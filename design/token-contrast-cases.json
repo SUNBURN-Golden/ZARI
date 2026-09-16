@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "scope": "Explicit opaque sRGB token pairs only; not full UI or WCAG certification.",
+  "cases": [
+    {
+      "id": "primary-on-app",
+      "foreground": "--zari-text-primary",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "primary-on-panel",
+      "foreground": "--zari-text-primary",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "primary-on-subtle",
+      "foreground": "--zari-text-primary",
+      "background": "--zari-surface-subtle",
+      "minimum": 4.5
+    },
+    {
+      "id": "secondary-on-app",
+      "foreground": "--zari-text-secondary",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "secondary-on-panel",
+      "foreground": "--zari-text-secondary",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "secondary-on-subtle",
+      "foreground": "--zari-text-secondary",
+      "background": "--zari-surface-subtle",
+      "minimum": 4.5
+    },
+    {
+      "id": "muted-on-app",
+      "foreground": "--zari-text-muted",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "muted-on-panel",
+      "foreground": "--zari-text-muted",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "muted-on-subtle",
+      "foreground": "--zari-text-muted",
+      "background": "--zari-surface-subtle",
+      "minimum": 4.5
+    },
+    {
+      "id": "inverse-on-accent",
+      "foreground": "--zari-text-inverse",
+      "background": "--zari-accent",
+      "minimum": 4.5
+    },
+    {
+      "id": "inverse-on-accent-hover",
+      "foreground": "--zari-text-inverse",
+      "background": "--zari-accent-hover",
+      "minimum": 4.5
+    },
+    {
+      "id": "accent-link",
+      "foreground": "--zari-accent",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "selected-label",
+      "foreground": "--zari-accent",
+      "background": "--zari-accent-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "success-on-soft",
+      "foreground": "--zari-success",
+      "background": "--zari-success-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "success-on-panel",
+      "foreground": "--zari-success",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "warning-on-soft",
+      "foreground": "--zari-warning",
+      "background": "--zari-warning-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "warning-on-panel",
+      "foreground": "--zari-warning",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "danger-on-soft",
+      "foreground": "--zari-danger",
+      "background": "--zari-danger-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "danger-on-panel",
+      "foreground": "--zari-danger",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "info-on-soft",
+      "foreground": "--zari-info",
+      "background": "--zari-info-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "info-on-panel",
+      "foreground": "--zari-info",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "control-on-app",
+      "foreground": "--zari-border-control",
+      "background": "--zari-surface-app",
+      "minimum": 3
+    },
+    {
+      "id": "focus-on-app",
+      "foreground": "--zari-focus-ring",
+      "background": "--zari-surface-app",
+      "minimum": 3
+    },
+    {
+      "id": "control-on-panel",
+      "foreground": "--zari-border-control",
+      "background": "--zari-surface-panel",
+      "minimum": 3
+    },
+    {
+      "id": "focus-on-panel",
+      "foreground": "--zari-focus-ring",
+      "background": "--zari-surface-panel",
+      "minimum": 3
+    },
+    {
+      "id": "control-on-subtle",
+      "foreground": "--zari-border-control",
+      "background": "--zari-surface-subtle",
+      "minimum": 3
+    },
+    {
+      "id": "focus-on-subtle",
+      "foreground": "--zari-focus-ring",
+      "background": "--zari-surface-subtle",
+      "minimum": 3
+    },
+    {
+      "id": "canvas-outline",
+      "foreground": "--zari-canvas-outline",
+      "background": "--zari-canvas-bg",
+      "minimum": 3
+    },
+    {
+      "id": "selection-on-canvas",
+      "foreground": "--zari-selection-ring",
+      "background": "--zari-canvas-bg",
+      "minimum": 3
+    },
+    {
+      "id": "selection-on-soft",
+      "foreground": "--zari-selection-ring",
+      "background": "--zari-accent-soft",
+      "minimum": 3
+    }
+  ]
+}

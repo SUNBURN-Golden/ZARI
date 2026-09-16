@@ -1,0 +1,110 @@
+/* ZARI design seed v0.1 — light only; not yet imported by a working app.
+ * Canonical semantic tokens. Visual approval remains pending.
+ * No external fonts, network imports, reset, or third-party package required.
+ */
+:root {
+  --zari-surface-app: #F6F5F1;
+  --zari-surface-panel: #FFFFFF;
+  --zari-surface-subtle: #ECEDE7;
+  --zari-text-primary: #202520;
+  --zari-text-secondary: #525C53;
+  --zari-text-muted: #626B62;
+  --zari-text-inverse: #FFFFFF;
+  --zari-border-subtle: #DDE2D8;
+  --zari-border-control: #788276;
+  --zari-accent: #36533E;
+  --zari-accent-hover: #294230;
+  --zari-accent-soft: #E7EEE5;
+  --zari-selection-ring: var(--zari-accent);
+  --zari-focus-ring: #295C77;
+  --zari-success: #2F623F;
+  --zari-success-soft: #EAF3E9;
+  --zari-warning: #79520E;
+  --zari-warning-soft: #FFF2D8;
+  --zari-danger: #9F3032;
+  --zari-danger-soft: #FBECEB;
+  --zari-info: #295C77;
+  --zari-info-soft: #EAF2F8;
+  --zari-canvas-bg: var(--zari-surface-subtle);
+  --zari-canvas-outline: var(--zari-text-secondary);
+  --zari-canvas-grid: var(--zari-border-subtle);
+  --zari-font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --zari-font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  --zari-text-xs: 0.8125rem;
+  --zari-text-sm: 0.875rem;
+  --zari-text-base: 1rem;
+  --zari-text-lg: 1.125rem;
+  --zari-text-xl: 1.5rem;
+  --zari-text-title: 2rem;
+  --zari-line-body: 1.55;
+  --zari-line-label: 1.4;
+  --zari-line-heading: 1.2;
+  --zari-weight-regular: 400;
+  --zari-weight-medium: 500;
+  --zari-weight-semibold: 600;
+  --zari-space-1: 0.25rem;
+  --zari-space-2: 0.5rem;
+  --zari-space-3: 0.75rem;
+  --zari-space-4: 1rem;
+  --zari-space-6: 1.5rem;
+  --zari-space-8: 2rem;
+  --zari-space-12: 3rem;
+  --zari-space-16: 4rem;
+  --zari-radius-control: 0.5rem;
+  --zari-radius-panel: 0.75rem;
+  --zari-radius-overlay: 1rem;
+  --zari-border-width: 1px;
+  --zari-focus-width: 2px;
+  --zari-focus-offset: 3px;
+  --zari-control-min-height: 2.75rem;
+  --zari-touch-min-height: 3rem;
+  --zari-panel-width: 18rem;
+  --zari-inspector-width: 20rem;
+  --zari-content-max: 100rem;
+  --zari-z-canvas: 0;
+  --zari-z-header: 10;
+  --zari-z-popover: 30;
+  --zari-z-modal: 50;
+  --zari-z-toast: 60;
+  --zari-shadow-raised: 0 2px 8px rgb(32 37 32 / 8%);
+  --zari-shadow-overlay: 0 12px 36px rgb(32 37 32 / 14%);
+  --zari-duration-fast: 120ms;
+  --zari-duration-base: 180ms;
+  --zari-duration-panel: 240ms;
+  --zari-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Opt-in utilities, not a global app reset. */
+.zari-ui {
+  color: var(--zari-text-primary);
+  background-color: var(--zari-surface-app);
+  font-family: var(--zari-font-ui);
+  font-size: var(--zari-text-base);
+  line-height: var(--zari-line-body);
+  letter-spacing: normal;
+}
+.zari-numeral {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.zari-focus-ring:focus-visible,
+.zari-focus-ring[data-focus-visible] {
+  outline: var(--zari-focus-width) solid var(--zari-focus-ring);
+  outline-offset: var(--zari-focus-offset);
+}
+
+/* Components must also disable spatial animation in their JS motion config.
+ * Business completion must never depend on transition/animation end events.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --zari-duration-fast: 0ms;
+    --zari-duration-base: 0ms;
+    --zari-duration-panel: 0ms;
+  }
+}
+@media (forced-colors: active) {
+  .zari-focus-ring:focus-visible,
+  .zari-focus-ring[data-focus-visible] {
+    outline-color: Highlight;
+  }
+}

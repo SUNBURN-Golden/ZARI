@@ -13,3 +13,14 @@
 - 실행하지 않은 테스트, 존재하지 않는 커밋·배포·상품을 완료 사실처럼 보고하지 않습니다.
 - 사용자 승인 없이 공개 전환·유료 자원 생성·비밀정보 업로드를 하지 않습니다.
 - 작업을 끝낼 때 IMPLEMENTATION_STATUS.md에 실제 변경·검증·미완료·다음 작업을 남깁니다.
+
+## 프런트엔드·디자인 작업 추가 규칙
+
+UI 작업 전 DESIGN.md, design/SCREENS.md, design/COMPONENTS.md, design/DECISIONS.md, design/REVIEW_CHECKLIST.md를 읽습니다. 기술·도메인 판정은 Rust 추가 지시문을 유지하고 일반적 시각 스타일 제안은 DESIGN.md로 구체화합니다.
+
+- 디자인 값은 apps/web/src/styles/tokens.css의 semantic token을 사용합니다. 새 조합은 대비 사례에 추가합니다.
+- 저장소의 디자인 계약을 외부 스킬의 기본 취향으로 덮어쓰지 않습니다. 스킬·훅·전역 설치는 현재 미적용입니다.
+- Apple 에셋 복제·무분별한 glass 효과·무의미한 KPI·모든 요소 카드화를 기본으로 만들지 않습니다.
+- draft와 approved baseline을 구분합니다. 승인 근거 없이 생성한 화면을 승인 상태로 기록하지 않습니다.
+- 디자인 변경 시 `node scripts/check-design-tokens.mjs --self-test`를 실행하고 실제 화면 검증 여부를 별도로 기록합니다.
+- 기존 보존 프롬프트와 SOURCE_MANIFEST.json을 디자인 수정 때문에 변경하지 않습니다.

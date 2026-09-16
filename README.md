@@ -5,7 +5,7 @@ Rust-first organization compiler
 
 ## 현재 상태
 
-초기 개발 문서를 등록하는 단계입니다. 애플리케이션 코드, 실행 환경, 테스트, CI, 배포는 아직 구현하지 않았습니다. 문서의 기능·성능·테스트 항목은 요구사항이지 달성 결과가 아닙니다.
+제품·기술 문서와 디자인 기준 v0.1, CSS 토큰, 토큰 검사 스크립트를 등록했습니다. 실행 가능한 Rust/WASM/React 앱, 화면 시안, CI, 배포는 아직 없습니다. 문서의 기능·성능 항목은 요구사항이지 달성 결과가 아닙니다.
 
 현재 상태와 다음 작업은 [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)를 기준으로 확인합니다.
 
@@ -28,3 +28,16 @@ Rust 코어가 정리 규칙·배치 탐색·적합성 검증·수량·비용 �
 수납장 한 칸 입력 → 정리 전략 선택 → 실제 Rust/WASM 계산 → 배치도·BOM 갱신 → 저장·불러오기.
 
 먼저 공간 경계 검사와 구매 묶음 계산을 Rust로 구현하고, 같은 fixture의 네이티브·실제 브라우저 WASM 결과를 대조합니다. 현재 이 기능이 구현되었다는 뜻은 아닙니다.
+
+## 디자인 기준
+
+**Apple식 정교함을 참고하되 ZARI만의 공간 작업 화면을 만듭니다.** 장식·템플릿을 복제하기보다 측정·선택·검사·실행의 연결을 우선합니다.
+
+- [DESIGN.md](DESIGN.md): 방향, 토큰, 정보 위계, 접근성, 변경 우선순위.
+- [핵심 화면](design/SCREENS.md) / [컴포넌트](design/COMPONENTS.md): 측정·배치 편집·구매목록의 상태와 동작.
+- [CSS 토큰](apps/web/src/styles/tokens.css): light 테마의 공통 값. 아직 앱 import·시각 승인 전.
+- [레퍼런스](design/REFERENCES.md) / [결정 기록](design/DECISIONS.md) / [검토 체크리스트](design/REVIEW_CHECKLIST.md).
+- [baseline 관리](design/baselines/README.md): 승인된 화면 0개. 코드 등록과 화면 승인은 구분합니다.
+- [검증 기록](design/VALIDATION.md): 토큰·문서 검사와 미실행 범위.
+
+토큰 검사: `node scripts/check-design-tokens.mjs --self-test` (외부 의존성 없음). 전체 앱·접근성 시험을 대신하지 않습니다. React Aria·Motion·Impeccable·Storybook은 후보이며 설치하지 않았습니다.
