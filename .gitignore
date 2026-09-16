@@ -1,0 +1,21 @@
+# Rust
+/target/
+**/target/
+**/pkg/
+
+# Web
+**/node_modules/
+**/dist/
+**/.vite/
+**/coverage/
+**/playwright-report/
+**/test-results/
+
+# Local secrets and editor files
+.env
+.env.*
+!.env.example
+!.env.*.example
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,23 @@
+{
+  "project": "ZARI",
+  "repository": "BeautifulMind-JT/ZARI",
+  "schema_version": 1,
+  "scope": "preserved_prompt_sources",
+  "note": "Checksums identify preserved source bytes; they do not certify implementation or external claims.",
+  "preserved_sources": [
+    {
+      "source_filename": "organization_compiler_master_prompt_ko.md",
+      "path": "docs/MASTER_PROMPT_KO.md",
+      "bytes": 44848,
+      "sha256": "29bedf2c458949228bcd65532da9c02d0dee2d7d42214a27a8b9ca540477fe63",
+      "git_blob_sha": "96c1c1431f204ad03ae2e335049a176c84f55796"
+    },
+    {
+      "source_filename": "organization_compiler_rust_addendum_ko.md",
+      "path": "docs/RUST_ADDENDUM_KO.md",
+      "bytes": 25402,
+      "sha256": "f375370349969d8c8e99b045b75f78d64ee1dae37c4b4f4dbf323031778addfc",
+      "git_blob_sha": "de1c06d649d65c325991b52538d4dc41daa2c391"
+    }
+  ]
+}
