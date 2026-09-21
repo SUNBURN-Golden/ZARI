@@ -9,6 +9,20 @@ Rust-first organization compiler
 
 현재 상태와 다음 작업은 [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)를 기준으로 확인합니다.
 
+## 아키텍처 제안 v1
+
+최신 `main` `46082a909c9210c7dbd0ee9946386dc18246108e`를 기준으로 제품·도메인·탐색·Worker·저장·UI 계약과 Devin 실행 계획을 문서화했습니다. 구현 또는 독립 감사 승인 완료를 뜻하지 않습니다. 문서 전용 아키텍처 PR의 검토·사용자 결정 이후 첫 통합 작업을 시작합니다.
+
+- [저장소 실사와 기존 문서 감사](docs/REPOSITORY_AUDIT.md)
+- [제품 명세](docs/PRODUCT_SPEC.md) / [아키텍처와 전체 문서 지도](docs/ARCHITECTURE.md)
+- [도메인·버전·스냅샷](docs/DOMAIN_MODEL.md) / [전략·solver·독립 검증](docs/SOLVER.md)
+- [Rust/WASM/Worker 계약](docs/WASM_PROTOCOL.md) / [저장·마이그레이션](docs/PERSISTENCE.md)
+- [프런트엔드 상태·상호작용](docs/FRONTEND.md) / [디자인 시스템 구체화](docs/DESIGN_SYSTEM.md)
+- [테스트와 검토 게이트](docs/TEST_STRATEGY.md) / [성능·보안·실패 모델](docs/PERFORMANCE_SECURITY_FAILURES.md)
+- [Devin 작업 그래프·활용 분석](docs/DEVIN_EXECUTION_PLAN.md) / [바로 전달할 Task 001 프롬프트](docs/DEVIN_TASK_001.md)
+
+첫 작업은 Rust 치수 정규화·폭 경계 검사·묶음 계산을 실제 Worker/WASM과 브라우저로 연결하는 것입니다. 전체 정리 계획의 생성·저장·복원은 Task 006의 별도 완료 기준입니다. 아키텍처 초안을 읽었다는 이유로 구현 작업·자동화·병합을 시작하지 않습니다.
+
 ## 문서와 적용 우선순위
 
 - [개발 마스터프롬프트](docs/MASTER_PROMPT_KO.md): 제품 목표, IKEA·Elfa 레퍼런스, 사용자 흐름, 검증 기준.
