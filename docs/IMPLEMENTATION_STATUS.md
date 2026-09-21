@@ -45,3 +45,28 @@ DESIGN.md, 핵심 화면·컴포넌트 명세, 레퍼런스·결정·검토 규�
 검증 명령과 실제 결과는 [design/VALIDATION.md](../design/VALIDATION.md)를 봅니다. 토큰 검사 통과를 앱 실행·전체 접근성·시각 승인·CI 성공으로 해석하지 않습니다.
 
 다음 개발에서는 DESIGN.md와 세 핵심 화면 명세를 함께 읽고, 기존 Rust/WASM 첫 연결 목표를 진행합니다. 도면·구매목록의 실제 상태를 구현한 뒤 캡처·검토하여 baseline을 등록합니다. 문서·화면 제작을 이유로 Rust 계산 연결을 가짜 UI로 대체하지 않습니다.
+
+## AI Engineering Control Plane 문서 개정 (PR #1, 미병합)
+
+AGENTS.md, TASKS/TEMPLATE.md, RUNBOOKS/DISPATCH.md에 Devin의 승인 범위 내
+자율 실행, Astra의 결정·독립 감사 집중, 고정 mechanical 전달 매핑을 반영했습니다.
+기존 저장소 규칙과 필수 review는 유지합니다. 이 기록은 운영 문서 변경이며
+Rust/WASM/React 구현이나 자동화 구현 완료를 뜻하지 않습니다.
+
+자체 확인: 프로젝트별 규칙 보존, 세 문서의 필드·역할·수동 운영 경로를 대조했습니다.
+앱 테스트나 CI를 실행하지 않았습니다. 독립 감사 PASS는 아직 없습니다.
+다음 단계는 새 PR HEAD의 독립 감사이며, mechanical layer 구현·감사와
+User 활성화 전까지 자동 dispatch는 비활성입니다.
+
+후속 자체 점검에서 TASKS/TEMPLATE.md의 KIX 전용 예시를 제거하고 ZARI의
+정본 task/specification 정책을 참조하도록 수정했습니다. 템플릿 변경분을 대조했으며
+이 수정 역시 독립 감사 PASS가 아닙니다.
+
+## 작성자 충돌 규칙 보완
+
+기본 Astra 감사와 User가 지정하는 대체 독립 감사자의 수락 조건을 정의하고,
+지정된 감사자에게 동일한 증거 검증·결과 처리 의무가 적용되도록 정리했습니다.
+지정 pointer와 인증된 auditor identity/session을 요청·결과에 연결합니다.
+기존 규칙 보존과 필드·gate 연결을 작성자 관점에서 대조했습니다.
+애플리케이션 테스트는 실행하지 않았으며 독립 감사 완료를 주장하지 않습니다.
+다음 단계는 수정에 참여하지 않은 지정 감사자의 새 HEAD 검토입니다.
