@@ -57,3 +57,7 @@ Rust/WASM/React 구현이나 자동화 구현 완료를 뜻하지 않습니다.
 앱 테스트나 CI를 실행하지 않았습니다. 독립 감사 PASS는 아직 없습니다.
 다음 단계는 새 PR HEAD의 독립 감사이며, mechanical layer 구현·감사와
 User 활성화 전까지 자동 dispatch는 비활성입니다.
+
+후속 자체 점검에서 TASKS/TEMPLATE.md의 KIX 전용 예시를 제거하고 ZARI의
+정본 task/specification 정책을 참조하도록 수정했습니다. 템플릿 변경분을 대조했으며
+이 수정 역시 독립 감사 PASS가 아닙니다.
