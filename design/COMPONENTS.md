@@ -18,7 +18,7 @@
 
 ## 접근성과 입력 규칙
 
-레이블을 placeholder로 대체하지 않는다. input의 타입, inputmode, 허용 문자열, 정규화 시점을 분리한다. React Aria의 숫자 파서를 사용하더라도 정확한 십진수 문자열→정수 mm 계약과 충돌하지 않는지 검증한다. JS 부동소수점 결과를 정식 도메인 값으로 확정하지 않는다.
+레이블을 placeholder로 대체하지 않는다. input의 타입, inputmode, 허용 문자열, 정규화 시점을 분리한다. 구체화된 [프런트엔드 계약](../docs/FRONTEND.md)에 따라 DimensionField는 React Aria TextField로 원문 문자열을 유지하고 Rust가 정규화한다. NumberField나 JS 숫자 파서를 정식 측정값 변환에 사용하지 않는다. JS 부동소수점 결과를 정식 도메인 값으로 확정하지 않는다.
 
 버튼은 button, 이동은 link로 표현하고 복잡한 카드 전체를 중첩 interactive element로 만들지 않는다. disabled 이유는 hover 없이 알 수 있어야 한다. 단순 상태를 버튼처럼 보이게 하지 않는다.
 
