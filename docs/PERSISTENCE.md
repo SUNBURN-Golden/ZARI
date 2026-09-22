@@ -17,6 +17,8 @@ Status: architecture proposal for implementation; no persistence code or migrati
 
 IndexedDB, accessed through one Dexie repository adapter, is the initial persistence mechanism. No account, backend, sync provider, or database service is required. TypeScript owns storage transactions and presentation state. Rust owns normalized input, semantic digests, domain validation, snapshot construction, BOM, and canonical content hashing. The persistence adapter must not repair geometry or recompute a BOM.
 
+All durable input/catalog/snapshot integrity checks use the `verifyRecord` operation in WASM_PROTOCOL; imported catalogs use its `validateCatalog` boundary. A verified hash does not certify physical correctness or turn a historical plan into a current one. Project import stages bounded records through these operations before its single commit transaction; no Worker call occurs inside that transaction.
+
 Keep five separate values:
 
 - **Raw editing draft:** exact input strings, selected display units, explicit unknown selections, incomplete edits, requested user operations, and bounded undo history. It can be saved even when invalid.
@@ -59,7 +61,7 @@ Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, 
 | Store | Primary key / indexes | Stored content | Decision |
 |---|---|---|---|
 | `projects` | `projectId`; indexes `updatedAt`, `status` | project name, `projectRevision`, `currentInputRevision`, `currentInputDigest`, full accepted-snapshot binding or null, last workflow step, created/updated timestamps, recovery flags | Small mutable coordination record; every project write touches it |
-| `inputs` | `[projectId+inputRevision]`; index `projectId` | immutable normalized DTO, input digest, catalog pin, rules/search configuration, owned-container snapshots used by this input | Separate immutable rows enable reproducibility and history |
+| `inputs` | `[projectId+inputRevision]`; index `projectId` | immutable ProjectInput and digest (including catalogPin, SearchSelection and owned-container copies); normalization engine version as record metadata | Separate immutable rows enable reproducibility and history; no independently mutable catalog/search duplicate |
 | `drafts` | `projectId` | raw form DTO, draft generation, originating editor-session ID, base input revision/digest, validation status, last completed edit command, bounded undo/redo record | One embedded draft per project; no random component state |
 | `snapshots` | `[projectId+inputRevision+planSnapshotId]`; indexes `projectId`, `planSnapshotId` | immutable snapshot body, full binding, `acceptedAt`, evaluation engine context | One complete payload per binding; no cross-project dedup service |
 | `ownedContainers` | `ownedContainerId`; index `updatedAt` | user-maintained inventory definition, revision, evidence, available quantity | Global reusable inventory library; projects explicitly copy/pin selected revision |
@@ -95,6 +97,8 @@ Autosave may debounce keystrokes (target 400 ms) and save immediately on form co
 5. The old accepted snapshot remains available as history. It is stale for current input; never relabel it as newly computed.
 
 No `await Worker`, fetch, timer, or WASM initialization inside an IndexedDB transaction. Resolve computation first, then compare-and-swap. Dexie documents both transaction completion and the risk of unrelated asynchronous work allowing a transaction to become inactive. This design deliberately uses short transactions. [Dexie transaction documentation](https://dexie.org/docs/Dexie/Dexie.transaction%28%29)
+
+After that transaction commits, the controller uses activateProject with a fresh activation ID and the committed normalized revision to install the immutable Rust context, as WASM_PROTOCOL specifies. Only its matching acknowledgement enables search. If context installation fails, the save is still real but computation is unavailable; retry Worker activation without incrementing inputRevision again. Engine version metadata on an input row is not a user-selected field and is excluded from inputDigest; engine changes independently stale old snapshot contexts.
 
 ### 3.3 Snapshot acceptance
 

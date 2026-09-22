@@ -27,7 +27,7 @@ Status: proposed architecture, not Rust implementation. This file owns wire sema
 | Id | validated String | string | 1..96 ASCII letters/digits/`_:-`; no inferred identity from labels |
 | Digest | [u8;32] | lowercase 64-hex string | SHA-256 of specified canonical material |
 
-Aggregate input caps are separate from scalar validity: 1 compartment, 20 placed containers, 200 expanded item instances, 50 groups, 20 obstacles, 1000 local catalog variants, 100 eligible candidate variants in the reference search profile. Cap exceedance returns `input_limit_exceeded`/explicit restricted search scope, not silent truncation or auto-discarded items. Quantities above the geometric instance cap remain legal input facts but cannot be fully expanded in this profile; request a narrower problem or return unassigned remainder explicitly.
+Aggregate input caps are separate from scalar validity: 1 compartment, 20 placed containers, 200 expanded item instances, 50 groups, 20 obstacles, 1000 local catalog variants, 4000 total offers, 100 eligible candidate variants per group in the reference search profile. Cap exceedance returns `input_limit_exceeded`/explicit restricted search scope, not silent truncation or auto-discarded items. Quantities above the geometric instance cap remain legal input facts but cannot be fully expanded in this profile; request a narrower problem or return unassigned remainder explicitly.
 
 ```rust
 pub struct LengthMm(u32);
@@ -58,6 +58,8 @@ Private fields and `TryFrom`/validated constructors enforce the table. Raw DTOs 
 Rust trims surrounding whitespace and parses ASCII decimal strings exactly. mm accepts integers; cm accepts decimal values exactly representable in whole mm, including redundant trailing fractional zeroes. Thus `60`, cm →600; `60.1`, cm→601; `60.10`, cm→601; `60.01`, cm is rejected, never rounded. Empty/whitespace means unknown; `0` length is invalid while zero position/quantity is legal. Reject sign-minus, exponent, comma grouping, embedded unit text, NaN and Infinity; `+` is not accepted. Max raw numeric field 64 bytes, max 16 fractional digits before rejecting oversized input. UI unit choices supply meaning; no locale guessing. Display-unit conversion also uses Rust, not parseFloat.
 
 Exact grammar after trim: mm/count `[0-9]+`; cm `[0-9]+(\.[0-9]{1,16})?`. Leading zeroes are accepted then canonicalized; `.1` and `60.` are incomplete/invalid on commit, not inferred values. RawUncertaintyDto uses `state: unknown|bounded` and camelCase `minusText`, `plusText`, `unit`; both bounds use the same exact decimal grammar but allow zero, never missing-as-zero. Raw user measurements normalize to Unverified provenance with absent observation time unless a separately evidenced explicit confirmation command supplies confirmation; selecting UserMeasured alone does not confirm. Synthetic fixtures carry Synthetic/Unverified unless the fixture explicitly declares its test-assumption evidence.
+
+Raw position input is the explicit signed exception: integer mm grammar `-?[0-9]+`, checked PositionMm range, with `-0` canonicalized to zero; it is never accepted as a negative physical length. Whole-KRW money, mass grams and clearance mm use unsigned integer grammar and their own scalar bounds. WASM_PROTOCOL specifies the bounded catalog-field normalization and complete-record verification commands; browser import adapters do not perform these authoritative conversions.
 
 All extent sums, interval bounds, quantities, pack counts, costs and mass aggregates use checked arithmetic with u64/i64/u128 intermediates as appropriate. Volumes are u128 internally and decimal strings if exposed. Never downcast before range-checking. `ceil(needed/pack)` is quotient + nonzero-remainder, avoiding unchecked `needed+pack-1`.
 
@@ -120,6 +122,8 @@ pub struct Project {
     pub input: ProjectInput,
 }
 pub struct ProjectInput {
+    pub catalog_pin: CatalogPin,
+    pub search: SearchSelection,
     pub space: Space,
     pub items: Vec<Item>,
     pub groups: Vec<ItemGroup>,
@@ -128,6 +132,12 @@ pub struct ProjectInput {
     pub constraints: UserConstraints,
     pub preferences: Preferences,
     pub evidence: Vec<Evidence>,
+}
+pub struct CatalogPin { pub catalog_version: String, pub catalog_digest: Digest }
+pub struct SearchSelection {
+    pub profile: SearchProfile,
+    pub budget: SearchBudget,
+    pub seed: Option<String>, // reference-v1: None
 }
 pub struct Dimensions { pub width: Measurement, pub depth: Measurement, pub height: Measurement }
 pub struct Vec3Mm { pub x: PositionMm, pub y: PositionMm, pub z: PositionMm }
@@ -138,7 +148,7 @@ pub struct Space {
     pub kind: SpaceKind, // only RectangularCompartment supported
     pub interior: Dimensions,
     pub opening: SpaceOpening,
-    pub external_staging_depth: Fact<MeasuredLength>,
+    pub staging: StagingEnvelope,
     pub support: SupportSurface,
     pub obstacles: Vec<Obstacle>,
     pub clearances: ClearancePolicy,
@@ -178,16 +188,43 @@ pub struct ItemDimensions {
     pub storage_state: String, // folded/stored condition, not arbitrary compression
     pub envelope: Dimensions,
 }
-pub struct ItemGroup { pub id: Id, pub label: String, pub item_ids: Vec<Id> }
+pub struct ItemGroup {
+    pub id: Id, pub label: String, pub item_ids: Vec<Id>,
+    pub split_policy: GroupSplitPolicy,
+}
+pub enum GroupSplitPolicy { OneTarget, AllowMultipleTargets }
 pub struct StorageRequirement {
     pub allowed_orientations: Fact<Vec<Orientation>>,
-    pub retrieval: RetrievalMode,
+    pub allowed_retrieval_modes: Vec<RetrievalMode>,
+    pub handling: HandlingClearance,
     pub must_stay_together: bool,
     pub mandatory_compatibility: Vec<Id>,
 }
 ```
 
-`MeasuredCuboid` consists of three Fact<MeasuredOffset> min axes and Dimensions; `MeasuredRectangle` has x/y offsets and width/depth. Unknown positions do not default to zero. ClearancePolicy has independently sourced wall left/right/front/back/top, between units and handling margins (nonnegative mm), plus rule IDs. No manufacturer requirements silently replaced by a global 5 mm default. UserConstraints contains hard/soft KRW budget, purchase allowed, hard one-action access, safety restrictions and locked group/zone choices. Preferences contains ranked objective, material/color/visual preferences; no synthetic safety score.
+`MeasuredCuboid` consists of three Fact<MeasuredOffset> min axes and Dimensions; `MeasuredRectangle` has x/y offsets and width/depth. Unknown positions do not default to zero. ClearancePolicy has independently sourced wall left/right/front/back/top and between-unit physical gaps (nonnegative mm), plus rule IDs. Motion handling margins are separate below. No manufacturer requirements silently replaced by a global 5 mm default. UserConstraints contains hard/soft KRW budget, purchase allowed, hard one-action access, safety restrictions and locked group/zone choices. Preferences contains ranked objective, material/color/visual preferences; no synthetic safety score.
+
+CatalogPin and SearchSelection are part of normalized ProjectInput and its inputDigest. RawProjectInputDto carries them alongside raw measurements; Rust validates rather than trusting IDs/limits. CompileVersions copies these values from normalized input, never accepts conflicting duplicates. Engine-owned schema/canonical/rule/solver versions remain execution context: an engine update makes an old plan stale but is not a user input edit. An empty immutable catalog is valid for direct/owned-only work; it still has a real digest, never an invented null catalog identity.
+
+```rust
+pub struct CavityClearancePolicy {
+    pub left: Fact<ClearanceMm>, pub right: Fact<ClearanceMm>,
+    pub front: Fact<ClearanceMm>, pub back: Fact<ClearanceMm>,
+    pub top: Fact<ClearanceMm>, pub between_items: Fact<ClearanceMm>,
+}
+pub struct HandlingClearance {
+    pub left: Fact<ClearanceMm>, pub right: Fact<ClearanceMm>,
+    pub top: Fact<ClearanceMm>, pub pull_extra_depth: Fact<ClearanceMm>,
+    pub lift_above_rim: Fact<ClearanceMm>,
+}
+pub struct StagingEnvelope {
+    pub free_volume: MeasuredCuboid,
+    pub base_support: Fact<StagingSupport>,
+}
+pub struct StagingSupport { pub load_limit: Fact<MassGrams> }
+```
+
+Staging is a measured front free cuboid, ending at y=0, whose base is z=0 in the compartment frame; its x-span and height are measured independently. Its depth is derived from its measured bounds, not duplicated as externalStagingDepth. Known StagingSupport means the entire base footprint is supported; capacity is a separate fact. A real surface at a different height requires unsupported vertical transfer and cannot be assumed level. Missing support, span or headroom stays unknown. Static wall/item clearances and motion margins are checked separately, not added twice to the same physical gap. DirectFrontExtraction does not use liftAboveRim and reports that subcheck NotApplicable with a rule reason; it does not alter the input fact that another permitted recipe may need. Each container physical model carries cavity clearances and handling requirements; effective handling is the conservative maximum of applicable known item/recipe/model requirements with all evidence retained, and remains unknown if an applicable requirement is unknown. StorageRequirement.allowedRetrievalModes is nonempty, unique and canonically sorted. Direct assignments require DirectFrontExtraction; contained/provisional-container assignments require PullContainerThenRetrieve; a recipe cannot silently override these choices. Both may be allowed in the same input so minimum-purchase can compare direct and container options honestly.
 
 Items are homogeneous units at a declared stored shape. Instance identity is `(itemId, ordinal:u32)` for known quantity. Group membership must be unique for the selected grouping; activity tags can overlap but do not duplicate physical inventory. Unknown quantity is not expanded into one imaginary item. An unknown-dimension item remains unassigned or provisionally associated, never a proved physical placement.
 
@@ -217,11 +254,28 @@ pub struct ItemPlacement {
 pub struct ItemAssignment {
     pub item_id: Id,
     pub unit_ordinal: u32,
-    pub target: ParentRef,
-    pub local_placement: Option<ItemPlacement>,
-    pub state: AssignmentState, // Provisional or GeometricallyPlaced
+    pub location: ItemLocation,
 }
+pub enum ItemLocation {
+    Direct { placement_id: Id },
+    Contained { container_placement_id: Id, local_placement: ItemPlacement },
+    ProvisionalContainer { container_placement_id: Id, reason_code: String },
+}
+pub struct Unassigned {
+    pub item_id: Id,
+    pub instances: UnassignedInstances,
+    pub reason_code: String,
+}
+pub enum UnassignedInstances {
+    Known { ranges: Vec<OrdinalRange> },
+    UnknownQuantity,
+}
+pub struct OrdinalRange { pub start: u32, pub end_exclusive: u32 }
 ```
+
+DirectItem placements are space children only; containers are space children only; contained items are represented by ItemLocation::Contained, not another Placement for the same item. Every Direct assignment references the matching DirectItem placement; its coordinates exist only there. Every direct placement has exactly one matching assignment. Known item ordinals partition exactly once across Direct/Contained/ProvisionalContainer assignments and unassigned ranges. Ranges are sorted, disjoint, nonempty, within0..quantity, and can compactly retain a remainder beyond the expansion cap; unknown quantity uses UnknownQuantity and has no invented ordinal. Provisional association counts as accounted-for inventory but not geometrically confirmed contents; assignmentCompleteness exposes that distinction.
+
+OneTarget means all known group instances share one container, or all are directly placed in the same declared zone; it never implies one item per group. AllowMultipleTargets permits multiple containers and mixed direct/owned/new targets in that zone, with exact instance conservation. An Item's mustStayTogether additionally forbids splitting that Item's known instances across targets. Any hard together restriction is respected before a visual/strategy preference. The UI records the group split choice explicitly; imported omission is invalid, not an inferred permissive policy.
 
 Container children use the cavity's unrotated local frame, with a separately evidenced inner offset in the original product frame. Only space→container→item nesting. Reject cycles, duplicate instance references, unknown parents, nesting depth>2, unpermitted orientation, floating support and stacking. Geometrically placed means coordinates exist; physical access/load may still be conditional.
 
@@ -247,6 +301,7 @@ pub struct VariantDimensions {
     pub handles: Fact<HandleEnvelope>,
     pub lid_state: Fact<LidState>,
     pub cavity_model: Fact<CavityModel>,
+    pub cavity_clearances: CavityClearancePolicy,
 }
 pub struct ProductVariant {
     pub id: Id, pub product_id: Id, pub option_label: String,
@@ -258,6 +313,7 @@ pub struct ProductVariant {
     pub compatibility: Fact<Vec<Id>>,
     pub mounting: Fact<MountingRequirement>,
     pub stackability: Fact<Stackability>,
+    pub handling: HandlingClearance,
 }
 pub struct Offer {
     pub id: Id, pub variant_id: Id, pub seller_id: Id,
@@ -304,6 +360,7 @@ pub struct Recipe {
     pub catalog_constraints: Vec<CatalogConstraint>,
     pub placement_constraints: Vec<PlacementConstraint>,
     pub retrieval: RetrievalMode,
+    pub handling: HandlingClearance,
     pub reason_ids: Vec<Id>,
 }
 ```
@@ -311,6 +368,27 @@ pub struct Recipe {
 Zone is a preference region or hard locked region with explicit bounds; a label “front” is insufficient. Default frequency zones split depth at floor(D/2) in normalized integer mm; unknown depth cannot create zones. Hard/soft type is explicit. Facts/field references use entity ID + typed field path, not arbitrary evaluation strings. Reasons carry rule ID, fact references and message parameters, so TS translates without inventing claims. `closedBin` and other future primitives are not valid supported-enum values; imports return unsupported rather than fallback to openBin.
 
 ## 6. Checks, BOM, guide and search output
+
+The solver/validator boundary is a complete proposal without trusted pass flags:
+
+```rust
+pub struct CandidateLayout {
+    pub placements: Vec<Placement>,
+    pub assignments: Vec<ItemAssignment>,
+    pub unassigned: Vec<Unassigned>,
+    pub purchase_selections: Vec<PurchaseSelection>,
+}
+pub struct PurchaseSelection {
+    pub placement_id: Id,
+    pub offer: OfferSelection,
+}
+pub enum OfferSelection {
+    Selected { offer_id: Id },
+    Unresolved { reason_code: String },
+}
+```
+
+Exactly one PurchaseSelection is required for each NewContainer placement, none for owned/direct placements. A selected offer must exist in the pinned catalog and refer to that exact variant. An unresolved selection produces unknown procurement facts; no pack1/free/in-stock default. Reference search chooses one homogeneous offer per variant across its new placements; different sellers/pack choices are purchase alternatives, not different physical alternatives. Manual SelectOffer also updates all new placements of that variant atomically. SnapshotContent retains purchaseSelections sorted by placementId; BOM references that binding and does not query another catalog or independently select a cheaper offer. No current offer can be borrowed to complete a historical quote.
 
 ```rust
 pub enum CheckStatus { Pass, Fail, Unknown, NotApplicable }
@@ -366,7 +444,7 @@ pub struct ActionStep {
 }
 ```
 
-Unknown quantities use Fact rather than zero-valued placeholders in aggregate summaries. `unassigned` retains `(itemId, remainingKnownQuantity or Unknown, reason)`. No assigned or unassigned instance disappears. Provisional association with an unknown interior is reported separately from geometrically placed content; it does not claim capacity. Known rejected geometry is never accepted as a positive plan.
+Unknown quantities use Fact rather than zero-valued placeholders in aggregate summaries. `unassigned` retains the exact ordinal ranges or UnknownQuantity and a reason; displayed counts are Rust-derived from that partition. No assigned or unassigned instance disappears. Provisional association with an unknown interior is reported separately from geometrically placed content; it does not claim capacity. Known rejected geometry is never accepted as a positive plan.
 
 Input Quantity's 10000 cap must not be reused for procurement aggregate results: needed10000 with pack9999 yields packs2, supplied19998 and surplus9998. UnitCount holds supplied/surplus and aggregate counts; use checked u64 intermediate and reject overflow before narrowing to u32. This edge case is mandatory from Task001.
 
@@ -397,6 +475,7 @@ pub struct SnapshotContent {
     pub placements: Vec<Placement>,
     pub assignments: Vec<ItemAssignment>,
     pub unassigned: Vec<Unassigned>,
+    pub purchase_selections: Vec<PurchaseSelection>,
     pub validation: ValidationReport,
     pub bom: Vec<BOMLine>,
     pub cost_summary: CostSummary,
@@ -445,7 +524,7 @@ Stale is derived from draft dirty/epoch mismatch, binding/input mismatch, or sel
 
 Manual moves/rotations/replacements change a requested layout, not measured ProjectInput. They increment editorEpoch immediately and projectRevision on durable acceptance, retain inputRevision/inputDigest when those source facts are unchanged, and produce a new PlanSnapshot/content ID/binding with `creation: manualEdit`. Reference solver determinism applies to `creation: referenceSearch`; it does not require the user's manually chosen geometry to equal the solver's selected geometry. Final validation/BOM/guide/identity are still exclusively Rust.
 
-The frozen LayoutEditCommand variants are MovePlacement{placementId,position}, RotatePlacement{placementId,orientation}, ReplaceVariant{placementId,variantId,offerId:Option<Id>} and RestoreLayout{sourceSnapshotId}. All serialize with `kind` camelCase tags and generated fields. Commands reference a current base snapshot and immutable catalog; replacing revalidates contained assignments, sizes, support, access and BOM, retaining any now-unassigned items. RestoreLayout receives the corresponding source snapshot through the validated context rather than trusting an ID alone; it revalidates its proposed layout against current input/catalog. A stale base requires reconciliation first, never silent rebinding.
+The frozen LayoutEditCommand variants are MovePlacement{placementId,position}, RotatePlacement{placementId,orientation}, ReplaceVariant{placementId,variantId,offerId:Option<Id>}, SelectOffer{variantId,offerId} and RestoreLayout{sourceSnapshotId}. All serialize with `kind` camelCase tags and generated fields. Commands reference a current base snapshot and immutable catalog; replacing revalidates contained assignments, sizes, support, access and BOM, retaining any now-unassigned items. ReplaceVariant with Some(offerId) first verifies its target variant reference, then applies that explicit offer to every new placement of the target variant atomically. With None, if any other new placement of the target variant already has a Selected offer, reject with invalid_input/reason offer_selection_required; otherwise mark the replaced placement Unresolved/offer_not_selected. Never silently inherit an offer or mix Selected and Unresolved for the same variant. SelectOffer updates all matching new-container purchase selections, then Rust re-finalizes validation/BOM/guide/identity as a manual edit. The UI discloses every affected purchase line/placement before accepting the result. RestoreLayout receives the corresponding source snapshot through the validated context rather than trusting an ID alone; it revalidates its proposed layout against current input/catalog. A stale base requires reconciliation first, never silent rebinding.
 
 Input edits/undo (measurements, groups, strategy, preferences) allocate a new inputRevision only if Rust digest changes. Layout-only undo restores a prior requested layout through validateEdit and updates editorEpoch/projectRevision, not inputRevision. All durable revisions move forward or stay unchanged according to their own scope; none decrements. Undo may reuse an existing byte-identical content ID, but does not revive old request identity. User action progress remains keyed to complete binding; deliberately restoring the exact previously accepted binding can expose its saved progress, while a different snapshot ID or inputRevision starts separate progress. No automatic progress transfer across bindings.
 

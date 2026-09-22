@@ -11,6 +11,8 @@ Rust-first organization compiler
 
 ## 아키텍처 제안 v1
 
+상세 설계의 시작점은 [구현 설계도](docs/BLUEPRINT.md)입니다. [실제 숫자로 계산하는 전체 예제](docs/COMPILER_WALKTHROUGH.md), [화면별 작업대 설계](design/WORKSPACE_BLUEPRINT.md), [Task001–010 전체 위임 계약](docs/DEVIN_PROGRAM.md), [Devin 전체 전달문](docs/DEVIN_PROGRAM_PROMPT.md)을 함께 제공합니다.
+
 최신 `main` `46082a909c9210c7dbd0ee9946386dc18246108e`를 기준으로 제품·도메인·탐색·Worker·저장·UI 계약과 Devin 실행 계획을 문서화했습니다. 구현 또는 독립 감사 승인 완료를 뜻하지 않습니다. 문서 전용 아키텍처 PR의 검토·사용자 결정 이후 첫 통합 작업을 시작합니다.
 
 - [저장소 실사와 기존 문서 감사](docs/REPOSITORY_AUDIT.md)

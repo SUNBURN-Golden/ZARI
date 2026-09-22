@@ -16,6 +16,9 @@ Status: proposed, documentation only. Audited base: `46082a909c9210c7dbd0ee99463
 | TEST_STRATEGY.md | Fixture oracle, parity, browser tests and gates |
 | PERFORMANCE_SECURITY_FAILURES.md | Targets, measurement method, threat/failure boundaries |
 | DEVIN_EXECUTION_PLAN.md / DEVIN_TASK_001.md | Task graph, evidence, review gates, first dispatch instruction |
+| BLUEPRINT.md / COMPILER_WALKTHROUGH.md | Implementation reading map and fully specified numerical acceptance example; no duplicate schema authority |
+| design/WORKSPACE_BLUEPRINT.md | Screen hierarchy, state/action semantics and task-linked browser acceptance |
+| DEVIN_PROGRAM.md / DEVIN_PROGRAM_PROMPT.md | Whole-program delegation, task-level ownership/continuation and complete program prompt |
 
 Preserved prompts retain product intent and Rust precedence. A contradiction with an approved requirement triggers an explicit architecture decision; adding this file does not silently repeal it. AGENTS and the dispatch runbook remain governance authority. New documents specify previously missing contracts; comments in snippets are architectural designs, not installed code.
 
@@ -105,6 +108,8 @@ MUST NOT: core→solver; core/solver→wasm/React/DOM/Dexie/network; validator�
 Raw editing ≠ normalized input ≠ search continuation ≠ evaluated snapshot ≠ persisted project. Normalization may return field errors without replacing the last valid model. Any raw edit immediately invalidates current result presentation. Worker responses must match worker session, project activation, request, editor epoch, input revision and immutable compile context. Accepted snapshots remain available as explicitly historical while edits/search/save fail.
 
 The finalizer independently validates a CandidateLayout against immutable input/catalog, checks quantities, creates BOM and guide and hashes canonical content. Only it constructs PlanSnapshot. Views and export consume that content; never query today's catalog to silently rewrite yesterday's quote. Progress observations/timestamps live outside content identity.
+
+ProjectInput includes the selected catalog pin and search profile/budget/seed; engine versions remain compile context. CandidateLayout includes exact direct/contained item identities and explicit selected/unresolved offers. A direct item has one coordinate authority. Cavity clearances and external staging width/depth/headroom/support are separate facts; a bin is not confirmed accessible from depth alone. See DOMAIN_MODEL and the numerical walkthrough for the complete boundary.
 
 ## 5. Choice record and deferred tools
 

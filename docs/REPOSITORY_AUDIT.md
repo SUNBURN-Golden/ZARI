@@ -104,3 +104,30 @@ No real catalog, exact compatible installed package matrix, application benchmar
 Ran the existing checker: 10 self-tests, 69 tokens, 30/30 declared contrast pairs pass. Preserved prompt bytes/hashes match SOURCE_MANIFEST. Documentation paths and allowed diff are checked before publication. No dependencies installed; no app implementation, app tests, browser flow, performance result, visual baseline approval or formal independent audit PASS is asserted.
 
 Repository evidence: [pinned main](https://github.com/BeautifulMind-JT/ZARI/tree/46082a909c9210c7dbd0ee9946386dc18246108e), [merged PR #1](https://github.com/BeautifulMind-JT/ZARI/pull/1).
+
+## 7. Detailed-blueprint follow-up, 2026-09-22
+
+Remote main remains `46082a909c9210c7dbd0ee9946386dc18246108e`. Architecture PR#2 remained Draft/open at `0c6bbb2a18b32d8690bcf36d0caf08a7a8d4aae3` before this follow-up; its review/comment lists were empty at inspection. Two concurrent governance changes now materially affect later execution, not the product code target:
+
+| PR | Observed exact HEAD | Meaning |
+|---|---|---|
+| [#3](https://github.com/BeautifulMind-JT/ZARI/pull/3) | `9d0f095f414daecd0f2b4d7afb3cd6f0052bcf6e` | Draft builder-neutral governance on main; not active by its presence |
+| [#4](https://github.com/BeautifulMind-JT/ZARI/pull/4) | `63b640558662684f0013b2a7575ef849ae7679f5` | Advanced from3fab9e2 during this work; Draft runtime on #3, CI/runtime code outside main; body reports runtime disabled and exact-HEAD audit/host gates pending |
+
+We do not modify either branch's governance/runtime files. At dispatch re-read actual main and configured activation; don't import the earlier MANUAL_ONLY observation or a future approval from chat memory as current fact. Full-program scope authorization and actual task launch remain separate.
+
+The second author challenge found substantive incomplete contracts in the initial proposal:
+
+| ID / severity | Defect | Clarification before implementation |
+|---|---|---|
+| B01 / MUST RESOLVE BEFORE002 | Catalog/search affect inputRevision but are absent from ProjectInput | Explicit CatalogPin/SearchSelection included in digest; engine versions remain context |
+| B02 / MUST RESOLVE BEFORE003/004 | CandidateLayout and chosen offers not concretely bound; direct items could have two positions | Complete proposal DTO; per-placement PurchaseSelection; single direct ItemLocation reference and ordinal partition |
+| B03 / MUST RESOLVE BEFORE003 | Front depth alone cannot prove bin contents access | Measured staging cuboid/support, cavity and motion margins, explicit480mm example |
+| B04 / MUST RESOLVE BEFORE004 | Group implicitly could mean one bin; single retrieval mode excludes direct/bin comparison | Explicit group split and allowed retrieval operations, finite multi-target allocation |
+| B05 / MUST RESOLVE BEFORE005 | Normalization result revision cannot simply be rebound after CAS | normalize→commit→fresh activateProject acknowledgement handshake |
+| B06 / MUST RESOLVE BEFORE006 | Installation guide could require unsupported loading inside compartment | Load in staging first, then insert loaded bin; fixed-orientation/quasi-static limitation |
+| B07 / MUST RESOLVE BEFORE003 | Acyclic removal order doesn't prove a parking space | Nonzero removable blockers remain access Unknown; hard one-action is Fail; no confirmation-based upgrade |
+| B08 / MUST RESOLVE BEFORE DISPATCH | Prior explanation could imply automated whole-program launch or Grok monitoring | Program authorization reused; existing task/claim/gate/merge retained; no scheduler/polling activation |
+| B09 / MUST RESOLVE BEFORE005/008 | Persistence/import require Rust verification but the operation table lacks its callable boundary | Explicit verifyRecord, normalizeCatalogFields and validateCatalog operations; integrity verification never establishes physical validity/currentness |
+
+These are corrections to an unimplemented proposal, not migrations of a running schema. The new Blueprint, Workspace Blueprint, Compiler Walkthrough and Devin Program make the decisions inspectable. No source prompt, manifest, design token, approved baseline or application code is changed. The review is an author-side challenge; it does not supply the required User-designated independent architecture audit.

@@ -1,5 +1,7 @@
 # ZARI frontend and interaction architecture
 
+Screen-by-screen layout and task-linked browser acceptance are specified in [WORKSPACE_BLUEPRINT.md](../design/WORKSPACE_BLUEPRINT.md). This document retains authority over state ownership. Direct item position is read only from its referenced Placement; contained item coordinates come from its ItemLocation. Offer selection uses Rust validateEdit/SelectOffer and never updates only the visible price in React.
+
 Status: proposed implementation contract; documentation only. The audited repository contains a token seed, not a running React application. [ARCHITECTURE.md](ARCHITECTURE.md) owns dependency direction; [WASM_PROTOCOL.md](WASM_PROTOCOL.md) owns exact wire envelopes; [PERSISTENCE.md](PERSISTENCE.md) owns durable revisions and transactions. This document specifies UI ownership and observable behavior without duplicating those authorities.
 
 ## Contents

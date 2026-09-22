@@ -2,6 +2,8 @@
 
 Status: architecture proposal; implementation has not begun. This document describes work to execute after the architecture gate. It does not enable automation, dispatch a session, approve a visual baseline, or authorize a merge.
 
+Whole-program delegation is specified in [DEVIN_PROGRAM.md](DEVIN_PROGRAM.md), with the complete program prompt in [DEVIN_PROGRAM_PROMPT.md](DEVIN_PROGRAM_PROMPT.md). The user may authorize the pinned001–010 scope once; each child retains the contracts below. Product reading map: [BLUEPRINT.md](BLUEPRINT.md). Numerical acceptance: [COMPILER_WALKTHROUGH.md](COMPILER_WALKTHROUGH.md). User-facing tasks also apply the relevant UX IDs in [WORKSPACE_BLUEPRINT.md](../design/WORKSPACE_BLUEPRINT.md).
+
 ## 1. Authority, readiness and ownership
 
 Read `AGENTS.md`, `TASKS/TEMPLATE.md` and `RUNBOOKS/DISPATCH.md` with this document. Product and computational contracts live in `PRODUCT_SPEC.md`, `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `SOLVER.md`, `WASM_PROTOCOL.md`, `PERSISTENCE.md` and `TEST_STRATEGY.md`. Design contracts remain `DESIGN.md` and the files under `design/`.
@@ -180,7 +182,21 @@ flowchart TD
 
 003 and 005 may run together only after 002 is accepted, with explicit nonoverlapping ownership. 003 owns core validation/finalization modules and its fixtures; 005 owns app persistence/Worker/editor modules and integration tests. 005 may integrate frozen APIs but must not implement the final validator. Changes to shared roots, generated contracts, Cargo/npm lockfiles and `IMPLEMENTATION_STATUS.md` must be handed off and integrated sequentially by one owner; if either task needs such changes concurrently, serialize the tasks. 004 follows 003 and is not parallel-safe with 005 by default because it introduces the solver/WASM export integration and shared lifecycle contracts.
 
-The graph does not launch all queued tickets. The user sends only the next eligible canonical task. Reserve competing sessions for evidence between approaches; speed alone is not a reason for multiple owners of one contract.
+The graph does not launch all queued tickets. User may authorize the pinned001–010 program once; unchanged included scope does not need repeated authorization. Each task still needs its canonical envelope, exact dependency/gate checks and the active runbook's ownership/dispatch procedure. Under MANUAL_ONLY the User remains the sole manual launch/control executor. A future audited and activated runtime may deliver only operations it actually implements; this document does not create a program scheduler. Reserve competing sessions for evidence between approaches; speed alone is not a reason for multiple owners of one contract. Default serial execution and the separate003 validator author are specified in DEVIN_PROGRAM.
+
+### Detailed-contract acceptance added before implementation
+
+| Task | Required additional evidence from the clarified contract |
+|---|---|
+| 002 | ProjectInput catalogPin/SearchSelection digest vectors; engine-only version change leaves input identity unchanged; CandidateLayout/ItemLocation/PurchaseSelection schemas; group split and staging/handling fields |
+| 003 | Forged direct-reference/ordinal/offer mismatch rejection; cavity and staging headroom/support checks; nonzero-blocker parking stays unsupported/conditional; all numerical validator cases from COMPILER_WALKTHROUGH |
+| 004 | Multi-container group allocation, hard together restriction, direct/owned/new conservation, one-offer-per-variant enumeration, minimum-purchase ranking of direct over unnecessary new bins |
+| 005 | normalize→CAS commit→fresh activateProject handshake, failed activation after successful save, no stale revision rebinding |
+| 006 | Same snapshot in diagram/BOM/guide/reload using the complete worked scenario; actual browser parity for its physical/quantity assertions |
+| 007 | One direct-position source in numeric/drag edits; layout-only undo identity; same-scale alternatives and task-linked UX IDs |
+| 008 | SelectOffer re-finalizes affected new-unit procurement under pinned catalog; historical quote immutable; changed catalog pin creates changed input |
+
+These are additions to the existing acceptance criteria and gates, not new microtasks or new schema sources. Tasks001–010 continue to have one bounded outcome each.
 
 ## 7. Ticket 001 — executable architecture proof
 
@@ -390,6 +406,8 @@ The graph does not launch all queued tickets. The user sends only the next eligi
 
 **Required implementation:** meaningful measurement flow and project switch; generated validation; revision increments; guarded Worker lifecycle, cancel/dispose/restart and crash handling; Dexie stores/migrations/transactions; explicit save states; stale-response rejection; reload and multi-tab conflict recovery. Pending search lifecycle is tested with controllable protocol fixtures until 004 is integrated, explicitly distinguishing those tests from real search cancellation.
 
+Implement the frozen verifyRecord integrity boundary, including initialized system identity before project activation. Prove a corrupted/missing catalog does not prevent integrity inspection and raw recovery export of a historical snapshot. Hash consistency alone never makes that snapshot a current evaluated plan.
+
 **Acceptance criteria:** invalid raw text survives draft reload without being silently normalized; units change exact values through Rust; success appears only after DB commit; two tabs cannot silently last-write-win; project switching fences previous Worker generations; trap/restart preserves committed state; corrupted/imported unsupported versions are not overwritten; unknown remains visible.
 
 **Exact verification expectations:** R1–R3 if authoritative core changes are needed, W1, C1, J1–J4, B1, P1, D1; transaction abort/quota/future-version fixtures; stale/request-order/crash tests; reload and two-page Playwright tests.
@@ -527,6 +545,8 @@ The graph does not launch all queued tickets. The user sends only the next eligi
 **Files/modules likely involved:** catalog/owned import UI and Worker adapter; Rust ingestion validation under existing core contracts; local catalog snapshots; BOM/purchase/guide/progress UI; fixtures/browser tests.
 
 **Required implementation:** staged manual/CSV/JSON import with Rust validation before activation; no partial snapshot publish; existing containers inventory; safe reference links; offer-bound quantities/known subtotal; shipping policy as supported; real variant/offer selection; action progress tied to immutable snapshot and prerequisites; explicit demo/real modes.
+
+Use the frozen normalizeCatalogFields and validateCatalog operations, including first-open import with no active project. Prove exact Rust scalar conversion, unknown/provenance preservation, digest mismatch rejection, bounded per-record transport and stale system-response rejection; no temporary fabricated project or partial catalog publication.
 
 **Acceptance criteria:** malformed imports leave previous catalog intact; missing inner dimensions never imply contents fit; same-name different variants remain distinct; owned shortage is explicit; required 5/pack2 yields 3/6/1; free differs from unknown; shipping/stock unknown prevents falsely confirmed totals/availability; no required item disappears; action for an undelivered purchase cannot silently complete its placement prerequisite. A practical-product completion claim requires a small auditable real catalog; no real data means this claim remains unverified.
 

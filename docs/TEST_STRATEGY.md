@@ -1,6 +1,12 @@
 # ZARI verification and review contract
 
+The detailed numerical oracle in [COMPILER_WALKTHROUGH.md](COMPILER_WALKTHROUGH.md) and interaction cases in [WORKSPACE_BLUEPRINT.md](../design/WORKSPACE_BLUEPRINT.md) extend the fixtures/evidence index below. Implement their relevant TRACE/UX IDs in the owning tasks; their presence in documentation is not an executed test. New full-domain assertions include catalog/search input identity, engine-only context staleness, normalization→CAS→fresh activation, direct-position/ordinal/offer bindings, multi-container group allocation, cavity clearances, staging headroom/support, explicit unsupported blocker parking, and SelectOffer snapshot re-finalization.
+
 Status: planned tests and gates, not executed application evidence. Repository target: `46082a909c9210c7dbd0ee9946386dc18246108e`. At this target Rust/WASM/React, executable domain fixtures, application CI, and approved visual baselines do not exist. The existing design-token checker is not an application test suite.
+
+Durable verification also covers `verifyRecord` digest mismatch, unsupported historical canonical version, and a deliberately rehashed invalid physical layout that must never become current merely through integrity verification. Catalog import exercises raw field normalization then atomic complete `validateCatalog`, preserves unknown/provenance and rejects an indivisible record above the Worker message cap without partial persistence.
+
+Task005 proves system-identity verification from Worker Ready, including a historical snapshot whose corrupt/missing catalog prevents project activation. Task008 proves first-open catalog import from the project list without an active project. Both reject stale system responses after workflow abandonment or Worker restart; neither creates a hidden project or advances an input revision.
 
 ## Contents
 

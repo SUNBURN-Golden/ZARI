@@ -2,6 +2,8 @@
 
 This is the complete implementation prompt. Send it only through the canonical manual-dispatch procedure after the architecture gate. The canonical GitHub task/PR supplied with dispatch provides its own ID, task revision, authorization, control record and assigned session; none is fabricated here. A bare prompt without that record is not a valid launch under the current runbook.
 
+This is child001 of the program in [DEVIN_PROGRAM.md](DEVIN_PROGRAM.md). An adopted program may authorize001–010 scope once. Finish this child autonomously through verification and review fixes; continuing to002 still requires its own eligible envelope, predecessor gate and current dispatch procedure. The whole-program prompt is [DEVIN_PROGRAM_PROMPT.md](DEVIN_PROGRAM_PROMPT.md). Do not repeatedly ask whether the user wants an already-authorized included feature.
+
 ---
 
 You are the implementation owner for **ZARI-001: executable Rust/WASM/Worker/browser architecture proof** in `BeautifulMind-JT/ZARI`.
