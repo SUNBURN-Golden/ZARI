@@ -1,7 +1,195 @@
 {
   "schemaVersion": 1,
   "project": "ZARI",
-  "status": "no-screens-captured",
-  "note": "Design direction is established. No visual implementation has been approved.",
-  "baselines": []
+  "status": "draft-screens-captured",
+  "note": "Actual Task001 browser captures; no screen has user approval. Full-page captures use the stated viewport.",
+  "captureEnvironment": {
+    "browserDistribution": "@sparticuz/chromium@153.0.0 (external test environment only)",
+    "launchOptions": {
+      "executablePath": "/tmp/zari-chromium",
+      "args": [
+        "--ash-no-nudges",
+        "--disable-domain-reliability",
+        "--disable-print-preview",
+        "--disk-cache-size=33554432",
+        "--no-default-browser-check",
+        "--no-pings",
+        "--font-render-hinting=none",
+        "--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process",
+        "--enable-features=SharedArrayBuffer",
+        "--ignore-gpu-blocklist",
+        "--in-process-gpu",
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader",
+        "--disable-setuid-sandbox",
+        "--headless='shell'",
+        "--no-sandbox",
+        "--no-zygote"
+      ]
+    },
+    "fontNote": "System Noto CJK fallback, installed in the capture host; the app loads no remote fonts."
+  },
+  "baselines": [
+    {
+      "id": "zari001-desktop-pass",
+      "status": "draft",
+      "file": "draft/zari001/desktop-pass.png",
+      "sha256": "65b8525655d1c5ec1bd4e15fe982146b201c589d8466fe2b87e7fc58444b5d68",
+      "sourceCommit": "79b6b7395d94eac18d15add4709edf3f1c188223",
+      "sourceDirty": false,
+      "screenOrStory": "/",
+      "state": "desktop-pass",
+      "fixtureId": "ui-bootstrap-synthetic-v1",
+      "rawOverrides": {
+        "unitWidth": "190",
+        "compartmentWidth": "600"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "browserAndVersion": "Chromium 153.0.8010.0",
+      "os": "linux 6.18.44",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "Noto Sans CJK JP"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "captureCommand": "ZARI_CAPTURE_DIR=/workspace/scratch/62a9fa3ca945/zari001-final-baselines node /tmp/zari-run.mjs npm run capture:baselines",
+      "capturedAt": "2026-09-23T00:42:20.800Z"
+    },
+    {
+      "id": "zari001-desktop-fail",
+      "status": "draft",
+      "file": "draft/zari001/desktop-fail.png",
+      "sha256": "31e9a94bb5496fe1c13bff4b00a9a259a23ce44b42155f0153f034540016b620",
+      "sourceCommit": "79b6b7395d94eac18d15add4709edf3f1c188223",
+      "sourceDirty": false,
+      "screenOrStory": "/",
+      "state": "desktop-fail",
+      "fixtureId": "ui-bootstrap-synthetic-v1",
+      "rawOverrides": {
+        "unitWidth": "195",
+        "compartmentWidth": "600"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "browserAndVersion": "Chromium 153.0.8010.0",
+      "os": "linux 6.18.44",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "Noto Sans CJK JP"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "captureCommand": "ZARI_CAPTURE_DIR=/workspace/scratch/62a9fa3ca945/zari001-final-baselines node /tmp/zari-run.mjs npm run capture:baselines",
+      "capturedAt": "2026-09-23T00:42:22.378Z"
+    },
+    {
+      "id": "zari001-desktop-unknown",
+      "status": "draft",
+      "file": "draft/zari001/desktop-unknown.png",
+      "sha256": "b24d12a7a8db7ee45732d2963f17359b6affe7d36eed49d7b49e897642dfeef3",
+      "sourceCommit": "79b6b7395d94eac18d15add4709edf3f1c188223",
+      "sourceDirty": false,
+      "screenOrStory": "/",
+      "state": "desktop-unknown",
+      "fixtureId": "ui-bootstrap-synthetic-v1",
+      "rawOverrides": {
+        "unitWidth": "190",
+        "compartmentWidth": ""
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "browserAndVersion": "Chromium 153.0.8010.0",
+      "os": "linux 6.18.44",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "Noto Sans CJK JP"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "captureCommand": "ZARI_CAPTURE_DIR=/workspace/scratch/62a9fa3ca945/zari001-final-baselines node /tmp/zari-run.mjs npm run capture:baselines",
+      "capturedAt": "2026-09-23T00:42:23.632Z"
+    },
+    {
+      "id": "zari001-desktop-focus",
+      "status": "draft",
+      "file": "draft/zari001/desktop-focus.png",
+      "sha256": "69397f17ff533f19b970f3ef8c72584512f3391f7da5f4bc3ec8cf32c087d1c9",
+      "sourceCommit": "79b6b7395d94eac18d15add4709edf3f1c188223",
+      "sourceDirty": false,
+      "screenOrStory": "/",
+      "state": "desktop-focus",
+      "fixtureId": "ui-bootstrap-synthetic-v1",
+      "rawOverrides": {
+        "unitWidth": "190",
+        "compartmentWidth": "600"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "browserAndVersion": "Chromium 153.0.8010.0",
+      "os": "linux 6.18.44",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "Noto Sans CJK JP"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "captureCommand": "ZARI_CAPTURE_DIR=/workspace/scratch/62a9fa3ca945/zari001-final-baselines node /tmp/zari-run.mjs npm run capture:baselines",
+      "capturedAt": "2026-09-23T00:42:24.965Z"
+    },
+    {
+      "id": "zari001-mobile-pass",
+      "status": "draft",
+      "file": "draft/zari001/mobile-pass.png",
+      "sha256": "7e0c6e0be48ca9c75d90bcfa430ea63f6ae98922ff01cf968e27721b88d78dad",
+      "sourceCommit": "79b6b7395d94eac18d15add4709edf3f1c188223",
+      "sourceDirty": false,
+      "screenOrStory": "/",
+      "state": "mobile-pass",
+      "fixtureId": "ui-bootstrap-synthetic-v1",
+      "rawOverrides": {
+        "unitWidth": "190",
+        "compartmentWidth": "600"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "browserAndVersion": "Chromium 153.0.8010.0",
+      "os": "linux 6.18.44",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "Noto Sans CJK JP"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "captureCommand": "ZARI_CAPTURE_DIR=/workspace/scratch/62a9fa3ca945/zari001-final-baselines node /tmp/zari-run.mjs npm run capture:baselines",
+      "capturedAt": "2026-09-23T00:42:26.022Z"
+    }
+  ]
 }

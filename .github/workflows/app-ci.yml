@@ -1,0 +1,76 @@
+name: ZARI implemented bridge checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zari-app-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact event commit
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Pinned Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Pinned Rust and WASM tools
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
+          cargo install wasm-bindgen-cli --version 0.2.128 --locked
+      - name: Record source and tools
+        run: |
+          git rev-parse HEAD
+          rustc --version
+          cargo --version
+          wasm-bindgen --version
+          node --version
+          npm --version
+      - name: Locked web dependencies
+        run: npm ci
+      - name: Native Rust checks and shared fixtures
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+          cargo test --workspace --locked
+          cargo run -p zari-core --locked --example fixture_runner -- fixtures/bootstrap
+          cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked
+      - name: Actual WASM and generated contract drift
+        run: |
+          npm run wasm:build
+          npm run contracts:check
+      - name: Web checks and production build
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+          node scripts/check-design-tokens.mjs --self-test
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Actual browser flows
+        run: npm run test:browser -- --project=chromium
+      - name: Native / actual browser Worker WASM parity
+        run: npm run test:parity
+      - name: Retain failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zari-bridge-failure-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
