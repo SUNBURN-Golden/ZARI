@@ -100,3 +100,19 @@ User 활성화 전까지 자동 dispatch는 비활성입니다.
 사용자가 설계 채택·독립 검토·머지 진행을 지시한 뒤, 작성에 참여하지 않은 검토자가 기존 SCREENS의 실행 순서와 새 물리 계약의 충돌을 확인했습니다. S03을 같은 PlanSnapshot의 ActionStep 선행 조건에 연결하고, 외부 staging에서 내용물을 담은 뒤 적재된 수납함을 삽입하도록 정정했습니다. 직접 배치와 구매 없는 계획에는 해당 없는 수납함·구매 단계를 생성하지 않습니다. 이는 미지원인 구획 내부 적재를 사용자에게 안내하지 않기 위한 문서 수정입니다.
 
 승인할 실제 화면 캡처는 여전히0개이며 baseline manifest는 변경하지 않았습니다. 디자인 방향 채택과 실제 렌더링 화면 승인은 구분합니다. 독립 검토·감사 결과와 최종 머지 여부는 변경된 정확한 HEAD에 연결된 PR 증거를 확인합니다.
+
+## Control Plane 적용 후보 — CP-ROLLOUT-004 (2026-09-23 UTC)
+
+정본 task: https://github.com/BeautifulMind-JT/kix-protocol/issues/40 / revision 1.
+현재 관측 main은 `d3cb460c94ca6de11d00dac181c0f8d8b95314e7`이다. 기존 closed runtime
+PR #4는 병합하지 않았으며, 현재 main에서 새 적용 PR을 준비했다.
+KIX `f179be8fc3c0c590b3194c26663aecdfe7a4a679`의 runtime/flow/boundary 실행 소스와
+회귀를 그대로 가져오고, ZARI V2 governance·repo/project mapping·비활성 설정을 연결했다.
+기존 ZARI 고유 규칙·원문·SOURCE_MANIFEST·제품/디자인 파일은 보존한다.
+
+공통 회귀 94개를 이 checkout에서 실행해 통과했다. repository validation과 소스
+동일성·기존 규칙 보존 검사는 PR의 exact-HEAD 검증 기록에 남긴다. Runtime CI는
+제어 구현만 검사하며 Rust/WASM/React의 제품 CI와 LOCAL_EVIDENCE_REQUIRED를 대체하지 않는다.
+현재 제품 구현·화면 승인·production host/preflight·독립 A3 감사·merge·activation
+완료를 주장하지 않는다. `runtime_enabled=false`; 새 source의 감사와 실제 host
+근거가 생기기 전 PENDING을 PASS로 바꾸지 않는다.
