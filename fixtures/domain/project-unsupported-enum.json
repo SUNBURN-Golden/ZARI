@@ -1,0 +1,582 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "project-unsupported-enum",
+  "operation": "normalizeProjectInput",
+  "schemaVersion": 1,
+  "input": {
+    "catalogPin": {
+      "catalogVersion": "catalog-2025-01",
+      "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "search": {
+      "profile": {
+        "id": "default",
+        "version": 1
+      },
+      "budget": {
+        "maxWorkUnits": "1000",
+        "maxNodes": 64,
+        "maxCandidatesPerGroup": 4,
+        "maxAlternatives": 3
+      },
+      "seed": null
+    },
+    "space": {
+      "id": "space-1",
+      "kind": "rectangularCompartment",
+      "interior": {
+        "width": {
+          "text": "600",
+          "unit": "mm",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "depth": {
+          "text": "400",
+          "unit": "mm",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "height": {
+          "text": "300",
+          "unit": "mm",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      },
+      "opening": {
+        "plane": "frontYZero",
+        "left": {
+          "text": "0",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "bottom": {
+          "text": "0",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "width": {
+          "text": "600",
+          "unit": "mm",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "height": {
+          "text": "300",
+          "unit": "mm",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      },
+      "staging": {
+        "freeVolume": {
+          "minX": {
+            "text": "0",
+            "uncertainty": {
+              "state": "unknown"
+            },
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "minY": {
+            "text": "0",
+            "uncertainty": {
+              "state": "unknown"
+            },
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "minZ": {
+            "text": "0",
+            "uncertainty": {
+              "state": "unknown"
+            },
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "extent": {
+            "width": {
+              "text": "600",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "depth": {
+              "text": "400",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "height": {
+              "text": "300",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            }
+          }
+        },
+        "baseSupport": {
+          "state": "known",
+          "value": {
+            "loadLimit": {
+              "state": "known",
+              "value": {
+                "text": "50000"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            }
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      },
+      "support": {
+        "id": "floor-1",
+        "kind": "establishedFloor",
+        "footprint": {
+          "x": {
+            "text": "0",
+            "uncertainty": {
+              "state": "unknown"
+            },
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "y": {
+            "text": "0",
+            "uncertainty": {
+              "state": "unknown"
+            },
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "width": {
+            "text": "600",
+            "unit": "mm",
+            "uncertainty": {
+              "state": "unknown"
+            },
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "depth": {
+            "text": "400",
+            "unit": "mm",
+            "uncertainty": {
+              "state": "unknown"
+            },
+            "origin": "userDeclared",
+            "evidenceIds": []
+          }
+        },
+        "elevation": {
+          "text": "0",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "loadLimit": {
+          "state": "known",
+          "value": {
+            "text": "50000"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      },
+      "obstacles": [],
+      "clearances": {
+        "left": {
+          "state": "known",
+          "value": {
+            "text": "5"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "right": {
+          "state": "known",
+          "value": {
+            "text": "5"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "front": {
+          "state": "known",
+          "value": {
+            "text": "0"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "back": {
+          "state": "known",
+          "value": {
+            "text": "0"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "top": {
+          "state": "known",
+          "value": {
+            "text": "10"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "betweenUnits": {
+          "state": "known",
+          "value": {
+            "text": "5"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "ruleIds": [
+          "rule:clearance-v1"
+        ]
+      }
+    },
+    "items": [
+      {
+        "id": "item-a",
+        "label": "Winter coats",
+        "category": "clothing",
+        "quantity": {
+          "state": "known",
+          "value": {
+            "text": "2"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "dimensions": {
+          "storageState": "folded",
+          "envelope": {
+            "width": {
+              "text": "190",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "depth": {
+              "text": "100",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "height": {
+              "text": "80",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            }
+          }
+        },
+        "massEach": {
+          "state": "known",
+          "value": {
+            "text": "800"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "requirement": {
+          "allowedOrientations": {
+            "state": "known",
+            "value": [
+              "upright0"
+            ],
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "allowedRetrievalModes": [
+            "directFrontExtraction"
+          ],
+          "handling": {
+            "left": {
+              "state": "known",
+              "value": {
+                "text": "5"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "right": {
+              "state": "known",
+              "value": {
+                "text": "5"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "top": {
+              "state": "known",
+              "value": {
+                "text": "5"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "pullExtraDepth": {
+              "state": "known",
+              "value": {
+                "text": "0"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "liftAboveRim": {
+              "state": "known",
+              "value": {
+                "text": "0"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            }
+          },
+          "mustStayTogether": false,
+          "mandatoryCompatibility": []
+        },
+        "frequency": {
+          "state": "known",
+          "value": "weekly",
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "activityIds": [],
+        "stockRole": {
+          "state": "known",
+          "value": "active",
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      },
+      {
+        "id": "item-b",
+        "label": "Documents",
+        "category": "paper",
+        "quantity": {
+          "state": "known",
+          "value": {
+            "text": "1"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "dimensions": {
+          "storageState": "boxed",
+          "envelope": {
+            "width": {
+              "text": "300",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "depth": {
+              "text": "200",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "height": {
+              "text": "50",
+              "unit": "mm",
+              "uncertainty": {
+                "state": "unknown"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            }
+          }
+        },
+        "massEach": {
+          "state": "known",
+          "value": {
+            "text": "1200"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "requirement": {
+          "allowedOrientations": {
+            "state": "known",
+            "value": [
+              "upright0",
+              "upright90"
+            ],
+            "origin": "userDeclared",
+            "evidenceIds": []
+          },
+          "allowedRetrievalModes": [
+            "pullContainerThenRetrieve",
+            "directFrontExtraction"
+          ],
+          "handling": {
+            "left": {
+              "state": "known",
+              "value": {
+                "text": "2"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "right": {
+              "state": "known",
+              "value": {
+                "text": "2"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "top": {
+              "state": "known",
+              "value": {
+                "text": "2"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "pullExtraDepth": {
+              "state": "known",
+              "value": {
+                "text": "0"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            },
+            "liftAboveRim": {
+              "state": "known",
+              "value": {
+                "text": "0"
+              },
+              "origin": "userDeclared",
+              "evidenceIds": []
+            }
+          },
+          "mustStayTogether": true,
+          "mandatoryCompatibility": [
+            "item-a"
+          ]
+        },
+        "frequency": {
+          "state": "known",
+          "value": "rare",
+          "origin": "userDeclared",
+          "evidenceIds": []
+        },
+        "activityIds": [],
+        "stockRole": {
+          "state": "known",
+          "value": "reserve",
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      }
+    ],
+    "groups": [
+      {
+        "id": "group-1",
+        "label": "Closet",
+        "itemIds": [
+          "item-b",
+          "item-a"
+        ],
+        "splitPolicy": "oneTarget"
+      }
+    ],
+    "ownedContainers": [],
+    "strategyChoice": "quantumSolver",
+    "constraints": {
+      "hardBudget": {
+        "state": "known",
+        "value": {
+          "text": "200000"
+        },
+        "origin": "userDeclared",
+        "evidenceIds": []
+      },
+      "softBudget": {
+        "state": "known",
+        "value": {
+          "text": "100000"
+        },
+        "origin": "userDeclared",
+        "evidenceIds": []
+      },
+      "purchaseAllowed": true,
+      "hardOneActionAccess": false,
+      "safetyRestrictions": [],
+      "lockedZones": []
+    },
+    "preferences": {
+      "objectiveRanking": [
+        "minimumPurchase"
+      ],
+      "material": null,
+      "color": null,
+      "visualNotes": []
+    },
+    "evidence": []
+  },
+  "engineContext": {
+    "buildId": "zari-domain-2"
+  },
+  "expected": {
+    "kind": "normalizeProjectInput",
+    "decodeError": true,
+    "diagnostics": [],
+    "inputDigest": null
+  }
+}

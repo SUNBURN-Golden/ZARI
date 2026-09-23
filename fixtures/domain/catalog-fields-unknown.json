@@ -1,0 +1,35 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "catalog-fields-unknown",
+  "operation": "normalizeCatalogFields",
+  "schemaVersion": 1,
+  "input": [
+    {
+      "fieldPath": "offers.offer-1.packQuantity",
+      "value": {
+        "kind": "packQuantity",
+        "text": "  "
+      }
+    }
+  ],
+  "engineContext": {
+    "buildId": "zari-domain-2"
+  },
+  "expected": {
+    "kind": "normalizeCatalogFields",
+    "decodeError": false,
+    "fields": [
+      {
+        "fieldPath": "offers.offer-1.packQuantity",
+        "value": {
+          "kind": "packQuantity",
+          "value": {
+            "state": "unknown",
+            "reason": "notProvided"
+          }
+        },
+        "diagnosticCodes": []
+      }
+    ]
+  }
+}

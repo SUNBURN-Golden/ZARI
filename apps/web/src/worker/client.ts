@@ -31,6 +31,8 @@ const expected = {
   activateProject: 'projectActivated',
   normalizeInput: 'normalized',
   evaluateProbe: 'probeEvaluated',
+  verifyRecord: 'recordVerified',
+  normalizeCatalogFields: 'catalogFieldsNormalized',
   disposeProject: 'projectDisposed',
 } as const;
 const sameMeta = (a: Meta, b: Meta) =>
@@ -44,6 +46,7 @@ export class ProbeClient {
   private project = 'system';
   private epoch = '0';
   private revision = '0';
+  private contextId: string | null = null;
   private disposed = false;
   constructor(
     private readonly factory: () => WorkerPort,
@@ -56,6 +59,7 @@ export class ProbeClient {
     this.session = crypto.randomUUID();
     this.activation = this.project = 'system';
     this.epoch = this.revision = '0';
+    this.contextId = null;
     const port = this.factory();
     this.port = port;
     const session = this.session;
@@ -70,7 +74,7 @@ export class ProbeClient {
     };
     const reply = await this.request({
       kind: 'initialize',
-      buildId: 'zari-bootstrap-1',
+      buildId: 'zari-domain-2',
       expectedProtocolVersion: 1,
       expectedSchemaVersion: 1,
     });
@@ -78,12 +82,15 @@ export class ProbeClient {
       'initialize',
       'activateProject',
       'normalizeInput(bootstrap)',
+      'normalizeInput(project)',
       'evaluateProbe',
+      'verifyRecord',
+      'normalizeCatalogFields',
       'disposeProject',
     ];
     if (
       reply.kind !== 'ready' ||
-      reply.buildId !== 'zari-bootstrap-1' ||
+      reply.buildId !== 'zari-domain-2' ||
       reply.protocolVersion !== 1 ||
       reply.schemaVersion !== 1 ||
       capabilities.some((cap) => !reply.capabilities.includes(cap)) ||
@@ -100,15 +107,26 @@ export class ProbeClient {
       this.rejectPending(new StaleRequest(), true);
     }
   }
-  async activate(project: string, epoch: string, revision: string): Promise<void> {
+  async activate(
+    project: string,
+    epoch: string,
+    revision: string,
+    context: Extract<Command, { kind: 'activateProject' }>['context'] = { kind: 'bootstrap' },
+  ): Promise<void> {
     this.rejectPending(new StaleRequest());
     this.project = project;
     this.activation = crypto.randomUUID();
     this.epoch = epoch;
     this.revision = revision;
-    const reply = await this.request({ kind: 'activateProject', context: { kind: 'bootstrap' } });
-    if (reply.kind !== 'projectActivated' || reply.contextId !== null)
+    this.contextId = null;
+    const reply = await this.request({ kind: 'activateProject', context });
+    if (
+      reply.kind !== 'projectActivated' ||
+      (context.kind === 'bootstrap' && reply.contextId !== null) ||
+      (context.kind === 'project' && typeof reply.contextId !== 'string')
+    )
       throw new Error('invalid_activation');
+    this.contextId = reply.contextId;
   }
   request(command: Command): Promise<Reply> {
     if (!this.port || this.disposed) return Promise.reject(new Error('worker_unavailable'));
@@ -122,7 +140,7 @@ export class ProbeClient {
       requestId: crypto.randomUUID(),
       editorEpoch: system ? '0' : this.epoch,
       inputRevision: system ? '0' : this.revision,
-      contextId: null,
+      contextId: system ? null : this.contextId,
     };
     const request = { meta, command } satisfies ProtocolRequest;
     if (!validateProtocolRequest(request))

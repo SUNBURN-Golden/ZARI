@@ -1,0 +1,17 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "catalog-fields-decode-error",
+  "operation": "normalizeCatalogFields",
+  "schemaVersion": 1,
+  "input": {
+    "not": "an-array"
+  },
+  "engineContext": {
+    "buildId": "zari-domain-2"
+  },
+  "expected": {
+    "kind": "normalizeCatalogFields",
+    "decodeError": true,
+    "fields": []
+  }
+}

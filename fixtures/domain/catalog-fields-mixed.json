@@ -1,0 +1,150 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "catalog-fields-mixed",
+  "operation": "normalizeCatalogFields",
+  "schemaVersion": 1,
+  "input": [
+    {
+      "fieldPath": "offers.offer-1.packQuantity",
+      "value": {
+        "kind": "packQuantity",
+        "text": "6"
+      }
+    },
+    {
+      "fieldPath": "offers.offer-1.packPrice",
+      "value": {
+        "kind": "moneyKrw",
+        "text": "18446744073709551615"
+      }
+    },
+    {
+      "fieldPath": "variants.var-1.dimensions.outer.width",
+      "value": {
+        "kind": "measurement",
+        "raw": {
+          "text": "42.5",
+          "unit": "cm",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      }
+    },
+    {
+      "fieldPath": "variants.var-1.mass",
+      "value": {
+        "kind": "massGrams",
+        "text": "1000001"
+      }
+    },
+    {
+      "fieldPath": "products.prod-1.name",
+      "value": {
+        "kind": "quantity",
+        "text": "3"
+      }
+    },
+    {
+      "fieldPath": "offers.offer-1.packQuantity",
+      "value": {
+        "kind": "moneyKrw",
+        "text": "100"
+      }
+    }
+  ],
+  "engineContext": {
+    "buildId": "zari-domain-2"
+  },
+  "expected": {
+    "kind": "normalizeCatalogFields",
+    "decodeError": false,
+    "fields": [
+      {
+        "fieldPath": "offers.offer-1.packQuantity",
+        "value": {
+          "kind": "packQuantity",
+          "value": {
+            "state": "known",
+            "value": 6,
+            "provenance": {
+              "origin": "userDeclared",
+              "verification": "unverified",
+              "evidenceIds": [],
+              "ruleIds": [],
+              "inputRefs": [],
+              "observedAt": null
+            }
+          }
+        },
+        "diagnosticCodes": []
+      },
+      {
+        "fieldPath": "offers.offer-1.packPrice",
+        "value": {
+          "kind": "moneyKrw",
+          "value": {
+            "state": "known",
+            "value": "18446744073709551615",
+            "provenance": {
+              "origin": "userDeclared",
+              "verification": "unverified",
+              "evidenceIds": [],
+              "ruleIds": [],
+              "inputRefs": [],
+              "observedAt": null
+            }
+          }
+        },
+        "diagnosticCodes": []
+      },
+      {
+        "fieldPath": "variants.var-1.dimensions.outer.width",
+        "value": {
+          "kind": "measurement",
+          "value": {
+            "state": "known",
+            "value": {
+              "nominal": 425,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            },
+            "provenance": {
+              "origin": "userDeclared",
+              "verification": "unverified",
+              "evidenceIds": [],
+              "ruleIds": [],
+              "inputRefs": [],
+              "observedAt": null
+            }
+          }
+        },
+        "diagnosticCodes": []
+      },
+      {
+        "fieldPath": "variants.var-1.mass",
+        "value": null,
+        "diagnosticCodes": [
+          "scalar_out_of_range"
+        ]
+      },
+      {
+        "fieldPath": "products.prod-1.name",
+        "value": null,
+        "diagnosticCodes": [
+          "unsupported_field_path"
+        ]
+      },
+      {
+        "fieldPath": "offers.offer-1.packQuantity",
+        "value": null,
+        "diagnosticCodes": [
+          "field_kind_mismatch"
+        ]
+      }
+    ]
+  }
+}

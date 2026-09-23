@@ -11,7 +11,24 @@ import { transform, build } from 'esbuild';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const outputDir = join(root, 'apps/web/src/contracts/generated');
-const roots = ['ProtocolRequest', 'ProtocolResponse', 'BootstrapProbeDto', 'BootstrapProbeResult', 'BootstrapFixture'];
+const roots = [
+  'ProtocolRequest',
+  'ProtocolResponse',
+  'BootstrapProbeDto',
+  'BootstrapProbeResult',
+  'BootstrapFixture',
+  'DomainFixture',
+  'RawProjectInputDto',
+  'ProjectInput',
+  'CatalogImportDto',
+  'CatalogSnapshot',
+  'PlanSnapshot',
+  'VerifiableRecordDto',
+  'RawCatalogFieldDto',
+  'NormalizedCatalogField',
+  'SnapshotBinding',
+  'LayoutEditCommand',
+];
 const files = ['schema.json', 'dto.ts', 'validators.mjs', 'validators.d.mts'];
 const mode = process.argv[2];
 if (!['generate', 'check'].includes(mode)) throw new Error('Usage: node scripts/contracts.mjs generate|check');
@@ -44,7 +61,7 @@ async function generate(dir) {
   }
   const schema = canonical({
     $schema: 'http://json-schema.org/draft-07/schema#',
-    $id: 'https://zari.local/contracts/bootstrap-v1',
+    $id: 'https://zari.local/contracts/domain-v2',
     title: 'ZariContractBundle',
     type: 'object',
     additionalProperties: false,
@@ -58,7 +75,17 @@ async function generate(dir) {
     style: { singleQuote: true, semi: true, printWidth: 100, tabWidth: 2 },
     maxItems: -1,
   });
-  const ajv = new Ajv({ strict: true, allErrors: true, code: { source: true, esm: true } });
+  // Schemars annotates integer scalars with Rust width formats; numeric bounds
+  // (minimum/maximum) are emitted separately, so the formats are annotations.
+  const rustIntegerFormats = Object.fromEntries(
+    ['uint8', 'uint16', 'uint32', 'uint64', 'int8', 'int16', 'int32', 'int64'].map((f) => [f, true]),
+  );
+  const ajv = new Ajv({
+    strict: true,
+    allErrors: true,
+    formats: rustIntegerFormats,
+    code: { source: true, esm: true },
+  });
   ajv.addSchema(schema);
   const exports = Object.fromEntries(roots.map((name) => [`validate${name}`, `${schema.$id}#/definitions/${name}`]));
   const standalone = standaloneCode(ajv, exports);
@@ -77,18 +104,35 @@ async function generate(dir) {
     writeFile(join(dir, 'validators.mjs'), `/* Generated from Rust DTOs. Do not edit. */\n${formatted.code}`),
     writeFile(join(dir, 'validators.d.mts'), declaration),
   ]);
-  const validateFixture = ajv.getSchema(exports.validateBootstrapFixture);
-  const fixtureDir = join(root, 'fixtures/bootstrap');
-  const fixtureFiles = (await readdir(fixtureDir)).filter((name) => name.endsWith('.json')).sort();
-  assert.ok(fixtureFiles.length > 0, 'Shared fixtures must exist.');
+  const fixtureKinds = [
+    { dir: 'fixtures/bootstrap', validator: exports.validateBootstrapFixture },
+    { dir: 'fixtures/domain', validator: exports.validateDomainFixture },
+  ];
+  const manifest = JSON.parse(await readFile(join(root, 'fixtures/manifest.json'), 'utf8'));
+  assert.equal(manifest.fixtureContractVersion, 1, 'Unexpected fixture contract version.');
+  const manifestByPath = new Map(manifest.entries.map((entry) => [entry.inputPath, entry]));
+  const manifestIds = new Set(manifest.entries.map((entry) => entry.id));
   const ids = new Set();
-  for (const name of fixtureFiles) {
-    const fixture = JSON.parse(await readFile(join(fixtureDir, name), 'utf8'));
-    assert.ok(validateFixture(fixture), `${name} violates the Rust fixture schema: ${ajv.errorsText(validateFixture.errors)}`);
-    assert.ok(!ids.has(fixture.caseId), `Duplicate fixture caseId: ${fixture.caseId}`);
-    ids.add(fixture.caseId);
+  let count = 0;
+  for (const { dir, validator } of fixtureKinds) {
+    const validate = ajv.getSchema(validator);
+    const fixtureDir = join(root, dir);
+    const fixtureFiles = (await readdir(fixtureDir)).filter((name) => name.endsWith('.json')).sort();
+    assert.ok(fixtureFiles.length > 0, `Shared fixtures must exist in ${dir}.`);
+    for (const name of fixtureFiles) {
+      const relative = `${dir}/${name}`;
+      const fixture = JSON.parse(await readFile(join(fixtureDir, name), 'utf8'));
+      assert.ok(validate(fixture), `${relative} violates the Rust fixture schema: ${ajv.errorsText(validate.errors)}`);
+      assert.ok(!ids.has(fixture.caseId), `Duplicate fixture caseId: ${fixture.caseId}`);
+      ids.add(fixture.caseId);
+      const entry = manifestByPath.get(relative);
+      assert.ok(entry, `${relative} is missing a manifest entry.`);
+      assert.equal(entry.id, fixture.caseId, `${relative} manifest id mismatch.`);
+      count += 1;
+    }
   }
-  return fixtureFiles.length;
+  assert.equal(count, manifestIds.size, 'Manifest entries must cover exactly the fixture files.');
+  return count;
 }
 if (mode === 'generate') {
   const count = await generate(outputDir);

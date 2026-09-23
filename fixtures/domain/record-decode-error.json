@@ -1,0 +1,19 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "record-decode-error",
+  "operation": "verifyRecord",
+  "schemaVersion": 1,
+  "input": {
+    "kind": "input"
+  },
+  "engineContext": {
+    "buildId": "zari-domain-2"
+  },
+  "expected": {
+    "kind": "verifyRecord",
+    "decodeError": true,
+    "verified": null,
+    "computedDigest": null,
+    "diagnostics": []
+  }
+}
