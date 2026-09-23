@@ -94,7 +94,7 @@ test('@capture actual workspace draft screens', async ({ page, browser }) => {
       browserAndVersion: `Chromium ${browser.version()}`,
       os: `${platform()} ${release()}`,
       fontEnvironment: {
-        cssStack: await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily),
+        cssStack: await page.locator('.zari-ui').evaluate((el) => getComputedStyle(el).fontFamily),
         koreanFallback: execFileSync('fc-match', [':lang=ko', 'family'], {
           encoding: 'utf8',
         }).trim(),
@@ -102,7 +102,9 @@ test('@capture actual workspace draft screens', async ({ page, browser }) => {
       locale: 'ko-KR',
       theme: 'light',
       reducedMotion: 'reduce',
-      captureCommand: 'ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines',
+      captureCommand:
+        process.env.ZARI_CAPTURE_COMMAND ??
+        'ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines',
       capturedAt: new Date().toISOString(),
     });
   }
