@@ -118,3 +118,5 @@ KIX `f179be8fc3c0c590b3194c26663aecdfe7a4a679`의 runtime/flow/boundary 실행 �
 근거가 생기기 전 PENDING을 PASS로 바꾸지 않는다.
 
 같은 적용 후보의 독립 기술검토에서 dispatch 승인 identity 소실과 boundary 환경변수 우회(P1), evaluator/상위 경로 보호 검사 누락(P2)을 발견해 보완했다. 이후 공통 회귀는 99개 통과했다. 실행 소스는 이제 KIX 원본 그대로가 아니라 해당 finding 수정 delta를 포함한다. 새 HEAD의 비작성자 재감사·CI 결과는 PR 정본에 연결하며, production 검증·활성화 완료를 뜻하지 않는다.
+
+재감사에서 같은 startup 우회의 `BASH_ENV` 변형을 확인했다. runner `.env`는 locale 키만 허용하고 파일/상위 경로 보호를 요구하도록 보완했으며, startup injection 환경을 거절한다. 공통 회귀는 100개 통과했다. 실제 host 검증은 별도이다.
