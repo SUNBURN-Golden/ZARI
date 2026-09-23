@@ -37,6 +37,7 @@ const readyEvent = {
     'evaluateProbe',
     'verifyRecord',
     'normalizeCatalogFields',
+    'validateCandidate',
     'disposeProject',
   ],
 } as const;

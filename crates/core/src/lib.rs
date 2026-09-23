@@ -1,6 +1,8 @@
 pub mod canonical;
 pub mod catalog;
 pub mod facts;
+pub mod finalize;
+pub mod geometry;
 pub mod input;
 pub mod normalize;
 pub mod plan;
@@ -10,9 +12,11 @@ pub mod raw;
 pub mod scalars;
 pub mod strategy;
 pub mod validate;
+pub mod validator;
 pub use canonical::*;
 pub use catalog::*;
 pub use facts::*;
+pub use finalize::{CandidateEvaluation, evaluate_candidate};
 pub use input::*;
 pub use normalize::*;
 pub use plan::*;
@@ -20,6 +24,7 @@ pub use probe::*;
 pub use protocol::*;
 pub use raw::*;
 pub use strategy::*;
+pub use validator::{CandidateValidation, has_blocking_failure, validate_candidate};
 
 pub fn required_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where

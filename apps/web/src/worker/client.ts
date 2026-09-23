@@ -33,6 +33,7 @@ const expected = {
   evaluateProbe: 'probeEvaluated',
   verifyRecord: 'recordVerified',
   normalizeCatalogFields: 'catalogFieldsNormalized',
+  validateCandidate: 'candidateValidated',
   disposeProject: 'projectDisposed',
 } as const;
 const sameMeta = (a: Meta, b: Meta) =>
@@ -86,6 +87,7 @@ export class ProbeClient {
       'evaluateProbe',
       'verifyRecord',
       'normalizeCatalogFields',
+      'validateCandidate',
       'disposeProject',
     ];
     if (

@@ -368,6 +368,66 @@
       "title": "BundleComponent",
       "type": "object"
     },
+    "CandidateLayout": {
+      "additionalProperties": false,
+      "description": "The complete proposal crossing the independent validator boundary; a\ncaller-supplied pass flag does not exist and cannot be trusted.",
+      "properties": {
+        "assignments": {
+          "items": {
+            "$ref": "#/definitions/ItemAssignment"
+          },
+          "type": "array"
+        },
+        "placements": {
+          "items": {
+            "$ref": "#/definitions/Placement"
+          },
+          "type": "array"
+        },
+        "purchaseSelections": {
+          "items": {
+            "$ref": "#/definitions/PurchaseSelection"
+          },
+          "type": "array"
+        },
+        "unassigned": {
+          "items": {
+            "$ref": "#/definitions/Unassigned"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "placements",
+        "assignments",
+        "unassigned",
+        "purchaseSelections"
+      ],
+      "title": "CandidateLayout",
+      "type": "object"
+    },
+    "CandidateProposal": {
+      "additionalProperties": false,
+      "description": "The full proposal handed to the independent validator boundary: the\ncandidate layout plus the declared strategy trace and creation mode that\nthe snapshot embeds. None of it asserts validity; the engine recomputes\nevery check and stamps its own compile versions.",
+      "properties": {
+        "creation": {
+          "$ref": "#/definitions/PlanCreation"
+        },
+        "layout": {
+          "$ref": "#/definitions/CandidateLayout"
+        },
+        "strategy": {
+          "$ref": "#/definitions/StrategyDecision"
+        }
+      },
+      "required": [
+        "layout",
+        "strategy",
+        "creation"
+      ],
+      "title": "CandidateProposal",
+      "type": "object"
+    },
     "CatalogEvidenceSubset": {
       "additionalProperties": false,
       "description": "The referenced subset retained inside a snapshot for historical display.",
@@ -966,6 +1026,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Independent validation and finalization boundary (Ticket 003). The\nproposal is rechecked from the activated context; a caller can never\nassert solver pass state because none exists on the wire.",
+          "properties": {
+            "kind": {
+              "const": "validateCandidate",
+              "type": "string"
+            },
+            "proposal": {
+              "$ref": "#/definitions/CandidateProposal"
+            }
+          },
+          "required": [
+            "kind",
+            "proposal"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "kind": {
               "const": "disposeProject",
@@ -1370,6 +1448,71 @@
             "fields"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "`snapshotDigest` doubles as the snapshot-presence assertion: `null`\nrequires the event to carry no snapshot (rejected candidates), a value\npins the exact immutable identity.",
+          "properties": {
+            "checks": {
+              "items": {
+                "$ref": "#/definitions/ExpectedCheck"
+              },
+              "type": "array"
+            },
+            "commerceReadiness": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CommerceReadiness"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "decodeError": {
+              "type": "boolean"
+            },
+            "diagnostics": {
+              "items": {
+                "$ref": "#/definitions/ExpectedDiagnostic"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "validateCandidate",
+              "type": "string"
+            },
+            "physicalAssurance": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PhysicalAssurance"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "snapshotDigest": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Digest"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "diagnostics",
+            "checks",
+            "physicalAssurance",
+            "commerceReadiness",
+            "snapshotDigest"
+          ],
+          "type": "object"
         }
       ],
       "title": "DomainFixtureExpected"
@@ -1379,7 +1522,8 @@
       "enum": [
         "normalizeProjectInput",
         "verifyRecord",
-        "normalizeCatalogFields"
+        "normalizeCatalogFields",
+        "validateCandidate"
       ],
       "title": "DomainOperation",
       "type": "string"
@@ -1597,6 +1741,49 @@
         },
         {
           "additionalProperties": false,
+          "description": "Result of `validateCandidate`: the independently computed report, the\nfinalized snapshot only when no blocking failure exists, and the\nstructural diagnostics for proposals that are not valid candidates.",
+          "properties": {
+            "diagnostics": {
+              "items": {
+                "$ref": "#/definitions/Diagnostic"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "candidateValidated",
+              "type": "string"
+            },
+            "report": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValidationReport"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PlanSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "report",
+            "snapshot",
+            "diagnostics"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "kind": {
               "const": "projectDisposed",
@@ -1720,6 +1907,31 @@
         "diagnosticCodes"
       ],
       "title": "ExpectedCatalogField",
+      "type": "object"
+    },
+    "ExpectedCheck": {
+      "additionalProperties": false,
+      "description": "One expected check assertion on a `candidateValidated` report: the check\nid must exist with this status (and reason when declared).",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "reasonCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "$ref": "#/definitions/CheckStatus"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "reasonCode"
+      ],
+      "title": "ExpectedCheck",
       "type": "object"
     },
     "ExpectedDiagnostic": {

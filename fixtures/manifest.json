@@ -754,6 +754,279 @@
         "browserWasm"
       ],
       "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "candidate-bounded-confirmed",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-bounded-confirmed.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-bounded-confirmed.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-contained-conditional",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-contained-conditional.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-contained-conditional.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-decode-error",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-decode-error.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-decode-error.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-direct-conditional",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-direct-conditional.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-direct-conditional.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-floating-support",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-floating-support.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-floating-support.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-ghost-placement",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-ghost-placement.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-ghost-placement.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-hard-budget",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-hard-budget.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-hard-budget.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-load-exceeded",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-load-exceeded.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-load-exceeded.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-missing-purchase",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-missing-purchase.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-missing-purchase.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-one-action-blocked",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-one-action-blocked.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-one-action-blocked.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-ordinal-overlap",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-ordinal-overlap.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-ordinal-overlap.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-orientation-forbidden",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-orientation-forbidden.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-orientation-forbidden.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-outside-space",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-outside-space.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-outside-space.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-owned-overuse",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-owned-overuse.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-owned-overuse.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-provisional",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-provisional.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-provisional.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-purchase-disallowed",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-purchase-disallowed.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-purchase-disallowed.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-sibling-overlap",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-sibling-overlap.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-sibling-overlap.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-staging-blocked",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-staging-blocked.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-staging-blocked.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-strategy-dangling",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-strategy-dangling.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-strategy-dangling.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-unresolved-offer",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-unresolved-offer.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-unresolved-offer.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "candidate-wrong-variant-offer",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-wrong-variant-offer.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-wrong-variant-offer.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
     }
   ]
 }
