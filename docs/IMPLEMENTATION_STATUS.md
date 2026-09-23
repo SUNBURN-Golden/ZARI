@@ -1,6 +1,74 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-001 실행 가능한 Rust/WASM 연결 (2026-09-23 UTC)
+## 현재 구현: ZARI-002 동결 도메인 계약과 canonical fixture 교환 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #9/revision 1이며 base는 ZARI-001 병합 커밋
+`4a6d3a59b0b9e03c1980d7e5d592e570fc55f664`입니다. 브랜치 `devin/zari-002-domain-interchange`에서
+작업했고 Cloud Devin·production runner·`runtime_enabled=true`는 사용하지 않았습니다.
+
+구현한 범위:
+
+- `scalars`: LengthMm·ClearanceMm·PositionMm·Quantity·PackQuantity·UnitCount·MassGrams·
+  MoneyKrw·Revision·WorkCount·Id·Digest의 고정 경계와 signed position·money·mass·u64 문자열
+  파서. 비유한정·sub-mm·범위 초과·비canonical 숫자 문법은 구조적으로 거부됩니다.
+- `facts`/`input`/`catalog`/`strategy`/`plan`: DOMAIN_MODEL.md의 ProjectInput·CatalogSnapshot·
+  PlanSnapshot·CandidateLayout·LayoutEditCommand·VerifiableRecordDto 그래프. unknown과
+  not-applicable은 서로 다르며 unknown은 0·pass·확인으로 변환하지 않습니다.
+- `canonical`: NFC 정규화와 비의미적 순서 정렬을 포함한 canonical serialization과
+  SHA-256 `content_digest`/`input_digest`/`catalog_digest`/`snapshot_digest`/`context_id`.
+- `raw`/`normalize`/`validate`: `deny_unknown_fields` raw DTO → fail-closed 정규화 +
+  진단, 그리고 ID 중복·dangling 참조·cycle·ordinal 분할·purchase binding·support·
+  retrieval 허용·action DAG의 구조 검증.
+- `protocol`: `BUILD_ID = "zari-domain-2"`, capabilities 8개, `activateProject`의
+  project context와 contextId fencing, `verifyRecord`(input/catalog/snapshot),
+  `normalizeCatalogFields`, bounded replay와 unique-key·depth·size guard.
+- fixture 교환: `DomainFixture` 계약과 `domain_fixture_requests`/`execute_domain_fixture`를
+  Rust가 소유하고, 같은 요청열을 native fixture_runner와 실제 Chromium Worker/WASM이 실행.
+  WASM은 `domainFixtureRequests` 바인딩으로 요청 생성까지 Rust가 담당합니다.
+- 생성 계약: Rust schema 16개 root를 `https://zari.local/contracts/domain-v2`로 합쳐
+  `dto.ts`·`schema.json`·`validators.mjs`·`validators.d.mts`를 생성합니다.
+  수동으로 유지하는 TS 도메인 스키마는 추가하지 않았습니다.
+- fixture: bootstrap 28개(buildId만 갱신) + domain 30개 = 58개, manifest coverage exact.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: 통과.
+- `cargo test --workspace --locked`: 44개 통과(scalars 11, bootstrap 9, domain 11, protocol 13).
+  domain suite는 공유 fixture 30개 실행, layout/snapshot 그래프 거부, activation/contextId fencing,
+  checked 묶음 계산과 proptest 4개(permutation digest 불변·u64 왕복·임의 문자열 파서·
+  의미적 차이 digest 비충돌)를 포함합니다.
+- `cargo run -p zari-core --locked --example fixture_runner -- fixtures`: 58개 통과.
+- `npm run contracts:generate`를 연속 2회 실행해 4개 산출물 SHA-256이 동일함을 확인(drift 없음),
+  `npm run contracts:check`: 통과(58개 fixture가 Rust fixture schema에 적합).
+- `npm run wasm:build`, `npm run typecheck`, `npm run lint`, `npm run test:build`: 통과.
+- `npm test`: Worker host 단위 검증 6개 통과.
+- `npm run test:parity`: 같은 58개 fixture의 native Rust와 실제 Chromium Worker/WASM event가
+  전부 일치. duplicate key·잘린 JSON·5MiB 초과 원시 payload는 각각 `invalid_json`·
+  `invalid_json`·`message_too_large` fatal로 거부됨을 실제 Worker에서 확인.
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev`: serde·
+  wasm-bindgen·sha2·unicode-normalization 계열만 확인; DOM·네트워크·data-engine 의존성 없음.
+
+고정 digest vector(동일 fixture가 native와 browser에서 재생산):
+
+- `project-minimal-pass` / `project-permuted-pass` input digest:
+  `bdc80a6cc50fa632760be5c7f5c997abf5fd7ba59659e2d0c9537fe4570edacd`
+- `project-distinct-digest` input digest:
+  `ae6350ca230ced7e99dcdc3a84cdc75aeaff25e8ab207d0b192ab2d2bf64f773`
+- `project-large-counter-pass`(u64 최대 근처 workCount·money) input digest:
+  `0c39aedd1fdd10ed50506a3aa0ce99ed970714a3b4c36d579081e4fde9388c8a`
+- `project-nfc-label-pass` / `project-nfc-decomposed-pass` input digest:
+  `8b1d9ebf8bbee7991e1fb1db33dfa38c401ed0c1397fe4b2a31772aea3989405`
+  (NFC 조합·분해 두 철자가 동일 digest로 수렴)
+
+미구현(이 task의 범위 밖): solver·geometry algorithm·조직화 전략, 실제 상품 데이터,
+IndexedDB 저장·복원·마이그레이션, 도면/BOM/실행 가이드 렌더링, 새 제품 UI.
+`PlanSnapshot`은 데이터 구조와 검증만 있으며 계획을 생성하지 않습니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only review
+(GROK_BUILD 이후 GLM, 동시 1명)와 issue의 AUDIT_FLOOR(A3 Rust Domain Gate)이며,
+merge는 User만 결정합니다. ZARI-001 화면 baseline은 draft 그대로입니다.
+
+## 이전 구현: ZARI-001 실행 가능한 Rust/WASM 연결 (2026-09-23 UTC)
 
 아키텍처 PR #2가 병합된 `d3cb460c94ca6de11d00dac181c0f8d8b95314e7`을 기준으로
 `codex/zari-001-executable-bridge`에서 작업했습니다. 아래의 초기 문서·설계 단계 기록은

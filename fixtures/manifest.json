@@ -364,6 +364,396 @@
         "browserWasm"
       ],
       "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "catalog-fields-decode-error",
+      "caseKind": "catalogFields",
+      "inputPath": "fixtures/domain/catalog-fields-decode-error.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-fields-decode-error.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "catalog-fields-mixed",
+      "caseKind": "catalogFields",
+      "inputPath": "fixtures/domain/catalog-fields-mixed.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-fields-mixed.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "catalog-fields-submillimeter",
+      "caseKind": "catalogFields",
+      "inputPath": "fixtures/domain/catalog-fields-submillimeter.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-fields-submillimeter.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "catalog-fields-unknown",
+      "caseKind": "catalogFields",
+      "inputPath": "fixtures/domain/catalog-fields-unknown.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-fields-unknown.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-dangling-compat-ref",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-dangling-compat-ref.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-dangling-compat-ref.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-dangling-evidence",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-dangling-evidence.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-dangling-evidence.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-dangling-item-ref",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-dangling-item-ref.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-dangling-item-ref.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-distinct-digest",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-distinct-digest.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-distinct-digest.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-duplicate-id",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-duplicate-id.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-duplicate-id.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-empty-label",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-empty-label.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-empty-label.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-invalid-id",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-invalid-id.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-invalid-id.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-invalid-timestamp",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-invalid-timestamp.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-invalid-timestamp.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-large-counter-pass",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-large-counter-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-large-counter-pass.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-minimal-pass",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-minimal-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-minimal-pass.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-nfc-decomposed-pass",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-nfc-decomposed-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-nfc-decomposed-pass.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-nfc-label-pass",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-nfc-label-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-nfc-label-pass.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-out-of-range",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-out-of-range.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-out-of-range.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-permuted-pass",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-permuted-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-permuted-pass.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-submillimeter-invalid",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-submillimeter-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-submillimeter-invalid.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-unknown-quantity-pass",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-unknown-quantity-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-unknown-quantity-pass.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "project-unsupported-enum",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/project-unsupported-enum.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/project-unsupported-enum.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-catalog-digest-mismatch",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-catalog-digest-mismatch.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-catalog-digest-mismatch.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-catalog-verified",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-catalog-verified.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-catalog-verified.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-decode-error",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-decode-error.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-decode-error.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-input-digest-mismatch",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-input-digest-mismatch.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-input-digest-mismatch.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-input-structural-invalid",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-input-structural-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-input-structural-invalid.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-input-verified",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-input-verified.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-input-verified.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-malformed-digest",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-malformed-digest.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-malformed-digest.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-snapshot-verified",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-snapshot-verified.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-snapshot-verified.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
+    },
+    {
+      "id": "record-unsupported-kind",
+      "caseKind": "recordVerify",
+      "inputPath": "fixtures/domain/record-unsupported-kind.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/record-unsupported-kind.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-002"
     }
   ]
 }

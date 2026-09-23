@@ -31,5 +31,26 @@ fn schema<T: JsonSchema>() -> Value {
     value
 }
 fn main() {
-    println!("{}",serde_json::to_string_pretty(&json!({"ProtocolRequest":schema::<ProtocolRequest>(),"ProtocolResponse":schema::<ProtocolResponse>(),"BootstrapProbeDto":schema::<BootstrapProbeDto>(),"BootstrapProbeResult":schema::<BootstrapProbeResult>(),"BootstrapFixture":schema::<BootstrapFixture>()})).expect("schema serializes"));
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "ProtocolRequest":schema::<ProtocolRequest>(),
+            "ProtocolResponse":schema::<ProtocolResponse>(),
+            "BootstrapProbeDto":schema::<BootstrapProbeDto>(),
+            "BootstrapProbeResult":schema::<BootstrapProbeResult>(),
+            "BootstrapFixture":schema::<BootstrapFixture>(),
+            "DomainFixture":schema::<DomainFixture>(),
+            "RawProjectInputDto":schema::<RawProjectInputDto>(),
+            "ProjectInput":schema::<ProjectInput>(),
+            "CatalogImportDto":schema::<CatalogImportDto>(),
+            "CatalogSnapshot":schema::<CatalogSnapshot>(),
+            "PlanSnapshot":schema::<PlanSnapshot>(),
+            "VerifiableRecordDto":schema::<VerifiableRecordDto>(),
+            "RawCatalogFieldDto":schema::<RawCatalogFieldDto>(),
+            "NormalizedCatalogField":schema::<NormalizedCatalogField>(),
+            "SnapshotBinding":schema::<SnapshotBinding>(),
+            "LayoutEditCommand":schema::<LayoutEditCommand>()
+        }))
+        .expect("schema serializes")
+    );
 }

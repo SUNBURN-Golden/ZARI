@@ -57,7 +57,10 @@ fn capability_subset_is_honest() {
             "initialize",
             "activateProject",
             "normalizeInput(bootstrap)",
+            "normalizeInput(project)",
             "evaluateProbe",
+            "verifyRecord",
+            "normalizeCatalogFields",
             "disposeProject"
         ])
     );
@@ -300,7 +303,7 @@ fn gap_provenance_permutations_and_nfc_spellings_have_one_digest() {
         first_result["normalizedInput"],
         second_result["normalizedInput"]
     );
-    let provenance = &first_result["normalizedInput"]["leftGapMm"]["provenance"];
+    let provenance = &first_result["normalizedInput"]["input"]["leftGapMm"]["provenance"];
     assert_eq!(
         provenance["evidenceIds"],
         json!(["evidence:a", "evidence:z"])
@@ -382,7 +385,7 @@ fn provenance_observation_requires_a_real_utc_rfc3339_timestamp() {
         let event = normalize_for_provenance(p);
         assert!(event["inputDigest"].is_string(), "{timestamp}: {event}");
         assert_eq!(
-            event["normalizedInput"]["rightGapMm"]["provenance"]["observedAt"],
+            event["normalizedInput"]["input"]["rightGapMm"]["provenance"]["observedAt"],
             timestamp
         );
     }

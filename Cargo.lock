@@ -470,6 +470,7 @@ dependencies = [
 name = "zari-wasm"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "wasm-bindgen",
  "zari-core",
 ]

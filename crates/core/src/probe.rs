@@ -1,128 +1,12 @@
+use crate::facts::*;
+use crate::plan::{
+    CheckBasis, CheckKind, CheckMeasurement, CheckStatus, ConstraintCheck, Remediation,
+};
 use crate::scalars::*;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct FieldRef {
-    pub entity_id: String,
-    pub field_path: String,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum MeasurementOrigin {
-    Synthetic,
-    Manufacturer,
-    Retailer,
-    UserMeasured,
-    UserDeclared,
-    AiEstimated,
-    Derived,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum VerificationStatus {
-    Unverified,
-    Estimated,
-    Confirmed,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Provenance {
-    pub origin: MeasurementOrigin,
-    pub verification: VerificationStatus,
-    pub evidence_ids: Vec<String>,
-    pub rule_ids: Vec<String>,
-    pub input_refs: Vec<FieldRef>,
-    #[serde(deserialize_with = "crate::required_option")]
-    #[schemars(with = "crate::RequiredNullable<String>")]
-    pub observed_at: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum UnknownReason {
-    NotMeasured,
-    NotProvided,
-    SourceMissing,
-    ConflictingSources,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(
-    tag = "state",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase",
-    deny_unknown_fields
-)]
-#[schemars(rename = "FactFor_{T}")]
-pub enum Fact<T> {
-    Known { value: T, provenance: Provenance },
-    Unknown { reason: UnknownReason },
-    NotApplicable { reason_code: String },
-}
-impl<T> Fact<T> {
-    pub fn value(&self) -> Option<&T> {
-        match self {
-            Self::Known { value, .. } => Some(value),
-            _ => None,
-        }
-    }
-    pub fn unknown() -> Self {
-        Self::Unknown {
-            reason: UnknownReason::NotProvided,
-        }
-    }
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(
-    tag = "state",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase",
-    deny_unknown_fields
-)]
-pub enum RawUncertaintyDto {
-    Unknown {},
-    Bounded {
-        minus_text: String,
-        plus_text: String,
-        unit: Unit,
-    },
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(
-    tag = "state",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase",
-    deny_unknown_fields
-)]
-pub enum Uncertainty {
-    Unknown {},
-    Bounded {
-        minus_mm: ClearanceMm,
-        plus_mm: ClearanceMm,
-    },
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct RawMeasurementDto {
-    pub text: String,
-    pub unit: Unit,
-    pub uncertainty: RawUncertaintyDto,
-    pub origin: MeasurementOrigin,
-    pub evidence_ids: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct MeasuredLength {
-    pub nominal: LengthMm,
-    pub uncertainty: Uncertainty,
-}
-pub type Measurement = Fact<MeasuredLength>;
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct RawCountDto {
-    pub text: String,
-}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BootstrapProbeDto {
@@ -149,61 +33,10 @@ pub struct NormalizedBootstrapInput {
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Diagnostic {
-    pub field_path: String,
-    pub code: String,
-    pub reason_code: String,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RowObject {
     pub ordinal: u32,
     pub x_mm: Revision,
     pub width_mm: LengthMm,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum CheckStatus {
-    Pass,
-    Fail,
-    Unknown,
-    NotApplicable,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum CheckKind {
-    OuterGeometry,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum CheckBasis {
-    Nominal,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct CheckMeasurement {
-    pub field_path: String,
-    pub value_mm: Fact<Revision>,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Remediation {
-    pub code: String,
-    pub field_paths: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct ConstraintCheck {
-    pub id: String,
-    pub kind: CheckKind,
-    pub subject_ids: Vec<String>,
-    pub status: CheckStatus,
-    pub reason_code: String,
-    pub basis: CheckBasis,
-    pub evidence_refs: Vec<FieldRef>,
-    pub measurements: Vec<CheckMeasurement>,
-    pub blocking: bool,
-    pub remediation: Vec<Remediation>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -224,18 +57,14 @@ pub struct BootstrapProbeResult {
     pub diagnostics: Vec<Diagnostic>,
 }
 
-pub fn valid_id(id: &str) -> bool {
-    !id.is_empty()
-        && id.len() <= 96
-        && id
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b"_:-".contains(&b))
+fn bootstrap_id() -> Id {
+    Id::new("bootstrap").expect("valid static id")
 }
 fn refs(fields: &[&str]) -> Vec<FieldRef> {
     fields
         .iter()
         .map(|s| FieldRef {
-            entity_id: "bootstrap".into(),
+            entity_id: bootstrap_id(),
             field_path: (*s).into(),
         })
         .collect()
@@ -253,7 +82,7 @@ fn derived<T>(value: T, rule: &str, fields: &[&str]) -> Fact<T> {
         },
     }
 }
-fn raw_known<T>(value: T, origin: MeasurementOrigin, evidence_ids: Vec<String>) -> Fact<T> {
+fn raw_known<T>(value: T, origin: MeasurementOrigin, evidence_ids: Vec<Id>) -> Fact<T> {
     Fact::Known {
         value,
         provenance: Provenance {
@@ -266,16 +95,8 @@ fn raw_known<T>(value: T, origin: MeasurementOrigin, evidence_ids: Vec<String>) 
         },
     }
 }
-fn error(d: &mut Vec<Diagnostic>, path: &str, code: impl Into<String>) {
-    let code = code.into();
-    d.push(Diagnostic {
-        field_path: path.into(),
-        reason_code: code.clone(),
-        code,
-    });
-}
 fn measure(raw: &RawMeasurementDto, path: &str, diagnostics: &mut Vec<Diagnostic>) -> Measurement {
-    let ids_valid = raw.evidence_ids.len() <= 100 && raw.evidence_ids.iter().all(|id| valid_id(id));
+    let ids_valid = raw.evidence_ids.len() <= 100;
     let mut ids = raw.evidence_ids.clone();
     ids.sort();
     ids.dedup();
@@ -357,68 +178,6 @@ fn count<T>(
         }
     }
 }
-/// Accept bounded RFC3339 timestamps whose offset is explicitly UTC. In RFC3339,
-/// `-00:00` means the local offset is unknown, so it is not an explicit UTC fact.
-fn valid_utc_timestamp(text: &str) -> bool {
-    let bytes = text.as_bytes();
-    if !(20..=64).contains(&bytes.len()) || !text.is_ascii() {
-        return false;
-    }
-    if bytes[4] != b'-'
-        || bytes[7] != b'-'
-        || !matches!(bytes[10], b'T' | b't')
-        || bytes[13] != b':'
-        || bytes[16] != b':'
-    {
-        return false;
-    }
-    let number = |start: usize, end: usize| -> Option<u32> {
-        bytes[start..end].iter().try_fold(0, |n, digit| {
-            digit
-                .is_ascii_digit()
-                .then(|| n * 10 + u32::from(digit - b'0'))
-        })
-    };
-    let (Some(year), Some(month), Some(day), Some(hour), Some(minute), Some(second)) = (
-        number(0, 4),
-        number(5, 7),
-        number(8, 10),
-        number(11, 13),
-        number(14, 16),
-        number(17, 19),
-    ) else {
-        return false;
-    };
-    let last_day = match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if year.is_multiple_of(400) || (year.is_multiple_of(4) && !year.is_multiple_of(100)) => {
-            29
-        }
-        2 => 28,
-        _ => return false,
-    };
-    if day == 0 || day > last_day || hour > 23 || minute > 59 || second > 60 {
-        return false;
-    }
-    // RFC3339 permits leap-second spelling only at the end of a UTC month.
-    // This validates the representation, not the truth of an observation.
-    if second == 60 && !(hour == 23 && minute == 59 && day == last_day) {
-        return false;
-    }
-    let suffix = &text[19..];
-    let zone = if let Some(fraction) = suffix.strip_prefix('.') {
-        let digits = fraction.bytes().take_while(u8::is_ascii_digit).count();
-        if digits == 0 {
-            return false;
-        }
-        &fraction[digits..]
-    } else {
-        suffix
-    };
-    matches!(zone, "Z" | "z" | "+00:00")
-}
-
 fn normalize_gap(
     fact: &Fact<ClearanceMm>,
     path: &str,
@@ -433,14 +192,13 @@ fn normalize_gap(
     };
     let valid_text = |text: &str| !text.is_empty() && text.chars().count() <= 256;
     if provenance.evidence_ids.len() > 100
-        || provenance.evidence_ids.iter().any(|id| !valid_id(id))
         || provenance.rule_ids.len() > 100
         || provenance.rule_ids.iter().any(|v| !valid_text(v))
         || provenance.input_refs.len() > 100
         || provenance
             .input_refs
             .iter()
-            .any(|r| !valid_id(&r.entity_id) || !valid_text(&r.field_path))
+            .any(|r| !valid_text(&r.field_path))
         || provenance
             .observed_at
             .as_ref()
@@ -691,9 +449,9 @@ pub fn evaluate_probe(input: &BootstrapProbeDto) -> BootstrapProbeResult {
         required_width_mm: required.clone(),
         row_objects: rows,
         width_check: ConstraintCheck {
-            id: "bootstrap:width".into(),
+            id: Id::new("bootstrap:width").expect("valid static id"),
             kind: CheckKind::OuterGeometry,
-            subject_ids: vec!["bootstrap".into()],
+            subject_ids: vec![bootstrap_id()],
             status,
             reason_code: reason_code.into(),
             basis: CheckBasis::Nominal,

@@ -1,0 +1,39 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "catalog-fields-submillimeter",
+  "operation": "normalizeCatalogFields",
+  "schemaVersion": 1,
+  "input": [
+    {
+      "fieldPath": "variants.var-1.dimensions.inner.height",
+      "value": {
+        "kind": "measurement",
+        "raw": {
+          "text": "30.005",
+          "unit": "cm",
+          "uncertainty": {
+            "state": "unknown"
+          },
+          "origin": "userDeclared",
+          "evidenceIds": []
+        }
+      }
+    }
+  ],
+  "engineContext": {
+    "buildId": "zari-domain-2"
+  },
+  "expected": {
+    "kind": "normalizeCatalogFields",
+    "decodeError": false,
+    "fields": [
+      {
+        "fieldPath": "variants.var-1.dimensions.inner.height",
+        "value": null,
+        "diagnosticCodes": [
+          "submillimeter_precision"
+        ]
+      }
+    ]
+  }
+}

@@ -13,7 +13,7 @@ function run(command, args, options = {}) {
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} exited ${result.status}`);
   return result.stdout;
 }
-const native = run('cargo', ['run', '-p', 'zari-core', '--locked', '--example', 'fixture_runner', '--', 'fixtures/bootstrap'], { stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 16 * 1024 * 1024 });
+const native = run('cargo', ['run', '-p', 'zari-core', '--locked', '--example', 'fixture_runner', '--', 'fixtures'], { stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 16 * 1024 * 1024 });
 const results = JSON.parse(native);
 assert.ok(Array.isArray(results) && results.length > 0, 'Native fixture runner must produce nonempty JSON array.');
 const dir = join(root, 'test-results/parity');

@@ -65,6 +65,69 @@ bounded_scalar!(PositionMm, i32, -20_000, 20_000);
 bounded_scalar!(Quantity, u32, 0, 10_000);
 bounded_scalar!(PackQuantity, u32, 1, 10_000);
 bounded_scalar!(UnitCount, u32, 0, u32::MAX);
+bounded_scalar!(MassGrams, u32, 0, 1_000_000);
+
+fn schema_pattern(pattern: &str) -> Schema {
+    // `$` alone may match just before a final newline in JSON Schema's ECMA
+    // regex dialect. The final lookahead enforces the actual end of the string.
+    json_schema!({"type": "string", "pattern": format!("{pattern}(?![\\s\\S])")})
+}
+
+macro_rules! string_scalar {
+    ($name:ident, $pattern:expr, $error:expr, $check:expr) => {
+        #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
+        #[serde(transparent)]
+        pub struct $name(String);
+
+        impl $name {
+            pub fn new(value: &str) -> Result<Self, String> {
+                let check: fn(&[u8]) -> bool = $check;
+                if check(value.as_bytes()) {
+                    Ok(Self(value.to_owned()))
+                } else {
+                    Err($error.into())
+                }
+            }
+            pub fn as_str(&self) -> &str {
+                &self.0
+            }
+        }
+
+        impl FromStr for $name {
+            type Err = String;
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                Self::new(value)
+            }
+        }
+
+        impl fmt::Display for $name {
+            fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.0.fmt(formatter)
+            }
+        }
+
+        impl<'de> Deserialize<'de> for $name {
+            fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                let value = String::deserialize(deserializer)?;
+                Self::new(&value).map_err(serde::de::Error::custom)
+            }
+        }
+
+        impl JsonSchema for $name {
+            fn schema_name() -> Cow<'static, str> {
+                stringify!($name).into()
+            }
+
+            fn schema_id() -> Cow<'static, str> {
+                concat!(module_path!(), "::", stringify!($name)).into()
+            }
+
+            fn json_schema(_: &mut SchemaGenerator) -> Schema {
+                schema_pattern($pattern)
+            }
+        }
+    };
+}
 
 // JSON numbers cannot losslessly transport u64 through JavaScript. The pattern
 // describes exactly the canonical decimal strings at or below u64::MAX, not
@@ -169,6 +232,42 @@ macro_rules! decimal_scalar {
 
 decimal_scalar!(Revision);
 decimal_scalar!(MoneyKrw);
+decimal_scalar!(WorkCount);
+
+string_scalar!(
+    Id,
+    "^[A-Za-z0-9_:-]{1,96}",
+    "invalid_id",
+    |bytes: &[u8]| {
+        !bytes.is_empty()
+            && bytes.len() <= 96
+            && bytes
+                .iter()
+                .all(|b| b.is_ascii_alphanumeric() || b"_:-".contains(b))
+    }
+);
+string_scalar!(
+    Digest,
+    "^[0-9a-f]{64}",
+    "invalid_digest",
+    |bytes: &[u8]| {
+        bytes.len() == 64
+            && bytes
+                .iter()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(b))
+    }
+);
+
+impl Digest {
+    pub fn from_sha256(bytes: [u8; 32]) -> Self {
+        let mut text = String::with_capacity(64);
+        for byte in bytes {
+            text.push(char::from_digit((byte >> 4).into(), 16).expect("nibble"));
+            text.push(char::from_digit((byte & 0x0f).into(), 16).expect("nibble"));
+        }
+        Self(text)
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -259,6 +358,43 @@ pub fn parse_quantity(text: &str) -> Result<Option<Quantity>, String> {
 
 pub fn parse_pack_quantity(text: &str) -> Result<Option<PackQuantity>, String> {
     parse_count(text)?.map(PackQuantity::new).transpose()
+}
+
+/// Signed integer millimetres: the explicit signed exception. `-0` is zero.
+pub fn parse_position(text: &str) -> Result<Option<PositionMm>, String> {
+    let Some(text) = raw_text(text)? else {
+        return Ok(None);
+    };
+    let (negative, digits) = match text.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, text),
+    };
+    let magnitude = digits_to_u64(digits)?;
+    let magnitude = i64::try_from(magnitude).map_err(|_| "scalar_out_of_range".to_owned())?;
+    PositionMm::new(
+        i32::try_from(if negative { -magnitude } else { magnitude })
+            .map_err(|_| "scalar_out_of_range".to_owned())?,
+    )
+    .map(Some)
+}
+
+pub fn parse_mass_grams(text: &str) -> Result<Option<MassGrams>, String> {
+    parse_count(text)?.map(MassGrams::new).transpose()
+}
+
+fn parse_u64_text(text: &str) -> Result<Option<u64>, String> {
+    let Some(text) = raw_text(text)? else {
+        return Ok(None);
+    };
+    digits_to_u64(text).map(Some)
+}
+
+pub fn parse_money_krw(text: &str) -> Result<Option<MoneyKrw>, String> {
+    parse_u64_text(text)?.map(MoneyKrw::new).transpose()
+}
+
+pub fn parse_work_count(text: &str) -> Result<Option<WorkCount>, String> {
+    parse_u64_text(text)?.map(WorkCount::new).transpose()
 }
 
 pub fn format_length(length: LengthMm, unit: Unit) -> String {
@@ -356,6 +492,52 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&MoneyKrw::new(0).unwrap()).unwrap(),
             "\"0\""
+        );
+    }
+
+    #[test]
+    fn signed_position_is_the_only_negative_input() {
+        assert_eq!(parse_position("-20000"), Ok(Some(PositionMm(-20_000))));
+        assert_eq!(parse_position("-0"), Ok(Some(PositionMm(0))));
+        assert_eq!(parse_position(" 42 "), Ok(Some(PositionMm(42))));
+        for text in ["-20001", "20001", "+1", "- 1", "1.5", "--1", "-", ""] {
+            if text.is_empty() {
+                assert_eq!(parse_position(text), Ok(None));
+            } else {
+                assert!(parse_position(text).is_err(), "accepted {text}");
+            }
+        }
+    }
+
+    #[test]
+    fn id_and_digest_are_validated_strings() {
+        assert!(Id::new("syn:trace:bin").is_ok());
+        for id in ["", &"a".repeat(97), "has space", "한글", "a/b", "a.b"] {
+            assert!(Id::new(id).is_err(), "accepted {id}");
+        }
+        let hex = "a".repeat(64);
+        assert!(Digest::new(&hex).is_ok());
+        assert_eq!(Digest::from_sha256([0; 32]).as_str(), &"0".repeat(64));
+        for bad in ["", "abcd", &"a".repeat(65), &"A".repeat(64)] {
+            assert!(Digest::new(bad).is_err(), "accepted {bad}");
+        }
+        assert!(serde_json::from_str::<Id>("\"bad id\"").is_err());
+        assert!(serde_json::from_str::<Digest>("\"zz\"").is_err());
+    }
+
+    #[test]
+    fn money_mass_and_work_count_bounds() {
+        assert_eq!(
+            parse_money_krw("18446744073709551615"),
+            Ok(Some(MoneyKrw::new(u64::MAX).unwrap()))
+        );
+        assert!(parse_money_krw("18446744073709551616").is_err());
+        assert_eq!(parse_money_krw(""), Ok(None));
+        assert_eq!(parse_mass_grams("0"), Ok(Some(MassGrams(0))));
+        assert!(parse_mass_grams("1000001").is_err());
+        assert_eq!(
+            parse_work_count("250000"),
+            Ok(Some(WorkCount::new(250_000).unwrap()))
         );
     }
 

@@ -1,8 +1,25 @@
+pub mod canonical;
+pub mod catalog;
+pub mod facts;
+pub mod input;
+pub mod normalize;
+pub mod plan;
 pub mod probe;
 pub mod protocol;
+pub mod raw;
 pub mod scalars;
+pub mod strategy;
+pub mod validate;
+pub use canonical::*;
+pub use catalog::*;
+pub use facts::*;
+pub use input::*;
+pub use normalize::*;
+pub use plan::*;
 pub use probe::*;
 pub use protocol::*;
+pub use raw::*;
+pub use strategy::*;
 
 pub fn required_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where

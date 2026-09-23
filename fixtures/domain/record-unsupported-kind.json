@@ -1,0 +1,20 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "record-unsupported-kind",
+  "operation": "verifyRecord",
+  "schemaVersion": 1,
+  "input": {
+    "kind": "quantumLedger",
+    "payload": {}
+  },
+  "engineContext": {
+    "buildId": "zari-domain-2"
+  },
+  "expected": {
+    "kind": "verifyRecord",
+    "decodeError": true,
+    "verified": null,
+    "computedDigest": null,
+    "diagnostics": []
+  }
+}
