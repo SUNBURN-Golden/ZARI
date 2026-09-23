@@ -1,5 +1,5 @@
 {
- "caseId": "candidate-contained-conditional",
+ "caseId": "candidate-soft-budget",
  "engineContext": {
   "buildId": "zari-domain-2"
  },
@@ -31,37 +31,12 @@
     "status": "unknown"
    },
    {
-    "id": "chk:ic:p-c1:n",
-    "reasonCode": "ok",
-    "status": "pass"
-   },
-   {
-    "id": "chk:ic:p-c1:c",
-    "reasonCode": "cavity_unknown",
-    "status": "unknown"
-   },
-   {
-    "id": "chk:sgc:p-c1:item-a:0:n",
-    "reasonCode": "ok",
-    "status": "pass"
-   },
-   {
-    "id": "chk:sgc:p-c1:item-a:0:c",
-    "reasonCode": "elevation_unknown",
-    "status": "unknown"
-   },
-   {
-    "id": "chk:orc:p-c1:item-a:0",
-    "reasonCode": "ok",
-    "status": "pass"
+    "id": "chk:ic:p-c1:x",
+    "reasonCode": "empty_cavity",
+    "status": "not_applicable"
    },
    {
     "id": "chk:ld:floor:space-1",
-    "reasonCode": "ok",
-    "status": "pass"
-   },
-   {
-    "id": "chk:ld:cavity:p-c1",
     "reasonCode": "ok",
     "status": "pass"
    },
@@ -97,11 +72,26 @@
    },
    {
     "id": "chk:oac:p-c1:x",
-    "reasonCode": "fact_unknown",
-    "status": "unknown"
+    "reasonCode": "empty_cavity",
+    "status": "not_applicable"
    },
    {
     "id": "chk:qc:partition",
+    "reasonCode": "ok",
+    "status": "pass"
+   },
+   {
+    "id": "chk:cp:group:group-1",
+    "reasonCode": "ok",
+    "status": "pass"
+   },
+   {
+    "id": "chk:cp:item:item-b",
+    "reasonCode": "ok",
+    "status": "pass"
+   },
+   {
+    "id": "chk:cp:compat:item-b:item-a",
     "reasonCode": "ok",
     "status": "pass"
    },
@@ -132,16 +122,16 @@
    },
    {
     "id": "chk:bg:soft",
-    "reasonCode": "ok",
-    "status": "pass"
+    "reasonCode": "soft_budget_exceeded",
+    "status": "fail"
    }
   ],
-  "commerceReadiness": "ready",
+  "commerceReadiness": "conditional",
   "decodeError": false,
   "diagnostics": [],
   "kind": "validateCandidate",
   "physicalAssurance": "conditional",
-  "snapshotDigest": "95e62ef92bbaf50d2c9c3a8b60c6da64370fb2545356b344a54cecfc0248f199"
+  "snapshotDigest": "73e56a4780d8b999671212d1801a4c7fe78761c3adadcdda62c0018150f9d709"
  },
  "fixtureSchemaVersion": 1,
  "input": {
@@ -825,7 +815,7 @@
       "verification": "unverified"
      },
      "state": "known",
-     "value": "200000"
+     "value": "100000"
     },
     "hardOneActionAccess": false,
     "lockedZones": [],
@@ -841,7 +831,7 @@
       "verification": "unverified"
      },
      "state": "known",
-     "value": "100000"
+     "value": "5000"
     }
    },
    "evidence": [],
@@ -853,7 +843,7 @@
       "item-b"
      ],
      "label": "Closet",
-     "splitPolicy": "allowMultipleTargets"
+     "splitPolicy": "oneTarget"
     }
    ],
    "items": [
@@ -970,8 +960,7 @@
        ]
       },
       "allowedRetrievalModes": [
-       "directFrontExtraction",
-       "pullContainerThenRetrieve"
+       "directFrontExtraction"
       ],
       "handling": {
        "left": {
@@ -1230,8 +1219,10 @@
         "value": 2
        }
       },
-      "mandatoryCompatibility": [],
-      "mustStayTogether": false
+      "mandatoryCompatibility": [
+       "item-a"
+      ],
+      "mustStayTogether": true
      },
      "stockRole": {
       "provenance": {
@@ -1716,25 +1707,7 @@
   "proposal": {
    "creation": "referenceSearch",
    "layout": {
-    "assignments": [
-     {
-      "itemId": "item-a",
-      "location": {
-       "containerPlacementId": "p-c1",
-       "kind": "contained",
-       "localPlacement": {
-        "orientation": "upright0",
-        "position": {
-         "x": 5,
-         "y": 5,
-         "z": 10
-        },
-        "supportId": "cavity-floor-1"
-       }
-      },
-      "unitOrdinal": 0
-     }
-    ],
+    "assignments": [],
     "placements": [
      {
       "id": "p-c1",
@@ -1772,7 +1745,7 @@
        "ranges": [
         {
          "endExclusive": 2,
-         "start": 1
+         "start": 0
         }
        ]
       },

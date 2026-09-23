@@ -594,6 +594,122 @@ fn protocol_rejects_candidate_without_project_context() {
     assert!(out.contains("invalid_state"), "{out}");
 }
 
+/// One new-container placement bound to offer-1: 1 pack × 12000 KRW, free
+/// shipping — the same purchase shape as the BOM oracle test.
+fn purchase_layout() -> CandidateLayout {
+    CandidateLayout {
+        placements: vec![Placement {
+            id: Id::new("p-c1").unwrap(),
+            subject: PlacementSubject::NewContainer {
+                variant_id: Id::new("var-1").unwrap(),
+                unit_ordinal: 0,
+            },
+            parent: ParentRef::Space {
+                space_id: Id::new("space-1").unwrap(),
+            },
+            position: pos(5, 0, 0),
+            orientation: Orientation::Upright0,
+            support_id: Id::new("floor-1").unwrap(),
+        }],
+        assignments: vec![ItemAssignment {
+            item_id: Id::new("item-a").unwrap(),
+            unit_ordinal: 0,
+            location: ItemLocation::Contained {
+                container_placement_id: Id::new("p-c1").unwrap(),
+                local_placement: ItemPlacement {
+                    position: pos(5, 5, 10),
+                    orientation: Orientation::Upright0,
+                    support_id: Id::new("cavity-floor-1").unwrap(),
+                },
+            },
+        }],
+        unassigned: vec![
+            unassigned("item-a", &[(1, 2)]),
+            unassigned("item-b", &[(0, 1)]),
+        ],
+        purchase_selections: vec![PurchaseSelection {
+            placement_id: Id::new("p-c1").unwrap(),
+            offer: OfferSelection::Selected {
+                offer_id: Id::new("offer-1").unwrap(),
+            },
+        }],
+    }
+}
+fn money(value: u64) -> Fact<MoneyKrw> {
+    Fact::Known {
+        value: MoneyKrw::new(value).unwrap(),
+        provenance: provenance(),
+    }
+}
+fn versions_scope(
+    input: &ProjectInput,
+    catalog: &CatalogContent,
+) -> (CompileVersions, SearchScope) {
+    (
+        CompileVersions {
+            schema_version: canonical::SCHEMA_VERSION,
+            canonical_version: canonical::CANONICAL_VERSION,
+            input_digest: canonical::input_digest(input),
+            catalog_version: catalog.catalog_version.clone(),
+            catalog_digest: canonical::catalog_digest(catalog),
+            rule_version: canonical::RULE_VERSION.into(),
+            solver_version: canonical::SOLVER_VERSION.into(),
+            search_profile: input.search.profile.clone(),
+            search_budget: input.search.budget.clone(),
+            seed: input.search.seed.clone(),
+        },
+        SearchScope {
+            profile: input.search.profile.clone(),
+            budget: input.search.budget.clone(),
+            group_ids: input.groups.iter().map(|g| g.id.clone()).collect(),
+            restrictions: vec![],
+        },
+    )
+}
+
+#[test]
+fn soft_budget_fail_is_advisory_and_still_publishes() {
+    // ZARI-003 N1: SOLVER.md § commercial defines only the hard budget as a
+    // reject; the soft budget is a declared preference, so its Fail is
+    // reported but must never veto PlanSnapshot publication.
+    let mut input = contained_input();
+    input.constraints.hard_budget = money(100_000);
+    input.constraints.soft_budget = money(5_000);
+    let catalog = catalog_content();
+    let layout = purchase_layout();
+    let report = validate_candidate(&input, &catalog, &layout).report;
+    let soft = check(&report, "chk:bg:soft");
+    assert_eq!(soft.status, CheckStatus::Fail);
+    assert_eq!(soft.reason_code, "soft_budget_exceeded");
+    assert!(!soft.blocking, "soft budget fail is advisory");
+    assert_eq!(check(&report, "chk:bg:hard").status, CheckStatus::Pass);
+    assert!(!has_blocking_failure(&report));
+    // A preference miss keeps commerce conditional; it is not promoted to
+    // ready and not silently dropped from the report.
+    assert_eq!(report.commerce_readiness, CommerceReadiness::Conditional);
+    let (versions, scope) = versions_scope(&input, &catalog);
+    let eval = evaluate_candidate(&input, &catalog, &propose(layout), versions, scope);
+    assert!(eval.snapshot.is_some(), "{:?}", eval.diagnostics);
+}
+
+#[test]
+fn hard_budget_fail_still_blocks_snapshot() {
+    let mut input = contained_input();
+    input.constraints.hard_budget = money(5_000);
+    let catalog = catalog_content();
+    let layout = purchase_layout();
+    let report = validate_candidate(&input, &catalog, &layout).report;
+    let hard = check(&report, "chk:bg:hard");
+    assert_eq!(hard.status, CheckStatus::Fail);
+    assert_eq!(hard.reason_code, "hard_budget_exceeded");
+    assert!(hard.blocking);
+    assert!(has_blocking_failure(&report));
+    let (versions, scope) = versions_scope(&input, &catalog);
+    let eval = evaluate_candidate(&input, &catalog, &propose(layout), versions, scope);
+    assert!(eval.report.is_some());
+    assert!(eval.snapshot.is_none());
+}
+
 #[test]
 fn malicious_proposal_shapes_fail_closed() {
     // Proposals are rechecked from facts; nothing on the wire asserts pass.

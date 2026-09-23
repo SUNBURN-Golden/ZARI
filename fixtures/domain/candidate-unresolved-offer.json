@@ -141,7 +141,7 @@
   "diagnostics": [],
   "kind": "validateCandidate",
   "physicalAssurance": "conditional",
-  "snapshotDigest": "22b694d5d2ffcbc29947500ec07f7a2ddd1b1a86d1bb6e050949defddc4859ca"
+  "snapshotDigest": "5f42c90e5fc17bc4f5d82d67a727f82fb9a069dd3f71b16bf24095ba4fe1d99b"
  },
  "fixtureSchemaVersion": 1,
  "input": {

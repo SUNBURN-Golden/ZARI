@@ -33,6 +33,14 @@ fn blocking_kind(kind: &CheckKind) -> bool {
         CheckKind::Inventory | CheckKind::Price | CheckKind::Shipping
     )
 }
+/// Whether a `Fail` on this specific check rejects PlanSnapshot publication.
+/// `bg:soft` is the one non-blocking budget check: the soft budget is a
+/// declared preference (SOLVER.md § commercial defines hard-budget rejects
+/// only), so its `Fail` stays visible in the report without vetoing the
+/// snapshot. `bg:hard` — cap exceeded or purchase disallowed — still blocks.
+fn blocking_check(id: &str, kind: &CheckKind) -> bool {
+    blocking_kind(kind) && id != "bg:soft"
+}
 /// The kinds that determine `physical_assurance`; commercial outcomes are
 /// tracked separately by `commerce_readiness`.
 fn physical_kind(kind: &CheckKind) -> bool {
@@ -128,17 +136,18 @@ impl Checks {
         reason_code: &str,
         measurements: Vec<CheckMeasurement>,
     ) {
+        let blocking = blocking_check(&id, &kind);
         let id = Id::new(&format!("chk:{id}")).expect("check id bounded");
         self.0.push(ConstraintCheck {
             id,
-            kind: kind.clone(),
+            kind,
             subject_ids,
             status,
             reason_code: reason_code.into(),
             basis,
             evidence_refs: vec![],
             measurements,
-            blocking: blocking_kind(&kind),
+            blocking,
             remediation: vec![],
         });
     }
@@ -1857,6 +1866,8 @@ pub fn validate_candidate(
         );
     }
     if purchases {
+        // Advisory only: exceeding the soft budget is a preference violation,
+        // reported as Fail but never blocking publication (`blocking_check`).
         let verdict = match (cost.grand_total(), input.constraints.soft_budget.value()) {
             (Some(total), Some(limit)) if total <= limit.get() => Pass,
             (Some(_), Some(_)) => Fail("soft_budget_exceeded"),

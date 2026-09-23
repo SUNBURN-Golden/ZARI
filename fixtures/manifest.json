@@ -977,6 +977,19 @@
       "introducedBy": "ZARI-003"
     },
     {
+      "id": "candidate-soft-budget",
+      "caseKind": "candidateValidate",
+      "inputPath": "fixtures/domain/candidate-soft-budget.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/candidate-soft-budget.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-003"
+    },
+    {
       "id": "candidate-staging-blocked",
       "caseKind": "candidateValidate",
       "inputPath": "fixtures/domain/candidate-staging-blocked.json",
