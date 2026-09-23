@@ -40,6 +40,33 @@ IndexedDB 저장·복원, 취소 가능한 증분 탐색, 서비스 배포. 폭 
 다음 단계는 이 구현 PR의 독립 review/A3 Bridge Gate와 사용자 merge 결정입니다.
 작성자가 자신의 변경에 독립 PASS를 부여하지 않습니다. 이후 ZARI-002는 기존 선행 gate와 정본 task 절차에 따릅니다.
 
+### 재검증 기록: 현재 main 기반 rebase 후 재실행 (2026-09-24 UTC, 작성자 DEVIN local CLI)
+
+사용자 지시로 이 task의 작성자(owner)가 DEVIN local CLI(SWE)로 이어졌습니다. 같은 TASK_ID의 기존
+브랜치 `codex/zari-001-executable-bridge`와 Draft PR #7을 재사용했으며 새 브랜치·새 PR을 만들지
+않았습니다. 브랜치를 관측 main `1890a5b097f94faad11a3d670a70621cc980f648` 위로 rebase했고
+rebase 직후 HEAD는 `58fa583e302ee5e50d05c478b9b05de3b11fe21c`입니다. 충돌은 이 문서 한 곳뿐이며
+양쪽 절을 모두 보존했습니다. 보존 원문 두 개와 SOURCE_MANIFEST는 변경하지 않았습니다.
+
+rebase된 tree에서 위 검증 명령 전부를 재실행했습니다:
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: 통과.
+- `cargo test --workspace --locked`: 30개 통과(스칼라 8, probe 9, protocol 13).
+- `cargo run -p zari-core --locked --example fixture_runner -- fixtures/bootstrap`: fixture 28개 독립 예상값 일치.
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev`: wasm-bindgen/serde 계열만 확인; DOM·네트워크·GPU/data-engine 의존성 없음.
+- `npm ci`, `npm run wasm:build`(wasm-bindgen CLI 0.2.128 일치), `npm run contracts:generate`, `npm run contracts:check`, `npm run typecheck`, `npm run lint`, `npm run build`: 통과.
+- `npm test`: Worker host 단위 검증 6개 통과.
+- `npm run test:browser -- --project=chromium`: 3개 흐름 통과. 이 환경에서는 Playwright가 설치한 Chromium headless shell 153.0.8010.12로 실행했으며 `@sparticuz/chromium` 우회가 필요하지 않았습니다.
+- `npm run test:parity`: 같은 fixture 28개의 native Rust와 실제 Chromium Worker/WASM 결과가 전부 일치.
+- `node scripts/check-design-tokens.mjs --self-test`: self-test 10개와 대비 사례 33/33 통과.
+- `npm run dev -- --host 127.0.0.1`로 dev 서버를 띄우고 실제 Chromium에서 확인: `.wasm` 응답 로드, 590mm 통과, 195mm 입력 시 605mm 초과, 묶음 3, 콘솔 오류 0.
+- 도구: Rust 1.98.1 / Node 24.19.0 / npm 11.17.0(engines 범위 내) / Playwright 1.63.0.
+
+이 기록은 작성자의 로컬 실행 증거이며 원격 CI 성공·독립 review·A3 Bridge Gate·화면 승인·merge를
+주장하지 않습니다. 이 문서 커밋 자체가 새 HEAD를 만들므로 정본의 최종 HEAD와 검증 근거는 PR #7의
+exact-HEAD 기록을 따릅니다. 이전 캡처의 sourceCommit은 rebase 전 SHA이며, 앱 소스는 rebase 후에도
+동일합니다(제품 코드 diff 없음, main의 운영 변경과 제품 경로 충돌 없음).
+
 
 ## 이전 기록: 초기 문서 등록 (efc6619)
 
