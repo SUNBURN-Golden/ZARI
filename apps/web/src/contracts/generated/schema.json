@@ -1,0 +1,1644 @@
+{
+  "$id": "https://zari.local/contracts/bootstrap-v1",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "BootstrapContext": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "bootstrap",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "BootstrapContext"
+    },
+    "BootstrapFixture": {
+      "additionalProperties": false,
+      "properties": {
+        "caseId": {
+          "type": "string"
+        },
+        "engineContext": {
+          "$ref": "#/definitions/EngineContext"
+        },
+        "expected": {
+          "$ref": "#/definitions/FixtureExpected"
+        },
+        "fixtureSchemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input": {
+          "$ref": "#/definitions/BootstrapProbeDto"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fixtureSchemaVersion",
+        "caseId",
+        "operation",
+        "schemaVersion",
+        "input",
+        "engineContext",
+        "expected"
+      ],
+      "title": "BootstrapFixture",
+      "type": "object"
+    },
+    "BootstrapProbeDto": {
+      "additionalProperties": false,
+      "properties": {
+        "betweenGapMm": {
+          "$ref": "#/definitions/FactFor_ClearanceMm"
+        },
+        "compartmentWidth": {
+          "$ref": "#/definitions/RawMeasurementDto"
+        },
+        "leftGapMm": {
+          "$ref": "#/definitions/FactFor_ClearanceMm"
+        },
+        "neededNewUnits": {
+          "$ref": "#/definitions/RawCountDto"
+        },
+        "packQuantity": {
+          "$ref": "#/definitions/RawCountDto"
+        },
+        "rightGapMm": {
+          "$ref": "#/definitions/FactFor_ClearanceMm"
+        },
+        "unitCount": {
+          "$ref": "#/definitions/RawCountDto"
+        },
+        "unitWidth": {
+          "$ref": "#/definitions/RawMeasurementDto"
+        }
+      },
+      "required": [
+        "compartmentWidth",
+        "unitWidth",
+        "unitCount",
+        "leftGapMm",
+        "rightGapMm",
+        "betweenGapMm",
+        "neededNewUnits",
+        "packQuantity"
+      ],
+      "title": "BootstrapProbeDto",
+      "type": "object"
+    },
+    "BootstrapProbeResult": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/definitions/Diagnostic"
+          },
+          "type": "array"
+        },
+        "normalizedCompartmentWidth": {
+          "$ref": "#/definitions/FactFor_MeasuredLength"
+        },
+        "normalizedUnitWidth": {
+          "$ref": "#/definitions/FactFor_MeasuredLength"
+        },
+        "order": {
+          "$ref": "#/definitions/OrderResult"
+        },
+        "requiredWidthMm": {
+          "$ref": "#/definitions/FactFor_Revision"
+        },
+        "rowObjects": {
+          "$ref": "#/definitions/FactFor_Array_of_RowObject"
+        },
+        "widthCheck": {
+          "$ref": "#/definitions/ConstraintCheck"
+        }
+      },
+      "required": [
+        "normalizedCompartmentWidth",
+        "normalizedUnitWidth",
+        "requiredWidthMm",
+        "rowObjects",
+        "widthCheck",
+        "order",
+        "diagnostics"
+      ],
+      "title": "BootstrapProbeResult",
+      "type": "object"
+    },
+    "CheckBasis": {
+      "enum": [
+        "nominal"
+      ],
+      "title": "CheckBasis",
+      "type": "string"
+    },
+    "CheckKind": {
+      "enum": [
+        "outer_geometry"
+      ],
+      "title": "CheckKind",
+      "type": "string"
+    },
+    "CheckMeasurement": {
+      "additionalProperties": false,
+      "properties": {
+        "fieldPath": {
+          "type": "string"
+        },
+        "valueMm": {
+          "$ref": "#/definitions/FactFor_Revision"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "valueMm"
+      ],
+      "title": "CheckMeasurement",
+      "type": "object"
+    },
+    "CheckStatus": {
+      "enum": [
+        "pass",
+        "fail",
+        "unknown",
+        "not_applicable"
+      ],
+      "title": "CheckStatus",
+      "type": "string"
+    },
+    "ClearanceMm": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "ClearanceMm",
+      "type": "integer"
+    },
+    "Command": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "buildId": {
+              "type": "string"
+            },
+            "expectedProtocolVersion": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "expectedSchemaVersion": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "initialize",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "buildId",
+            "expectedProtocolVersion",
+            "expectedSchemaVersion"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "context": {
+              "$ref": "#/definitions/BootstrapContext"
+            },
+            "kind": {
+              "const": "activateProject",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "context"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "formatRequests": {
+              "items": {
+                "$ref": "#/definitions/FieldFormatRequest"
+              },
+              "type": "array"
+            },
+            "input": {
+              "$ref": "#/definitions/NormalizeInputDto"
+            },
+            "kind": {
+              "const": "normalizeInput",
+              "type": "string"
+            },
+            "priorInputDigest": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "input",
+            "priorInputDigest",
+            "formatRequests"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "evaluateProbe",
+              "type": "string"
+            },
+            "probe": {
+              "$ref": "#/definitions/BootstrapProbeDto"
+            }
+          },
+          "required": [
+            "kind",
+            "probe"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "disposeProject",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "Command"
+    },
+    "ConstraintCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/definitions/CheckBasis"
+        },
+        "blocking": {
+          "type": "boolean"
+        },
+        "evidenceRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/CheckKind"
+        },
+        "measurements": {
+          "items": {
+            "$ref": "#/definitions/CheckMeasurement"
+          },
+          "type": "array"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "remediation": {
+          "items": {
+            "$ref": "#/definitions/Remediation"
+          },
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "subjectIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "subjectIds",
+        "status",
+        "reasonCode",
+        "basis",
+        "evidenceRefs",
+        "measurements",
+        "blocking",
+        "remediation"
+      ],
+      "title": "ConstraintCheck",
+      "type": "object"
+    },
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "fieldPath": {
+          "type": "string"
+        },
+        "reasonCode": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "code",
+        "reasonCode"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "EngineContext": {
+      "additionalProperties": false,
+      "properties": {
+        "buildId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "buildId"
+      ],
+      "title": "EngineContext",
+      "type": "object"
+    },
+    "Event": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "buildId": {
+              "type": "string"
+            },
+            "canonicalVersion": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "capabilities": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "ready",
+              "type": "string"
+            },
+            "protocolVersion": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "ruleVersion": {
+              "type": "string"
+            },
+            "schemaVersion": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "solverVersion": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "buildId",
+            "protocolVersion",
+            "schemaVersion",
+            "canonicalVersion",
+            "ruleVersion",
+            "solverVersion",
+            "capabilities"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "contextId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "projectActivated",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "contextId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "diagnostics": {
+              "items": {
+                "$ref": "#/definitions/Diagnostic"
+              },
+              "type": "array"
+            },
+            "equivalentToPrior": {
+              "type": "boolean"
+            },
+            "formattedFields": {
+              "items": {
+                "$ref": "#/definitions/FormattedField"
+              },
+              "type": "array"
+            },
+            "inputDigest": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "normalized",
+              "type": "string"
+            },
+            "normalizedInput": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NormalizedBootstrapInput"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "normalizedInput",
+            "inputDigest",
+            "equivalentToPrior",
+            "formattedFields",
+            "diagnostics"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "probeEvaluated",
+              "type": "string"
+            },
+            "result": {
+              "$ref": "#/definitions/BootstrapProbeResult"
+            }
+          },
+          "required": [
+            "kind",
+            "result"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "projectDisposed",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "affectedFields": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "affectedIds": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "code": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "operationFailed",
+              "type": "string"
+            },
+            "reasonParameters": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "code",
+            "affectedFields",
+            "affectedIds",
+            "retryable",
+            "reasonParameters"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "Event"
+    },
+    "FactFor_Array_of_RowObject": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "provenance": {
+              "$ref": "#/definitions/Provenance"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "items": {
+                "$ref": "#/definitions/RowObject"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "provenance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FactFor_Array_of_RowObject"
+    },
+    "FactFor_ClearanceMm": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "provenance": {
+              "$ref": "#/definitions/Provenance"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/ClearanceMm"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "provenance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FactFor_ClearanceMm"
+    },
+    "FactFor_MeasuredLength": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "provenance": {
+              "$ref": "#/definitions/Provenance"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/MeasuredLength"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "provenance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FactFor_MeasuredLength"
+    },
+    "FactFor_PackQuantity": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "provenance": {
+              "$ref": "#/definitions/Provenance"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/PackQuantity"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "provenance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FactFor_PackQuantity"
+    },
+    "FactFor_Quantity": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "provenance": {
+              "$ref": "#/definitions/Provenance"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/Quantity"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "provenance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FactFor_Quantity"
+    },
+    "FactFor_Revision": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "provenance": {
+              "$ref": "#/definitions/Provenance"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/Revision"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "provenance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FactFor_Revision"
+    },
+    "FactFor_UnitCount": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "provenance": {
+              "$ref": "#/definitions/Provenance"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/UnitCount"
+            }
+          },
+          "required": [
+            "state",
+            "value",
+            "provenance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FactFor_UnitCount"
+    },
+    "FieldFormatRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "fieldPath": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/Unit"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "unit"
+      ],
+      "title": "FieldFormatRequest",
+      "type": "object"
+    },
+    "FieldRef": {
+      "additionalProperties": false,
+      "properties": {
+        "entityId": {
+          "type": "string"
+        },
+        "fieldPath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "entityId",
+        "fieldPath"
+      ],
+      "title": "FieldRef",
+      "type": "object"
+    },
+    "FixtureExpected": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnosticFields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "packsToOrder": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "requiredWidthMm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "suppliedUnits": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "surplusUnits": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "widthStatus": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "xPositionsMm": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "widthStatus",
+        "requiredWidthMm",
+        "xPositionsMm",
+        "packsToOrder",
+        "suppliedUnits",
+        "surplusUnits",
+        "diagnosticFields"
+      ],
+      "title": "FixtureExpected",
+      "type": "object"
+    },
+    "FormattedField": {
+      "additionalProperties": false,
+      "properties": {
+        "fieldPath": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/Unit"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "unit",
+        "text"
+      ],
+      "title": "FormattedField",
+      "type": "object"
+    },
+    "LengthMm": {
+      "maximum": 10000,
+      "minimum": 1,
+      "title": "LengthMm",
+      "type": "integer"
+    },
+    "MeasuredLength": {
+      "additionalProperties": false,
+      "properties": {
+        "nominal": {
+          "$ref": "#/definitions/LengthMm"
+        },
+        "uncertainty": {
+          "$ref": "#/definitions/Uncertainty"
+        }
+      },
+      "required": [
+        "nominal",
+        "uncertainty"
+      ],
+      "title": "MeasuredLength",
+      "type": "object"
+    },
+    "MeasurementOrigin": {
+      "enum": [
+        "synthetic",
+        "manufacturer",
+        "retailer",
+        "userMeasured",
+        "userDeclared",
+        "aiEstimated",
+        "derived"
+      ],
+      "title": "MeasurementOrigin",
+      "type": "string"
+    },
+    "NormalizedBootstrapInput": {
+      "additionalProperties": false,
+      "properties": {
+        "betweenGapMm": {
+          "$ref": "#/definitions/FactFor_ClearanceMm"
+        },
+        "compartmentWidth": {
+          "$ref": "#/definitions/FactFor_MeasuredLength"
+        },
+        "leftGapMm": {
+          "$ref": "#/definitions/FactFor_ClearanceMm"
+        },
+        "neededNewUnits": {
+          "$ref": "#/definitions/FactFor_Quantity"
+        },
+        "packQuantity": {
+          "$ref": "#/definitions/FactFor_PackQuantity"
+        },
+        "rightGapMm": {
+          "$ref": "#/definitions/FactFor_ClearanceMm"
+        },
+        "unitCount": {
+          "$ref": "#/definitions/FactFor_Quantity"
+        },
+        "unitWidth": {
+          "$ref": "#/definitions/FactFor_MeasuredLength"
+        }
+      },
+      "required": [
+        "compartmentWidth",
+        "unitWidth",
+        "unitCount",
+        "leftGapMm",
+        "rightGapMm",
+        "betweenGapMm",
+        "neededNewUnits",
+        "packQuantity"
+      ],
+      "title": "NormalizedBootstrapInput",
+      "type": "object"
+    },
+    "NormalizeInputDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "bootstrap",
+              "type": "string"
+            },
+            "probe": {
+              "$ref": "#/definitions/BootstrapProbeDto"
+            }
+          },
+          "required": [
+            "kind",
+            "probe"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "NormalizeInputDto"
+    },
+    "OrderResult": {
+      "additionalProperties": false,
+      "properties": {
+        "packsToOrder": {
+          "$ref": "#/definitions/FactFor_Quantity"
+        },
+        "suppliedUnits": {
+          "$ref": "#/definitions/FactFor_UnitCount"
+        },
+        "surplusUnits": {
+          "$ref": "#/definitions/FactFor_UnitCount"
+        }
+      },
+      "required": [
+        "packsToOrder",
+        "suppliedUnits",
+        "surplusUnits"
+      ],
+      "title": "OrderResult",
+      "type": "object"
+    },
+    "PackQuantity": {
+      "maximum": 10000,
+      "minimum": 1,
+      "title": "PackQuantity",
+      "type": "integer"
+    },
+    "ProtocolRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "$ref": "#/definitions/Command"
+        },
+        "meta": {
+          "$ref": "#/definitions/RequestMeta"
+        }
+      },
+      "required": [
+        "meta",
+        "command"
+      ],
+      "title": "ProtocolRequest",
+      "type": "object"
+    },
+    "ProtocolResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "$ref": "#/definitions/Event"
+        },
+        "meta": {
+          "$ref": "#/definitions/RequestMeta"
+        },
+        "sequence": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "meta",
+        "sequence",
+        "event"
+      ],
+      "title": "ProtocolResponse",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "evidenceIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "inputRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "observedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "origin": {
+          "$ref": "#/definitions/MeasurementOrigin"
+        },
+        "ruleIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "verification": {
+          "$ref": "#/definitions/VerificationStatus"
+        }
+      },
+      "required": [
+        "origin",
+        "verification",
+        "evidenceIds",
+        "ruleIds",
+        "inputRefs",
+        "observedAt"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Quantity": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Quantity",
+      "type": "integer"
+    },
+    "RawCountDto": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "RawCountDto",
+      "type": "object"
+    },
+    "RawMeasurementDto": {
+      "additionalProperties": false,
+      "properties": {
+        "evidenceIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "origin": {
+          "$ref": "#/definitions/MeasurementOrigin"
+        },
+        "text": {
+          "type": "string"
+        },
+        "uncertainty": {
+          "$ref": "#/definitions/RawUncertaintyDto"
+        },
+        "unit": {
+          "$ref": "#/definitions/Unit"
+        }
+      },
+      "required": [
+        "text",
+        "unit",
+        "uncertainty",
+        "origin",
+        "evidenceIds"
+      ],
+      "title": "RawMeasurementDto",
+      "type": "object"
+    },
+    "RawUncertaintyDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "minusText": {
+              "type": "string"
+            },
+            "plusText": {
+              "type": "string"
+            },
+            "state": {
+              "const": "bounded",
+              "type": "string"
+            },
+            "unit": {
+              "$ref": "#/definitions/Unit"
+            }
+          },
+          "required": [
+            "state",
+            "minusText",
+            "plusText",
+            "unit"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "RawUncertaintyDto"
+    },
+    "Remediation": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "fieldPaths": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "fieldPaths"
+      ],
+      "title": "Remediation",
+      "type": "object"
+    },
+    "RequestMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "contextId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "editorEpoch": {
+          "$ref": "#/definitions/Revision"
+        },
+        "inputRevision": {
+          "$ref": "#/definitions/Revision"
+        },
+        "projectActivationId": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "protocolVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "workerSessionId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "protocolVersion",
+        "schemaVersion",
+        "workerSessionId",
+        "projectActivationId",
+        "requestId",
+        "projectId",
+        "editorEpoch",
+        "inputRevision",
+        "contextId"
+      ],
+      "title": "RequestMeta",
+      "type": "object"
+    },
+    "Revision": {
+      "maxLength": 20,
+      "minLength": 1,
+      "pattern": "^(?:0|[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4][0-9]{0}|18446744073709551615)(?![\\s\\S])",
+      "title": "Revision",
+      "type": "string"
+    },
+    "RowObject": {
+      "additionalProperties": false,
+      "properties": {
+        "ordinal": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "widthMm": {
+          "$ref": "#/definitions/LengthMm"
+        },
+        "xMm": {
+          "$ref": "#/definitions/Revision"
+        }
+      },
+      "required": [
+        "ordinal",
+        "xMm",
+        "widthMm"
+      ],
+      "title": "RowObject",
+      "type": "object"
+    },
+    "Uncertainty": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "minusMm": {
+              "$ref": "#/definitions/ClearanceMm"
+            },
+            "plusMm": {
+              "$ref": "#/definitions/ClearanceMm"
+            },
+            "state": {
+              "const": "bounded",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "minusMm",
+            "plusMm"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "Uncertainty"
+    },
+    "Unit": {
+      "enum": [
+        "mm",
+        "cm"
+      ],
+      "title": "Unit",
+      "type": "string"
+    },
+    "UnitCount": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "UnitCount",
+      "type": "integer"
+    },
+    "UnknownReason": {
+      "enum": [
+        "notMeasured",
+        "notProvided",
+        "sourceMissing",
+        "conflictingSources"
+      ],
+      "title": "UnknownReason",
+      "type": "string"
+    },
+    "VerificationStatus": {
+      "enum": [
+        "unverified",
+        "estimated",
+        "confirmed"
+      ],
+      "title": "VerificationStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "BootstrapFixture": {
+      "$ref": "#/definitions/BootstrapFixture"
+    },
+    "BootstrapProbeDto": {
+      "$ref": "#/definitions/BootstrapProbeDto"
+    },
+    "BootstrapProbeResult": {
+      "$ref": "#/definitions/BootstrapProbeResult"
+    },
+    "ProtocolRequest": {
+      "$ref": "#/definitions/ProtocolRequest"
+    },
+    "ProtocolResponse": {
+      "$ref": "#/definitions/ProtocolResponse"
+    }
+  },
+  "required": [
+    "ProtocolRequest",
+    "ProtocolResponse",
+    "BootstrapProbeDto",
+    "BootstrapProbeResult",
+    "BootstrapFixture"
+  ],
+  "title": "ZariContractBundle",
+  "type": "object"
+}

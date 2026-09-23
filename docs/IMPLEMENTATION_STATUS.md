@@ -1,5 +1,46 @@
 # ZARI 구현 상태
 
+## 현재 구현: ZARI-001 실행 가능한 Rust/WASM 연결 (2026-09-23 UTC)
+
+아키텍처 PR #2가 병합된 `d3cb460c94ca6de11d00dac181c0f8d8b95314e7`을 기준으로
+`codex/zari-001-executable-bridge`에서 작업했습니다. 아래의 초기 문서·설계 단계 기록은
+과거 상태이며 현재 앱의 부재를 뜻하지 않습니다. 정본 작업은 GitHub issue #5/revision 1입니다.
+사용자가 직접 지시한 구현·실제 캡처 범위이며 자동 dispatch나 다른 runtime PR의 활성화가 아닙니다.
+
+구현한 경로는 **한국어 원문 입력 → JSON Worker protocol → 실제 Rust/WASM 정규화·폭 검사·묶음 계산 → SVG/결과 화면**입니다.
+Rust core와 얇은 WASM crate, 고정 도구/lockfile, Rust에서 생성한 DTO/schema/standalone validator,
+세션·project activation·editor epoch·revision에 따른 응답 폐기, Worker 재시작과 입력 유지가 있습니다.
+React Aria 입력과 SVG 치수선 연결, 미확인/유효하지 않은 값/오래된 결과의 구별,
+390px/1440px 화면을 구현했습니다. React가 폭 적합성이나 묶음 계산을 재구현하지 않습니다.
+
+실제로 실행한 검증:
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: 통과.
+- `cargo test --workspace --locked`: 30개 통과(스칼라 8, probe 9, protocol 13).
+- `cargo run -p zari-core --locked --example fixture_runner -- fixtures/bootstrap`: 독립 예상값을 포함한 공유 fixture 28개 통과.
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev`: 브라우저 의존성 확인; DOM·네트워크·GPU/data-engine 의존성 없음.
+- `npm ci`, `npm run wasm:build`, `npm run contracts:generate`, `npm run contracts:check`, `npm run typecheck`, `npm run lint`, `npm run build`: 통과.
+- `npm test`: Worker host 단위 검증 6개 통과.
+- `npm run test:browser -- --project=chromium`: 실제 WASM 입력/오류/단위, 키보드/모바일/새로고침, Worker 오류/재시작의 3개 흐름 통과.
+- `npm run test:parity`: 같은 fixture 28개를 native Rust와 Chromium Worker/WASM에서 실행한 authoritative JSON이 전부 일치. 메타데이터로 결과 차이를 숨기지 않습니다.
+- `node scripts/check-design-tokens.mjs --self-test`: self-test 10개 및 실제 색상 대비 사례 33/33 통과.
+
+로컬 브라우저 검증은 Chromium 153.0.8010.0을 사용했습니다. 실행 환경의 기본 브라우저 배포 경로를
+이용할 수 없어 저장소 밖의 `@sparticuz/chromium@153.0.0` 실행 파일을
+`ZARI_CHROMIUM_EXECUTABLE`/`ZARI_CHROMIUM_ARGS_JSON`으로 지정했습니다. 앱의 의존성을 추가한 것이 아니며,
+계산은 실제 브라우저 Worker의 WASM입니다. CI는 Playwright가 설치하는 Chromium 경로를 사용합니다.
+위 결과는 로컬 실행 증거이며 원격 CI 성공·독립 A3 감사·화면 승인으로 대체하지 않습니다.
+
+미구현: solver, 독립 최종 배치 검증, 실제 상품, 조직화 전략, PlanSnapshot/BOM/실행 가이드,
+IndexedDB 저장·복원, 취소 가능한 증분 탐색, 서비스 배포. 폭 통과는 설치·내용물·접근·하중 통과가 아닙니다.
+새로고침은 새 예제로 시작합니다. `5mm`는 합성 fixture 조건이며 설치 권장치가 아닙니다.
+
+실제 캡처의 파일·sourceCommit·환경·해시는 `design/baselines/manifest.json`에 기록합니다.
+사용자가 구체적인 캡처를 승인하기 전까지 모두 draft이며 승인된 baseline 수는 0입니다.
+다음 단계는 이 구현 PR의 독립 review/A3 Bridge Gate와 사용자 merge 결정입니다.
+작성자가 자신의 변경에 독립 PASS를 부여하지 않습니다. 이후 ZARI-002는 기존 선행 gate와 정본 task 절차에 따릅니다.
+
+
 ## 이전 기록: 초기 문서 등록 (efc6619)
 
 아래 이전 기록의 변경 범위는 초기 문서 등록입니다. Rust·WASM·React 애플리케이션 구현을 수행한 작업이 아닙니다.

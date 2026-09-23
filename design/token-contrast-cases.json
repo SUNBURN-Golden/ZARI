@@ -181,6 +181,24 @@
       "foreground": "--zari-selection-ring",
       "background": "--zari-accent-soft",
       "minimum": 3
+    },
+    {
+      "id": "danger-on-canvas",
+      "foreground": "--zari-danger",
+      "background": "--zari-canvas-bg",
+      "minimum": 4.5
+    },
+    {
+      "id": "info-on-canvas",
+      "foreground": "--zari-info",
+      "background": "--zari-canvas-bg",
+      "minimum": 4.5
+    },
+    {
+      "id": "accent-on-app",
+      "foreground": "--zari-accent",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
     }
   ]
 }

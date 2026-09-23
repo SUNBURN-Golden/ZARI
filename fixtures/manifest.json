@@ -1,0 +1,369 @@
+{
+  "fixtureContractVersion": 1,
+  "entries": [
+    {
+      "id": "boundary-contact",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/boundary-contact.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/boundary-contact.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "equivalent-60-cm",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/equivalent-60-cm.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/equivalent-60-cm.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "exact-cm-tenth",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/exact-cm-tenth.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/exact-cm-tenth.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "exact-pack-multiple",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/exact-pack-multiple.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/exact-pack-multiple.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "nan-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/nan-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/nan-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "negative-length-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/negative-length-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/negative-length-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "one-mm-overflow",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/one-mm-overflow.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/one-mm-overflow.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "overflow-count-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/overflow-count-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/overflow-count-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "oversized-length-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/oversized-length-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/oversized-length-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "pack-aggregate-limit",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/pack-aggregate-limit.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/pack-aggregate-limit.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "pack-zero-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/pack-zero-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/pack-zero-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "provenance-canonical-set",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/provenance-canonical-set.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/provenance-canonical-set.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "provenance-duplicate-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/provenance-duplicate-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/provenance-duplicate-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "provenance-timestamp-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/provenance-timestamp-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/provenance-timestamp-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "row-limit-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/row-limit-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/row-limit-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "submillimeter-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/submillimeter-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/submillimeter-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "unknown-compartment",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/unknown-compartment.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/unknown-compartment.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "unknown-demand",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/unknown-demand.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/unknown-demand.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "unknown-gap",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/unknown-gap.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/unknown-gap.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "unknown-pack",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/unknown-pack.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/unknown-pack.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "unknown-unit-width",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/unknown-unit-width.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/unknown-unit-width.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "width-590-pass",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/width-590-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/width-590-pass.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "width-605-fail",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/width-605-fail.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/width-605-fail.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "zero-demand",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/zero-demand.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/zero-demand.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "zero-demand-invalid-pack",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/zero-demand-invalid-pack.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/zero-demand-invalid-pack.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "zero-demand-unknown-pack",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/zero-demand-unknown-pack.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/zero-demand-unknown-pack.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "zero-length-invalid",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/zero-length-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/zero-length-invalid.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    },
+    {
+      "id": "zero-row-unknown-unit",
+      "caseKind": "bootstrapProbe",
+      "inputPath": "fixtures/bootstrap/zero-row-unknown-unit.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bootstrap/zero-row-unknown-unit.json#/expected",
+      "assertionType": "authoritativeFields",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-001"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.wasm binary
+# Preserved source bytes must never be normalized on checkout or commit.
+docs/MASTER_PROMPT_KO.md -text
+docs/RUST_ADDENDUM_KO.md -text
+SOURCE_MANIFEST.json -text

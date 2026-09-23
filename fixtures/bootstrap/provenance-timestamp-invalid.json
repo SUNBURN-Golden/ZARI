@@ -1,0 +1,85 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "provenance-timestamp-invalid",
+  "operation": "evaluateProbe",
+  "schemaVersion": 1,
+  "input": {
+    "compartmentWidth": {
+      "text": "600",
+      "unit": "mm",
+      "uncertainty": {
+        "state": "unknown"
+      },
+      "origin": "synthetic",
+      "evidenceIds": []
+    },
+    "unitWidth": {
+      "text": "190",
+      "unit": "mm",
+      "uncertainty": {
+        "state": "unknown"
+      },
+      "origin": "synthetic",
+      "evidenceIds": []
+    },
+    "unitCount": {
+      "text": "3"
+    },
+    "leftGapMm": {
+      "state": "known",
+      "value": 5,
+      "provenance": {
+        "origin": "synthetic",
+        "verification": "unverified",
+        "evidenceIds": [],
+        "ruleIds": [],
+        "inputRefs": [],
+        "observedAt": "not-a-date"
+      }
+    },
+    "rightGapMm": {
+      "state": "known",
+      "value": 5,
+      "provenance": {
+        "origin": "synthetic",
+        "verification": "unverified",
+        "evidenceIds": [],
+        "ruleIds": [],
+        "inputRefs": [],
+        "observedAt": null
+      }
+    },
+    "betweenGapMm": {
+      "state": "known",
+      "value": 5,
+      "provenance": {
+        "origin": "synthetic",
+        "verification": "unverified",
+        "evidenceIds": [],
+        "ruleIds": [],
+        "inputRefs": [],
+        "observedAt": null
+      }
+    },
+    "neededNewUnits": {
+      "text": "5"
+    },
+    "packQuantity": {
+      "text": "2"
+    }
+  },
+  "engineContext": {
+    "buildId": "zari-bootstrap-1"
+  },
+  "expected": {
+    "widthStatus": "unknown",
+    "requiredWidthMm": null,
+    "xPositionsMm": null,
+    "packsToOrder": 3,
+    "suppliedUnits": 6,
+    "surplusUnits": 1,
+    "diagnosticFields": [
+      "leftGapMm"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "zari",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web"
+  ],
+  "packageManager": "npm@11.9.0",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
+  "scripts": {
+    "wasm:build": "node scripts/wasm-build.mjs",
+    "contracts:generate": "node scripts/contracts.mjs generate",
+    "contracts:check": "node scripts/contracts.mjs check",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint apps/web/src apps/web/tests",
+    "test": "vitest run",
+    "build": "npm run wasm:build && vite build",
+    "test:build": "npm run wasm:build && vite build --mode test",
+    "test:browser": "npm run test:build && playwright test --grep-invert \"@parity|@capture\"",
+    "test:parity": "node scripts/parity.mjs",
+    "dev": "vite",
+    "preview": "vite preview",
+    "capture:baselines": "npm run test:build && playwright test --grep @capture"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.13.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "ajv": "8.20.0",
+    "esbuild": "0.28.0",
+    "eslint": "10.11.0",
+    "json-schema-to-typescript": "16.0.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vite": "8.3.0",
+    "vitest": "5.0.1"
+  }
+}
