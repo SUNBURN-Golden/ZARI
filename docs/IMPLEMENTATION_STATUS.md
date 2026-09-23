@@ -35,7 +35,7 @@ React Aria 입력과 SVG 치수선 연결, 미확인/유효하지 않은 값/오
 IndexedDB 저장·복원, 취소 가능한 증분 탐색, 서비스 배포. 폭 통과는 설치·내용물·접근·하중 통과가 아닙니다.
 새로고침은 새 예제로 시작합니다. `5mm`는 합성 fixture 조건이며 설치 권장치가 아닙니다.
 
-실제 캡처의 파일·sourceCommit·환경·해시는 `design/baselines/manifest.json`에 기록합니다.
+실제 캡처 5개(데스크톱 정상/초과/미확인/포커스, 모바일 정상)의 파일·sourceCommit·환경·해시는 `design/baselines/manifest.json`에 기록했습니다.
 사용자가 구체적인 캡처를 승인하기 전까지 모두 draft이며 승인된 baseline 수는 0입니다.
 다음 단계는 이 구현 PR의 독립 review/A3 Bridge Gate와 사용자 merge 결정입니다.
 작성자가 자신의 변경에 독립 PASS를 부여하지 않습니다. 이후 ZARI-002는 기존 선행 gate와 정본 task 절차에 따릅니다.
