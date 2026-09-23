@@ -116,3 +116,5 @@ KIX `f179be8fc3c0c590b3194c26663aecdfe7a4a679`의 runtime/flow/boundary 실행 �
 현재 제품 구현·화면 승인·production host/preflight·독립 A3 감사·merge·activation
 완료를 주장하지 않는다. `runtime_enabled=false`; 새 source의 감사와 실제 host
 근거가 생기기 전 PENDING을 PASS로 바꾸지 않는다.
+
+같은 적용 후보의 독립 기술검토에서 dispatch 승인 identity 소실과 boundary 환경변수 우회(P1), evaluator/상위 경로 보호 검사 누락(P2)을 발견해 보완했다. 이후 공통 회귀는 99개 통과했다. 실행 소스는 이제 KIX 원본 그대로가 아니라 해당 finding 수정 delta를 포함한다. 새 HEAD의 비작성자 재감사·CI 결과는 PR 정본에 연결하며, production 검증·활성화 완료를 뜻하지 않는다.
