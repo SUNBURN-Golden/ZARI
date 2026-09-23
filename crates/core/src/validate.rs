@@ -9,6 +9,7 @@ use crate::facts::*;
 use crate::input::*;
 use crate::plan::*;
 use crate::scalars::*;
+use crate::strategy::StrategyDecision;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -1199,6 +1200,98 @@ pub fn validate_layout(
                 &mut diagnostics,
                 format!("purchaseSelections.{placement_id}"),
                 "missing_purchase_selection",
+            );
+        }
+    }
+    diagnostics
+}
+
+/// Structural validation of the strategy trace a proposal declares: resolved
+/// groups must name real input groups and zone/item members, zone references
+/// resolve against strategy or locked zones, and collections stay bounded.
+pub fn validate_strategy(strategy: &StrategyDecision, input: &ProjectInput) -> Vec<Diagnostic> {
+    let mut diagnostics = vec![];
+    if strategy.groups.len() > MAX_COLLECTION
+        || strategy.zones.len() > MAX_COLLECTION
+        || strategy.reasons.len() > MAX_COLLECTION
+        || strategy.assumptions.len() > MAX_COLLECTION
+    {
+        err(&mut diagnostics, "strategy", "input_limit_exceeded");
+    }
+    duplicate_ids(
+        &mut diagnostics,
+        "strategy.zones",
+        strategy.zones.iter().map(|z| &z.id),
+    );
+    duplicate_ids(
+        &mut diagnostics,
+        "strategy.reasons",
+        strategy.reasons.iter().map(|r| &r.id),
+    );
+    duplicate_ids(
+        &mut diagnostics,
+        "strategy.assumptions",
+        strategy.assumptions.iter().map(|c| &c.id),
+    );
+    duplicate_ids(
+        &mut diagnostics,
+        "strategy.groups",
+        strategy.groups.iter().map(|g| &g.group_id),
+    );
+    let zone_ids: BTreeSet<&str> = strategy
+        .zones
+        .iter()
+        .map(|z| z.id.as_str())
+        .chain(
+            input
+                .constraints
+                .locked_zones
+                .iter()
+                .map(|l| l.zone.id.as_str()),
+        )
+        .collect();
+    for resolved in &strategy.groups {
+        let path = format!("strategy.groups.{}", resolved.group_id.as_str());
+        let Some(group) = input.groups.iter().find(|g| g.id == resolved.group_id) else {
+            err(&mut diagnostics, path, "dangling_group_ref");
+            continue;
+        };
+        if !zone_ids.contains(resolved.zone_id.as_str()) {
+            err(
+                &mut diagnostics,
+                format!("{path}.zoneId"),
+                "dangling_zone_ref",
+            );
+        }
+        let members: BTreeSet<&str> = group.item_ids.iter().map(|i| i.as_str()).collect();
+        if resolved.item_ids.is_empty() {
+            err(
+                &mut diagnostics,
+                format!("{path}.itemIds"),
+                "empty_group_items",
+            );
+        }
+        for item_id in &resolved.item_ids {
+            if !members.contains(item_id.as_str()) {
+                err(
+                    &mut diagnostics,
+                    format!("{path}.itemIds"),
+                    "dangling_item_ref",
+                );
+            }
+        }
+    }
+    let resolved_ids: BTreeSet<&str> = strategy
+        .groups
+        .iter()
+        .map(|g| g.group_id.as_str())
+        .collect();
+    for priority in &strategy.priorities {
+        if !resolved_ids.contains(priority.group_id.as_str()) {
+            err(
+                &mut diagnostics,
+                format!("strategy.priorities.{}", priority.group_id.as_str()),
+                "dangling_group_ref",
             );
         }
     }

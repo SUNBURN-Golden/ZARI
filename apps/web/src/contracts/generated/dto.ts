@@ -644,7 +644,26 @@ export type DomainFixtureExpected =
       decodeError: boolean;
       fields: ExpectedCatalogField[];
       kind: 'normalizeCatalogFields';
+    }
+  | {
+      checks: ExpectedCheck[];
+      commerceReadiness: CommerceReadiness | null;
+      decodeError: boolean;
+      diagnostics: ExpectedDiagnostic[];
+      kind: 'validateCandidate';
+      physicalAssurance: PhysicalAssurance | null;
+      snapshotDigest: Digest | null;
     };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CommerceReadiness".
+ */
+export type CommerceReadiness = 'ready' | 'conditional' | 'notApplicable';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PhysicalAssurance".
+ */
+export type PhysicalAssurance = 'confirmedWithinScope' | 'conditional' | 'rejected';
 /**
  * The domain interchange operation a shared fixture exercises. The fixture's
  * `expected.kind` must carry the same name.
@@ -652,7 +671,8 @@ export type DomainFixtureExpected =
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "DomainOperation".
  */
-export type DomainOperation = 'normalizeProjectInput' | 'verifyRecord' | 'normalizeCatalogFields';
+export type DomainOperation =
+  'normalizeProjectInput' | 'verifyRecord' | 'normalizeCatalogFields' | 'validateCandidate';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "LayoutEditCommand".
@@ -930,16 +950,6 @@ export type UnassignedInstances =
     };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "CommerceReadiness".
- */
-export type CommerceReadiness = 'ready' | 'conditional' | 'notApplicable';
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "PhysicalAssurance".
- */
-export type PhysicalAssurance = 'confirmedWithinScope' | 'conditional' | 'rejected';
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "Command".
  */
 export type Command =
@@ -970,6 +980,10 @@ export type Command =
   | {
       fields: RawCatalogFieldDto[];
       kind: 'normalizeCatalogFields';
+    }
+  | {
+      kind: 'validateCandidate';
+      proposal: CandidateProposal;
     }
   | {
       kind: 'disposeProject';
@@ -1331,6 +1345,12 @@ export type Event =
   | {
       fields: NormalizedCatalogField[];
       kind: 'catalogFieldsNormalized';
+    }
+  | {
+      diagnostics: Diagnostic[];
+      kind: 'candidateValidated';
+      report: ValidationReport | null;
+      snapshot: PlanSnapshot | null;
     }
   | {
       kind: 'projectDisposed';
@@ -1793,6 +1813,18 @@ export interface ExpectedCatalogField {
   diagnosticCodes: string[];
   fieldPath: string;
   value: unknown;
+}
+/**
+ * One expected check assertion on a `candidateValidated` report: the check
+ * id must exist with this status (and reason when declared).
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedCheck".
+ */
+export interface ExpectedCheck {
+  id: string;
+  reasonCode: string | null;
+  status: CheckStatus;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -2647,6 +2679,33 @@ export interface RawStagingSupportDto {
 export interface RawCatalogFieldDto {
   fieldPath: string;
   value: RawCatalogFieldValueDto;
+}
+/**
+ * The full proposal handed to the independent validator boundary: the
+ * candidate layout plus the declared strategy trace and creation mode that
+ * the snapshot embeds. None of it asserts validity; the engine recomputes
+ * every check and stamps its own compile versions.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CandidateProposal".
+ */
+export interface CandidateProposal {
+  creation: PlanCreation;
+  layout: CandidateLayout;
+  strategy: StrategyDecision;
+}
+/**
+ * The complete proposal crossing the independent validator boundary; a
+ * caller-supplied pass flag does not exist and cannot be trusted.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CandidateLayout".
+ */
+export interface CandidateLayout {
+  assignments: ItemAssignment[];
+  placements: Placement[];
+  purchaseSelections: PurchaseSelection[];
+  unassigned: Unassigned[];
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

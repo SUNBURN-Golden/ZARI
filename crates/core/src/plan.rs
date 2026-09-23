@@ -218,6 +218,17 @@ pub struct CandidateLayout {
     pub unassigned: Vec<Unassigned>,
     pub purchase_selections: Vec<PurchaseSelection>,
 }
+/// The full proposal handed to the independent validator boundary: the
+/// candidate layout plus the declared strategy trace and creation mode that
+/// the snapshot embeds. None of it asserts validity; the engine recomputes
+/// every check and stamps its own compile versions.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CandidateProposal {
+    pub layout: CandidateLayout,
+    pub strategy: StrategyDecision,
+    pub creation: PlanCreation,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

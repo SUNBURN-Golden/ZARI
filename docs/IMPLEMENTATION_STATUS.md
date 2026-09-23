@@ -1,6 +1,89 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-002 동결 도메인 계약과 canonical fixture 교환 (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-003 독립 검증과 PlanSnapshot 확정 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #11이며 base는 ZARI-002 병합 커밋
+`c08e815fb6e309c54481f3dc59e2e8fab48680c1`입니다. 브랜치
+`devin/zari-003-independent-validator`에서 작업했고 Cloud Devin·production runner·
+`runtime_enabled=true`는 사용하지 않았습니다. solver·search pruning·UI는 이 task의
+범위 밖이며 구현하지 않았습니다.
+
+구현한 범위:
+
+- `geometry`: 축 구간·cuboid·footprint, 방향별 치수, nominal/conservative envelope,
+  삽입 sweep과 staging 부피 계산. unknown 불확도는 보수 근거에서 즉시 unknown이 됩니다.
+- `validator`: 제안을 독립 재검증하는 `ValidationReport` — 외경·공간 경계, cavity
+  수용, 형제 겹침, 부모 수용, support·elevation·하중 집계, aperture·삽입 경로·staging,
+  파생 설치 순서(Kahn + 독립 재생), 작동 접근성, 방향·회전, 수량 보존(ordinal 분할·
+  보유 상한), 구매 검증(재고·가격·배송·예산·offer/variant 정합·pack 잉여)을 각 check의
+  nominal/conservative basis로 구분해 기록합니다. caller가 제공하는 통과 주장은
+  존재하지 않으며 check는 pass·fail·unknown·notApplicable을 유지합니다. hard budget
+  초과·구매 불가 Fail만 발행을 차단하고 soft budget 초과 Fail은 선호 위반으로
+  report에 남되 snapshot을 차단하지 않습니다(N1 수정).
+- `finalize`: catalog evidence 부분집합, 결정적 BOM(checked pack 산술·잉여·금액),
+  비용 요약, prerequisite로 연결된 action DAG(acquire→arrive→install→transfer),
+  SnapshotContent로부터 파생되는 content digest 기반 `PlanSnapshot`. 거절된 제안은
+  snapshot을 발행하지 않고 conditional 제안은 계약이 허용하는 명시적 conditional
+  snapshot만 발행합니다.
+- `protocol`: `validateCandidate` command와 `candidateValidated` event, project
+  context의 active input/catalog 저장, `DomainOperation::ValidateCandidate` fixture
+  경로. 구조적 결함은 diagnostics와 함께 report·snapshot 없이 거절됩니다.
+- `plan`의 `CandidateProposal`, `validate`의 `validate_strategy`와 candidate layout
+  구조 검사(중복 ID·dangling 참조·ordinal 분할·purchase binding·전략 참조).
+- fixture: domain 22개 candidate 사례(유효·conditional·적대적: ghost placement,
+  dangling 참조, ordinal 중복, 보유 초과, 형제 겹침, 부유 support, 하중 초과,
+  방향 금지, 공간 이탈, staging 차단, 1-action 접근 차단, hard budget, soft budget,
+  미해결 offer, 구매 불가, 잘못된 variant/offer, decode 오류)와 manifest 등록.
+- `tests/validator.rs`: 독립 oracle 11개 — naive interval 기하 oracle과 생산 코드 대조,
+  수량 보존 수동 집계, 설치 순서 파생 검증, snapshot digest 재계산·왕복 검증,
+  unknown→pass 불승격, BOM pack 산술 독립 재계산, soft budget advisory/hard budget
+  차단 경계, 무컨텍스트 요청 거절, 악의적 형상 fail-closed.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: 통과.
+- `cargo test --workspace --locked`: 55개 통과(lib 11, bootstrap 9, domain 11, protocol 13, validator 11).
+- `cargo run -p zari-core --locked --example fixture_runner -- fixtures`: 80개 통과.
+- `npm run contracts:generate` 후 `npm run contracts:check`: 통과(80개 fixture가 Rust fixture schema에 적합, drift 없음).
+- `npm run wasm:build`, `npm run typecheck`, `npm run lint`: 통과.
+- `npm test`: Worker host 단위 검증 6개 통과(client capability·reply 매핑 갱신 반영).
+- `npm run test:parity`: 같은 80개 fixture의 native Rust와 실제 Chromium Worker/WASM
+  event가 전부 일치. `.wasm` 응답 로드를 실제로 대기한 뒤 `runDomainFixture`를 실행했습니다.
+- `cargo tree -p zari-core --locked`: serde·serde_json·schemars·sha2·unicode-normalization
+  계열만 확인; solver·탐색 의존성 없음(solver crate는 아직 존재하지 않음).
+
+검증 중 발견해 수정한 결함:
+
+- 무료 배송 offer에서 shipping 합계가 None으로 남아 `grand_total`이 `total_unknown`으로
+  붕괴하던 문제 — 무료 배송을 명시적 0으로 기록하도록 수정.
+- 삽입 순서 의존 방향이 반대였던 문제 — B의 sweep이 A의 최종 부피를 가로지르면 B가 먼저
+  설치되어야 하는데 반대로 기록해 모든 교차 쌍이 `insertion_order_unsupported`로
+  거절되던 것을 수정하고, 독립 replay로 순서를 재확인합니다.
+- 순서를 증명할 수 없을 때(unknown)도 임의 순서가 `install_order`로 내려가 action DAG를
+  오도하던 문제 — 증명된 순서만 DAG 근거로 사용하고 그 외에는 빈 순서로 둡니다.
+
+감사 delta(N1): Astra KEEP_DRAFT 지적으로 `chk:bg:soft`의 Fail이 `CheckKind::Budget`
+전체의 blocking 판정에 잘못 포함되어 PlanSnapshot 발행을 차단하던 것을 수정했습니다.
+SOLVER.md § commercial은 hard budget만 거절 조건으로 정의하고 DOMAIN_MODEL.md는
+hard/soft 예산을 별도 필드로 구분하므로, `blocking`은 emit 경로에서 check id로
+결정해 `bg:soft`만 advisory로 둡니다. soft 초과는 `soft_budget_exceeded` Fail로
+report에 그대로 남고 commerce는 conditional을 유지하며, `bg:hard`의 cap 초과와
+`purchase_disallowed`는 계속 blocking입니다. report 내용이 실제로 바뀌었으므로
+`candidate-contained-conditional`·`candidate-provisional`·`candidate-unresolved-offer`의
+고정 snapshot digest를 Rust가 계산한 새 값으로 다시 pinning했고, 새
+`candidate-soft-budget` fixture는 soft만 초과한 후보가 snapshot을 발행함을,
+`candidate-hard-budget`·`candidate-purchase-disallowed`는 snapshot null 유지를
+확인합니다.
+
+미구현(이 task의 범위 밖): solver·search pruning·UI, 실제 상품 데이터, IndexedDB
+저장·복원, 도면·실행 가이드 렌더링, 임의 3D 적재·안전 인증. conditional snapshot은
+모든 조건이 통과했다는 뜻이 아니며 unknown은 계약상 conditional/blocked로 남습니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only review
+(GROK_BUILD 이후 GLM, 동시 1명)와 issue의 AUDIT_FLOOR(A3 validator audit + Class E
+독립 검토)이며, merge는 User만 결정합니다. ZARI-001 화면 baseline은 draft 그대로입니다.
+
+## 이전 구현: ZARI-002 동결 도메인 계약과 canonical fixture 교환 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #9/revision 1이며 base는 ZARI-001 병합 커밋
 `4a6d3a59b0b9e03c1980d7e5d592e570fc55f664`입니다. 브랜치 `devin/zari-002-domain-interchange`에서

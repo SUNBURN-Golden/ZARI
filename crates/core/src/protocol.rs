@@ -2,6 +2,7 @@ use crate::{
     canonical::{self, CatalogContent},
     catalog::*,
     facts::*,
+    finalize,
     input::*,
     normalize::*,
     plan::*,
@@ -22,7 +23,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-2";
-const CAPABILITIES: [&str; 8] = [
+const CAPABILITIES: [&str; 9] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -30,15 +31,17 @@ const CAPABILITIES: [&str; 8] = [
     "evaluateProbe",
     "verifyRecord",
     "normalizeCatalogFields",
+    "validateCandidate",
     "disposeProject",
 ];
-const COMMAND_KINDS: [&str; 7] = [
+const COMMAND_KINDS: [&str; 8] = [
     "initialize",
     "activateProject",
     "normalizeInput",
     "evaluateProbe",
     "verifyRecord",
     "normalizeCatalogFields",
+    "validateCandidate",
     "disposeProject",
 ];
 const MAX_MESSAGE_BYTES: usize = 5 * 1024 * 1024;
@@ -145,6 +148,12 @@ pub enum Command {
     NormalizeCatalogFields {
         fields: Vec<RawCatalogFieldDto>,
     },
+    /// Independent validation and finalization boundary (Ticket 003). The
+    /// proposal is rechecked from the activated context; a caller can never
+    /// assert solver pass state because none exists on the wire.
+    ValidateCandidate {
+        proposal: CandidateProposal,
+    },
     DisposeProject {},
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -204,6 +213,18 @@ pub enum Event {
     },
     CatalogFieldsNormalized {
         fields: Vec<NormalizedCatalogField>,
+    },
+    /// Result of `validateCandidate`: the independently computed report, the
+    /// finalized snapshot only when no blocking failure exists, and the
+    /// structural diagnostics for proposals that are not valid candidates.
+    CandidateValidated {
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<ValidationReport>")]
+        report: Option<ValidationReport>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
+        snapshot: Option<PlanSnapshot>,
+        diagnostics: Vec<Diagnostic>,
     },
     ProjectDisposed,
     OperationFailed {
@@ -266,6 +287,7 @@ pub enum DomainOperation {
     NormalizeProjectInput,
     VerifyRecord,
     NormalizeCatalogFields,
+    ValidateCandidate,
 }
 /// One expected diagnostic, compared as an unordered `(fieldPath, code)` set.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema)]
@@ -285,6 +307,17 @@ pub struct ExpectedCatalogField {
     pub value: Option<Value>,
     pub diagnostic_codes: Vec<String>,
 }
+/// One expected check assertion on a `candidateValidated` report: the check
+/// id must exist with this status (and reason when declared).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExpectedCheck {
+    pub id: String,
+    pub status: CheckStatus,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<String>")]
+    pub reason_code: Option<String>,
+}
 /// Per-operation oracle. `decodeError` asserts that the payload cannot even
 /// decode into the operation's input type — the worker answers
 /// `operationFailed/invalid_input`.
@@ -295,6 +328,7 @@ pub struct ExpectedCatalogField {
     rename_all_fields = "camelCase",
     deny_unknown_fields
 )]
+#[allow(clippy::large_enum_variant)]
 pub enum DomainFixtureExpected {
     NormalizeProjectInput {
         decode_error: bool,
@@ -317,6 +351,23 @@ pub enum DomainFixtureExpected {
         decode_error: bool,
         fields: Vec<ExpectedCatalogField>,
     },
+    /// `snapshotDigest` doubles as the snapshot-presence assertion: `null`
+    /// requires the event to carry no snapshot (rejected candidates), a value
+    /// pins the exact immutable identity.
+    ValidateCandidate {
+        decode_error: bool,
+        diagnostics: Vec<ExpectedDiagnostic>,
+        checks: Vec<ExpectedCheck>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PhysicalAssurance>")]
+        physical_assurance: Option<PhysicalAssurance>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<CommerceReadiness>")]
+        commerce_readiness: Option<CommerceReadiness>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<Digest>")]
+        snapshot_digest: Option<Digest>,
+    },
 }
 /// One shared domain interchange case, executed through the identical
 /// `Runtime::handle_json` path natively and inside the real browser
@@ -337,7 +388,7 @@ pub struct DomainFixture {
 /// in order. Both the native fixture runner and the browser harness send
 /// these exact payloads, so parity covers the whole protocol path.
 pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
-    let meta = |request_id: &str, system: bool| {
+    let meta = |request_id: &str, system: bool, context_id: Option<&str>| {
         json!({
             "protocolVersion": 1,
             "schemaVersion": 1,
@@ -347,12 +398,12 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
             "projectId": (if system { "system" } else { "fixture-project" }),
             "editorEpoch": "0",
             "inputRevision": "0",
-            "contextId": null
+            "contextId": context_id
         })
     };
     let request = |meta: Value, command: Value| json!({ "meta": meta, "command": command });
     let initialize = request(
-        meta("fixture-initialize", true),
+        meta("fixture-initialize", true, None),
         json!({
             "kind": "initialize",
             "buildId": BUILD_ID,
@@ -364,11 +415,11 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
         DomainOperation::NormalizeProjectInput => vec![
             initialize,
             request(
-                meta("fixture-activate", false),
+                meta("fixture-activate", false, None),
                 json!({ "kind": "activateProject", "context": { "kind": "bootstrap" } }),
             ),
             request(
-                meta("fixture-operation", false),
+                meta("fixture-operation", false, None),
                 json!({
                     "kind": "normalizeInput",
                     "input": { "kind": "project", "project": fixture.input.clone() },
@@ -380,17 +431,56 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
         DomainOperation::VerifyRecord => vec![
             initialize,
             request(
-                meta("fixture-operation", true),
+                meta("fixture-operation", true, None),
                 json!({ "kind": "verifyRecord", "record": fixture.input.clone() }),
             ),
         ],
         DomainOperation::NormalizeCatalogFields => vec![
             initialize,
             request(
-                meta("fixture-operation", true),
+                meta("fixture-operation", true, None),
                 json!({ "kind": "normalizeCatalogFields", "fields": fixture.input.clone() }),
             ),
         ],
+        DomainOperation::ValidateCandidate => {
+            // input: {"input": <ProjectInput>, "catalog": <CatalogSnapshot>,
+            //         "proposal": <CandidateProposal>}. The operation request
+            // is fenced by the activation context id Rust derives here, so
+            // the same deterministic identity drives native and browser runs.
+            let input: Option<ProjectInput> =
+                serde_json::from_value(fixture.input["input"].clone()).ok();
+            let catalog: Option<CatalogSnapshot> =
+                serde_json::from_value(fixture.input["catalog"].clone()).ok();
+            let context_id = input
+                .as_ref()
+                .zip(catalog.as_ref())
+                .map(|(input, catalog)| {
+                    canonical::context_id(input, &CatalogContent::from(catalog))
+                        .as_str()
+                        .to_owned()
+                });
+            vec![
+                initialize,
+                request(
+                    meta("fixture-activate", false, None),
+                    json!({
+                        "kind": "activateProject",
+                        "context": {
+                            "kind": "project",
+                            "input": fixture.input["input"].clone(),
+                            "catalog": fixture.input["catalog"].clone()
+                        }
+                    }),
+                ),
+                request(
+                    meta("fixture-operation", false, context_id.as_deref()),
+                    json!({
+                        "kind": "validateCandidate",
+                        "proposal": fixture.input["proposal"].clone()
+                    }),
+                ),
+            ]
+        }
     }
 }
 fn sorted_diagnostics(event: &Value) -> Vec<ExpectedDiagnostic> {
@@ -447,7 +537,8 @@ pub fn execute_domain_fixture(fixture: &DomainFixture) -> Result<Value, String> 
     let declared_decode = match expected {
         DomainFixtureExpected::NormalizeProjectInput { decode_error, .. }
         | DomainFixtureExpected::VerifyRecord { decode_error, .. }
-        | DomainFixtureExpected::NormalizeCatalogFields { decode_error, .. } => *decode_error,
+        | DomainFixtureExpected::NormalizeCatalogFields { decode_error, .. }
+        | DomainFixtureExpected::ValidateCandidate { decode_error, .. } => *decode_error,
     };
     if declared_decode != decode_error {
         return Err(format!(
@@ -565,6 +656,98 @@ pub fn execute_domain_fixture(fixture: &DomainFixture) -> Result<Value, String> 
                 }
             }
         }
+        DomainFixtureExpected::ValidateCandidate {
+            diagnostics,
+            checks,
+            physical_assurance,
+            commerce_readiness,
+            snapshot_digest,
+            ..
+        } => {
+            if event["kind"] != "candidateValidated" {
+                return Err(format!(
+                    "{}: expected candidateValidated event, got {event}",
+                    fixture.case_id
+                ));
+            }
+            let mut expected_sorted = diagnostics.clone();
+            expected_sorted.sort();
+            if sorted_diagnostics(&event) != expected_sorted {
+                return Err(format!(
+                    "{}: diagnostics mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            let report = &event["report"];
+            let actual_checks = report["checks"].as_array().cloned().unwrap_or_default();
+            for expected_check in checks {
+                let Some(actual) = actual_checks
+                    .iter()
+                    .find(|c| c["id"].as_str() == Some(expected_check.id.as_str()))
+                else {
+                    return Err(format!(
+                        "{}: missing check {}: {event}",
+                        fixture.case_id, expected_check.id
+                    ));
+                };
+                let actual_status = actual["status"].as_str().unwrap_or_default();
+                let expected_status = serde_json::to_value(&expected_check.status)
+                    .ok()
+                    .and_then(|v| v.as_str().map(str::to_owned))
+                    .unwrap_or_default();
+                if actual_status != expected_status {
+                    return Err(format!(
+                        "{}: check {} status {actual_status}, expected {expected_status}: {event}",
+                        fixture.case_id, expected_check.id
+                    ));
+                }
+                if let Some(reason) = &expected_check.reason_code
+                    && actual["reasonCode"].as_str() != Some(reason.as_str())
+                {
+                    return Err(format!(
+                        "{}: check {} reason mismatch: {event}",
+                        fixture.case_id, expected_check.id
+                    ));
+                }
+            }
+            let compare_enum = |field: &str, expected: &Option<Value>| -> Result<(), String> {
+                if let Some(expected) = expected
+                    && report[field].as_str() != expected.as_str()
+                {
+                    return Err(format!("{}: {field} mismatch: {event}", fixture.case_id));
+                }
+                Ok(())
+            };
+            compare_enum(
+                "physicalAssurance",
+                &physical_assurance
+                    .as_ref()
+                    .and_then(|v| serde_json::to_value(v).ok()),
+            )?;
+            compare_enum(
+                "commerceReadiness",
+                &commerce_readiness
+                    .as_ref()
+                    .and_then(|v| serde_json::to_value(v).ok()),
+            )?;
+            match snapshot_digest {
+                Some(digest) => {
+                    if event["snapshot"]["planSnapshotId"].as_str() != Some(digest.as_str()) {
+                        return Err(format!(
+                            "{}: snapshot digest mismatch: {event}",
+                            fixture.case_id
+                        ));
+                    }
+                }
+                None if !event["snapshot"].is_null() => {
+                    return Err(format!(
+                        "{}: rejected candidate must not publish a snapshot: {event}",
+                        fixture.case_id
+                    ));
+                }
+                None => {}
+            }
+        }
     }
     Ok(event)
 }
@@ -576,6 +759,10 @@ pub struct Runtime {
     /// The contextId issued for the active project context; bootstrap
     /// contexts keep `None` and reject requests that carry one.
     active_context: Option<String>,
+    /// The immutable activated project facts the validator evaluates against.
+    active_input: Option<ProjectInput>,
+    /// The validated catalog bound to the active context's pin.
+    active_catalog: Option<CatalogContent>,
     /// Validated immutable catalog cache (bounded at two entries).
     catalogs: VecDeque<(Digest, CatalogContent)>,
     last_disposed: Option<RequestMeta>,
@@ -750,17 +937,31 @@ impl Runtime {
             {
                 return failure("invalid_project_activation");
             }
+            let mut activated: Option<(ProjectInput, CatalogContent)> = None;
             let context_id = match context {
                 ActivationContext::Bootstrap {} => None,
                 ActivationContext::Project { input, catalog } => {
                     match self.validate_project_context(input, catalog.as_ref()) {
-                        Ok(id) => Some(id),
+                        Ok((id, content)) => {
+                            activated = Some((input.clone(), content));
+                            Some(id)
+                        }
                         Err(event) => return event,
                     }
                 }
             };
             self.active = Some(meta.clone());
             self.active_context = context_id.clone();
+            match activated {
+                Some((input, catalog)) => {
+                    self.active_input = Some(input);
+                    self.active_catalog = Some(catalog);
+                }
+                None => {
+                    self.active_input = None;
+                    self.active_catalog = None;
+                }
+            }
             self.last_disposed = None;
             self.recent.clear();
             return Event::ProjectActivated { context_id };
@@ -891,9 +1092,44 @@ impl Runtime {
             Command::VerifyRecord { .. } | Command::NormalizeCatalogFields { .. } => {
                 self.execute_stateless(&request.command)
             }
+            Command::ValidateCandidate { proposal } => {
+                let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
+                else {
+                    // Candidate validation requires an activated project
+                    // context; bootstrap contexts cannot host a proposal.
+                    return failure("invalid_state");
+                };
+                let versions = CompileVersions {
+                    schema_version: canonical::SCHEMA_VERSION,
+                    canonical_version: canonical::CANONICAL_VERSION,
+                    input_digest: canonical::input_digest(input),
+                    catalog_version: catalog.catalog_version.clone(),
+                    catalog_digest: canonical::catalog_digest(catalog),
+                    rule_version: canonical::RULE_VERSION.into(),
+                    solver_version: canonical::SOLVER_VERSION.into(),
+                    search_profile: input.search.profile.clone(),
+                    search_budget: input.search.budget.clone(),
+                    seed: input.search.seed.clone(),
+                };
+                let scope = SearchScope {
+                    profile: input.search.profile.clone(),
+                    budget: input.search.budget.clone(),
+                    group_ids: input.groups.iter().map(|g| g.id.clone()).collect(),
+                    restrictions: vec![],
+                };
+                let evaluation =
+                    finalize::evaluate_candidate(input, catalog, proposal, versions, scope);
+                Event::CandidateValidated {
+                    report: evaluation.report,
+                    snapshot: evaluation.snapshot,
+                    diagnostics: evaluation.diagnostics,
+                }
+            }
             Command::DisposeProject { .. } => {
                 self.last_disposed = self.active.take();
                 self.active_context = None;
+                self.active_input = None;
+                self.active_catalog = None;
                 self.recent.clear();
                 Event::ProjectDisposed
             }
@@ -902,13 +1138,15 @@ impl Runtime {
             }
         }
     }
-    /// Validate an activation's project context and return its context id.
+    /// Validate an activation's project context and return its context id
+    /// plus the validated catalog content the validator will evaluate
+    /// against.
     #[allow(clippy::result_large_err)]
     fn validate_project_context(
         &mut self,
         input: &ProjectInput,
         catalog: Option<&CatalogSnapshot>,
-    ) -> Result<String, Event> {
+    ) -> Result<(String, CatalogContent), Event> {
         let diagnostics = validate::validate_project_input(input);
         if !diagnostics.is_empty() {
             return Err(Event::OperationFailed {
@@ -960,7 +1198,10 @@ impl Runtime {
                 None => return Err(failure("catalog_unavailable")),
             },
         };
-        Ok(canonical::context_id(input, &content).as_str().to_owned())
+        Ok((
+            canonical::context_id(input, &content).as_str().to_owned(),
+            content,
+        ))
     }
     /// Stateless operations legal under system identity or an active project.
     fn execute_stateless(&mut self, command: &Command) -> Event {
