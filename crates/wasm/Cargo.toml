@@ -10,5 +10,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 zari-core = { path = "../core" }
+zari-solver = { path = "../solver" }
 wasm-bindgen.workspace = true
 serde_json.workspace = true

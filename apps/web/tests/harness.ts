@@ -71,6 +71,15 @@ window.runDomainFixture = async (fixture) => {
         response.kind === 'fatalProtocolError'
       )
         break;
+      // For runSearch fixtures the oracle asserts on the terminal event — the
+      // same rule the native `execute_domain_fixture_with` applies.
+      if (
+        fixture.operation === 'runSearch' &&
+        ['searchCompleted', 'searchCancelled', 'operationFailed'].includes(
+          (event as { kind?: string } | null)?.kind ?? '',
+        )
+      )
+        break;
     }
     return event;
   } finally {

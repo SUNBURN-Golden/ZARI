@@ -1,7 +1,7 @@
 {
  "caseId": "candidate-provisional",
  "engineContext": {
-  "buildId": "zari-domain-2"
+  "buildId": "zari-domain-3"
  },
  "expected": {
   "checks": [
@@ -141,7 +141,7 @@
   "diagnostics": [],
   "kind": "validateCandidate",
   "physicalAssurance": "conditional",
-  "snapshotDigest": "6dd56ec6d6fe42ac33bd59c94524bf676cf008dcab1c174346f9694e9d5af7f6"
+  "snapshotDigest": "c889d59adee2f09ab70d605d5a5a2df492fcca2729f7ef4d96bee47805e4ef7e"
  },
  "fixtureSchemaVersion": 1,
  "input": {

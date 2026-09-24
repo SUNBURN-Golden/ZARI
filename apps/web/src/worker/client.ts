@@ -20,7 +20,7 @@ export class StaleRequest extends Error {
 }
 type Pending = {
   meta: Meta;
-  expected: Reply['kind'];
+  expected: readonly string[];
   timer: ReturnType<typeof setTimeout>;
   resolve: (event: Reply) => void;
   reject: (error: Error) => void;
@@ -34,8 +34,15 @@ const expected = {
   verifyRecord: 'recordVerified',
   normalizeCatalogFields: 'catalogFieldsNormalized',
   validateCandidate: 'candidateValidated',
+  proposeStrategies: 'strategiesProposed',
+  startSearch: 'searchStarted',
   disposeProject: 'projectDisposed',
 } as const;
+/** `stepSearch`/`cancelSearch` accept several terminal/progress events. */
+const multiExpected: Partial<Record<Command['kind'], readonly string[]>> = {
+  stepSearch: ['searchProgress', 'searchCompleted', 'searchCancelled'],
+  cancelSearch: ['searchCancelled'],
+};
 const sameMeta = (a: Meta, b: Meta) =>
   Object.keys(a).every((key) => a[key as keyof Meta] === b[key as keyof Meta]);
 /** Identity and transport only. Never interprets measurements or computes a plan. */
@@ -75,7 +82,7 @@ export class ProbeClient {
     };
     const reply = await this.request({
       kind: 'initialize',
-      buildId: 'zari-domain-2',
+      buildId: 'zari-domain-3',
       expectedProtocolVersion: 1,
       expectedSchemaVersion: 1,
     });
@@ -89,10 +96,14 @@ export class ProbeClient {
       'normalizeCatalogFields',
       'validateCandidate',
       'disposeProject',
+      'proposeStrategies',
+      'startSearch',
+      'stepSearch',
+      'cancelSearch',
     ];
     if (
       reply.kind !== 'ready' ||
-      reply.buildId !== 'zari-domain-2' ||
+      reply.buildId !== 'zari-domain-3' ||
       reply.protocolVersion !== 1 ||
       reply.schemaVersion !== 1 ||
       capabilities.some((cap) => !reply.capabilities.includes(cap)) ||
@@ -154,7 +165,7 @@ export class ProbeClient {
       const timer = setTimeout(() => this.fail(new Error('worker_timeout')), this.timeoutMs);
       this.pending.set(meta.requestId, {
         meta,
-        expected: expected[command.kind],
+        expected: multiExpected[command.kind] ?? [expected[command.kind as keyof typeof expected]],
         timer,
         resolve,
         reject,
@@ -193,7 +204,10 @@ export class ProbeClient {
         response.meta.inputRevision !== this.revision)
     )
       return;
-    if (response.event.kind !== pending.expected && response.event.kind !== 'operationFailed') {
+    if (
+      !pending.expected.includes(response.event.kind) &&
+      response.event.kind !== 'operationFailed'
+    ) {
       this.fail(new Error('unexpected_worker_event'));
       return;
     }

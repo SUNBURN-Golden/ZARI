@@ -1,0 +1,10 @@
+[package]
+name = "zari-solver"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+zari-core = { path = "../core" }
+serde_json.workspace = true

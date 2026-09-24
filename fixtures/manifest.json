@@ -1040,6 +1040,71 @@
         "browserWasm"
       ],
       "introducedBy": "ZARI-003"
+    },
+    {
+      "id": "strategies-proposed",
+      "caseKind": "proposeStrategies",
+      "inputPath": "fixtures/domain/strategies-proposed.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/strategies-proposed.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-004"
+    },
+    {
+      "id": "search-budget-exhausted",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/domain/search-budget-exhausted.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/search-budget-exhausted.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-004"
+    },
+    {
+      "id": "search-cancelled",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/domain/search-cancelled.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/search-cancelled.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-004"
+    },
+    {
+      "id": "search-progress-window",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/domain/search-progress-window.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/search-progress-window.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-004"
+    },
+    {
+      "id": "search-scope-complete",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/domain/search-scope-complete.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/search-scope-complete.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-004"
     }
   ]
 }

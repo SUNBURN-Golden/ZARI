@@ -653,6 +653,44 @@ export type DomainFixtureExpected =
       kind: 'validateCandidate';
       physicalAssurance: PhysicalAssurance | null;
       snapshotDigest: Digest | null;
+    }
+  | {
+      /**
+       * Sorted union of assumption codes across all decisions.
+       */
+      conditionCodes: string[];
+      decodeError: boolean;
+      kind: 'proposeStrategies';
+      /**
+       * Ordered strategies the event must return.
+       */
+      strategies: Strategy[];
+    }
+  | {
+      /**
+       * Ordered snapshot digests of the emitted ranked alternatives.
+       */
+      alternativeDigests: Digest[];
+      /**
+       * Exact consumed counters at termination; `null` for a cancelled or
+       * non-terminated run (asserted against the event either way).
+       */
+      consumed: SearchCounters | null;
+      decodeError: boolean;
+      /**
+       * Sorted diagnostic-candidate reason codes.
+       */
+      diagnosticReasons: string[];
+      kind: 'runSearch';
+      /**
+       * Sorted scope-restriction codes.
+       */
+      restrictionCodes: string[];
+      /**
+       * Required terminal reason; `null` asserts the run never terminated
+       * within the declared steps (last event is `searchProgress`).
+       */
+      termination: SearchTermination | null;
     };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -665,6 +703,26 @@ export type CommerceReadiness = 'ready' | 'conditional' | 'notApplicable';
  */
 export type PhysicalAssurance = 'confirmedWithinScope' | 'conditional' | 'rejected';
 /**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "Strategy".
+ */
+export type Strategy =
+  | 'minimumPurchase'
+  | 'frequencySeparation'
+  | 'activityGrouping'
+  | 'activeReserveSeparation'
+  | 'oneActionAccess';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "WorkCount".
+ */
+export type WorkCount = string;
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SearchTermination".
+ */
+export type SearchTermination = 'scopeComplete' | 'budgetExhausted' | 'cancelled' | 'interrupted';
+/**
  * The domain interchange operation a shared fixture exercises. The fixture's
  * `expected.kind` must carry the same name.
  *
@@ -672,7 +730,9 @@ export type PhysicalAssurance = 'confirmedWithinScope' | 'conditional' | 'reject
  * via the `definition` "DomainOperation".
  */
 export type DomainOperation =
-  'normalizeProjectInput' | 'verifyRecord' | 'normalizeCatalogFields' | 'validateCandidate';
+  | ('normalizeProjectInput' | 'verifyRecord' | 'normalizeCatalogFields' | 'validateCandidate')
+  | 'proposeStrategies'
+  | 'runSearch';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "LayoutEditCommand".
@@ -844,21 +904,6 @@ export type FactFor_StockRole =
 export type StockRole = 'active' | 'reserve';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "Strategy".
- */
-export type Strategy =
-  | 'minimumPurchase'
-  | 'frequencySeparation'
-  | 'activityGrouping'
-  | 'activeReserveSeparation'
-  | 'oneActionAccess';
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "WorkCount".
- */
-export type WorkCount = string;
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "SpaceKind".
  */
 export type SpaceKind = 'rectangularCompartment';
@@ -984,6 +1029,22 @@ export type Command =
   | {
       kind: 'validateCandidate';
       proposal: CandidateProposal;
+    }
+  | {
+      kind: 'proposeStrategies';
+    }
+  | {
+      kind: 'startSearch';
+      mode: SearchMode;
+    }
+  | {
+      allowance: number;
+      kind: 'stepSearch';
+      searchId: string;
+    }
+  | {
+      kind: 'cancelSearch';
+      searchId: string;
     }
   | {
       kind: 'disposeProject';
@@ -1305,6 +1366,15 @@ export type RawCatalogFieldValueDto =
       text: string;
     };
 /**
+ * Search drive mode recorded at `startSearch`. The single-threaded runtime
+ * only ever advances on explicit `stepSearch` requests, so `continuous` is a
+ * scheduling hint for the host — never an autonomous loop inside WASM.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SearchMode".
+ */
+export type SearchMode = 'continuous' | 'manual';
+/**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "Event".
  */
@@ -1351,6 +1421,30 @@ export type Event =
       kind: 'candidateValidated';
       report: ValidationReport | null;
       snapshot: PlanSnapshot | null;
+    }
+  | {
+      decisions: StrategyDecision[];
+      kind: 'strategiesProposed';
+    }
+  | {
+      kind: 'searchStarted';
+      mode: SearchMode;
+      searchId: string;
+    }
+  | {
+      consumed: SearchCounters;
+      kind: 'searchProgress';
+      searchId: string;
+    }
+  | {
+      kind: 'searchCompleted';
+      result: SearchResult;
+      searchId: string;
+    }
+  | {
+      consumed: SearchCounters;
+      kind: 'searchCancelled';
+      searchId: string;
     }
   | {
       kind: 'projectDisposed';
@@ -1825,6 +1919,15 @@ export interface ExpectedCheck {
   id: string;
   reasonCode: string | null;
   status: CheckStatus;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SearchCounters".
+ */
+export interface SearchCounters {
+  nodes: number;
+  validatedCandidates: number;
+  workUnits: WorkCount;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -2753,6 +2856,25 @@ export interface NormalizedBootstrapInput {
   rightGapMm: FactFor_ClearanceMm;
   unitCount: FactFor_Quantity;
   unitWidth: FactFor_MeasuredLength;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SearchResult".
+ */
+export interface SearchResult {
+  alternatives: PlanSnapshot[];
+  consumed: SearchCounters;
+  diagnosticCandidates: RejectedCandidate[];
+  scope: SearchScope;
+  termination: SearchTermination;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "RejectedCandidate".
+ */
+export interface RejectedCandidate {
+  reasonCode: string;
+  subjectIds: Id[];
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

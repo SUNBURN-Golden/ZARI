@@ -1,6 +1,107 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-003 독립 검증과 PlanSnapshot 확정 (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-004 규칙→전략→레시피→유계 배치 탐색 solver (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #13이며 base는 ZARI-003 병합 커밋
+`2bc56c73e9db78a0c65c0303f443dd7e50c1ce8a`입니다. 브랜치
+`devin/zari-004-resumable-solver`에서 작업했고 Cloud Devin·production runner·
+`runtime_enabled=true`는 사용하지 않았습니다. UI 재설계·baseline 승인·merge는
+범위 밖이며 수행하지 않았습니다.
+
+구현한 범위:
+
+- `crates/solver`: 규칙 레지스트리→`StrategyDecision`→recipe-bound 옵션→증분
+  패킹→외부 배치 anchor→offer 튜플 열거까지의 결정적 생성 체인. 지원 전략은
+  MinimumPurchase·FrequencySeparation·ActivityGrouping·ActiveReserveSeparation·
+  OneActionAccess이며 각 결정은 zone·reason·priority·assumption을 동반합니다.
+- 재개 가능한 탐색 기계: 숨은 재귀 없는 명시적 `Frame` continuation 스택,
+  롤백 마크, per-step work-unit allowance와 node budget, 대안 수 cap,
+  명시적 종료 사유(`scopeComplete`·`budgetExhausted`·`cancelled`).
+  allowance보다 비용이 큰 op은 실행하지 않고 진행 없이 보존합니다(스텝 분할
+  불변성). 취소는 임의 프레임에서 즉시 관측됩니다.
+- 패킹: 직접 배치, 알려진 가용 수량만큼만 할당되는 보유 컨테이너
+  (unknown 가용성은 `owned_availability_unknown` 계열 제한으로 보존),
+  pull-금지 품목 조기 배제, `must_stay_together`·호환 클러스터 원자 패킹,
+  unknown 기하의 조건부 부착, 빈 컨테이너 배치 미생성, 기존 개방 target
+  우선·신규 target 결정적 확장, AllowMultiple의 결정적 조합 확장과
+  그룹별 옵션 cap(직접 배치 옵션은 항상 생존).
+- 배치: 방향 열거(`Upright0`→`Upright90`), nominal extent, 바닥 고도,
+  벽 간격, footprint, hard zone, 형제 충돌·이격, 물리 solid, 개폐 범위,
+  staging·장애물 sweep, hard 1-action 접근의 생성측 사전 검사. unknown 사실은
+  hard 실패로 취급하지 않고 nominal 후보를 방출해 독립 검증기가 conditional을
+  보고하게 합니다(unknown 내경→nominal clearance anchor, unknown 바닥
+  고도→`z=0` nominal).
+- offer/비용: 사용 variant별 offer 슬롯(variant ID 정렬, 한 variant의 모든
+  placement가 동일 선택을 공유 — validator의 per-variant 집계와 정합),
+  완전히 알려진 hard budget 초과만 생성측에서 pruning(`CostAccumulator`와
+  동일 산술), 미해결 offer 사실은 unresolved로 보존, 물리 dedup은 offer
+  선택을 제외해 동일 물리 배치의 구매 변형이 하나의 유지 대안으로 경쟁,
+  결정적 rank key와 bounded 대안 유지.
+- 독립 검증 경계: solver의 nominal 검사는 생성측 pruning일 뿐이며 모든
+  수용 후보는 `evaluate_candidate`→accepted finalizer 경계를 통과해야
+  `SearchAlternative`로 발행됩니다. 성공 캐시 공유·자기 검증 없음.
+- 레이아웃 조립: 품목당 하나의 unassigned 레코드(ordinal range 병합,
+  `UnknownQuantity` 포함), 호환성 차단 품목의 정직한 표현, 전체 신규
+  컨테이너 placement의 완전한 offer 선택.
+- protocol: `proposeStrategies`/`startSearch`/`stepSearch`/`cancelSearch`
+  command와 `strategiesProposed`/`searchStarted`/`searchProgress`/
+  `searchCompleted`/`searchCancelled` event, Runtime의 search handle과
+  종료 후 요청 fencing, `SearchEngine`/`SearchSession` trait,
+  `DomainOperation::ProposeStrategies`·`RunSearch`와 `FixtureSearchStep`/
+  `RunSearchSpec` fixture 경로(요청열은 Rust/WASM이 생성하고 native·browser
+  동일). engine-less runtime은 검색 capability를 정직하게 제외합니다.
+- `BUILD_ID = "zari-domain-3"`, `SOLVER_VERSION = "zari-solver-v1"`. WASM
+  Runtime은 `SolverEngine`을 설치하고 TS client의 capability·buildId 검사를
+  갱신했습니다.
+- fixture: `strategies-proposed`·`search-scope-complete`·`search-budget-exhausted`·
+  `search-cancelled`·`search-progress-window` 5개 추가(domain 85개),
+  manifest 등록, 기존 80개 fixture의 `engineContext.buildId` 재고정과
+  `solverVersion` 반영으로 바뀐 6개 candidate fixture의 `snapshotDigest`
+  재계산·재고정.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `cargo fmt --all -- --check`: 통과.
+- `cargo clippy --workspace --all-targets --locked`: solver·wasm 경고 0,
+  zari-core의 선존 경고 1개(validator collapsible-if, ZARI-003 read-only 코드)만 잔존.
+- `cargo test --workspace --locked`: 전체 통과 — core 55 + solver 11
+  (전략 결정성·완전성, 취소, node/work-unit budget 소진, 부분 진행,
+  컨테이너 패킹, 대안 유일성, 모든 유지 대안의 독립 검증 통과,
+  구매 불가 직접 배치 대안, 반복 실행 결정성, 스텝 분할 불변성).
+- `npm run contracts:generate` 후 `npm run contracts:check`: 통과(85개 fixture가
+  Rust fixture schema에 적합, drift 없음).
+- `npm run wasm:build`(wasm-bindgen 0.2.128 locked, wasm32-unknown-unknown),
+  `npm run typecheck`, `npm run lint`, `npm test`(client 단위 6개): 통과.
+- `npm run test:parity`: 같은 85개 fixture의 native Rust와 실제 Chromium
+  Worker/WASM event가 전부 일치(4개 runSearch·1개 proposeStrategies 포함).
+  `npm run test:browser`(probe 3개 흐름): 통과.
+
+검증 중 발견해 수정한 결함:
+
+- `EvalAnchor`가 object commit 후 다음 anchor 재열거 시 자기 commit을 되돌리지
+  않아 `duplicate_id` 구조 거절이 발생 — `Uncommit` op으로 수정.
+- `FinishPack`의 unassigned 로그가 롤백 마크 이전에 기록돼 옵션 0의 기록이
+  후속 옵션으로 누수 — 마크 선취 후 기록으로 수정.
+- 보유 컨테이너가 unknown 가용성으로 할당될 수 있던 문제 — 알려진 가용
+  수량만큼만 할당하고 나머지는 제한으로 보존.
+- unknown 내경/바닥 고도에서 후보가 생성측에서 소멸해 validator가
+  unknown을 보고할 기회가 없던 문제 — nominal anchor/고도로 수정.
+- 품목당 다수 unassigned 레코드가 `duplicate_unassigned`를 유발 — reason별
+  병합이 아닌 품목당 단일 레코드(ordinal 병합)로 수정.
+- allowance가 프로토콜 하한 미만이면 무거운 quantum에서 진행 없이 기아하는
+  것이 정상 의미론임을 확인하고 테스트는 운용 allowance(≥1024)로 분할
+  불변성을 검증.
+
+미구현(이 task의 범위 밖): 전략 휴리스틱 최적화·ranking 품질 튜닝,
+구획 내부 3D 적재, 실제 상품 데이터, 도면·실행 가이드 UI, IndexedDB 저장,
+성능 측정·튜닝. solver의 nominal 통과는 물리 적합의 최종 주장이 아니며
+발행 판정은 항상 독립 validator/finalizer가 내립니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
+review(GROK 이후 GLM, 동시 1명)와 issue #13의 AUDIT_FLOOR이며, merge는
+User만 결정합니다. ZARI-001 화면 baseline은 draft 그대로입니다.
+
+## 이전 구현: ZARI-003 독립 검증과 PlanSnapshot 확정 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #11이며 base는 ZARI-002 병합 커밋
 `c08e815fb6e309c54481f3dc59e2e8fab48680c1`입니다. 브랜치

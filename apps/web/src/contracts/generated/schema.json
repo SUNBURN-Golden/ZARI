@@ -1044,6 +1044,80 @@
         },
         {
           "additionalProperties": false,
+          "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
+          "properties": {
+            "kind": {
+              "const": "proposeStrategies",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Start one resumable bounded search over the activated immutable\ncontext. Any existing search handle is disposed first; the returned id\nis `search-1`, `search-2`, … monotonically per runtime.",
+          "properties": {
+            "kind": {
+              "const": "startSearch",
+              "type": "string"
+            },
+            "mode": {
+              "$ref": "#/definitions/SearchMode"
+            }
+          },
+          "required": [
+            "kind",
+            "mode"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Advance the live search by at most `allowance` deterministic work\nunits (1..=1024). `searchId` must match the issued handle exactly.",
+          "properties": {
+            "allowance": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "stepSearch",
+              "type": "string"
+            },
+            "searchId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "searchId",
+            "allowance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Idempotent cooperative cancellation of exactly that search handle.",
+          "properties": {
+            "kind": {
+              "const": "cancelSearch",
+              "type": "string"
+            },
+            "searchId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "searchId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "kind": {
               "const": "disposeProject",
@@ -1513,20 +1587,132 @@
             "snapshotDigest"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "conditionCodes": {
+              "description": "Sorted union of assumption codes across all decisions.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "decodeError": {
+              "type": "boolean"
+            },
+            "kind": {
+              "const": "proposeStrategies",
+              "type": "string"
+            },
+            "strategies": {
+              "description": "Ordered strategies the event must return.",
+              "items": {
+                "$ref": "#/definitions/Strategy"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "strategies",
+            "conditionCodes"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "alternativeDigests": {
+              "description": "Ordered snapshot digests of the emitted ranked alternatives.",
+              "items": {
+                "$ref": "#/definitions/Digest"
+              },
+              "type": "array"
+            },
+            "consumed": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SearchCounters"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exact consumed counters at termination; `null` for a cancelled or\nnon-terminated run (asserted against the event either way)."
+            },
+            "decodeError": {
+              "type": "boolean"
+            },
+            "diagnosticReasons": {
+              "description": "Sorted diagnostic-candidate reason codes.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "runSearch",
+              "type": "string"
+            },
+            "restrictionCodes": {
+              "description": "Sorted scope-restriction codes.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "termination": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SearchTermination"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Required terminal reason; `null` asserts the run never terminated\nwithin the declared steps (last event is `searchProgress`)."
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "termination",
+            "alternativeDigests",
+            "diagnosticReasons",
+            "restrictionCodes",
+            "consumed"
+          ],
+          "type": "object"
         }
       ],
       "title": "DomainFixtureExpected"
     },
     "DomainOperation": {
       "description": "The domain interchange operation a shared fixture exercises. The fixture's\n`expected.kind` must carry the same name.",
-      "enum": [
-        "normalizeProjectInput",
-        "verifyRecord",
-        "normalizeCatalogFields",
-        "validateCandidate"
+      "oneOf": [
+        {
+          "enum": [
+            "normalizeProjectInput",
+            "verifyRecord",
+            "normalizeCatalogFields",
+            "validateCandidate"
+          ],
+          "type": "string"
+        },
+        {
+          "const": "proposeStrategies",
+          "description": "Strategy catalogue over the fixture's activated project context.",
+          "type": "string"
+        },
+        {
+          "const": "runSearch",
+          "description": "Resumable bounded search driven by explicit fixture-declared steps.",
+          "type": "string"
+        }
       ],
-      "title": "DomainOperation",
-      "type": "string"
+      "title": "DomainOperation"
     },
     "EngineContext": {
       "additionalProperties": false,
@@ -1779,6 +1965,115 @@
             "report",
             "snapshot",
             "diagnostics"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `proposeStrategies`: the deterministic decision IR for every\nsupported strategy, in supported-strategy order.",
+          "properties": {
+            "decisions": {
+              "items": {
+                "$ref": "#/definitions/StrategyDecision"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "strategiesProposed",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "decisions"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "`startSearch` acknowledged; the handle must be echoed verbatim by\n`stepSearch`/`cancelSearch`.",
+          "properties": {
+            "kind": {
+              "const": "searchStarted",
+              "type": "string"
+            },
+            "mode": {
+              "$ref": "#/definitions/SearchMode"
+            },
+            "searchId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "searchId",
+            "mode"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One bounded step completed without reaching a terminal event.",
+          "properties": {
+            "consumed": {
+              "$ref": "#/definitions/SearchCounters"
+            },
+            "kind": {
+              "const": "searchProgress",
+              "type": "string"
+            },
+            "searchId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "searchId",
+            "consumed"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "The search terminated; `result` carries ranked alternatives whose\nsnapshots were all produced by the independent validator/finalizer.",
+          "properties": {
+            "kind": {
+              "const": "searchCompleted",
+              "type": "string"
+            },
+            "result": {
+              "$ref": "#/definitions/SearchResult"
+            },
+            "searchId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "searchId",
+            "result"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Acknowledgement of `cancelSearch` (idempotent within the activation).",
+          "properties": {
+            "consumed": {
+              "$ref": "#/definitions/SearchCounters"
+            },
+            "kind": {
+              "const": "searchCancelled",
+              "type": "string"
+            },
+            "searchId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "searchId",
+            "consumed"
           ],
           "type": "object"
         },
@@ -6874,6 +7169,26 @@
       "title": "Reason",
       "type": "object"
     },
+    "RejectedCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "reasonCode": {
+          "type": "string"
+        },
+        "subjectIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "reasonCode",
+        "subjectIds"
+      ],
+      "title": "RejectedCandidate",
+      "type": "object"
+    },
     "Remediation": {
       "additionalProperties": false,
       "properties": {
@@ -7070,6 +7385,40 @@
       "title": "SearchBudget",
       "type": "object"
     },
+    "SearchCounters": {
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "validatedCandidates": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "workUnits": {
+          "$ref": "#/definitions/WorkCount"
+        }
+      },
+      "required": [
+        "workUnits",
+        "nodes",
+        "validatedCandidates"
+      ],
+      "title": "SearchCounters",
+      "type": "object"
+    },
+    "SearchMode": {
+      "description": "Search drive mode recorded at `startSearch`. The single-threaded runtime\nonly ever advances on explicit `stepSearch` requests, so `continuous` is a\nscheduling hint for the host — never an autonomous loop inside WASM.",
+      "enum": [
+        "continuous",
+        "manual"
+      ],
+      "title": "SearchMode",
+      "type": "string"
+    },
     "SearchProfile": {
       "additionalProperties": false,
       "properties": {
@@ -7087,6 +7436,41 @@
         "version"
       ],
       "title": "SearchProfile",
+      "type": "object"
+    },
+    "SearchResult": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "items": {
+            "$ref": "#/definitions/PlanSnapshot"
+          },
+          "type": "array"
+        },
+        "consumed": {
+          "$ref": "#/definitions/SearchCounters"
+        },
+        "diagnosticCandidates": {
+          "items": {
+            "$ref": "#/definitions/RejectedCandidate"
+          },
+          "type": "array"
+        },
+        "scope": {
+          "$ref": "#/definitions/SearchScope"
+        },
+        "termination": {
+          "$ref": "#/definitions/SearchTermination"
+        }
+      },
+      "required": [
+        "termination",
+        "scope",
+        "consumed",
+        "alternatives",
+        "diagnosticCandidates"
+      ],
+      "title": "SearchResult",
       "type": "object"
     },
     "SearchScope": {
@@ -7143,6 +7527,16 @@
       ],
       "title": "SearchSelection",
       "type": "object"
+    },
+    "SearchTermination": {
+      "enum": [
+        "scopeComplete",
+        "budgetExhausted",
+        "cancelled",
+        "interrupted"
+      ],
+      "title": "SearchTermination",
+      "type": "string"
     },
     "ShippingRule": {
       "description": "v1 supports a known fixed fee per seller order or free; anything else is an\nexplicit unknown/complex policy fact, never a zero-price default.",
