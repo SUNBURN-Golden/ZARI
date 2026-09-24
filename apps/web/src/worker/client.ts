@@ -45,7 +45,12 @@ const multiExpected: Partial<Record<Command['kind'], readonly string[]>> = {
 };
 const sameMeta = (a: Meta, b: Meta) =>
   Object.keys(a).every((key) => a[key as keyof Meta] === b[key as keyof Meta]);
-/** Identity and transport only. Never interprets measurements or computes a plan. */
+export const WORKER_BUILD_ID = 'zari-domain-3';
+/**
+ * Identity and transport only. Never interprets measurements or computes a plan.
+ * One instance owns one Worker session; on crash/restart the whole instance is
+ * retired and a fresh one is started by the caller.
+ */
 export class ProbeClient {
   private port: WorkerPort | null = null;
   private pending = new Map<string, Pending>();
@@ -56,6 +61,11 @@ export class ProbeClient {
   private revision = '0';
   private contextId: string | null = null;
   private disposed = false;
+  private failureError: Error | null = null;
+  /** The error that retired this Worker, if any. */
+  get failure(): Error | null {
+    return this.failureError;
+  }
   constructor(
     private readonly factory: () => WorkerPort,
     private readonly onFailure: (error: Error) => void = () => {},
@@ -82,7 +92,7 @@ export class ProbeClient {
     };
     const reply = await this.request({
       kind: 'initialize',
-      buildId: 'zari-domain-3',
+      buildId: WORKER_BUILD_ID,
       expectedProtocolVersion: 1,
       expectedSchemaVersion: 1,
     });
@@ -103,7 +113,7 @@ export class ProbeClient {
     ];
     if (
       reply.kind !== 'ready' ||
-      reply.buildId !== 'zari-domain-3' ||
+      reply.buildId !== WORKER_BUILD_ID ||
       reply.protocolVersion !== 1 ||
       reply.schemaVersion !== 1 ||
       capabilities.some((cap) => !reply.capabilities.includes(cap)) ||
@@ -141,9 +151,19 @@ export class ProbeClient {
       throw new Error('invalid_activation');
     this.contextId = reply.contextId;
   }
-  request(command: Command): Promise<Reply> {
+  request(command: Command, timeoutMs = this.timeoutMs): Promise<Reply> {
+    return this.send(command, command.kind === 'initialize', timeoutMs);
+  }
+  /**
+   * A request under the system identity — `verifyRecord` for integrity checks
+   * that must not be tied to a project activation or epoch. System requests
+   * survive epoch bumps but are still fenced by the Worker session itself.
+   */
+  systemRequest(command: Command, timeoutMs = this.timeoutMs): Promise<Reply> {
+    return this.send(command, true, timeoutMs);
+  }
+  private send(command: Command, system: boolean, timeoutMs: number): Promise<Reply> {
     if (!this.port || this.disposed) return Promise.reject(new Error('worker_unavailable'));
-    const system = command.kind === 'initialize';
     const meta: Meta = {
       protocolVersion: 1,
       schemaVersion: 1,
@@ -162,7 +182,7 @@ export class ProbeClient {
     if (new TextEncoder().encode(text).length > MAX_BYTES)
       return Promise.reject(new Error('message_too_large'));
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.fail(new Error('worker_timeout')), this.timeoutMs);
+      const timer = setTimeout(() => this.fail(new Error('worker_timeout')), timeoutMs);
       this.pending.set(meta.requestId, {
         meta,
         expected: multiExpected[command.kind] ?? [expected[command.kind as keyof typeof expected]],
@@ -226,6 +246,7 @@ export class ProbeClient {
   }
   private fail(error: Error): void {
     if (!this.disposed) {
+      this.failureError = error;
       this.dispose(error);
       this.onFailure(error);
     }
