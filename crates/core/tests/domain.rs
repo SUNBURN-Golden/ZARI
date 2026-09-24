@@ -49,7 +49,19 @@ fn shared_domain_fixtures_are_complete_and_pass() {
     assert!(paths.len() >= 25, "domain fixture coverage");
     for path in paths {
         let fixture: DomainFixture = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-        execute_domain_fixture(&fixture).unwrap_or_else(|e| panic!("{}: {e}", fixture.case_id));
+        // Search fixtures require an installed engine; all other fixtures run
+        // on the engine-less runtime to keep the capability subset honest.
+        if matches!(
+            fixture.operation,
+            DomainOperation::ProposeStrategies | DomainOperation::RunSearch
+        ) {
+            let mut runtime = Runtime::new();
+            runtime.set_search_engine(Box::new(zari_solver::SolverEngine));
+            execute_domain_fixture_with(&fixture, &mut runtime)
+                .unwrap_or_else(|e| panic!("{}: {e}", fixture.case_id));
+        } else {
+            execute_domain_fixture(&fixture).unwrap_or_else(|e| panic!("{}: {e}", fixture.case_id));
+        }
     }
 }
 

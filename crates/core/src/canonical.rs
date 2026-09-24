@@ -22,7 +22,8 @@ use unicode_normalization::UnicodeNormalization;
 pub const SCHEMA_VERSION: u32 = 1;
 pub const CANONICAL_VERSION: u32 = 1;
 pub const RULE_VERSION: &str = "zari-domain-v1";
-pub const SOLVER_VERSION: &str = "none";
+/// `zari-solver-v1`: resumable bounded rule→strategy→recipe→placement search.
+pub const SOLVER_VERSION: &str = "zari-solver-v1";
 
 fn canonicalize_strings(value: Value) -> Value {
     match value {

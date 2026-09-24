@@ -1,17 +1,26 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-#[derive(Default)]
 pub struct Runtime(zari_core::Runtime);
 
 #[wasm_bindgen]
 impl Runtime {
+    /// The browser Worker runtime ships the reference solver; search commands
+    /// run through the same `handle_json` boundary as native fixtures.
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        Self::default()
+        let mut runtime = zari_core::Runtime::new();
+        runtime.set_search_engine(Box::new(zari_solver::SolverEngine));
+        Self(runtime)
     }
     pub fn handle_json(&mut self, input: &str) -> String {
         self.0.handle_json(input)
+    }
+}
+
+impl Default for Runtime {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

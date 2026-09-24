@@ -9,6 +9,7 @@ use crate::{
     probe::*,
     raw::*,
     scalars::*,
+    strategy::*,
     validate,
 };
 use schemars::JsonSchema;
@@ -22,7 +23,7 @@ use std::{
     fmt,
 };
 
-pub const BUILD_ID: &str = "zari-domain-2";
+pub const BUILD_ID: &str = "zari-domain-3";
 const CAPABILITIES: [&str; 9] = [
     "initialize",
     "activateProject",
@@ -34,7 +35,14 @@ const CAPABILITIES: [&str; 9] = [
     "validateCandidate",
     "disposeProject",
 ];
-const COMMAND_KINDS: [&str; 8] = [
+/// Extra capabilities advertised only when a search engine is installed.
+const SEARCH_CAPABILITIES: [&str; 4] = [
+    "proposeStrategies",
+    "startSearch",
+    "stepSearch",
+    "cancelSearch",
+];
+const COMMAND_KINDS: [&str; 12] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -43,8 +51,16 @@ const COMMAND_KINDS: [&str; 8] = [
     "normalizeCatalogFields",
     "validateCandidate",
     "disposeProject",
+    "proposeStrategies",
+    "startSearch",
+    "stepSearch",
+    "cancelSearch",
 ];
 const MAX_MESSAGE_BYTES: usize = 5 * 1024 * 1024;
+/// Per-step work-unit ceiling from WASM_PROTOCOL §3 (default 256, max 1024).
+const MAX_STEP_ALLOWANCE: u32 = 1024;
+/// Fixture-expanded step requests are bounded like every other collection.
+const MAX_FIXTURE_SEARCH_STEPS: usize = 4096;
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RequestMeta {
@@ -105,6 +121,43 @@ pub enum NormalizedInput {
     Bootstrap { input: NormalizedBootstrapInput },
     Project { input: ProjectInput },
 }
+/// Search drive mode recorded at `startSearch`. The single-threaded runtime
+/// only ever advances on explicit `stepSearch` requests, so `continuous` is a
+/// scheduling hint for the host — never an autonomous loop inside WASM.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum SearchMode {
+    Continuous,
+    Manual,
+}
+/// Outcome of one bounded search step. `Completed` carries the full result
+/// only after every emitted alternative crossed the independent validator.
+pub enum SearchStep {
+    Progress { consumed: SearchCounters },
+    Completed { result: Box<SearchResult> },
+    Cancelled { consumed: SearchCounters },
+}
+/// One resumable bounded search over the activated immutable context. The
+/// host drives it through explicit steps; every unit of work is a
+/// deterministic quantum defined by SOLVER.md §3, so results are invariant
+/// under step partitioning.
+pub trait SearchSession {
+    /// Consume at most `allowance` work units and report the step outcome.
+    fn step(&mut self, allowance: u32) -> SearchStep;
+    /// Cooperative cancellation: the next step reports `Cancelled` and the
+    /// session never publishes another result. Returns the counters at the
+    /// point of cancellation.
+    fn cancel(&mut self) -> SearchCounters;
+}
+/// The search implementation a host installs on the runtime. Core drives it
+/// through this boundary and never asserts candidate validity itself; every
+/// candidate published inside `SearchResult` was independently revalidated.
+pub trait SearchEngine {
+    /// Deterministic strategy catalogue: one decision per supported strategy.
+    fn propose_strategies(&self, input: &ProjectInput) -> Vec<StrategyDecision>;
+    /// Allocate a fresh resumable search over the immutable context.
+    fn start(&self, input: &ProjectInput, catalog: &CatalogContent) -> Box<dyn SearchSession>;
+}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 #[allow(clippy::large_enum_variant)]
@@ -153,6 +206,25 @@ pub enum Command {
     /// assert solver pass state because none exists on the wire.
     ValidateCandidate {
         proposal: CandidateProposal,
+    },
+    /// Evaluate every supported strategy's decision IR for the activated
+    /// project context without starting a search (SOLVER.md §4).
+    ProposeStrategies {},
+    /// Start one resumable bounded search over the activated immutable
+    /// context. Any existing search handle is disposed first; the returned id
+    /// is `search-1`, `search-2`, … monotonically per runtime.
+    StartSearch {
+        mode: SearchMode,
+    },
+    /// Advance the live search by at most `allowance` deterministic work
+    /// units (1..=1024). `searchId` must match the issued handle exactly.
+    StepSearch {
+        search_id: String,
+        allowance: u32,
+    },
+    /// Idempotent cooperative cancellation of exactly that search handle.
+    CancelSearch {
+        search_id: String,
     },
     DisposeProject {},
 }
@@ -226,6 +298,33 @@ pub enum Event {
         snapshot: Option<PlanSnapshot>,
         diagnostics: Vec<Diagnostic>,
     },
+    /// Result of `proposeStrategies`: the deterministic decision IR for every
+    /// supported strategy, in supported-strategy order.
+    StrategiesProposed {
+        decisions: Vec<StrategyDecision>,
+    },
+    /// `startSearch` acknowledged; the handle must be echoed verbatim by
+    /// `stepSearch`/`cancelSearch`.
+    SearchStarted {
+        search_id: String,
+        mode: SearchMode,
+    },
+    /// One bounded step completed without reaching a terminal event.
+    SearchProgress {
+        search_id: String,
+        consumed: SearchCounters,
+    },
+    /// The search terminated; `result` carries ranked alternatives whose
+    /// snapshots were all produced by the independent validator/finalizer.
+    SearchCompleted {
+        search_id: String,
+        result: Box<SearchResult>,
+    },
+    /// Acknowledgement of `cancelSearch` (idempotent within the activation).
+    SearchCancelled {
+        search_id: String,
+        consumed: SearchCounters,
+    },
     ProjectDisposed,
     OperationFailed {
         code: String,
@@ -288,6 +387,35 @@ pub enum DomainOperation {
     VerifyRecord,
     NormalizeCatalogFields,
     ValidateCandidate,
+    /// Strategy catalogue over the fixture's activated project context.
+    ProposeStrategies,
+    /// Resumable bounded search driven by explicit fixture-declared steps.
+    RunSearch,
+}
+/// Step recipe for a `runSearch` fixture: `count` requests of `allowance`
+/// work units each. Declared steps are expanded in order; `cancelAfterSteps`
+/// appends a `cancelSearch` after that many step requests.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FixtureSearchStep {
+    pub allowance: u32,
+    pub count: u32,
+}
+/// `runSearch` fixture input payload: `{"input": <ProjectInput>,
+/// "catalog": <CatalogSnapshot>, "mode"?, "steps"?, "cancelAfterSteps"?}`.
+/// `input`/`catalog` stay untyped so malformed payloads still decode into
+/// the fixture envelope and reach the activation boundary unchanged.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RunSearchSpec {
+    pub input: Value,
+    pub catalog: Value,
+    #[serde(default)]
+    pub mode: Option<SearchMode>,
+    #[serde(default)]
+    pub steps: Vec<FixtureSearchStep>,
+    #[serde(default)]
+    pub cancel_after_steps: Option<u32>,
 }
 /// One expected diagnostic, compared as an unordered `(fieldPath, code)` set.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema)]
@@ -367,6 +495,32 @@ pub enum DomainFixtureExpected {
         #[serde(deserialize_with = "crate::required_option")]
         #[schemars(with = "crate::RequiredNullable<Digest>")]
         snapshot_digest: Option<Digest>,
+    },
+    ProposeStrategies {
+        decode_error: bool,
+        /// Ordered strategies the event must return.
+        strategies: Vec<Strategy>,
+        /// Sorted union of assumption codes across all decisions.
+        condition_codes: Vec<String>,
+    },
+    RunSearch {
+        decode_error: bool,
+        /// Required terminal reason; `null` asserts the run never terminated
+        /// within the declared steps (last event is `searchProgress`).
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<SearchTermination>")]
+        termination: Option<SearchTermination>,
+        /// Ordered snapshot digests of the emitted ranked alternatives.
+        alternative_digests: Vec<Digest>,
+        /// Sorted diagnostic-candidate reason codes.
+        diagnostic_reasons: Vec<String>,
+        /// Sorted scope-restriction codes.
+        restriction_codes: Vec<String>,
+        /// Exact consumed counters at termination; `null` for a cancelled or
+        /// non-terminated run (asserted against the event either way).
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<SearchCounters>")]
+        consumed: Option<SearchCounters>,
     },
 }
 /// One shared domain interchange case, executed through the identical
@@ -481,7 +635,113 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
                 ),
             ]
         }
+        DomainOperation::ProposeStrategies => {
+            // input: {"input": <ProjectInput>, "catalog": <CatalogSnapshot>}
+            let (input, catalog) = (
+                fixture.input["input"].clone(),
+                fixture.input["catalog"].clone(),
+            );
+            let context_id = project_context_id(&input, &catalog);
+            vec![
+                initialize,
+                request(
+                    meta("fixture-activate", false, None),
+                    json!({
+                        "kind": "activateProject",
+                        "context": { "kind": "project", "input": input, "catalog": catalog }
+                    }),
+                ),
+                request(
+                    meta("fixture-operation", false, context_id.as_deref()),
+                    json!({ "kind": "proposeStrategies" }),
+                ),
+            ]
+        }
+        DomainOperation::RunSearch => {
+            // input: {"input": <ProjectInput>, "catalog": <CatalogSnapshot>,
+            //         "mode"?, "steps"?, "cancelAfterSteps"?}. Step requests
+            // are expanded here so the exact wire sequence is identical for
+            // the native runner and the browser harness.
+            let spec: RunSearchSpec =
+                serde_json::from_value(fixture.input.clone()).unwrap_or_else(|_| RunSearchSpec {
+                    input: fixture.input["input"].clone(),
+                    catalog: fixture.input["catalog"].clone(),
+                    mode: None,
+                    steps: vec![],
+                    cancel_after_steps: None,
+                });
+            let context_id = project_context_id(&spec.input, &spec.catalog);
+            let mode = spec
+                .mode
+                .map(|m| serde_json::to_value(m).unwrap_or(Value::Null))
+                .unwrap_or_else(|| json!("manual"));
+            let mut requests = vec![
+                initialize,
+                request(
+                    meta("fixture-activate", false, None),
+                    json!({
+                        "kind": "activateProject",
+                        "context": {
+                            "kind": "project",
+                            "input": spec.input,
+                            "catalog": spec.catalog
+                        }
+                    }),
+                ),
+                request(
+                    meta("fixture-operation", false, context_id.as_deref()),
+                    json!({ "kind": "startSearch", "mode": mode }),
+                ),
+            ];
+            let mut emitted_steps: u32 = 0;
+            'steps: for step in &spec.steps {
+                for _ in 0..step.count {
+                    if requests.len() - 3 >= MAX_FIXTURE_SEARCH_STEPS {
+                        break 'steps;
+                    }
+                    emitted_steps += 1;
+                    requests.push(request(
+                        meta(
+                            &format!("fixture-step-{emitted_steps}"),
+                            false,
+                            context_id.as_deref(),
+                        ),
+                        json!({
+                            "kind": "stepSearch",
+                            "searchId": "search-1",
+                            "allowance": step.allowance
+                        }),
+                    ));
+                    if spec.cancel_after_steps == Some(emitted_steps) {
+                        requests.push(request(
+                            meta("fixture-cancel", false, context_id.as_deref()),
+                            json!({ "kind": "cancelSearch", "searchId": "search-1" }),
+                        ));
+                        break 'steps;
+                    }
+                }
+            }
+            if spec.steps.is_empty() && spec.cancel_after_steps == Some(0) {
+                requests.push(request(
+                    meta("fixture-cancel", false, context_id.as_deref()),
+                    json!({ "kind": "cancelSearch", "searchId": "search-1" }),
+                ));
+            }
+            requests
+        }
     }
+}
+/// Derive the activation `contextId` the runtime will issue for a project
+/// context, mirroring `Runtime::handle_command`. `None` when the payload
+/// cannot decode — activation will fail before the operation request matters.
+fn project_context_id(input: &Value, catalog: &Value) -> Option<String> {
+    let input: ProjectInput = serde_json::from_value(input.clone()).ok()?;
+    let catalog: CatalogSnapshot = serde_json::from_value(catalog.clone()).ok()?;
+    Some(
+        canonical::context_id(&input, &CatalogContent::from(&catalog))
+            .as_str()
+            .to_owned(),
+    )
 }
 fn sorted_diagnostics(event: &Value) -> Vec<ExpectedDiagnostic> {
     let mut diagnostics: Vec<ExpectedDiagnostic> = event
@@ -500,10 +760,20 @@ fn sorted_diagnostics(event: &Value) -> Vec<ExpectedDiagnostic> {
     diagnostics.sort();
     diagnostics
 }
-/// Execute one shared domain fixture through `Runtime::handle_json` and check
-/// the oracle. Returns the operation event JSON; the same event is produced
-/// by the browser Worker path for byte-level parity.
+/// Execute one shared domain fixture through a fresh engine-less
+/// `Runtime::handle_json` and check the oracle.
 pub fn execute_domain_fixture(fixture: &DomainFixture) -> Result<Value, String> {
+    let mut runtime = Runtime::new();
+    execute_domain_fixture_with(fixture, &mut runtime)
+}
+/// Execute one shared domain fixture through `Runtime::handle_json` on the
+/// supplied runtime (hosts install a `SearchEngine` for search fixtures) and
+/// check the oracle. Returns the operation event JSON; the same event is
+/// produced by the browser Worker path for byte-level parity.
+pub fn execute_domain_fixture_with(
+    fixture: &DomainFixture,
+    runtime: &mut Runtime,
+) -> Result<Value, String> {
     if fixture.fixture_schema_version != 1
         || fixture.schema_version != 1
         || fixture.engine_context.build_id != BUILD_ID
@@ -524,13 +794,24 @@ pub fn execute_domain_fixture(fixture: &DomainFixture) -> Result<Value, String> 
             fixture.case_id
         ));
     }
-    let mut runtime = Runtime::new();
     let requests = domain_fixture_requests(fixture);
     let mut event = Value::Null;
     for request in &requests {
         let response: Value = serde_json::from_str(&runtime.handle_json(&request.to_string()))
             .map_err(|e| format!("{}: response not JSON: {e}", fixture.case_id))?;
         event = response.get("event").cloned().unwrap_or(Value::Null);
+        // For search fixtures the oracle asserts on the terminal event; the
+        // first completed/cancelled/failed event wins and later noise from
+        // redundant declared steps is ignored. The browser harness captures
+        // the identical event.
+        if fixture.operation == DomainOperation::RunSearch
+            && matches!(
+                event["kind"].as_str(),
+                Some("searchCompleted") | Some("searchCancelled") | Some("operationFailed")
+            )
+        {
+            break;
+        }
     }
     let decode_error = event["kind"] == "operationFailed" && event["code"] == "invalid_input";
     let expected = &fixture.expected;
@@ -538,7 +819,9 @@ pub fn execute_domain_fixture(fixture: &DomainFixture) -> Result<Value, String> 
         DomainFixtureExpected::NormalizeProjectInput { decode_error, .. }
         | DomainFixtureExpected::VerifyRecord { decode_error, .. }
         | DomainFixtureExpected::NormalizeCatalogFields { decode_error, .. }
-        | DomainFixtureExpected::ValidateCandidate { decode_error, .. } => *decode_error,
+        | DomainFixtureExpected::ValidateCandidate { decode_error, .. }
+        | DomainFixtureExpected::ProposeStrategies { decode_error, .. }
+        | DomainFixtureExpected::RunSearch { decode_error, .. } => *decode_error,
     };
     if declared_decode != decode_error {
         return Err(format!(
@@ -748,10 +1031,172 @@ pub fn execute_domain_fixture(fixture: &DomainFixture) -> Result<Value, String> 
                 None => {}
             }
         }
+        DomainFixtureExpected::ProposeStrategies {
+            strategies,
+            condition_codes,
+            ..
+        } => {
+            if event["kind"] != "strategiesProposed" {
+                return Err(format!(
+                    "{}: expected strategiesProposed event, got {event}",
+                    fixture.case_id
+                ));
+            }
+            let decisions = event["decisions"].as_array().cloned().unwrap_or_default();
+            let actual_strategies: Vec<String> = decisions
+                .iter()
+                .filter_map(|d| d["strategy"].as_str().map(str::to_owned))
+                .collect();
+            let expected_strategies: Vec<String> = strategies
+                .iter()
+                .filter_map(|s| {
+                    serde_json::to_value(s)
+                        .ok()
+                        .and_then(|v| v.as_str().map(str::to_owned))
+                })
+                .collect();
+            if actual_strategies != expected_strategies {
+                return Err(format!(
+                    "{}: strategy order mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            let mut actual_codes: Vec<String> = decisions
+                .iter()
+                .flat_map(|d| {
+                    d["assumptions"]
+                        .as_array()
+                        .cloned()
+                        .unwrap_or_default()
+                        .iter()
+                        .filter_map(|a| a["code"].as_str().map(str::to_owned))
+                        .collect::<Vec<_>>()
+                })
+                .collect();
+            actual_codes.sort();
+            actual_codes.dedup();
+            let mut expected_codes = condition_codes.clone();
+            expected_codes.sort();
+            expected_codes.dedup();
+            if actual_codes != expected_codes {
+                return Err(format!(
+                    "{}: condition codes mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+        }
+        DomainFixtureExpected::RunSearch {
+            termination,
+            alternative_digests,
+            diagnostic_reasons,
+            restriction_codes,
+            consumed,
+            ..
+        } => {
+            let kind = event["kind"].as_str().unwrap_or_default();
+            let (result, counters) = match kind {
+                "searchCompleted" => (event["result"].clone(), event["result"]["consumed"].clone()),
+                "searchCancelled" => (Value::Null, event["consumed"].clone()),
+                "searchProgress" | "searchStarted" => (Value::Null, Value::Null),
+                _ => {
+                    return Err(format!(
+                        "{}: unexpected terminal event kind {kind}: {event}",
+                        fixture.case_id
+                    ));
+                }
+            };
+            let actual_termination = result["termination"].clone();
+            let expected_termination = termination
+                .as_ref()
+                .map(|t| serde_json::to_value(t).unwrap_or(Value::Null));
+            if kind == "searchCancelled" {
+                if expected_termination != Some(json!("cancelled")) {
+                    return Err(format!(
+                        "{}: cancelled run must expect termination cancelled: {event}",
+                        fixture.case_id
+                    ));
+                }
+            } else if actual_termination != json!(expected_termination) {
+                return Err(format!(
+                    "{}: termination mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            let expected_digests: Vec<String> = alternative_digests
+                .iter()
+                .map(|d| d.as_str().to_owned())
+                .collect();
+            let actual_digests: Vec<String> = result["alternatives"]
+                .as_array()
+                .map(|alts| {
+                    alts.iter()
+                        .filter_map(|a| a["planSnapshotId"].as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default();
+            if actual_digests != expected_digests {
+                return Err(format!(
+                    "{}: alternative digest order mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            let mut actual_reasons: Vec<String> = result["diagnosticCandidates"]
+                .as_array()
+                .map(|ds| {
+                    ds.iter()
+                        .filter_map(|d| d["reasonCode"].as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default();
+            actual_reasons.sort();
+            actual_reasons.dedup();
+            let mut expected_reasons = diagnostic_reasons.clone();
+            expected_reasons.sort();
+            expected_reasons.dedup();
+            if actual_reasons != expected_reasons {
+                return Err(format!(
+                    "{}: diagnostic reasons mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            let mut actual_restrictions: Vec<String> = result["scope"]["restrictions"]
+                .as_array()
+                .map(|rs| {
+                    rs.iter()
+                        .filter_map(|r| r["code"].as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default();
+            actual_restrictions.sort();
+            actual_restrictions.dedup();
+            let mut expected_restrictions = restriction_codes.clone();
+            expected_restrictions.sort();
+            expected_restrictions.dedup();
+            if actual_restrictions != expected_restrictions {
+                return Err(format!(
+                    "{}: scope restrictions mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            if consumed.is_some() || kind == "searchCompleted" {
+                if json!(consumed) != counters {
+                    return Err(format!(
+                        "{}: consumed counters mismatch: {event}",
+                        fixture.case_id
+                    ));
+                }
+            }
+        }
     }
     Ok(event)
 }
 
+/// One live resumable search owned by the runtime; the engine owns the
+/// cursor, core owns the handle lifecycle.
+struct ActiveSearch {
+    id: String,
+    session: Box<dyn SearchSession>,
+}
 #[derive(Default)]
 pub struct Runtime {
     session: Option<String>,
@@ -767,6 +1212,16 @@ pub struct Runtime {
     catalogs: VecDeque<(Digest, CatalogContent)>,
     last_disposed: Option<RequestMeta>,
     recent: VecDeque<(String, String, String)>,
+    /// Installed search engine; absent on hosts that do not ship a solver.
+    engine: Option<Box<dyn SearchEngine>>,
+    /// The one live search handle; disposed on activation, replacement,
+    /// completion, cancellation or dispose.
+    search: Option<ActiveSearch>,
+    /// Monotone per-runtime handle counter producing `search-1`, `search-2`, …
+    search_counter: u32,
+    /// The last search id that reached a terminal event plus its final
+    /// counters, so idempotent cancels acknowledge without reviving a handle.
+    last_terminal_search: Option<(String, SearchCounters)>,
 }
 fn failure(code: &str) -> Event {
     Event::OperationFailed {
@@ -799,6 +1254,13 @@ fn bootstrap_input_digest(input: &NormalizedBootstrapInput) -> String {
 impl Runtime {
     pub fn new() -> Self {
         Self::default()
+    }
+    /// Install the search engine before initialization. Hosts that do not
+    /// ship a solver leave it absent; search commands then answer
+    /// `operation_not_supported` and the ready event omits search
+    /// capabilities.
+    pub fn set_search_engine(&mut self, engine: Box<dyn SearchEngine>) {
+        self.engine = Some(engine);
     }
     pub fn handle_json(&mut self, input: &str) -> String {
         if input.len() > MAX_MESSAGE_BYTES {
@@ -856,7 +1318,10 @@ impl Runtime {
             .get("command")
             .and_then(|v| v.get("kind"))
             .and_then(Value::as_str);
-        if kind.is_some_and(|k| !COMMAND_KINDS.contains(&k)) {
+        if kind.is_some_and(|k| {
+            !COMMAND_KINDS.contains(&k)
+                || (self.engine.is_none() && SEARCH_CAPABILITIES.contains(&k))
+        }) {
             return response(failure("operation_not_supported"));
         }
         let request: ProtocolRequest = match serde_json::from_value(value) {
@@ -898,14 +1363,18 @@ impl Runtime {
                 return failure("version_mismatch");
             }
             self.session = Some(meta.worker_session_id.clone());
+            let mut capabilities: Vec<String> = CAPABILITIES.iter().map(|s| (*s).into()).collect();
+            if self.engine.is_some() {
+                capabilities.extend(SEARCH_CAPABILITIES.iter().map(|s| (*s).into()));
+            }
             return Event::Ready {
                 build_id: BUILD_ID.into(),
                 protocol_version: 1,
                 schema_version: 1,
                 canonical_version: canonical::CANONICAL_VERSION,
                 rule_version: canonical::RULE_VERSION.into(),
-                solver_version: "none".into(),
-                capabilities: CAPABILITIES.iter().map(|s| (*s).into()).collect(),
+                solver_version: canonical::SOLVER_VERSION.into(),
+                capabilities,
             };
         }
         if self.session.as_ref() != Some(&meta.worker_session_id) {
@@ -963,6 +1432,8 @@ impl Runtime {
                 }
             }
             self.last_disposed = None;
+            self.search = None;
+            self.last_terminal_search = None;
             self.recent.clear();
             return Event::ProjectActivated { context_id };
         }
@@ -1125,11 +1596,107 @@ impl Runtime {
                     diagnostics: evaluation.diagnostics,
                 }
             }
+            Command::ProposeStrategies { .. } => {
+                let (Some(input), Some(_)) = (&self.active_input, &self.active_catalog) else {
+                    // Strategy proposals need the activated project context.
+                    return failure("invalid_state");
+                };
+                let Some(engine) = &self.engine else {
+                    return failure("operation_not_supported");
+                };
+                Event::StrategiesProposed {
+                    decisions: engine.propose_strategies(input),
+                }
+            }
+            Command::StartSearch { mode } => {
+                let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
+                else {
+                    return failure("invalid_state");
+                };
+                let Some(engine) = &self.engine else {
+                    return failure("operation_not_supported");
+                };
+                // Any prior handle is dropped before the new one is issued;
+                // handle ids are monotone per runtime so stale ids are fenced.
+                self.search = None;
+                self.search_counter += 1;
+                let search_id = format!("search-{}", self.search_counter);
+                self.search = Some(ActiveSearch {
+                    id: search_id.clone(),
+                    session: engine.start(input, catalog),
+                });
+                Event::SearchStarted {
+                    search_id,
+                    mode: *mode,
+                }
+            }
+            Command::StepSearch {
+                search_id,
+                allowance,
+            } => {
+                let Some(search) = self.search.as_mut() else {
+                    return failure("invalid_state");
+                };
+                if search.id != *search_id {
+                    return failure("stale_search_id");
+                }
+                if *allowance == 0 || *allowance > MAX_STEP_ALLOWANCE {
+                    return failure("invalid_allowance");
+                }
+                let id = search.id.clone();
+                match search.session.step(*allowance) {
+                    SearchStep::Progress { consumed } => Event::SearchProgress {
+                        search_id: id,
+                        consumed,
+                    },
+                    SearchStep::Completed { result } => {
+                        self.last_terminal_search = Some((id.clone(), result.consumed.clone()));
+                        self.search = None;
+                        Event::SearchCompleted {
+                            search_id: id,
+                            result,
+                        }
+                    }
+                    SearchStep::Cancelled { consumed } => {
+                        self.last_terminal_search = Some((id.clone(), consumed.clone()));
+                        self.search = None;
+                        Event::SearchCancelled {
+                            search_id: id,
+                            consumed,
+                        }
+                    }
+                }
+            }
+            Command::CancelSearch { search_id } => match self.search.take() {
+                Some(mut search) if search.id == *search_id => {
+                    let consumed = search.session.cancel();
+                    self.last_terminal_search = Some((search_id.clone(), consumed.clone()));
+                    Event::SearchCancelled {
+                        search_id: search_id.clone(),
+                        consumed,
+                    }
+                }
+                Some(search) => {
+                    self.search = Some(search);
+                    failure("stale_search_id")
+                }
+                // Idempotent within the activation: a handle that already
+                // terminated still acknowledges, a never-issued id fails.
+                None => match self.last_terminal_search.as_ref() {
+                    Some((id, consumed)) if id == search_id => Event::SearchCancelled {
+                        search_id: search_id.clone(),
+                        consumed: consumed.clone(),
+                    },
+                    _ => failure("invalid_state"),
+                },
+            },
             Command::DisposeProject { .. } => {
                 self.last_disposed = self.active.take();
                 self.active_context = None;
                 self.active_input = None;
                 self.active_catalog = None;
+                self.search = None;
+                self.last_terminal_search = None;
                 self.recent.clear();
                 Event::ProjectDisposed
             }

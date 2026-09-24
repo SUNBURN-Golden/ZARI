@@ -1,6 +1,8 @@
 use serde_json::Value;
 use std::{collections::BTreeSet, env, fs, path::PathBuf};
-use zari_core::{BootstrapFixture, DomainFixture, evaluate_probe, execute_domain_fixture};
+use zari_core::{
+    BootstrapFixture, DomainFixture, Runtime, evaluate_probe, execute_domain_fixture_with,
+};
 fn collect(dir: PathBuf, paths: &mut Vec<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
@@ -71,9 +73,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
         } else {
             let fixture: DomainFixture = serde_json::from_slice(&bytes)?;
+            let mut runtime = Runtime::new();
+            runtime.set_search_engine(Box::new(zari_solver::SolverEngine));
             (
                 fixture.case_id.clone(),
-                execute_domain_fixture(&fixture)
+                execute_domain_fixture_with(&fixture, &mut runtime)
                     .map_err(|e| format!("{}: {e}", fixture.case_id))?,
             )
         };

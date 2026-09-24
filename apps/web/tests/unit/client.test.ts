@@ -23,12 +23,12 @@ class Port implements WorkerPort {
 const clients: ProbeClient[] = [];
 const readyEvent = {
   kind: 'ready',
-  buildId: 'zari-domain-2',
+  buildId: 'zari-domain-3',
   protocolVersion: 1,
   schemaVersion: 1,
   canonicalVersion: 1,
   ruleVersion: 'zari-domain-v1',
-  solverVersion: 'none',
+  solverVersion: 'zari-solver-v1',
   capabilities: [
     'initialize',
     'activateProject',
@@ -39,6 +39,10 @@ const readyEvent = {
     'normalizeCatalogFields',
     'validateCandidate',
     'disposeProject',
+    'proposeStrategies',
+    'startSearch',
+    'stepSearch',
+    'cancelSearch',
   ],
 } as const;
 afterEach(() => clients.splice(0).forEach((client) => client.dispose()));
