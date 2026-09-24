@@ -1178,9 +1178,7 @@ pub fn execute_domain_fixture_with(
                     fixture.case_id
                 ));
             }
-            if (consumed.is_some() || kind == "searchCompleted")
-                && json!(consumed) != counters
-            {
+            if (consumed.is_some() || kind == "searchCompleted") && json!(consumed) != counters {
                 return Err(format!(
                     "{}: consumed counters mismatch: {event}",
                     fixture.case_id
