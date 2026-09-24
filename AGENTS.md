@@ -380,3 +380,10 @@ UI 작업 전 DESIGN.md, design/SCREENS.md, design/COMPONENTS.md, design/DECISIO
 - draft와 approved baseline을 구분합니다. 승인 근거 없이 생성한 화면을 승인 상태로 기록하지 않습니다.
 - 디자인 변경 시 `node scripts/check-design-tokens.mjs --self-test`를 실행하고 실제 화면 검증 여부를 별도로 기록합니다.
 - 기존 보존 프롬프트와 SOURCE_MANIFEST.json을 디자인 수정 때문에 변경하지 않습니다.
+
+
+## KIX control-plane SoT pointer (E2)
+
+Control-plane SoT, dispatch policy, and production activation are managed in **BeautifulMind-JT/kix-protocol**, not in this sibling tree.
+See [`docs/KIX_CONTROL_PLANE_POINTER.md`](docs/KIX_CONTROL_PLANE_POINTER.md).
+Do not enable sibling runtime, copy full policy, or change activation/workflows from this pointer PR.
