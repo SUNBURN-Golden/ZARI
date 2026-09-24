@@ -1,0 +1,284 @@
+import Dexie, { type Table } from 'dexie';
+import type {
+  CatalogSnapshot,
+  Diagnostic,
+  OwnedContainer,
+  PlanSnapshot,
+  ProjectInput,
+  RawProjectInputDto,
+} from '../contracts/generated/dto';
+import {
+  validateCatalogSnapshot,
+  validatePlanSnapshot,
+  validateProjectInput,
+  validateRawProjectInputDto,
+} from '../contracts/generated/validators.mjs';
+
+export const DB_NAME = 'zari-local';
+export const DB_VERSION = 1;
+export const SCHEMA_VERSION = 1;
+const MAX_REVISION = 18446744073709551615n;
+
+export type SaveStatus = 'unchecked' | 'valid' | 'invalid';
+
+/** Small mutable coordination record; every project write touches it. */
+export interface ProjectRow {
+  schemaVersion: number;
+  projectId: string;
+  name: string;
+  status: 'active';
+  projectRevision: string;
+  currentInputRevision: string;
+  currentInputDigest: string | null;
+  accepted: { inputRevision: string; planSnapshotId: string } | null;
+  lastStep: string;
+  createdAt: string;
+  updatedAt: string;
+  recovery: { code: string; detail: string } | null;
+}
+/** Immutable normalized input at one revision. */
+export interface InputRow {
+  schemaVersion: number;
+  projectId: string;
+  inputRevision: string;
+  inputDigest: string;
+  input: ProjectInput;
+  engineBuildId: string;
+  createdAt: string;
+}
+/** One embedded raw draft per project; raw text survives invalid states. */
+export interface DraftRow {
+  schemaVersion: number;
+  projectId: string;
+  generation: string;
+  editorSessionId: string;
+  baseInputRevision: string;
+  form: RawProjectInputDto;
+  validation: { status: SaveStatus; diagnostics: Diagnostic[] };
+  updatedAt: string;
+}
+/** Immutable evaluated plan body plus its exact binding. */
+export interface SnapshotRow {
+  schemaVersion: number;
+  projectId: string;
+  inputRevision: string;
+  planSnapshotId: string;
+  snapshot: PlanSnapshot;
+  acceptedAt: string;
+  engineBuildId: string;
+}
+export interface OwnedContainerRow {
+  schemaVersion: number;
+  ownedContainerId: string;
+  revision: string;
+  container: OwnedContainer;
+  updatedAt: string;
+}
+export interface CatalogRow {
+  schemaVersion: number;
+  catalogDigest: string;
+  catalogVersion: string;
+  origin: string;
+  catalog: CatalogSnapshot;
+  ingestedAt: string;
+}
+export interface ActionProgressRow {
+  schemaVersion: number;
+  projectId: string;
+  inputRevision: string;
+  planSnapshotId: string;
+  stepId: string;
+  status: 'done' | 'todo';
+  updatedAt: string;
+}
+export interface MetadataRow {
+  schemaVersion: number;
+  key: string;
+  payload: unknown;
+}
+/** Quarantined record envelope kept under `metadata` for recovery. */
+export interface QuarantinePayload {
+  kind: 'quarantine';
+  payloadVersion: 1;
+  projectId: string;
+  store: string;
+  storeKey: string;
+  reason: string;
+  capturedAt: string;
+  bytes: string;
+}
+
+export class ZariDb extends Dexie {
+  projects!: Table<ProjectRow, string>;
+  inputs!: Table<InputRow, [string, string]>;
+  drafts!: Table<DraftRow, string>;
+  snapshots!: Table<SnapshotRow, [string, string, string]>;
+  ownedContainers!: Table<OwnedContainerRow, string>;
+  catalogs!: Table<CatalogRow, string>;
+  actionProgress!: Table<ActionProgressRow, [string, string, string, string]>;
+  metadata!: Table<MetadataRow, string>;
+  constructor(name: string = DB_NAME) {
+    super(name);
+    this.version(DB_VERSION).stores({
+      projects: 'projectId, updatedAt, status',
+      inputs: '[projectId+inputRevision], projectId',
+      drafts: 'projectId',
+      snapshots: '[projectId+inputRevision+planSnapshotId], projectId, planSnapshotId',
+      ownedContainers: 'ownedContainerId, updatedAt',
+      catalogs: 'catalogDigest, catalogVersion, origin',
+      actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
+      metadata: 'key',
+    });
+  }
+}
+
+export const isCanonicalRevision = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  /^(0|[1-9][0-9]*)$/.test(value) &&
+  BigInt(value) <= MAX_REVISION;
+
+export function nextRevision(value: string): string {
+  if (!isCanonicalRevision(value)) throw new Error('invalid_revision');
+  const next = BigInt(value) + 1n;
+  if (next > MAX_REVISION) throw new Error('revision_exhausted');
+  return next.toString();
+}
+
+const digestShape = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  value.length === 64 &&
+  [...value].every((c) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
+const text = (value: unknown, max = 256): value is string =>
+  typeof value === 'string' && [...value].length <= max;
+
+/**
+ * Newer on-disk schema versions are unsupported, not corrupt: bytes are
+ * preserved and writes are rejected. Anything malformed is corrupt.
+ */
+function checkSchemaVersion(row: { schemaVersion?: unknown } | null): void {
+  if (
+    row &&
+    typeof row === 'object' &&
+    typeof row.schemaVersion === 'number' &&
+    row.schemaVersion > SCHEMA_VERSION
+  )
+    throw new Error('unsupported_schema');
+}
+/**
+ * Read-side envelope guards. They check storage bookkeeping shape only —
+ * domain/hash integrity is Rust `verifyRecord` work. A row that fails here is
+ * quarantined, never rewritten in place.
+ */
+export function readProjectRow(value: unknown): ProjectRow {
+  const row = value as ProjectRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.projectId) ||
+    !text(row.name, 4096) ||
+    row.status !== 'active' ||
+    !isCanonicalRevision(row.projectRevision) ||
+    !isCanonicalRevision(row.currentInputRevision) ||
+    !(row.currentInputDigest === null || digestShape(row.currentInputDigest)) ||
+    !(
+      row.accepted === null ||
+      (typeof row.accepted === 'object' &&
+        row.accepted !== null &&
+        isCanonicalRevision(row.accepted.inputRevision) &&
+        digestShape(row.accepted.planSnapshotId))
+    ) ||
+    !text(row.lastStep)
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+export function readDraftRow(value: unknown): DraftRow {
+  const row = value as DraftRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.projectId) ||
+    !isCanonicalRevision(row.generation) ||
+    !text(row.editorSessionId) ||
+    !isCanonicalRevision(row.baseInputRevision) ||
+    !validateRawProjectInputDto(row.form) ||
+    !(
+      row.validation &&
+      (row.validation.status === 'unchecked' ||
+        row.validation.status === 'valid' ||
+        row.validation.status === 'invalid') &&
+      Array.isArray(row.validation.diagnostics)
+    )
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+export function readInputRow(value: unknown): InputRow {
+  const row = value as InputRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.projectId) ||
+    !isCanonicalRevision(row.inputRevision) ||
+    !digestShape(row.inputDigest) ||
+    !validateProjectInput(row.input) ||
+    !text(row.engineBuildId)
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+export function readSnapshotRow(value: unknown): SnapshotRow {
+  const row = value as SnapshotRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.projectId) ||
+    !isCanonicalRevision(row.inputRevision) ||
+    !digestShape(row.planSnapshotId) ||
+    !validatePlanSnapshot(row.snapshot) ||
+    !text(row.acceptedAt) ||
+    !text(row.engineBuildId)
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+export function readCatalogRow(value: unknown): CatalogRow {
+  const row = value as CatalogRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !digestShape(row.catalogDigest) ||
+    !text(row.catalogVersion) ||
+    !text(row.origin) ||
+    !validateCatalogSnapshot(row.catalog) ||
+    row.catalog.catalogDigest !== row.catalogDigest
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+export function readActionProgressRow(value: unknown): ActionProgressRow {
+  const row = value as ActionProgressRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.projectId) ||
+    !isCanonicalRevision(row.inputRevision) ||
+    !digestShape(row.planSnapshotId) ||
+    !text(row.stepId) ||
+    (row.status !== 'done' && row.status !== 'todo')
+  )
+    throw new Error('record_corrupt');
+  return row;
+}

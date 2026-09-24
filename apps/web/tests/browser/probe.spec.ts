@@ -6,7 +6,7 @@ test('real WASM pass fail unknown invalid units and package arithmetic', async (
     if (m.type() === 'error') errors.push(m.text());
   });
   const wasm = page.waitForResponse((r) => r.url().endsWith('.wasm') && r.ok());
-  await page.goto('/');
+  await page.goto('/#/probe');
   await wasm;
   await expect(page.getByTestId('width-status')).toContainText('입력한 폭 안에 들어갑니다');
   await expect(page.getByTestId('required-width')).toContainText('590');
@@ -45,7 +45,7 @@ test('real WASM pass fail unknown invalid units and package arithmetic', async (
   expect(errors).toEqual([]);
 });
 test('keyboard workflow raw stale state mobile fit and explicit fresh reload', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/probe');
   await expect(page.getByTestId('width-status')).toContainText('입력한 폭 안에 들어갑니다');
   const space = page.getByRole('textbox', { name: '수납장 안쪽 폭', exact: true });
   await page.keyboard.press('Tab');
@@ -86,7 +86,7 @@ test('Worker crash preserves input and retry calculates through fresh WASM', asy
       }
     };
   });
-  await page.goto('/');
+  await page.goto('/#/probe');
   await expect(page.getByTestId('width-status')).toContainText('입력한 폭 안에 들어갑니다');
   await page.getByRole('textbox', { name: '물체 하나의 폭', exact: true }).fill('195');
   await page.evaluate(() => {

@@ -1,6 +1,80 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-004 규칙→전략→레시피→유계 배치 탐색 solver (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-005 저장 측정 흐름과 Worker 수명주기 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #15이며 base는 ZARI-004 병합 커밋
+`2bfd9f79441dc57370d7249f60aea6b44cbae62a`입니다. 브랜치
+`devin/zari-005-worker-lifecycle`에서 작업했고 Cloud Devin·production runner·
+`runtime_enabled=true`는 사용하지 않았습니다. 도메인/스키마 재설계·서버 동기화·
+baseline 승인·merge는 범위 밖이며 수행하지 않았습니다.
+
+구현한 범위:
+
+- `persistence/db.ts`: Dexie 스키마 v1 — projects·inputs·drafts·snapshots·
+  ownedContainers·catalogs·actionProgress·metadata 스토어와 행별 envelope guard.
+  더 새로운 `schemaVersion`은 `unsupported_schema`(보존·쓰기 거부), 형식 위반은
+  `record_corrupt`로 구분하며 읽기에서 복구·기본값 대체를 하지 않습니다.
+- `persistence/repository.ts`: 탭당 직렬 write queue, `projectRevision` CAS로
+  두 탭의 silent last-write-win 차단, draft generation stale fence,
+  normalize→커밋 단일 트랜잭션(draft+input+project 동시 기록), quarantine
+  (10건/10MiB 상한), 프로젝트 범위 삭제.
+- `persistence/export.ts`: 표준/복구 export envelope — 각 레코드 digest 동봉,
+  quarantine 원본 바이트 포함, 미구현 attachments는 명시적 제외 목록으로 표기.
+- `worker/client.ts`: `systemRequest`(system identity의 verifyRecord 경로 —
+  project activation 없이 무결성 검사 가능), per-request timeout, meta 정합·
+  stale·순서 fencing 유지.
+- `worker/controller.ts`: `WorkerController`(ensure/recover/dispose와
+  lifecycle 이벤트 — pending은 항상 reject, 조용한 재시도 없음)와
+  `SearchPump`(연속 검색의 host macrotask 스케줄링, bounded stepSearch,
+  cooperative cancel + hard-timeout, stall watchdog, crash→onFailed).
+- `features/project/`: raw draft 조작(`items.<id>`는 배열에서 id로 탐색),
+  `project_measurement` 문법과 정합하는 MEASUREMENT_FIELDS, `ProjectSession` —
+  open 시 `verifyRecord` 무결성 검사·손상 격리·context 설치/열화,
+  autosave+commit reconcile(normalize→CAS commit→activate handshake),
+  단위 변경은 Rust `formattedFields` 응답과 원자적으로 커밋(JS 변환 없음),
+  BroadcastChannel 다중 탭 충돌 감지, reloadLatest/saveAsCopy/export 복구,
+  저장 실패 시 close 차단.
+- `app/`: hash router(`#/projects`·`#/project/<id>`·`#/probe`), 프로젝트
+  목록/생성 화면, 측정 편집 화면(저장 상태·diagnostics·정규화 값·충돌/손상/
+  워커 패널·export), 기존 probe 화면 이동, 탭당 repository+controller 공유.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `npm run typecheck`, `npm run lint`: 통과.
+- `npm test`: unit 28개 — repository 9(CAS 충돌·손상·미지원 버전·
+  quarantine·사본 복구), client 7(stale/순서/crash fencing), searchPump 5
+  (명시적 protocol-harness 표기), session 8 — `WasmPort`가 실제 zari_wasm
+  Runtime을 구동해 verifyRecord·normalize·activate·실 solver step/cancel을
+  검증(실 Rust 계산이며 transport만 대체).
+- `npm run test:browser`: 10개 통과 — project 7(생성/편집/저장/실 reload,
+  invalid raw text 보존, Rust 단위 변환, A→B 전환 fencing, 두 번째 탭 충돌,
+  주입된 저장 실패, Worker crash/retry, 390px) + probe 3(경로 `#/probe`로 갱신).
+- `npm run test:parity`: 85 fixture native Rust와 실제 Chromium Worker/WASM
+  전부 일치(`search-cancelled` 등 runSearch 4개 포함 — 실 solver 취소 증거).
+- `node scripts/check-design-tokens.mjs --self-test`: 33/33 통과.
+
+검증 중 발견해 수정한 결함:
+
+- `setUnit`이 새 단위를 draft에 먼저 기록한 뒤 format을 요청해 Rust가
+  '600'을 600cm(6000mm)로 해석 — 프로토콜대로 matching `formattedFields`
+  응답과 단위를 원자적으로 커밋하도록 수정.
+- `items.<id>` 필드 경로를 맵 키로 해석해 ProjectScreen 렌더가 붕괴 —
+  배열 요소의 `id`로 탐색하도록 수정(Rust `project_measurement` 문법과 정합).
+- 이미 ready인 Worker로 프로젝트를 다시 열 때 lifecycle 이벤트가 발생하지
+  않아 worker 표시가 'uninitialized'로 고착 — open 시 현재 상태를 동기화.
+- searchPump harness의 `searchCompleted` fixture가 `SearchResult` 스키마를
+  위반해 client가 worker를 폐기 — 실제 계약 형태로 수정.
+
+미구현(이 task의 범위 밖): snapshot 수용·도면·BOM·실행 가이드(006+),
+catalog import/validateCatalog(008), 서버 동기화, production runtime.
+IndexedDB는 이 기기의 내구 저장소이며 서버 백업으로 취급하지 않습니다.
+손상·미지원 레코드는 복구용 export로 보존되고 현재 계획으로 승격되지 않습니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
+review(GROK_BUILD 이후 GLM, 동시 1명)와 issue #15의 AUDIT_FLOOR이며,
+merge는 User만 결정합니다. ZARI-001 화면 baseline은 draft 그대로입니다.
+
+## 이전 구현: ZARI-004 규칙→전략→레시피→유계 배치 탐색 solver (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #13이며 base는 ZARI-003 병합 커밋
 `2bc56c73e9db78a0c65c0303f443dd7e50c1ce8a`입니다. 브랜치

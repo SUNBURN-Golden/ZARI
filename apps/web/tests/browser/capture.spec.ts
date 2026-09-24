@@ -61,7 +61,7 @@ test('@capture actual workspace draft screens', async ({ page, browser }) => {
   ];
   for (const state of states) {
     await page.setViewportSize({ width: state.width, height: state.height });
-    await page.goto('/');
+    await page.goto('/#/probe');
     await expect(page.getByTestId('width-status')).toContainText('입력한 폭 안에 들어갑니다');
     await page.getByRole('textbox', { name: '물체 하나의 폭', exact: true }).fill(state.item);
     await page.getByRole('textbox', { name: '수납장 안쪽 폭', exact: true }).fill(state.space);
@@ -84,7 +84,7 @@ test('@capture actual workspace draft screens', async ({ page, browser }) => {
       sha256: createHash('sha256').update(bytes).digest('hex'),
       sourceCommit,
       sourceDirty,
-      screenOrStory: '/',
+      screenOrStory: '/#/probe',
       state: state.id,
       fixtureId: 'ui-bootstrap-synthetic-v1',
       rawOverrides: { unitWidth: state.item, compartmentWidth: state.space },
