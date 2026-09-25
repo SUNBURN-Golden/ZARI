@@ -65,6 +65,7 @@ const readyEvent = {
     'verifyRecord',
     'normalizeCatalogFields',
     'validateCandidate',
+    'evaluateLayoutEdit',
     'disposeProject',
     'proposeStrategies',
     'startSearch',

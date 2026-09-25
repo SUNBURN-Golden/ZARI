@@ -1,7 +1,10 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type KeyboardEvent } from 'react';
 import { Button } from 'react-aria-components';
 import type {
+  LayoutEditCommand,
+  Orientation,
   PlanSnapshot,
+  Placement,
   SnapshotContent,
   Strategy,
 } from '../contracts/generated/dto';
@@ -9,10 +12,16 @@ import {
   ACTION_TEXT,
   CHECK_KIND_TEXT,
   CHECK_STATUS_TEXT,
+  EDIT_COMMAND_TEXT,
+  EDIT_REJECTION_TEXT,
+  ORIENTATIONS,
+  ORIENTATION_TEXT,
   REJECTION_TEXT,
   STRATEGY_TEXT,
   UNASSIGNED_TEXT,
+  allowedOrientations,
   frontViewRects,
+  ghostRect,
   interiorBox,
   isNoPurchase,
   moneyText,
@@ -39,10 +48,16 @@ function PlanDiagram({
   content,
   view,
   testId,
+  selectedId,
+  ghost,
+  onSelect,
 }: {
   content: SnapshotContent;
   view: 'top' | 'front';
   testId: string;
+  selectedId?: string | null;
+  ghost?: RectVm | null;
+  onSelect?: (placementId: string) => void;
 }) {
   const box = interiorBox(content);
   const rects = view === 'top' ? topViewRects(content) : frontViewRects(content);
@@ -68,10 +83,12 @@ function PlanDiagram({
         <g key={`${r.refId}:${r.label}:${r.x}:${r.y}`}>
           <rect
             className={`diagram-${r.kind}`}
+            data-selected={selectedId === r.refId ? 'true' : undefined}
             x={r.x}
             y={r.y}
             width={r.width}
             height={r.height}
+            onClick={onSelect ? () => onSelect(r.refId) : undefined}
           >
             <title>{r.label}</title>
           </rect>
@@ -86,12 +103,254 @@ function PlanDiagram({
           )}
         </g>
       ))}
+      {ghost && view === 'top' && (
+        <rect
+          className="diagram-ghost"
+          data-testid="edit-ghost"
+          x={ghost.x}
+          y={ghost.y}
+          width={ghost.width}
+          height={ghost.height}
+        >
+          <title>{ghost.label}</title>
+        </rect>
+      )}
       {view === 'top' && (
         <text className="diagram-label" x={0} y={h + 10} fontSize={14}>
           ↑ 문/앞면
         </text>
       )}
     </svg>
+  );
+}
+
+/**
+ * Equal-scale thumbnail: every card renders the same space interior box in
+ * the same viewBox, so alternatives are comparable at one scale.
+ */
+function PlanThumb({ content, testId }: { content: SnapshotContent; testId: string }) {
+  const box = interiorBox(content);
+  if (!box) return null;
+  return (
+    <svg
+      className="plan-thumb"
+      data-testid={testId}
+      viewBox={`-4 -4 ${box.width + 8} ${box.depth + 8}`}
+      role="img"
+      aria-label="위에서 본 축소 배치"
+    >
+      <rect className="diagram-space" x={0} y={0} width={box.width} height={box.depth} />
+      {topViewRects(content).map((r) => (
+        <rect
+          key={`${r.refId}:${r.x}:${r.y}`}
+          className={`diagram-${r.kind}`}
+          x={r.x}
+          y={r.y}
+          width={r.width}
+          height={r.height}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/**
+ * Placement inspector: numeric/keyboard editing parity. Every control issues
+ * a typed `LayoutEditCommand`; Rust decides whether the result is a verified
+ * snapshot or an explained rejection.
+ */
+function Inspector({
+  session,
+  state,
+  snapshot,
+}: {
+  session: ProjectSession;
+  state: SessionSnapshot;
+  snapshot: PlanSnapshot;
+}) {
+  const content = snapshot.content;
+  const edit = state.plan.edit;
+  const placement: Placement | undefined = content.placements.find(
+    (p) => p.id === edit.selectedPlacementId,
+  );
+  const moveForm = useRef<HTMLFormElement | null>(null);
+  if (!placement) {
+    return (
+      <div className="edit-inspector" data-testid="inspector-empty">
+        <p className="session-note">
+          도면이나 목록에서 배치를 선택하면 위치·방향을 고칠 수 있습니다.
+        </p>
+      </div>
+    );
+  }
+  const allowed = allowedOrientations(content, placement);
+  const subject = placement.subject;
+  const variants = state.plan.catalog?.variants ?? [];
+  const variant =
+    subject.kind === 'newContainer'
+      ? (variants.find((v) => v.id === subject.variantId) ?? null)
+      : null;
+  const offerFor = content.purchaseSelections.find(
+    (s) => s.placementId === placement.id,
+  );
+  const pending = edit.pending !== null;
+  const applyMove = () => {
+    const form = moveForm.current;
+    if (!form) return;
+    const read = (name: string) =>
+      Number((form.elements.namedItem(name) as HTMLInputElement | null)?.value);
+    const command: LayoutEditCommand = {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: {
+        x: read('pos-x'),
+        y: read('pos-y'),
+        z: read('pos-z'),
+      },
+    };
+    session.requestLayoutEdit(command, snapshot.planSnapshotId);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      applyMove();
+    }
+  };
+  return (
+    <div className="edit-inspector" data-testid="inspector">
+      <div className="section-kicker">편집</div>
+      <h4>{subjectLabel(content, subject)}</h4>
+      <form
+        ref={moveForm}
+        className="edit-inspector-fields"
+        data-testid="move-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          applyMove();
+        }}
+        onKeyDown={onKey}
+      >
+        {(['x', 'y', 'z'] as const).map((axis) => (
+          <label key={axis} className="edit-inspector-field">
+            <span>{axis.toUpperCase()} mm</span>
+            <input
+              name={`pos-${axis}`}
+              type="number"
+              step="1"
+              min="-20000"
+              max="20000"
+              defaultValue={placement.position[axis]}
+              data-testid={`move-${axis}`}
+            />
+          </label>
+        ))}
+        <Button
+          className="button button-secondary"
+          type="submit"
+          isDisabled={pending}
+          data-testid="move-apply"
+        >
+          이동 적용
+        </Button>
+      </form>
+      <fieldset className="edit-inspector-fields" data-testid="rotate-field">
+        <legend>방향</legend>
+        {allowed === null ? (
+          <p className="session-note">허용 방향을 알 수 없어 회전을 건너뜁니다.</p>
+        ) : (
+          ORIENTATIONS.map((o) => (
+            <label key={o} className="strategy-option">
+              <input
+                type="radio"
+                name="orientation"
+                checked={placement.orientation === o}
+                disabled={!allowed.includes(o) || pending}
+                data-testid={`rotate-${o}`}
+                onChange={() =>
+                  session.requestLayoutEdit(
+                    {
+                      kind: 'rotatePlacement',
+                      placementId: placement.id,
+                      orientation: o as Orientation,
+                    },
+                    snapshot.planSnapshotId,
+                  )
+                }
+              />
+              {ORIENTATION_TEXT[o] ?? o}
+              {!allowed.includes(o) && ' (허용 안 됨)'}
+            </label>
+          ))
+        )}
+      </fieldset>
+      {subject.kind === 'newContainer' && (
+        <div className="edit-inspector-fields" data-testid="variant-field">
+          <label className="edit-inspector-field">
+            <span>수납함 옵션</span>
+            <select
+              value={subject.variantId}
+              disabled={pending}
+              data-testid="variant-select"
+              onChange={(e) =>
+                session.requestLayoutEdit(
+                  {
+                    kind: 'replaceVariant',
+                    placementId: placement.id,
+                    variantId: e.target.value,
+                    offerId: null,
+                  },
+                  snapshot.planSnapshotId,
+                )
+              }
+            >
+              {variants.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.optionLabel}
+                </option>
+              ))}
+            </select>
+          </label>
+          {variant && (
+            <label className="edit-inspector-field">
+              <span>판매처</span>
+              <select
+                value={
+                  offerFor?.offer.kind === 'selected' ? offerFor.offer.offerId : ''
+                }
+                disabled={pending}
+                data-testid="offer-select"
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  session.requestLayoutEdit(
+                    {
+                      kind: 'selectOffer',
+                      variantId: variant.id,
+                      offerId: e.target.value,
+                    },
+                    snapshot.planSnapshotId,
+                  );
+                }}
+              >
+                <option value="">
+                  {offerFor?.offer.kind === 'unresolved' ? '미정 (보류)' : '선택…'}
+                </option>
+                {(state.plan.catalog?.offers ?? [])
+                  .filter((o) => o.variantId === variant.id)
+                  .map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.id}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
+      <p className="session-note">
+        단축키 — 화살표: 10mm 이동, Shift+화살표: 1mm, R: 회전, Ctrl+Z / Ctrl+Shift+Z:
+        되돌리기/다시 실행
+      </p>
+    </div>
   );
 }
 
@@ -107,20 +366,145 @@ function PlanDetail({
 }) {
   const content = snapshot.content;
   const current = session.isCurrentSnapshot(snapshot);
+  const edit = state.plan.edit;
+  const editable = current && state.context === 'installed';
   const checksUnknown = content.validation.checks.filter(
     (c) => c.status === 'unknown',
   );
   const itemById = new Map(content.inputFacts.items.map((i) => [i.id, i]));
+  const ghost =
+    edit.pending && edit.pending.baseSnapshotId === snapshot.planSnapshotId
+      ? ghostRect(content, edit.pending.command)
+      : null;
+  const selected = content.placements.find(
+    (p) => p.id === edit.selectedPlacementId,
+  );
+  /**
+   * Keyboard editing parity: arrows nudge the selected placement (10mm,
+   * Shift=1mm), R rotates to the next allowed orientation, Ctrl+Z /
+   * Ctrl+Shift+Z undo/redo. Keys apply only on the diagram surface — inputs
+   * and selects keep their native behavior.
+   */
+  const onSurfaceKey = (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === 'INPUT' ||
+      target.tagName === 'SELECT' ||
+      target.tagName === 'TEXTAREA'
+    )
+      return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) session.redoEdit();
+      else session.undoEdit();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      session.redoEdit();
+      return;
+    }
+    if (!editable || !selected) return;
+    const step = e.shiftKey ? 1 : 10;
+    const delta = { x: 0, y: 0, z: 0 };
+    if (e.key === 'ArrowLeft') delta.x = -step;
+    else if (e.key === 'ArrowRight') delta.x = step;
+    else if (e.key === 'ArrowUp') delta.y = -step;
+    else if (e.key === 'ArrowDown') delta.y = step;
+    else if (e.key.toLowerCase() === 'r') {
+      const allowed = allowedOrientations(content, selected);
+      if (allowed && allowed.length > 1) {
+        const next = allowed.find((o) => o !== selected.orientation);
+        if (next) {
+          e.preventDefault();
+          session.requestLayoutEdit(
+            {
+              kind: 'rotatePlacement',
+              placementId: selected.id,
+              orientation: next,
+            },
+            snapshot.planSnapshotId,
+          );
+        }
+      }
+      return;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    session.requestLayoutEdit(
+      {
+        kind: 'movePlacement',
+        placementId: selected.id,
+        position: {
+          x: selected.position.x + delta.x,
+          y: selected.position.y + delta.y,
+          z: selected.position.z + delta.z,
+        },
+      },
+      snapshot.planSnapshotId,
+    );
+  };
   return (
-    <div className="plan-detail" data-testid="plan-detail">
+    <div
+      className="plan-detail"
+      data-testid="plan-detail"
+      tabIndex={editable ? 0 : undefined}
+      onKeyDown={onSurfaceKey}
+      data-editable={editable || undefined}
+    >
       {!current && (
         <p className="notice notice-stale" role="alert" data-testid="stale-plan-notice">
           입력이 변경된 뒤 계산된 계획이 아닙니다 — 과거 기록으로만 봅니다. 다시 계산해 주세요.
         </p>
       )}
+      {edit.pending && edit.pending.baseSnapshotId === snapshot.planSnapshotId && (
+        <p className="notice" data-testid="edit-pending" role="status">
+          {EDIT_COMMAND_TEXT[edit.pending.command.kind] ?? edit.pending.command.kind}{' '}
+          검증 중 — 확정되기 전까지 임시 상태입니다.
+        </p>
+      )}
+      {edit.rejection &&
+        edit.rejection.baseSnapshotId === snapshot.planSnapshotId && (
+        <div className="notice notice-stale" role="alert" data-testid="edit-rejected">
+          <p>
+            {EDIT_COMMAND_TEXT[edit.rejection.command.kind] ??
+              edit.rejection.command.kind}
+            이(가) 거부되었습니다 — 기존 계획은 바뀌지 않았습니다.
+          </p>
+          <ul className="diagnostic-list">
+            {edit.rejection.diagnostics.map((d, i) => (
+              <li key={`d-${i}`} className="field-error">
+                {EDIT_REJECTION_TEXT[d.code] ?? d.code}
+                {d.fieldPath ? ` — ${d.fieldPath}` : ''}
+              </li>
+            ))}
+            {(edit.rejection.report?.checks ?? [])
+              .filter((c) => c.status === 'fail')
+              .map((c) => (
+                <li key={c.id} className="field-error">
+                  {CHECK_KIND_TEXT[c.kind] ?? c.kind}:{' '}
+                  {EDIT_REJECTION_TEXT[c.reasonCode] ?? c.reasonCode}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
       <div className="plan-diagrams">
-        <PlanDiagram content={content} view="top" testId="plan-diagram-top" />
-        <PlanDiagram content={content} view="front" testId="plan-diagram-front" />
+        <PlanDiagram
+          content={content}
+          view="top"
+          testId="plan-diagram-top"
+          selectedId={edit.selectedPlacementId}
+          ghost={ghost}
+          onSelect={editable ? (id) => session.selectPlacement(id) : undefined}
+        />
+        <PlanDiagram
+          content={content}
+          view="front"
+          testId="plan-diagram-front"
+          selectedId={edit.selectedPlacementId}
+        />
       </div>
 
       <section aria-labelledby="placements-title">
@@ -128,10 +512,22 @@ function PlanDetail({
         <h3 id="placements-title">물건이 어디에 놓이는지</h3>
         <ul className="plan-list" data-testid="placements-list">
           {content.placements.map((p) => (
-            <li key={p.id}>
-              <span>{subjectLabel(content, p.subject)}</span>
+            <li key={p.id} data-selected={edit.selectedPlacementId === p.id || undefined}>
+              {editable ? (
+                <button
+                  type="button"
+                  className="placement-pick"
+                  data-testid={`placement-${p.id}`}
+                  onClick={() => session.selectPlacement(p.id)}
+                >
+                  {subjectLabel(content, p.subject)}
+                </button>
+              ) : (
+                <span>{subjectLabel(content, p.subject)}</span>
+              )}
               <span className="session-note">
-                ({p.position.x}, {p.position.y}, {p.position.z}) mm
+                ({p.position.x}, {p.position.y}, {p.position.z}) mm ·{' '}
+                {ORIENTATION_TEXT[p.orientation] ?? p.orientation}
               </span>
             </li>
           ))}
@@ -148,6 +544,7 @@ function PlanDetail({
             ))}
           </ul>
         )}
+        {editable && <Inspector session={session} state={state} snapshot={snapshot} />}
       </section>
 
       <section aria-labelledby="checks-title">
@@ -391,6 +788,9 @@ export function PlanScreen({ projectId }: { projectId: string }) {
         <section className="measurement-panel" aria-labelledby="alts-title">
           <div className="section-kicker">후보</div>
           <h3 id="alts-title">검토된 계획 {plan.alternatives.length}개</h3>
+          <p className="session-note">
+            모든 후보는 같은 공간 치수로 같은 축척에 그립니다 — 크기 비교가 그대로 맞습니다.
+          </p>
           <ul className="plan-list" data-testid="alternatives-list">
             {plan.alternatives.map((alt, i) => {
               const un = unassignedCount(alt);
@@ -404,6 +804,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     data-selected={plan.selectedId === id}
                     onClick={() => session.selectAlternative(id)}
                   >
+                    <PlanThumb content={alt.content} testId={`plan-thumb-${i}`} />
                     <span className="plan-card-title">
                       #{i + 1} {isNoPurchase(alt) ? '구매 없음' : '구매 포함'}
                     </span>
@@ -429,6 +830,55 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           {selected && (
             <PlanDetail session={session} state={state} snapshot={selected} />
           )}
+        </section>
+      )}
+
+      {plan.edit.head && (
+        <section
+          className="measurement-panel"
+          aria-labelledby="edit-title"
+          data-testid="edit-section"
+        >
+          <div className="section-kicker">편집안</div>
+          <h3 id="edit-title">검증된 작업 계획</h3>
+          <p className="session-note">
+            편집은 적용될 때마다 Rust가 전체 배치를 다시 검증합니다. 되돌리기는
+            이전 배치를 새 스냅샷으로 복원합니다.
+          </p>
+          <div className="form-actions">
+            <Button
+              className="button button-secondary"
+              onPress={() => session.undoEdit()}
+              isDisabled={plan.edit.undo.length === 0 || plan.edit.pending !== null}
+              data-testid="undo-edit"
+            >
+              되돌리기 ({plan.edit.undo.length})
+            </Button>
+            <Button
+              className="button button-secondary"
+              onPress={() => session.redoEdit()}
+              isDisabled={plan.edit.redo.length === 0 || plan.edit.pending !== null}
+              data-testid="redo-edit"
+            >
+              다시 실행 ({plan.edit.redo.length})
+            </Button>
+            <span className="session-note" data-testid="edit-chain-info">
+              {plan.edit.undo.length === 0 && plan.edit.redo.length === 0
+                ? '편집 이력이 없습니다'
+                : `${plan.edit.undo.length + plan.edit.redo.length}건의 편집이 기록되어 있습니다`}
+            </span>
+            <Button
+              className="button button-primary"
+              onPress={() => session.acceptPlan(plan.edit.head!.planSnapshotId)}
+              isDisabled={
+                plan.acceptState === 'saving' || plan.edit.pending !== null
+              }
+              data-testid="accept-edit-head"
+            >
+              이 편집안을 채택
+            </Button>
+          </div>
+          <PlanDetail session={session} state={state} snapshot={plan.edit.head} />
         </section>
       )}
 

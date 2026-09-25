@@ -353,6 +353,84 @@
       "introducedBy": "ZARI-001"
     },
     {
+      "id": "edit-move-outside",
+      "caseKind": "layoutEdit",
+      "inputPath": "fixtures/domain/edit-move-outside.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/edit-move-outside.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-007"
+    },
+    {
+      "id": "edit-move-permitted",
+      "caseKind": "layoutEdit",
+      "inputPath": "fixtures/domain/edit-move-permitted.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/edit-move-permitted.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-007"
+    },
+    {
+      "id": "edit-restore",
+      "caseKind": "layoutEdit",
+      "inputPath": "fixtures/domain/edit-restore.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/edit-restore.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-007"
+    },
+    {
+      "id": "edit-rotate-forbidden",
+      "caseKind": "layoutEdit",
+      "inputPath": "fixtures/domain/edit-rotate-forbidden.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/edit-rotate-forbidden.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-007"
+    },
+    {
+      "id": "edit-rotate-permitted",
+      "caseKind": "layoutEdit",
+      "inputPath": "fixtures/domain/edit-rotate-permitted.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/edit-rotate-permitted.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-007"
+    },
+    {
+      "id": "edit-unknown-placement",
+      "caseKind": "layoutEdit",
+      "inputPath": "fixtures/domain/edit-unknown-placement.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/edit-unknown-placement.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-007"
+    },
+    {
       "id": "zero-row-unknown-unit",
       "caseKind": "bootstrapProbe",
       "inputPath": "fixtures/bootstrap/zero-row-unknown-unit.json",

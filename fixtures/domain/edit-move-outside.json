@@ -1,0 +1,3621 @@
+{
+ "fixtureSchemaVersion": 1,
+ "caseId": "edit-move-outside",
+ "operation": "evaluateLayoutEdit",
+ "schemaVersion": 1,
+ "input": {
+  "input": {
+   "catalogPin": {
+    "catalogDigest": "802a109192357c493fd4effc09ccef51c109a7ab05b18a927d109572505cff1a",
+    "catalogVersion": "catalog-2025-01"
+   },
+   "constraints": {
+    "hardBudget": {
+     "provenance": {
+      "evidenceIds": [],
+      "inputRefs": [],
+      "observedAt": null,
+      "origin": "userDeclared",
+      "ruleIds": [],
+      "verification": "unverified"
+     },
+     "state": "known",
+     "value": "200000"
+    },
+    "hardOneActionAccess": false,
+    "lockedZones": [],
+    "purchaseAllowed": true,
+    "safetyRestrictions": [],
+    "softBudget": {
+     "provenance": {
+      "evidenceIds": [],
+      "inputRefs": [],
+      "observedAt": null,
+      "origin": "userDeclared",
+      "ruleIds": [],
+      "verification": "unverified"
+     },
+     "state": "known",
+     "value": "100000"
+    }
+   },
+   "evidence": [],
+   "groups": [
+    {
+     "id": "group-1",
+     "itemIds": [
+      "item-a",
+      "item-b"
+     ],
+     "label": "Closet",
+     "splitPolicy": "oneTarget"
+    }
+   ],
+   "items": [
+    {
+     "activityIds": [],
+     "category": "clothing",
+     "dimensions": {
+      "envelope": {
+       "depth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 100,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "height": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 80,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "width": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 190,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       }
+      },
+      "storageState": "folded"
+     },
+     "frequency": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "weekly"
+     },
+     "id": "item-a",
+     "label": "Winter coats",
+     "massEach": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 800
+     },
+     "quantity": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 2
+     },
+     "requirement": {
+      "allowedOrientations": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": [
+        "upright0"
+       ]
+      },
+      "allowedRetrievalModes": [
+       "directFrontExtraction"
+      ],
+      "handling": {
+       "left": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 5
+       },
+       "liftAboveRim": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 0
+       },
+       "pullExtraDepth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 0
+       },
+       "right": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 5
+       },
+       "top": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 5
+       }
+      },
+      "mandatoryCompatibility": [],
+      "mustStayTogether": false
+     },
+     "stockRole": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "active"
+     }
+    },
+    {
+     "activityIds": [],
+     "category": "paper",
+     "dimensions": {
+      "envelope": {
+       "depth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 200,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "height": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 50,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "width": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 300,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       }
+      },
+      "storageState": "boxed"
+     },
+     "frequency": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "rare"
+     },
+     "id": "item-b",
+     "label": "Documents",
+     "massEach": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 1200
+     },
+     "quantity": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 1
+     },
+     "requirement": {
+      "allowedOrientations": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": [
+        "upright0",
+        "upright90"
+       ]
+      },
+      "allowedRetrievalModes": [
+       "directFrontExtraction",
+       "pullContainerThenRetrieve"
+      ],
+      "handling": {
+       "left": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       },
+       "liftAboveRim": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 0
+       },
+       "pullExtraDepth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 0
+       },
+       "right": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       },
+       "top": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       }
+      },
+      "mandatoryCompatibility": [
+       "item-a"
+      ],
+      "mustStayTogether": true
+     },
+     "stockRole": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "reserve"
+     }
+    }
+   ],
+   "ownedContainers": [],
+   "preferences": {
+    "color": null,
+    "material": null,
+    "objectiveRanking": [
+     "minimumPurchase"
+    ],
+    "visualNotes": []
+   },
+   "search": {
+    "budget": {
+     "maxAlternatives": 3,
+     "maxCandidatesPerGroup": 4,
+     "maxNodes": 64,
+     "maxWorkUnits": "1000"
+    },
+    "profile": {
+     "id": "default",
+     "version": 1
+    },
+    "seed": null
+   },
+   "space": {
+    "clearances": {
+     "back": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 0
+     },
+     "betweenUnits": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 5
+     },
+     "front": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 0
+     },
+     "left": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 5
+     },
+     "right": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 5
+     },
+     "ruleIds": [
+      "rule:clearance-v1"
+     ],
+     "top": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 10
+     }
+    },
+    "id": "space-1",
+    "interior": {
+     "depth": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 400,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     },
+     "height": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 300,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     },
+     "width": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 600,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     }
+    },
+    "kind": "rectangularCompartment",
+    "obstacles": [],
+    "opening": {
+     "bottom": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 0,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     },
+     "height": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 300,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     },
+     "left": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 0,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     },
+     "plane": "frontYZero",
+     "width": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 600,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     }
+    },
+    "staging": {
+     "baseSupport": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "loadLimit": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 50000
+       }
+      }
+     },
+     "freeVolume": {
+      "extent": {
+       "depth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 400,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "height": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 300,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "width": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 600,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       }
+      },
+      "minX": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "nominal": 0,
+        "uncertainty": {
+         "minusMm": 0,
+         "plusMm": 0,
+         "state": "bounded"
+        }
+       }
+      },
+      "minY": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "nominal": -400,
+        "uncertainty": {
+         "minusMm": 0,
+         "plusMm": 0,
+         "state": "bounded"
+        }
+       }
+      },
+      "minZ": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "nominal": 0,
+        "uncertainty": {
+         "minusMm": 0,
+         "plusMm": 0,
+         "state": "bounded"
+        }
+       }
+      }
+     }
+    },
+    "support": {
+     "elevation": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "nominal": 0,
+       "uncertainty": {
+        "minusMm": 0,
+        "plusMm": 0,
+        "state": "bounded"
+       }
+      }
+     },
+     "footprint": {
+      "depth": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "nominal": 400,
+        "uncertainty": {
+         "minusMm": 0,
+         "plusMm": 0,
+         "state": "bounded"
+        }
+       }
+      },
+      "width": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "nominal": 600,
+        "uncertainty": {
+         "minusMm": 0,
+         "plusMm": 0,
+         "state": "bounded"
+        }
+       }
+      },
+      "x": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "nominal": 0,
+        "uncertainty": {
+         "minusMm": 0,
+         "plusMm": 0,
+         "state": "bounded"
+        }
+       }
+      },
+      "y": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "nominal": 0,
+        "uncertainty": {
+         "minusMm": 0,
+         "plusMm": 0,
+         "state": "bounded"
+        }
+       }
+      }
+     },
+     "id": "floor-1",
+     "kind": "establishedFloor",
+     "loadLimit": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "userDeclared",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 50000
+     }
+    }
+   },
+   "strategyChoice": "minimumPurchase"
+  },
+  "catalog": {
+   "catalogDigest": "802a109192357c493fd4effc09ccef51c109a7ab05b18a927d109572505cff1a",
+   "catalogVersion": "catalog-2025-01",
+   "evidence": [],
+   "ingestionVersion": "ingest-1",
+   "offers": [
+    {
+     "bundleComponents": [],
+     "id": "offer-1",
+     "inventory": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "inStock"
+     },
+     "observedAt": null,
+     "packPrice": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "12000"
+     },
+     "packQuantity": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 4
+     },
+     "sellerId": "seller-1",
+     "shipping": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "kind": "free"
+      }
+     },
+     "url": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "https://shop.example/var-1"
+     },
+     "variantId": "var-1"
+    }
+   ],
+   "products": [
+    {
+     "brand": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "ACME"
+     },
+     "category": "storage",
+     "id": "prod-1",
+     "name": "Storage box",
+     "provenance": {
+      "evidenceIds": [],
+      "inputRefs": [],
+      "observedAt": null,
+      "origin": "manufacturer",
+      "ruleIds": [],
+      "verification": "unverified"
+     }
+    }
+   ],
+   "schemaVersion": 1,
+   "sourceKind": "synthetic",
+   "sourceObservations": [],
+   "variants": [
+    {
+     "allowedOrientations": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": [
+       "upright0"
+      ]
+     },
+     "color": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "clear"
+     },
+     "compatibility": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": []
+     },
+     "dimensions": {
+      "cavityClearances": {
+       "back": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       },
+       "betweenItems": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 5
+       },
+       "front": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       },
+       "left": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       },
+       "right": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       },
+       "top": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       }
+      },
+      "cavityModel": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": "conservativeCuboid"
+      },
+      "handles": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "kind": "includedInOuter"
+       }
+      },
+      "inner": {
+       "depth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 190,
+         "uncertainty": {
+          "state": "unknown"
+         }
+        }
+       },
+       "height": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 140,
+         "uncertainty": {
+          "state": "unknown"
+         }
+        }
+       },
+       "width": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 290,
+         "uncertainty": {
+          "state": "unknown"
+         }
+        }
+       }
+      },
+      "innerOffset": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "x": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "manufacturer",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 5,
+          "uncertainty": {
+           "state": "unknown"
+          }
+         }
+        },
+        "y": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "manufacturer",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 5,
+          "uncertainty": {
+           "state": "unknown"
+          }
+         }
+        },
+        "z": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "manufacturer",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 10,
+          "uncertainty": {
+           "state": "unknown"
+          }
+         }
+        }
+       }
+      },
+      "innerSupport": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": {
+        "elevation": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "manufacturer",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 10,
+          "uncertainty": {
+           "state": "unknown"
+          }
+         }
+        },
+        "footprint": {
+         "depth": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "manufacturer",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 190,
+           "uncertainty": {
+            "state": "unknown"
+           }
+          }
+         },
+         "width": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "manufacturer",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 290,
+           "uncertainty": {
+            "state": "unknown"
+           }
+          }
+         },
+         "x": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "manufacturer",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 5,
+           "uncertainty": {
+            "state": "unknown"
+           }
+          }
+         },
+         "y": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "manufacturer",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 5,
+           "uncertainty": {
+            "state": "unknown"
+           }
+          }
+         }
+        },
+        "id": "cavity-floor-1",
+        "kind": "containerCavityFloor",
+        "loadLimit": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "manufacturer",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": 20000
+        }
+       }
+      },
+      "lidState": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": "absent"
+      },
+      "outer": {
+       "depth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 200,
+         "uncertainty": {
+          "state": "unknown"
+         }
+        }
+       },
+       "height": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 150,
+         "uncertainty": {
+          "state": "unknown"
+         }
+        }
+       },
+       "width": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "manufacturer",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 300,
+         "uncertainty": {
+          "state": "unknown"
+         }
+        }
+       }
+      }
+     },
+     "handling": {
+      "left": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": 5
+      },
+      "liftAboveRim": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": 0
+      },
+      "pullExtraDepth": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": 0
+      },
+      "right": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": 5
+      },
+      "top": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "manufacturer",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": 5
+      }
+     },
+     "id": "var-1",
+     "mass": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": 1500
+     },
+     "material": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "polypropylene"
+     },
+     "mounting": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": "none"
+     },
+     "optionLabel": "20L clear",
+     "primitive": "openBin",
+     "productId": "prod-1",
+     "stackability": {
+      "provenance": {
+       "evidenceIds": [],
+       "inputRefs": [],
+       "observedAt": null,
+       "origin": "manufacturer",
+       "ruleIds": [],
+       "verification": "unverified"
+      },
+      "state": "known",
+      "value": {
+       "kind": "stackable",
+       "maxUnits": 3
+      }
+     }
+    }
+   ]
+  },
+  "base": {
+   "content": {
+    "actions": [
+     {
+      "id": "act:install:p-a0",
+      "kind": "install",
+      "prerequisiteStepIds": [],
+      "reasonIds": [],
+      "requiredConfirmations": [],
+      "subjectIds": [
+       "p-a0"
+      ]
+     },
+     {
+      "id": "act:install:p-b0",
+      "kind": "install",
+      "prerequisiteStepIds": [],
+      "reasonIds": [],
+      "requiredConfirmations": [],
+      "subjectIds": [
+       "p-b0"
+      ]
+     },
+     {
+      "id": "act:verify:item-a",
+      "kind": "verifyUnassigned",
+      "prerequisiteStepIds": [],
+      "reasonIds": [],
+      "requiredConfirmations": [],
+      "subjectIds": [
+       "item-a"
+      ]
+     }
+    ],
+    "assignments": [
+     {
+      "itemId": "item-b",
+      "location": {
+       "kind": "direct",
+       "placementId": "p-b0"
+      },
+      "unitOrdinal": 0
+     },
+     {
+      "itemId": "item-a",
+      "location": {
+       "kind": "direct",
+       "placementId": "p-a0"
+      },
+      "unitOrdinal": 0
+     }
+    ],
+    "bom": [],
+    "costSummary": {
+     "grandTotal": {
+      "reasonCode": "no_purchases",
+      "state": "notApplicable"
+     },
+     "productSubtotal": {
+      "reasonCode": "no_purchases",
+      "state": "notApplicable"
+     },
+     "shippingTotal": {
+      "reasonCode": "no_purchases",
+      "state": "notApplicable"
+     }
+    },
+    "creation": "referenceSearch",
+    "inputFacts": {
+     "catalogPin": {
+      "catalogDigest": "802a109192357c493fd4effc09ccef51c109a7ab05b18a927d109572505cff1a",
+      "catalogVersion": "catalog-2025-01"
+     },
+     "constraints": {
+      "hardBudget": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": "200000"
+      },
+      "hardOneActionAccess": false,
+      "lockedZones": [],
+      "purchaseAllowed": true,
+      "safetyRestrictions": [],
+      "softBudget": {
+       "provenance": {
+        "evidenceIds": [],
+        "inputRefs": [],
+        "observedAt": null,
+        "origin": "userDeclared",
+        "ruleIds": [],
+        "verification": "unverified"
+       },
+       "state": "known",
+       "value": "100000"
+      }
+     },
+     "evidence": [],
+     "groups": [
+      {
+       "id": "group-1",
+       "itemIds": [
+        "item-a",
+        "item-b"
+       ],
+       "label": "Closet",
+       "splitPolicy": "oneTarget"
+      }
+     ],
+     "items": [
+      {
+       "activityIds": [],
+       "category": "clothing",
+       "dimensions": {
+        "envelope": {
+         "depth": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 100,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         },
+         "height": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 80,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         },
+         "width": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 190,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         }
+        },
+        "storageState": "folded"
+       },
+       "frequency": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": "weekly"
+       },
+       "id": "item-a",
+       "label": "Winter coats",
+       "massEach": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 800
+       },
+       "quantity": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 2
+       },
+       "requirement": {
+        "allowedOrientations": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": [
+          "upright0"
+         ]
+        },
+        "allowedRetrievalModes": [
+         "directFrontExtraction"
+        ],
+        "handling": {
+         "left": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 5
+         },
+         "liftAboveRim": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 0
+         },
+         "pullExtraDepth": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 0
+         },
+         "right": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 5
+         },
+         "top": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 5
+         }
+        },
+        "mandatoryCompatibility": [],
+        "mustStayTogether": false
+       },
+       "stockRole": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": "active"
+       }
+      },
+      {
+       "activityIds": [],
+       "category": "paper",
+       "dimensions": {
+        "envelope": {
+         "depth": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 200,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         },
+         "height": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 50,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         },
+         "width": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 300,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         }
+        },
+        "storageState": "boxed"
+       },
+       "frequency": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": "rare"
+       },
+       "id": "item-b",
+       "label": "Documents",
+       "massEach": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 1200
+       },
+       "quantity": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 1
+       },
+       "requirement": {
+        "allowedOrientations": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": [
+          "upright0",
+          "upright90"
+         ]
+        },
+        "allowedRetrievalModes": [
+         "directFrontExtraction",
+         "pullContainerThenRetrieve"
+        ],
+        "handling": {
+         "left": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 2
+         },
+         "liftAboveRim": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 0
+         },
+         "pullExtraDepth": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 0
+         },
+         "right": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 2
+         },
+         "top": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 2
+         }
+        },
+        "mandatoryCompatibility": [
+         "item-a"
+        ],
+        "mustStayTogether": true
+       },
+       "stockRole": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": "reserve"
+       }
+      }
+     ],
+     "ownedContainers": [],
+     "preferences": {
+      "color": null,
+      "material": null,
+      "objectiveRanking": [
+       "minimumPurchase"
+      ],
+      "visualNotes": []
+     },
+     "search": {
+      "budget": {
+       "maxAlternatives": 3,
+       "maxCandidatesPerGroup": 4,
+       "maxNodes": 64,
+       "maxWorkUnits": "1000"
+      },
+      "profile": {
+       "id": "default",
+       "version": 1
+      },
+      "seed": null
+     },
+     "space": {
+      "clearances": {
+       "back": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 0
+       },
+       "betweenUnits": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 5
+       },
+       "front": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 0
+       },
+       "left": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 5
+       },
+       "right": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 5
+       },
+       "ruleIds": [
+        "rule:clearance-v1"
+       ],
+       "top": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 10
+       }
+      },
+      "id": "space-1",
+      "interior": {
+       "depth": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 400,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "height": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 300,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "width": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 600,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       }
+      },
+      "kind": "rectangularCompartment",
+      "obstacles": [],
+      "opening": {
+       "bottom": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 0,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "height": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 300,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "left": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 0,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "plane": "frontYZero",
+       "width": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 600,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       }
+      },
+      "staging": {
+       "baseSupport": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "loadLimit": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": 50000
+         }
+        }
+       },
+       "freeVolume": {
+        "extent": {
+         "depth": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 400,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         },
+         "height": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 300,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         },
+         "width": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "userDeclared",
+           "ruleIds": [],
+           "verification": "unverified"
+          },
+          "state": "known",
+          "value": {
+           "nominal": 600,
+           "uncertainty": {
+            "minusMm": 0,
+            "plusMm": 0,
+            "state": "bounded"
+           }
+          }
+         }
+        },
+        "minX": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 0,
+          "uncertainty": {
+           "minusMm": 0,
+           "plusMm": 0,
+           "state": "bounded"
+          }
+         }
+        },
+        "minY": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": -400,
+          "uncertainty": {
+           "minusMm": 0,
+           "plusMm": 0,
+           "state": "bounded"
+          }
+         }
+        },
+        "minZ": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 0,
+          "uncertainty": {
+           "minusMm": 0,
+           "plusMm": 0,
+           "state": "bounded"
+          }
+         }
+        }
+       }
+      },
+      "support": {
+       "elevation": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": {
+         "nominal": 0,
+         "uncertainty": {
+          "minusMm": 0,
+          "plusMm": 0,
+          "state": "bounded"
+         }
+        }
+       },
+       "footprint": {
+        "depth": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 400,
+          "uncertainty": {
+           "minusMm": 0,
+           "plusMm": 0,
+           "state": "bounded"
+          }
+         }
+        },
+        "width": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 600,
+          "uncertainty": {
+           "minusMm": 0,
+           "plusMm": 0,
+           "state": "bounded"
+          }
+         }
+        },
+        "x": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 0,
+          "uncertainty": {
+           "minusMm": 0,
+           "plusMm": 0,
+           "state": "bounded"
+          }
+         }
+        },
+        "y": {
+         "provenance": {
+          "evidenceIds": [],
+          "inputRefs": [],
+          "observedAt": null,
+          "origin": "userDeclared",
+          "ruleIds": [],
+          "verification": "unverified"
+         },
+         "state": "known",
+         "value": {
+          "nominal": 0,
+          "uncertainty": {
+           "minusMm": 0,
+           "plusMm": 0,
+           "state": "bounded"
+          }
+         }
+        }
+       },
+       "id": "floor-1",
+       "kind": "establishedFloor",
+       "loadLimit": {
+        "provenance": {
+         "evidenceIds": [],
+         "inputRefs": [],
+         "observedAt": null,
+         "origin": "userDeclared",
+         "ruleIds": [],
+         "verification": "unverified"
+        },
+        "state": "known",
+        "value": 50000
+       }
+      }
+     },
+     "strategyChoice": "minimumPurchase"
+    },
+    "placements": [
+     {
+      "id": "p-b0",
+      "orientation": "upright0",
+      "parent": {
+       "kind": "space",
+       "spaceId": "space-1"
+      },
+      "position": {
+       "x": 5,
+       "y": 0,
+       "z": 0
+      },
+      "subject": {
+       "itemId": "item-b",
+       "kind": "directItem",
+       "unitOrdinal": 0
+      },
+      "supportId": "floor-1"
+     },
+     {
+      "id": "p-a0",
+      "orientation": "upright0",
+      "parent": {
+       "kind": "space",
+       "spaceId": "space-1"
+      },
+      "position": {
+       "x": 310,
+       "y": 0,
+       "z": 0
+      },
+      "subject": {
+       "itemId": "item-a",
+       "kind": "directItem",
+       "unitOrdinal": 0
+      },
+      "supportId": "floor-1"
+     }
+    ],
+    "purchaseSelections": [],
+    "referencedCatalog": {
+     "evidence": [],
+     "offers": [],
+     "products": [],
+     "variants": []
+    },
+    "scope": {
+     "budget": {
+      "maxAlternatives": 3,
+      "maxCandidatesPerGroup": 4,
+      "maxNodes": 64,
+      "maxWorkUnits": "1000"
+     },
+     "groupIds": [
+      "group-1"
+     ],
+     "profile": {
+      "id": "default",
+      "version": 1
+     },
+     "restrictions": []
+    },
+    "strategy": {
+     "assumptions": [],
+     "factRefs": [],
+     "groups": [
+      {
+       "groupId": "group-1",
+       "itemIds": [
+        "item-a",
+        "item-b"
+       ],
+       "zoneId": "zone-1"
+      }
+     ],
+     "priorities": [
+      {
+       "groupId": "group-1",
+       "ordinal": 0
+      }
+     ],
+     "reasons": [],
+     "ruleIds": [
+      "rule:solver-min-purchase"
+     ],
+     "strategy": "minimumPurchase",
+     "zones": [
+      {
+       "bounds": {
+        "extent": {
+         "depth": 400,
+         "height": 300,
+         "width": 600
+        },
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        }
+       },
+       "id": "zone-1",
+       "kind": "softPreference",
+       "label": "Compartment"
+      }
+     ]
+    },
+    "unassigned": [
+     {
+      "instances": {
+       "kind": "known",
+       "ranges": [
+        {
+         "endExclusive": 2,
+         "start": 1
+        }
+       ]
+      },
+      "itemId": "item-a",
+      "reasonCode": "no-space"
+     }
+    ],
+    "validation": {
+     "assignmentCompleteness": {
+      "assignedInstances": 2,
+      "provisionalInstances": 0,
+      "unassignedInstances": 1,
+      "unknownQuantityItems": 0
+     },
+     "checks": [
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:or:p-b0",
+       "kind": "orientation",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:or:p-a0",
+       "kind": "orientation",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:og:p-b0:n",
+       "kind": "outer_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:og:p-b0:c",
+       "kind": "outer_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:og:p-a0:n",
+       "kind": "outer_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:og:p-a0:c",
+       "kind": "outer_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ogp:p-b0:p-a0:n",
+       "kind": "outer_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0",
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ogp:p-b0:p-a0:c",
+       "kind": "outer_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0",
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:sg:p-b0:n",
+       "kind": "support_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:sg:p-b0:c",
+       "kind": "support_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:sg:p-a0:n",
+       "kind": "support_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:sg:p-a0:c",
+       "kind": "support_geometry",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ld:floor:space-1",
+       "kind": "support_load",
+       "measurements": [
+        {
+         "fieldPath": "totalMassGrams",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "2000"
+         }
+        },
+        {
+         "fieldPath": "limitGrams",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "50000"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "space-1"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ld:staging:p-b0",
+       "kind": "support_load",
+       "measurements": [
+        {
+         "fieldPath": "totalMassGrams",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "1200"
+         }
+        },
+        {
+         "fieldPath": "limitGrams",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "50000"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ld:staging:p-a0",
+       "kind": "support_load",
+       "measurements": [
+        {
+         "fieldPath": "totalMassGrams",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "800"
+         }
+        },
+        {
+         "fieldPath": "limitGrams",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "50000"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ip:p-b0:n",
+       "kind": "installation_path",
+       "measurements": [
+        {
+         "fieldPath": "pullDepthRequiredMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "200"
+         }
+        },
+        {
+         "fieldPath": "stagingDepthAvailableMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "400"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ip:p-b0:c",
+       "kind": "installation_path",
+       "measurements": [
+        {
+         "fieldPath": "pullDepthRequiredMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "200"
+         }
+        },
+        {
+         "fieldPath": "stagingDepthAvailableMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "400"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ip:p-a0:n",
+       "kind": "installation_path",
+       "measurements": [
+        {
+         "fieldPath": "pullDepthRequiredMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "100"
+         }
+        },
+        {
+         "fieldPath": "stagingDepthAvailableMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "400"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:ip:p-a0:c",
+       "kind": "installation_path",
+       "measurements": [
+        {
+         "fieldPath": "pullDepthRequiredMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "100"
+         }
+        },
+        {
+         "fieldPath": "stagingDepthAvailableMm",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "400"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:io:order",
+       "kind": "installation_path",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0",
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:oa:p-b0:n",
+       "kind": "operational_access",
+       "measurements": [
+        {
+         "fieldPath": "blockerCount",
+         "valueMm": {
+          "reason": "notProvided",
+          "state": "unknown"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:oa:p-b0:c",
+       "kind": "operational_access",
+       "measurements": [
+        {
+         "fieldPath": "blockerCount",
+         "valueMm": {
+          "reason": "notProvided",
+          "state": "unknown"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nominal",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:oa:p-a0:n",
+       "kind": "operational_access",
+       "measurements": [
+        {
+         "fieldPath": "blockerCount",
+         "valueMm": {
+          "reason": "notProvided",
+          "state": "unknown"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "conservative",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:oa:p-a0:c",
+       "kind": "operational_access",
+       "measurements": [
+        {
+         "fieldPath": "blockerCount",
+         "valueMm": {
+          "reason": "notProvided",
+          "state": "unknown"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:oac:p-b0:x",
+       "kind": "operational_access",
+       "measurements": [],
+       "reasonCode": "direct_extraction_no_rim_lift",
+       "remediation": [],
+       "status": "not_applicable",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:oac:p-a0:x",
+       "kind": "operational_access",
+       "measurements": [],
+       "reasonCode": "direct_extraction_no_rim_lift",
+       "remediation": [],
+       "status": "not_applicable",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:qc:partition",
+       "kind": "quantity_conservation",
+       "measurements": [
+        {
+         "fieldPath": "assignedInstances",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "2"
+         }
+        },
+        {
+         "fieldPath": "provisionalInstances",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "0"
+         }
+        },
+        {
+         "fieldPath": "unassignedInstances",
+         "valueMm": {
+          "provenance": {
+           "evidenceIds": [],
+           "inputRefs": [],
+           "observedAt": null,
+           "origin": "derived",
+           "ruleIds": [
+            "validator:measure"
+           ],
+           "verification": "confirmed"
+          },
+          "state": "known",
+          "value": "1"
+         }
+        }
+       ],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": []
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:cp:group:group-1",
+       "kind": "compatibility",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "group-1"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:cp:item:item-b",
+       "kind": "compatibility",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "item-b"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:cp:compat:item-b:item-a",
+       "kind": "compatibility",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "item-b",
+        "item-a"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:cp:model:p-b0",
+       "kind": "compatibility",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-b0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:cp:model:p-a0",
+       "kind": "compatibility",
+       "measurements": [],
+       "reasonCode": "ok",
+       "remediation": [],
+       "status": "pass",
+       "subjectIds": [
+        "p-a0"
+       ]
+      },
+      {
+       "basis": "nonGeometric",
+       "blocking": true,
+       "evidenceRefs": [],
+       "id": "chk:bg:hard",
+       "kind": "budget",
+       "measurements": [],
+       "reasonCode": "no_purchases",
+       "remediation": [],
+       "status": "not_applicable",
+       "subjectIds": []
+      }
+     ],
+     "commerceReadiness": "notApplicable",
+     "physicalAssurance": "confirmedWithinScope"
+    },
+    "versions": {
+     "canonicalVersion": 1,
+     "catalogDigest": "802a109192357c493fd4effc09ccef51c109a7ab05b18a927d109572505cff1a",
+     "catalogVersion": "catalog-2025-01",
+     "inputDigest": "839a9e6e4d60cf0878e3f598bbc2dd3cd12e49b6a853ad3f75159293fa7069a3",
+     "ruleVersion": "zari-domain-v1",
+     "schemaVersion": 1,
+     "searchBudget": {
+      "maxAlternatives": 3,
+      "maxCandidatesPerGroup": 4,
+      "maxNodes": 64,
+      "maxWorkUnits": "1000"
+     },
+     "searchProfile": {
+      "id": "default",
+      "version": 1
+     },
+     "seed": null,
+     "solverVersion": "zari-solver-v1"
+    }
+   },
+   "planSnapshotId": "a97c3b1f0ac77a28e938e29a5da1bdeec54c6216731dd0a34246613bac66219f"
+  },
+  "command": {
+   "kind": "movePlacement",
+   "placementId": "p-b0",
+   "position": {
+    "x": 500,
+    "y": 0,
+    "z": 0
+   }
+  }
+ },
+ "engineContext": {
+  "buildId": "zari-domain-3"
+ },
+ "expected": {
+  "kind": "evaluateLayoutEdit",
+  "decodeError": false,
+  "diagnostics": [],
+  "checks": [
+   {
+    "id": "chk:og:p-b0:n",
+    "status": "fail",
+    "reasonCode": "outside_compartment"
+   }
+  ],
+  "physicalAssurance": "rejected",
+  "commerceReadiness": "notApplicable",
+  "snapshotDigest": null
+ }
+}

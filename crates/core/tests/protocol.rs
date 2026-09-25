@@ -62,6 +62,7 @@ fn capability_subset_is_honest() {
             "verifyRecord",
             "normalizeCatalogFields",
             "validateCandidate",
+            "evaluateLayoutEdit",
             "disposeProject"
         ])
     );
