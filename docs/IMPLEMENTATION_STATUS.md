@@ -1,6 +1,86 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-008 실제 카탈로그·보유 수납함·실행 진행 (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-009 복구·프라이버시·이식 가능한 로컬 프로젝트 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #25이며 base는 ZARI-008 병합 후 main
+`178f6289542ba67f3da52237f3cab1a8072b3150`입니다. 브랜치
+`devin/zari-009-recovery-privacy`에서 작업했고 Cloud Devin·production
+runner·`runtime_enabled=true`는 사용하지 않았습니다. 인증·클라우드 동기화·
+외부 사진 분석·백그라운드 텔레메트리는 범위 밖이며 추가하지 않았습니다.
+
+구현한 범위:
+
+- `persistence/export.ts` + `features/project/transfer.ts` +
+  `repository.commitImport`: 트랜잭션 내보내기/가져오기. 보내기 봉투는
+  프로젝트·draft·입력·스냅샷·진행·카탈로그·라이브러리·첨부 메타데이터와
+  명시적 `excluded` 목록(사진 바이트·임시 로그 — 파일 스스로 불완전
+  복사임을 선언)을 담습니다. 가져오기는 바운드 파싱(10 MiB·깊이 32)·봉투
+  검사·행 봉투 가드·교차 참조(댕글링·중복 ID·다이제스트 불일치) → Rust
+  `verifyRecord` → 사용자 검토 → 새 projectId로 원자 커밋 순서입니다.
+  미지원 exportVersion·schemaVersion은 명시적 `unsupported_schema`로
+  거절하고, recovery 파일은 가져오기 대상이 아니며, 실패한 stage/commit은
+  기존 프로젝트와 절반 프로젝트를 남기지 않습니다. 소스 projectId는
+  `importedFrom` provenance로 보존되고 라이브러리·격리는 건드리지 않습니다.
+- `repository.duplicateProject`: 새 id·리비전 1·draft 세대 리셋으로
+  복제합니다. 현재 입력·채택 스냅샷은 현재 입력 리비전과 일치할 때만
+  다시 묶이며 실행 진행·편집 체인은 옮기지 않습니다.
+- `persistence/db.ts` v2: `attachments` 스토어를 추가하고 v1 선언을
+  유지해 in-place 업그레이드를 지원합니다. 마이그레이션 저널은 Dexie
+  upgrade 트랜잭션 안에서만 기록되어 실제로 적용된 전환만 남습니다.
+  오래된 빌드가 v2 DB를 여는 것은 IndexedDB 자체가 거절합니다.
+- `features/attachments/`(model+image): 로컬 전용 사진 첨부 — JPEG·PNG·
+  WebP만, magic-byte 일치 요구, 원본 10 MiB·디코드 2천만 픽셀·프로젝트당
+  10장 한도, canvas 재인코드로 EXIF·위치가 제거된 표시용 사본을 저장하며
+  원본임을 주장하지 않습니다. 추가·목록·삭제 어디에도 네트워크가 없고
+  사진은 solver/입력 컨텍스트와 분리됩니다. 프로젝트 삭제는 첨부 바이트를
+  같은 트랜잭션에서 지웁니다.
+- `features/plan/csv.ts` + PlanScreen `구매 목록 CSV`: 항상 따옴표로 묶고
+  선행 공백·제어문자를 벗겨낸 뒤 수식 트리거(`= + - @`)가 보이면 `'` 접두를
+  붙이는 formula-safe CSV를 내보냅니다. 표시 텍스트와 같은 셀을 쓰므로
+  미확인 offer fact가 스프레드시트에서 0·재고 있음이 되지 않습니다.
+- `apps/web/public/sw.js` + `features/shell/offline.ts` + 빌드 플러그인
+  `zari-build.json`: 버전별 동일 출처 앱셸 캐시. closeBundle에서 전체
+  출력의 콘텐츠 다이제스트로 buildId를 계산하고, 서비스 워커는 manifest의
+  모든 자산을 per-build 캐시에 stage한 뒤 탐색 경계에서만 원자 승격하며
+  이전 완전 빌드를 유지합니다. 불완전 stage는 이전 빌드를 대체하지 않고,
+  `builtAt` 역행은 거절하며, 프로젝트 데이터·사진·교차 출처 요청은 캐시하지
+  않습니다. dev 빌드는 등록을 건너뜁니다.
+- `app/ProjectsScreen.tsx`: 파일에서 가져오기(검토 패널 — 출처·건수·첨부
+  바이트 제외 안내), 복제, 삭제(확인 패널), `· 가져옴` 라벨을 추가했습니다.
+  `app/ProjectScreen.tsx`: 사진 패널(파생 사본임을 명시)을 추가하고 기존
+  복구용 보내기·충돌·저장 실패 UX를 유지합니다. `index.html`+`favicon.svg`
+  추가로 정적 404 요청을 제거했습니다.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
+  --locked`, `cargo test --workspace --locked`: 통과 (75개).
+- `npm run contracts:check`: 생성 DTO/schema/validators가 Rust 원본과 일치
+  (95 fixture 구조 유효).
+- `npm run typecheck`, `npm run lint`: 통과.
+- `npm test`(vitest): 55개 통과 — 새 `transfer.test.ts`가 실 WASM harness로
+  export→stage→commit 왕복, 미지원·손상·댕글링·중복·조작 스냅샷 거절,
+  실패 commit의 절반 프로젝트 부재, 복제 규칙, 첨부 한도·가드, v1→v2 업그레이드
+  저널, 원자 삭제, 격리 원본 복구 보내기를 검증합니다.
+- `npx playwright test`: 26개 통과 — 새 `portable.spec.ts`가 실 Chromium에서
+  보내기→가져오기 왕복, 복제, 잘못된·미래 버전 가져오기 거절, 손상 격리와
+  복구 다운로드, 사진 추가·삭제의 네트워크 0 확인, 프로젝트 삭제의 연쇄
+  제거, 오프라인 재방문(완전 빌드 실행), 불완전 stage 승격 거부를 검증합니다.
+- `npm run test:parity`: 95 fixture native↔browser WASM 대조 일치.
+- `node scripts/check-design-tokens.mjs --self-test`: 통과 (33/33).
+- `npm run build`: 프로덕션 빌드 + `zari-build.json` manifest 생성 성공.
+
+미구현·한계: 보내기 파일에 사진 바이트가 없으므로 가져오기 후 첨부는
+재추가가 필요합니다(파일이 제외를 스스로 선언). 오래된 탭/새 빌드의 DB
+다운그레이드 보호는 IndexedDB 자체 메커니즘이며 별도 브라우저 경로
+테스트는 없습니다. 브라우저 저장소는 백업이 아니며 UI도 그렇게 표기합니다.
+가져온 `accepted` 표시는 파일의 사용자 선택을 옮긴 것으로 현재 적합성의
+보증이 아닙니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
+review(GROK 이후 GLM, 동시 1명)이며 merge는 User만 결정합니다.
+
+## 이전 구현: ZARI-008 실제 카탈로그·보유 수납함·실행 진행 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #23이며 base는 ZARI-007 병합 후 main
 `ab95a53e657144fc7281623d564c887512468b64`입니다. 브랜치

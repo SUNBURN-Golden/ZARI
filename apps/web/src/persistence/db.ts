@@ -17,7 +17,13 @@ import {
 } from '../contracts/generated/validators.mjs';
 
 export const DB_NAME = 'zari-local';
-export const DB_VERSION = 1;
+/**
+ * v1: Task 005 stores. v2: Task 009 adds the `attachments` Blob store for
+ * optional local photos. Historical declarations stay so a v1 database
+ * upgrades in place; a v2 database opened by a v1 build is refused by
+ * IndexedDB itself (downgrade protection).
+ */
+export const DB_VERSION = 2;
 export const SCHEMA_VERSION = 1;
 const MAX_REVISION = 18446744073709551615n;
 
@@ -37,6 +43,8 @@ export interface ProjectRow {
   createdAt: string;
   updatedAt: string;
   recovery: { code: string; detail: string } | null;
+  /** Import provenance; absent on projects created locally. */
+  importedFrom?: { sourceProjectId: string; exportedAt: string };
 }
 /** Immutable normalized input at one revision. */
 export interface InputRow {
@@ -124,6 +132,35 @@ export interface MetadataRow {
   key: string;
   payload: unknown;
 }
+/**
+ * Optional local photo attachment (PERSISTENCE §2, Ticket 009). `bytes` is a
+ * decode/re-encode display derivative — EXIF/location metadata is stripped by
+ * re-encoding, so the stored bytes are never claimed to be the user's
+ * original file. Attachment rows live outside solver/input context entirely.
+ */
+export interface AttachmentRow {
+  schemaVersion: number;
+  attachmentId: string;
+  projectId: string;
+  name: string;
+  mime: 'image/jpeg' | 'image/png' | 'image/webp';
+  /** Stored derivative byte length (must equal `bytes.byteLength`). */
+  byteSize: number;
+  /** Source file size before re-encoding, for honest limits/reporting. */
+  originalByteSize: number;
+  width: number;
+  height: number;
+  bytes: ArrayBuffer;
+  createdAt: string;
+}
+/** Migration journal entry recorded in `metadata` after a versioned open. */
+export interface MigrationJournal {
+  kind: 'migration';
+  fromVersion: number;
+  toVersion: number;
+  state: 'applied';
+  recordedAt: string;
+}
 /** Quarantined record envelope kept under `metadata` for recovery. */
 export interface QuarantinePayload {
   kind: 'quarantine';
@@ -144,10 +181,11 @@ export class ZariDb extends Dexie {
   ownedContainers!: Table<OwnedContainerRow, string>;
   catalogs!: Table<CatalogRow, string>;
   actionProgress!: Table<ActionProgressRow, [string, string, string, string]>;
+  attachments!: Table<AttachmentRow, string>;
   metadata!: Table<MetadataRow, string>;
   constructor(name: string = DB_NAME) {
     super(name);
-    this.version(DB_VERSION).stores({
+    this.version(1).stores({
       projects: 'projectId, updatedAt, status',
       inputs: '[projectId+inputRevision], projectId',
       drafts: 'projectId',
@@ -157,6 +195,35 @@ export class ZariDb extends Dexie {
       actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
       metadata: 'key',
     });
+    this.version(2)
+      .stores({
+        projects: 'projectId, updatedAt, status',
+        inputs: '[projectId+inputRevision], projectId',
+        drafts: 'projectId',
+        snapshots: '[projectId+inputRevision+planSnapshotId], projectId, planSnapshotId',
+        ownedContainers: 'ownedContainerId, updatedAt',
+        catalogs: 'catalogDigest, catalogVersion, origin',
+        actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
+        attachments: 'attachmentId, projectId',
+        metadata: 'key',
+      })
+      // PERSISTENCE §6 journal: recorded inside the schema transaction, so
+      // the entry exists iff the upgrade actually applied — a failed or
+      // never-run migration leaves no journal.
+      .upgrade(async (tx) => {
+        const journal: MigrationJournal = {
+          kind: 'migration',
+          fromVersion: 1,
+          toVersion: 2,
+          state: 'applied',
+          recordedAt: new Date().toISOString(),
+        };
+        await tx.table('metadata').put({
+          schemaVersion: SCHEMA_VERSION,
+          key: 'migration:1->2',
+          payload: journal,
+        });
+      });
   }
 }
 
@@ -217,7 +284,14 @@ export function readProjectRow(value: unknown): ProjectRow {
         isCanonicalRevision(row.accepted.inputRevision) &&
         digestShape(row.accepted.planSnapshotId))
     ) ||
-    !text(row.lastStep)
+    !text(row.lastStep) ||
+    !(
+      row.importedFrom === undefined ||
+      (typeof row.importedFrom === 'object' &&
+        row.importedFrom !== null &&
+        text(row.importedFrom.sourceProjectId) &&
+        text(row.importedFrom.exportedAt))
+    )
   )
     throw new Error('record_corrupt');
   return row;
@@ -345,6 +419,38 @@ export function readActionProgressRow(value: unknown): ActionProgressRow {
     !digestShape(row.planSnapshotId) ||
     !text(row.stepId) ||
     (row.status !== 'done' && row.status !== 'todo')
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const ATTACHMENT_MAX_COUNT = 10;
+export function readAttachmentRow(value: unknown): AttachmentRow {
+  const row = value as AttachmentRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.attachmentId) ||
+    !text(row.projectId) ||
+    !text(row.name, 1024) ||
+    (row.mime !== 'image/jpeg' &&
+      row.mime !== 'image/png' &&
+      row.mime !== 'image/webp') ||
+    !Number.isInteger(row.byteSize) ||
+    row.byteSize <= 0 ||
+    row.byteSize > ATTACHMENT_MAX_BYTES ||
+    !Number.isInteger(row.originalByteSize) ||
+    row.originalByteSize <= 0 ||
+    row.originalByteSize > ATTACHMENT_MAX_BYTES ||
+    !Number.isInteger(row.width) ||
+    row.width <= 0 ||
+    !Number.isInteger(row.height) ||
+    row.height <= 0 ||
+    !(row.bytes instanceof ArrayBuffer) ||
+    row.bytes.byteLength !== row.byteSize ||
+    !text(row.createdAt)
   )
     throw new Error('record_corrupt');
   return row;
