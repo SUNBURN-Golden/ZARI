@@ -1,5 +1,6 @@
 pub mod canonical;
 pub mod catalog;
+pub mod edit;
 pub mod facts;
 pub mod finalize;
 pub mod geometry;
@@ -15,6 +16,7 @@ pub mod validate;
 pub mod validator;
 pub use canonical::*;
 pub use catalog::*;
+pub use edit::*;
 pub use facts::*;
 pub use finalize::{CandidateEvaluation, evaluate_candidate};
 pub use input::*;

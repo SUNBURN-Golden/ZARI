@@ -24,7 +24,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-3";
-const CAPABILITIES: [&str; 9] = [
+const CAPABILITIES: [&str; 10] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -33,6 +33,7 @@ const CAPABILITIES: [&str; 9] = [
     "verifyRecord",
     "normalizeCatalogFields",
     "validateCandidate",
+    "evaluateLayoutEdit",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -42,7 +43,7 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 12] = [
+const COMMAND_KINDS: [&str; 13] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -50,6 +51,7 @@ const COMMAND_KINDS: [&str; 12] = [
     "verifyRecord",
     "normalizeCatalogFields",
     "validateCandidate",
+    "evaluateLayoutEdit",
     "disposeProject",
     "proposeStrategies",
     "startSearch",
@@ -207,6 +209,17 @@ pub enum Command {
     ValidateCandidate {
         proposal: CandidateProposal,
     },
+    /// Trustworthy editing (Ticket 007): apply one domain edit command to an
+    /// immutable base snapshot and revalidate the whole layout through the
+    /// same boundary as `validateCandidate`. `sourceSnapshot` resolves
+    /// `restoreLayout` targets; it is ignored by other commands.
+    EvaluateLayoutEdit {
+        base_snapshot: PlanSnapshot,
+        command: LayoutEditCommand,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
+        source_snapshot: Option<PlanSnapshot>,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -290,6 +303,20 @@ pub enum Event {
     /// finalized snapshot only when no blocking failure exists, and the
     /// structural diagnostics for proposals that are not valid candidates.
     CandidateValidated {
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<ValidationReport>")]
+        report: Option<ValidationReport>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
+        snapshot: Option<PlanSnapshot>,
+        diagnostics: Vec<Diagnostic>,
+    },
+    /// Result of `evaluateLayoutEdit`: the same triple as
+    /// `candidateValidated`. `snapshot` is present only when the edited layout
+    /// survived independent validation; `diagnostics` carries command-level
+    /// rejection codes (unknown placement, out-of-scope base, unsupported
+    /// transform) plus structural failures.
+    EditEvaluated {
         #[serde(deserialize_with = "crate::required_option")]
         #[schemars(with = "crate::RequiredNullable<ValidationReport>")]
         report: Option<ValidationReport>,
@@ -387,6 +414,8 @@ pub enum DomainOperation {
     VerifyRecord,
     NormalizeCatalogFields,
     ValidateCandidate,
+    /// One layout edit command against an embedded base snapshot.
+    EvaluateLayoutEdit,
     /// Strategy catalogue over the fixture's activated project context.
     ProposeStrategies,
     /// Resumable bounded search driven by explicit fixture-declared steps.
@@ -483,6 +512,23 @@ pub enum DomainFixtureExpected {
     /// requires the event to carry no snapshot (rejected candidates), a value
     /// pins the exact immutable identity.
     ValidateCandidate {
+        decode_error: bool,
+        diagnostics: Vec<ExpectedDiagnostic>,
+        checks: Vec<ExpectedCheck>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PhysicalAssurance>")]
+        physical_assurance: Option<PhysicalAssurance>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<CommerceReadiness>")]
+        commerce_readiness: Option<CommerceReadiness>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<Digest>")]
+        snapshot_digest: Option<Digest>,
+    },
+    /// Same oracle shape as `validateCandidate` over the `editEvaluated`
+    /// event; `snapshotDigest: null` asserts a rejected edit published no
+    /// snapshot.
+    EvaluateLayoutEdit {
         decode_error: bool,
         diagnostics: Vec<ExpectedDiagnostic>,
         checks: Vec<ExpectedCheck>,
@@ -631,6 +677,51 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
                     json!({
                         "kind": "validateCandidate",
                         "proposal": fixture.input["proposal"].clone()
+                    }),
+                ),
+            ]
+        }
+        DomainOperation::EvaluateLayoutEdit => {
+            // input: {"input": <ProjectInput>, "catalog": <CatalogSnapshot>,
+            //         "base": <PlanSnapshot>, "command": <LayoutEditCommand>,
+            //         "source"?: <PlanSnapshot>}. The operation request is
+            // fenced by the activation context id like validateCandidate.
+            let input: Option<ProjectInput> =
+                serde_json::from_value(fixture.input["input"].clone()).ok();
+            let catalog: Option<CatalogSnapshot> =
+                serde_json::from_value(fixture.input["catalog"].clone()).ok();
+            let context_id = input
+                .as_ref()
+                .zip(catalog.as_ref())
+                .map(|(input, catalog)| {
+                    canonical::context_id(input, &CatalogContent::from(catalog))
+                        .as_str()
+                        .to_owned()
+                });
+            vec![
+                initialize,
+                request(
+                    meta("fixture-activate", false, None),
+                    json!({
+                        "kind": "activateProject",
+                        "context": {
+                            "kind": "project",
+                            "input": fixture.input["input"].clone(),
+                            "catalog": fixture.input["catalog"].clone()
+                        }
+                    }),
+                ),
+                request(
+                    meta("fixture-operation", false, context_id.as_deref()),
+                    json!({
+                        "kind": "evaluateLayoutEdit",
+                        "baseSnapshot": fixture.input["base"].clone(),
+                        "command": fixture.input["command"].clone(),
+                        "sourceSnapshot": fixture
+                            .input
+                            .get("source")
+                            .cloned()
+                            .unwrap_or(Value::Null)
                     }),
                 ),
             ]
@@ -820,6 +911,7 @@ pub fn execute_domain_fixture_with(
         | DomainFixtureExpected::VerifyRecord { decode_error, .. }
         | DomainFixtureExpected::NormalizeCatalogFields { decode_error, .. }
         | DomainFixtureExpected::ValidateCandidate { decode_error, .. }
+        | DomainFixtureExpected::EvaluateLayoutEdit { decode_error, .. }
         | DomainFixtureExpected::ProposeStrategies { decode_error, .. }
         | DomainFixtureExpected::RunSearch { decode_error, .. } => *decode_error,
     };
@@ -946,10 +1038,24 @@ pub fn execute_domain_fixture_with(
             commerce_readiness,
             snapshot_digest,
             ..
+        }
+        | DomainFixtureExpected::EvaluateLayoutEdit {
+            diagnostics,
+            checks,
+            physical_assurance,
+            commerce_readiness,
+            snapshot_digest,
+            ..
         } => {
-            if event["kind"] != "candidateValidated" {
+            let expected_event = if matches!(fixture.operation, DomainOperation::EvaluateLayoutEdit)
+            {
+                "editEvaluated"
+            } else {
+                "candidateValidated"
+            };
+            if event["kind"] != expected_event {
                 return Err(format!(
-                    "{}: expected candidateValidated event, got {event}",
+                    "{}: expected {expected_event} event, got {event}",
                     fixture.case_id
                 ));
             }
@@ -1589,6 +1695,48 @@ impl Runtime {
                 let evaluation =
                     finalize::evaluate_candidate(input, catalog, proposal, versions, scope);
                 Event::CandidateValidated {
+                    report: evaluation.report,
+                    snapshot: evaluation.snapshot,
+                    diagnostics: evaluation.diagnostics,
+                }
+            }
+            Command::EvaluateLayoutEdit {
+                base_snapshot,
+                command,
+                source_snapshot,
+            } => {
+                let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
+                else {
+                    return failure("invalid_state");
+                };
+                let versions = CompileVersions {
+                    schema_version: canonical::SCHEMA_VERSION,
+                    canonical_version: canonical::CANONICAL_VERSION,
+                    input_digest: canonical::input_digest(input),
+                    catalog_version: catalog.catalog_version.clone(),
+                    catalog_digest: canonical::catalog_digest(catalog),
+                    rule_version: canonical::RULE_VERSION.into(),
+                    solver_version: canonical::SOLVER_VERSION.into(),
+                    search_profile: input.search.profile.clone(),
+                    search_budget: input.search.budget.clone(),
+                    seed: input.search.seed.clone(),
+                };
+                let scope = SearchScope {
+                    profile: input.search.profile.clone(),
+                    budget: input.search.budget.clone(),
+                    group_ids: input.groups.iter().map(|g| g.id.clone()).collect(),
+                    restrictions: vec![],
+                };
+                let evaluation = crate::edit::evaluate_layout_edit(
+                    input,
+                    catalog,
+                    base_snapshot,
+                    command,
+                    source_snapshot.as_ref(),
+                    versions,
+                    scope,
+                );
+                Event::EditEvaluated {
                     report: evaluation.report,
                     snapshot: evaluation.snapshot,
                     diagnostics: evaluation.diagnostics,

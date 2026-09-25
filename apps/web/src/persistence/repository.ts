@@ -17,6 +17,7 @@ import {
   type ActionProgressRow,
   type CatalogRow,
   type DraftRow,
+  type EditChain,
   type InputRow,
   type ProjectRow,
   type QuarantinePayload,
@@ -518,6 +519,93 @@ export class ProjectRepository {
             });
             this.known.set(args.projectId, next);
             return { status: 'committed', projectRevision: next };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
+   * §007 layout edit commit: persist the verified edit result snapshot and the
+   * updated draft edit chain in one transaction. Same fences as
+   * `acceptSnapshot` — the snapshot's stamped input must still be the
+   * committed one, and an existing row under the same key must be
+   * byte-identical. `accepted` is untouched: an edited working plan is a
+   * proposal until the user accepts it.
+   */
+  commitEditSnapshot(args: {
+    projectId: string;
+    snapshot: PlanSnapshot;
+    /**
+     * The snapshot the edit was applied to; persisted alongside the result so
+     * undo can resolve its bytes after a reload (the base may be a search
+     * alternative that was never accepted).
+     */
+    base: PlanSnapshot;
+    /** Replacement edit chain for the draft row (`null` clears it). */
+    edit: EditChain | null;
+    engineBuildId: string;
+  }): Promise<CommitResult | { status: 'stale_input' }> {
+    return this.enqueue(async () => {
+      const expected = await this.expectedRevision(args.projectId);
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.projects,
+          this.db.inputs,
+          this.db.snapshots,
+          this.db.drafts,
+          async (): Promise<CommitResult | { status: 'stale_input' }> => {
+            const project = readProjectRow(await this.db.projects.get(args.projectId));
+            if (project.projectRevision !== expected) return { status: 'conflict' };
+            const content = args.snapshot.content;
+            if (
+              project.currentInputDigest === null ||
+              content.versions.inputDigest !== project.currentInputDigest ||
+              args.base.content.versions.inputDigest !== project.currentInputDigest
+            ) {
+              return { status: 'stale_input' };
+            }
+            for (const snap of [args.base, args.snapshot]) {
+              const key = [
+                args.projectId,
+                project.currentInputRevision,
+                snap.planSnapshotId,
+              ] as [string, string, string];
+              const existing = await this.db.snapshots.get(key);
+              if (existing !== undefined) {
+                const row = readSnapshotRow(existing);
+                if (JSON.stringify(row.snapshot) !== JSON.stringify(snap)) {
+                  throw new StoreError('record_corrupt', 'snapshot_content_mismatch');
+                }
+              } else {
+                await this.db.snapshots.add({
+                  schemaVersion: SCHEMA_VERSION,
+                  projectId: args.projectId,
+                  inputRevision: project.currentInputRevision,
+                  planSnapshotId: snap.planSnapshotId,
+                  snapshot: snap,
+                  acceptedAt: this.now(),
+                  engineBuildId: args.engineBuildId,
+                });
+              }
+            }
+            const rawDraft = await this.db.drafts.get(args.projectId);
+            if (rawDraft === undefined) return { status: 'conflict' };
+            const draft = readDraftRow(rawDraft);
+            const next = nextRevision(project.projectRevision);
+            await this.db.drafts.put({ ...draft, edit: args.edit, updatedAt: this.now() });
+            await this.db.projects.update(args.projectId, {
+              projectRevision: next,
+              updatedAt: this.now(),
+            });
+            this.known.set(args.projectId, next);
+            return {
+              status: 'committed',
+              projectRevision: next,
+              inputRevision: project.currentInputRevision,
+            };
           },
         );
       } catch (error) {

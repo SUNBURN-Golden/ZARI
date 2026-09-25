@@ -1044,6 +1044,39 @@
         },
         {
           "additionalProperties": false,
+          "description": "Trustworthy editing (Ticket 007): apply one domain edit command to an\nimmutable base snapshot and revalidate the whole layout through the\nsame boundary as `validateCandidate`. `sourceSnapshot` resolves\n`restoreLayout` targets; it is ignored by other commands.",
+          "properties": {
+            "baseSnapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            },
+            "command": {
+              "$ref": "#/definitions/LayoutEditCommand"
+            },
+            "kind": {
+              "const": "evaluateLayoutEdit",
+              "type": "string"
+            },
+            "sourceSnapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PlanSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "baseSnapshot",
+            "command",
+            "sourceSnapshot"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -1590,6 +1623,71 @@
         },
         {
           "additionalProperties": false,
+          "description": "Same oracle shape as `validateCandidate` over the `editEvaluated`\nevent; `snapshotDigest: null` asserts a rejected edit published no\nsnapshot.",
+          "properties": {
+            "checks": {
+              "items": {
+                "$ref": "#/definitions/ExpectedCheck"
+              },
+              "type": "array"
+            },
+            "commerceReadiness": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CommerceReadiness"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "decodeError": {
+              "type": "boolean"
+            },
+            "diagnostics": {
+              "items": {
+                "$ref": "#/definitions/ExpectedDiagnostic"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "evaluateLayoutEdit",
+              "type": "string"
+            },
+            "physicalAssurance": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PhysicalAssurance"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "snapshotDigest": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Digest"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "diagnostics",
+            "checks",
+            "physicalAssurance",
+            "commerceReadiness",
+            "snapshotDigest"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "conditionCodes": {
               "description": "Sorted union of assumption codes across all decisions.",
@@ -1699,6 +1797,11 @@
             "normalizeCatalogFields",
             "validateCandidate"
           ],
+          "type": "string"
+        },
+        {
+          "const": "evaluateLayoutEdit",
+          "description": "One layout edit command against an embedded base snapshot.",
           "type": "string"
         },
         {
@@ -1937,6 +2040,49 @@
             },
             "kind": {
               "const": "candidateValidated",
+              "type": "string"
+            },
+            "report": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValidationReport"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PlanSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "report",
+            "snapshot",
+            "diagnostics"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `evaluateLayoutEdit`: the same triple as\n`candidateValidated`. `snapshot` is present only when the edited layout\nsurvived independent validation; `diagnostics` carries command-level\nrejection codes (unknown placement, out-of-scope base, unsupported\ntransform) plus structural failures.",
+          "properties": {
+            "diagnostics": {
+              "items": {
+                "$ref": "#/definitions/Diagnostic"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "editEvaluated",
               "type": "string"
             },
             "report": {

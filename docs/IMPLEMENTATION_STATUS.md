@@ -1,6 +1,88 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-006 검증된 계획 수직 슬라이스 (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-007 신뢰 가능한 편집과 비교 가능한 대안 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #21이며 base는 ZARI-006 이후 main
+`9807bf30cf1df37bab345ae6cbcc0cc542335948`입니다. 브랜치
+`devin/zari-007-trustworthy-editing`에서 작업했고 Cloud Devin·production
+runner·`runtime_enabled=true`는 사용하지 않았습니다. 도메인/스키마 재설계·
+baseline 승인·merge는 범위 밖이며 수행하지 않았습니다.
+
+구현한 범위:
+
+- `core/edit.rs`: `evaluate_layout_edit` — 불변 `PlanSnapshot`의 무결성
+  (구조 검증·digest 일치)과 현재 input/catalog digest 범위를 확인한 뒤
+  `LayoutEditCommand` 하나를 적용하고 `finalize::evaluate_candidate`로
+  전체 배치를 재검증합니다. 명령 수준·차단 검증 실패는 snapshot 없이
+  구조화된 진단(unknown_placement, edit_base_not_in_scope,
+  edit_source_required/mismatch/not_in_scope, dangling_variant_ref,
+  offer_not_for_variant, digest_mismatch)으로 설명되고, provisional
+  결과가 verified BOM으로 새지 않습니다. 부모 이동은 자식(contained)
+  placement의 변환을 함께 옮기고 수량 분배는 유지됩니다.
+- `core/protocol.rs`: capability·command `evaluateLayoutEdit`, 이벤트
+  `editEvaluated`(report·snapshot·diagnostics — `validateCandidate`와 같은
+  삼중), fixture 연산 `EvaluateLayoutEdit`과 `snapshotDigest: null`(거절에
+  스냅샷 없음) oracle을 추가했습니다.
+- 공유 fixture 6종(`fixtures/domain/edit-*.json`, manifest 등록): 허용
+  이동·공간 밖 이동·허용/금지 회전·restore·알 수 없는 placement —
+  `snapshotDigest` 핀으로 byte-stable identity를 고정했습니다.
+- `worker/client.ts`: `evaluateLayoutEdit` → `editEvaluated` 매핑과
+  capability 요구를 추가했습니다.
+- `persistence/db.ts` + `repository.ts`: `EditChain`(inputDigest·
+  baseSnapshotId·headSnapshotId·bounded undo/redo 전이 목록)을
+  `DraftRow.edit`에 보존하고, `commitEditSnapshot`이 base+result 스냅샷의
+  현재 input digest 일치·바이트 동일성을 확인한 뒤 직렬화된 CAS로 체인과
+  함께 원자 기록합니다. `accepted`는 편집으로 바뀌지 않습니다.
+- `features/project/session.ts`: `EditState`(선택·pending ghost·기각
+  설명·chain base·검증된 head·undo/redo)를 추가하고,
+  `requestLayoutEdit`/`selectPlacement`/`undoEdit`/`redoEdit`을 구현합니다.
+  응답은 단조 `editSeq`·세션·context·input 경계로 fence되어 늦은 응답이
+  새 명령을 덮지 못하고, `StaleRequest`는 pending만 정리합니다. undo/redo는
+  매번 새 request id로 `restoreLayout`/원 명령을 재검증하며 오래된 토큰을
+  되살리지 않습니다. 입력 커밋으로 digest가 바뀌면 체인 전체를 폐기하고,
+  같은 입력 재열 때만 스냅샷 행이 모두 존재하면 체인을 복원합니다.
+- `features/plan/view.ts` + `app/PlanScreen.tsx`: 배치 선택(도면 rect·목록
+  버튼), inspector(X/Y/Z 수치 입력·허용 방향 라디오·variant/판매처 선택 —
+  허용 방향 fact가 unknown이면 회전을 잠그지 않고 생략), pending ghost
+  (점선·`검증 중` 라벨, BOM/비용 미반영), 기각 설명(Rust 진단+실패 check
+  매핑), 되돌리기/다시 실행 버튼, 편집안 섹션과 `이 편집안을 채택`을
+  추가했습니다. 키보드: 화살표 10mm(Shift 1mm)·R 회전·Ctrl+Z/Shift+Z/Y.
+  후보 카드는 같은 공간 치수의 `viewBox`로 그리는 `PlanThumb`를 붙여 축척이
+  같음을 보장합니다(물리 중복 제거는 기존 solver 키를 재사용).
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `cargo fmt --check`, `cargo test --workspace`: 통과 —
+  `crates/core/tests/edit.rs` 6개(허용 이동/공간 밖/허용·금지 회전/
+  restore/unknown placement 직접 호출) 포함, 기존 capability 테스트에
+  `evaluateLayoutEdit` 광고를 반영.
+- `npm run contracts:check`: 통과 — 생성 DTO/schema/validators가 Rust
+  원본과 일치(91 fixture 구조 유효).
+- `npm run wasm:build`: wasm-bindgen 0.2.128 실 WASM 빌드 성공.
+- `npm run typecheck`, `npm run lint`: 통과. 단위 harness의 fake port
+  capability 목록에 `evaluateLayoutEdit`를 추가했습니다.
+- `npm test`(vitest unit): 35개 통과 — session에 실 WASM으로 편집→검증
+  head·undo/redo restore·체인 영속·재열 복원, 기각 설명+스냅샷 없음,
+  superseded 응답 fence, 입력 커밋 시 체인 폐기를 추가했습니다.
+- `npx playwright test --grep-invert "@parity|@capture"`: 14개 통과 —
+  새 `edit.spec.ts`가 실 Chromium+WASM Worker로 선택→검사→수치 이동
+  거절 설명→허용 이동 검증·편집안 생성→undo/redo→Ctrl+Z/Shift+Z→동일
+  viewBox thumbnail→실 reload 체인 복원→입력 변경 시 체인 폐기→390px
+  inspector를 검증합니다.
+- `npm run test:parity`: 91 fixture native↔browser WASM 대조 일치
+  (6개 edit fixture 포함).
+- `node scripts/check-design-tokens.mjs --self-test`: 통과 (33/33).
+
+미구현(이 task의 범위 밖): 드래그 편집, 임의 자유 회전(도메인 Orientation은
+`upright0`/`upright90`만 존재), undo/redo의 경로 단위 부분 복원(현재 범위는
+DOMAIN_MODEL의 layout-only chain), catalog import(008), 서버 동기화,
+production runtime. 합성 카탈로그는 시연용 데이터이며 실제 상품·재고·
+가격이 아닙니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
+review(GROK 이후 GLM, 동시 1명)이며 merge는 User만 결정합니다.
+
+## 이전 구현: ZARI-006 검증된 계획 수직 슬라이스 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #18이며 base는 ZARI-005 이후 main
 `35dc9ce864aa7487c200de93675dc4d3014a8d87`입니다. 브랜치

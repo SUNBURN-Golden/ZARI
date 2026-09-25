@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type {
   CatalogSnapshot,
   Diagnostic,
+  LayoutEditCommand,
   OwnedContainer,
   PlanSnapshot,
   ProjectInput,
@@ -9,6 +10,7 @@ import type {
 } from '../contracts/generated/dto';
 import {
   validateCatalogSnapshot,
+  validateLayoutEditCommand,
   validatePlanSnapshot,
   validateProjectInput,
   validateRawProjectInputDto,
@@ -46,6 +48,30 @@ export interface InputRow {
   engineBuildId: string;
   createdAt: string;
 }
+/**
+ * One committed layout-edit transition (DOMAIN_MODEL §undo): the validated
+ * domain command plus the immutable snapshot ids it moved between. No
+ * closures or event objects are ever persisted.
+ */
+export interface EditTransition {
+  baseSnapshotId: string;
+  command: LayoutEditCommand;
+  resultSnapshotId: string;
+}
+/**
+ * Bounded layout-edit chain persisted inside the draft row. The chain is
+ * layout-only: it lives and dies inside one input revision — when the
+ * committed input digest moves, the whole chain is stale and dropped on load.
+ */
+export interface EditChain {
+  inputDigest: string;
+  /** Snapshot the chain started from (a search alternative or the accepted plan). */
+  baseSnapshotId: string;
+  /** Current working-plan snapshot after the applied edits. */
+  headSnapshotId: string;
+  undo: EditTransition[];
+  redo: EditTransition[];
+}
 /** One embedded raw draft per project; raw text survives invalid states. */
 export interface DraftRow {
   schemaVersion: number;
@@ -55,6 +81,8 @@ export interface DraftRow {
   baseInputRevision: string;
   form: RawProjectInputDto;
   validation: { status: SaveStatus; diagnostics: Diagnostic[] };
+  /** Layout-edit undo/redo chain; absent on drafts that predate editing. */
+  edit?: EditChain | null;
   updatedAt: string;
 }
 /** Immutable evaluated plan body plus its exact binding. */
@@ -212,10 +240,33 @@ export function readDraftRow(value: unknown): DraftRow {
         row.validation.status === 'valid' ||
         row.validation.status === 'invalid') &&
       Array.isArray(row.validation.diagnostics)
-    )
+    ) ||
+    !(row.edit === undefined || row.edit === null || validEditChain(row.edit))
   )
     throw new Error('record_corrupt');
   return row;
+}
+function validEditChain(value: unknown): boolean {
+  const chain = value as EditChain;
+  if (
+    !chain ||
+    typeof chain !== 'object' ||
+    !digestShape(chain.inputDigest) ||
+    !digestShape(chain.baseSnapshotId) ||
+    !digestShape(chain.headSnapshotId) ||
+    !Array.isArray(chain.undo) ||
+    !Array.isArray(chain.redo) ||
+    chain.undo.length > 100 ||
+    chain.redo.length > 100
+  )
+    return false;
+  const transition = (t: EditTransition) =>
+    t &&
+    typeof t === 'object' &&
+    digestShape(t.baseSnapshotId) &&
+    digestShape(t.resultSnapshotId) &&
+    validateLayoutEditCommand(t.command);
+  return chain.undo.every(transition) && chain.redo.every(transition);
 }
 export function readInputRow(value: unknown): InputRow {
   const row = value as InputRow;

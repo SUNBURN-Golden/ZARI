@@ -4,6 +4,7 @@ import type {
   FactFor_PackQuantity,
   FactFor_Quantity,
   FactFor_UnitCount,
+  LayoutEditCommand,
   Orientation,
   PlanSnapshot,
   Placement,
@@ -25,7 +26,7 @@ export interface RectVm {
   label: string;
   /** Placement id for cross-highlighting with lists/checks. */
   refId: string;
-  kind: 'container' | 'item' | 'contained';
+  kind: 'container' | 'item' | 'contained' | 'ghost';
 }
 
 const nominal = (fact: FactFor_MeasuredLength): number | null =>
@@ -263,4 +264,105 @@ export const REJECTION_TEXT: Record<string, string> = {
   ordinal_partition_overlap: '수량 분배가 겹칩니다',
   validation_failed: '독립 검증을 통과하지 못했습니다',
   budget_exceeded: '예산을 초과합니다',
+};
+
+// ---------- ZARI-007 editing views ----------
+
+/** Every orientation value in display order. */
+export const ORIENTATIONS: Orientation[] = ['upright0', 'upright90'];
+
+export const ORIENTATION_TEXT: Record<string, string> = {
+  upright0: '정면 0°',
+  upright90: '90° 회전',
+};
+
+/**
+ * The orientations the subject itself allows; `null` when the fact is unknown
+ * — unknown never silently means "allowed".
+ */
+export function allowedOrientations(
+  content: SnapshotContent,
+  placement: Placement,
+): Orientation[] | null {
+  const subject = placement.subject;
+  const fact =
+    subject.kind === 'directItem'
+      ? content.inputFacts.items.find((i) => i.id === subject.itemId)
+          ?.requirement.allowedOrientations
+      : subject.kind === 'newContainer'
+        ? content.referencedCatalog.variants.find((v) => v.id === subject.variantId)
+            ?.allowedOrientations
+        : content.inputFacts.ownedContainers.find((o) => o.id === subject.ownedId)
+            ?.physical.allowedOrientations;
+  if (!fact || fact.state !== 'known') return null;
+  return fact.value;
+}
+
+/**
+ * Ghost rectangle for an in-flight edit command: where the placement *would*
+ * sit. It is a provisional preview — dashed styling, never a verified plan.
+ */
+export function ghostRect(content: SnapshotContent, command: LayoutEditCommand): RectVm | null {
+  let placement: Placement | undefined;
+  let x: number;
+  let y: number;
+  let orientation: Orientation;
+  if (command.kind === 'movePlacement') {
+    placement = content.placements.find((p) => p.id === command.placementId);
+    if (!placement) return null;
+    x = command.position.x;
+    y = command.position.y;
+    orientation = placement.orientation;
+  } else if (command.kind === 'rotatePlacement') {
+    placement = content.placements.find((p) => p.id === command.placementId);
+    if (!placement) return null;
+    x = placement.position.x;
+    y = placement.position.y;
+    orientation = command.orientation;
+  } else {
+    return null;
+  }
+  const extent = placementExtent(content, { ...placement, orientation });
+  if (!extent) return null;
+  return {
+    x,
+    y,
+    width: extent.width,
+    height: extent.depth,
+    label: `${subjectLabel(content, placement.subject)} (검증 중)`,
+    refId: placement.id,
+    kind: 'ghost',
+  };
+}
+
+export const EDIT_COMMAND_TEXT: Record<string, string> = {
+  movePlacement: '위치 이동',
+  rotatePlacement: '회전',
+  replaceVariant: '옵션 교체',
+  selectOffer: '구매 선택',
+  restoreLayout: '이전 배치로 되돌리기',
+};
+
+/** Rust edit/command rejection codes → Korean explanation. */
+export const EDIT_REJECTION_TEXT: Record<string, string> = {
+  unknown_placement: '배치를 찾을 수 없습니다',
+  edit_command_not_applicable: '이 배치에는 적용할 수 없는 명령입니다',
+  edit_base_not_in_scope: '이 스냅샷은 지금 입력 기준이 아닙니다',
+  edit_source_required: '되돌릴 스냅샷이 없습니다',
+  edit_source_mismatch: '되돌리기 대상이 일치하지 않습니다',
+  edit_source_not_in_scope: '되돌리기 대상이 지금 입력 기준이 아닙니다',
+  dangling_variant_ref: '카탈로그에 없는 옵션입니다',
+  offer_not_for_variant: '이 옵션에 연결된 판매처가 아닙니다',
+  digest_mismatch: '스냅샷 무결성 검증에 실패했습니다',
+  invalid_request_shape: '허용된 수치 범위(±20000mm)를 벗어났습니다',
+  context_not_installed: '작업 컨텍스트가 준비되지 않았습니다',
+  stale_input: '입력이 바뀌어 편집을 저장할 수 없습니다',
+  orientation_forbidden: '이 물건은 그 방향으로 둘 수 없습니다',
+  outside_compartment: '공간 밖으로 나갑니다',
+  clearance_violated: '옆 물건과의 여유 공간이 부족합니다',
+  unsupported_footprint: '지지면에서 벗어납니다',
+  opening_too_narrow: '문 입구로 들어갈 수 없습니다',
+  insertion_cycle: '넣는 순서가 꼬입니다',
+  staging_width_insufficient: '작업 공간이 부족합니다',
+  cyclic_blockers: '꺼낼 때 서로 막습니다',
 };

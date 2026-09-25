@@ -655,6 +655,15 @@ export type DomainFixtureExpected =
       snapshotDigest: Digest | null;
     }
   | {
+      checks: ExpectedCheck[];
+      commerceReadiness: CommerceReadiness | null;
+      decodeError: boolean;
+      diagnostics: ExpectedDiagnostic[];
+      kind: 'evaluateLayoutEdit';
+      physicalAssurance: PhysicalAssurance | null;
+      snapshotDigest: Digest | null;
+    }
+  | {
       /**
        * Sorted union of assumption codes across all decisions.
        */
@@ -731,6 +740,7 @@ export type SearchTermination = 'scopeComplete' | 'budgetExhausted' | 'cancelled
  */
 export type DomainOperation =
   | ('normalizeProjectInput' | 'verifyRecord' | 'normalizeCatalogFields' | 'validateCandidate')
+  | 'evaluateLayoutEdit'
   | 'proposeStrategies'
   | 'runSearch';
 /**
@@ -1029,6 +1039,12 @@ export type Command =
   | {
       kind: 'validateCandidate';
       proposal: CandidateProposal;
+    }
+  | {
+      baseSnapshot: PlanSnapshot;
+      command: LayoutEditCommand;
+      kind: 'evaluateLayoutEdit';
+      sourceSnapshot: PlanSnapshot | null;
     }
   | {
       kind: 'proposeStrategies';
@@ -1419,6 +1435,12 @@ export type Event =
   | {
       diagnostics: Diagnostic[];
       kind: 'candidateValidated';
+      report: ValidationReport | null;
+      snapshot: PlanSnapshot | null;
+    }
+  | {
+      diagnostics: Diagnostic[];
+      kind: 'editEvaluated';
       report: ValidationReport | null;
       snapshot: PlanSnapshot | null;
     }
