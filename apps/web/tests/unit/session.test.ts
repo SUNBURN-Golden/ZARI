@@ -344,3 +344,118 @@ it('REAL solver: the pump steps an actual WASM search and cancelSearch is servic
     expect(BigInt(workUnits[i]!) >= BigInt(workUnits[i - 1]!)).toBe(true);
   expect(outcome).toBe('cancelled');
 });
+
+it('strategies and a real WASM search surface through the session plan state', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  const plan = await until(session, (s) => s.plan.strategies !== null, 15000);
+  expect(plan.plan.strategies!.length).toBeGreaterThan(0);
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  expect(done.plan.searchError).toBeNull();
+  expect(done.plan.alternatives.length).toBeGreaterThan(0);
+  expect(done.plan.resultInputDigest).not.toBeNull();
+  // The bundled demo surfaces a containerized purchase plan and a no-purchase
+  // plan — both real solver alternatives, not fabricated fixtures.
+  const purchase = done.plan.alternatives.find((s) =>
+    s.content.placements.some((p) => p.subject.kind === 'newContainer'),
+  );
+  expect(purchase).toBeDefined();
+  expect(purchase!.content.bom.length).toBeGreaterThan(0);
+  expect(done.plan.alternatives.some((s) => s.content.bom.length === 0)).toBe(true);
+}, 90000);
+
+it('accept persists the snapshot once; reopening restores the bound plan', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  const chosen = done.plan.alternatives[0]!;
+  void session.acceptPlan(chosen.planSnapshotId);
+  const saved = await until(session, (s) => s.plan.acceptState !== 'saving');
+  expect(saved.plan.acceptState).toBe('saved');
+  expect(saved.plan.acceptError).toBeNull();
+  expect(saved.plan.accepted).not.toBeNull();
+  expect(saved.plan.accepted!.planSnapshotId).toBe(chosen.planSnapshotId);
+  expect(saved.plan.acceptedSnapshot?.planSnapshotId).toBe(chosen.planSnapshotId);
+  // Durable facts: the snapshot row and the project binding landed together.
+  const bundle = await repo.loadBundle(projectId);
+  expect(bundle.project.accepted?.planSnapshotId).toBe(chosen.planSnapshotId);
+  const row = bundle.snapshots.find((s) => s.planSnapshotId === chosen.planSnapshotId);
+  expect(row).toBeDefined();
+  // A fresh session on a new port reloads the bound snapshot from IndexedDB.
+  await session.close(true);
+  const reopened = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await reopened.open();
+  const restored = await until(reopened, (s) => s.status === 'ready' && s.plan.accepted !== null);
+  expect(restored.plan.acceptedSnapshot?.planSnapshotId).toBe(chosen.planSnapshotId);
+  // staleInput clears once the open-time reconcile round-trip confirms the draft.
+  await until(reopened, (s) => !s.staleInput, 15000);
+  const snap = reopened.snapshot.plan.acceptedSnapshot!;
+  expect(reopened.isCurrentSnapshot(snap)).toBe(true);
+}, 90000);
+
+it('accepting an accepted snapshot after the input moved is refused as stale_input', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  void session.acceptPlan(done.plan.alternatives[0]!.planSnapshotId);
+  await until(session, (s) => s.plan.acceptState === 'saved');
+  const acceptedSnapshot = session.snapshot.plan.acceptedSnapshot!;
+  // Committing a real edit supersedes the input the snapshot was bound to.
+  session.edit('space.interior.width', '610');
+  session.commit();
+  await until(session, (s) => s.saveState === 'saved');
+  await until(session, () => !session.isCurrentSnapshot(acceptedSnapshot));
+  // The stale snapshot is still byte-valid, but the CAS binding refuses it.
+  void session.acceptPlan(acceptedSnapshot.planSnapshotId);
+  const refused = await until(session, (s) => s.plan.acceptState !== 'saving');
+  expect(refused.plan.acceptState).toBe('error');
+  expect(refused.plan.acceptError).toBe('stale_input');
+}, 90000);
+
+it('a cancelled search can be restarted on the same context', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  // Small step allowance → many macrotask steps → a reliable cancel window.
+  session.startSearch({ stepAllowance: 32 });
+  await until(session, (s) => s.plan.progress !== null, 15000);
+  session.cancelSearch();
+  await until(session, (s) => s.plan.search === 'cancelled', 15000);
+  // A new search on the same context completes and replaces the old results.
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  expect(done.plan.alternatives.length).toBeGreaterThan(0);
+}, 90000);
+
+it('a worker crash mid-search is reported as a failed search, not a fake result', async () => {
+  const { repo, controller, ports } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch({ stepAllowance: 32 });
+  await until(session, (s) => s.plan.progress !== null, 15000);
+  ports[0]!.crash();
+  const failed = await until(session, (s) => s.plan.search === 'failed', 15000);
+  expect(failed.plan.searchError).not.toBeNull();
+  // Recovery reinstalls context; a fresh search works on the new worker.
+  await controller.recover();
+  await until(session, (s) => s.worker === 'ready' && s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  expect(done.plan.alternatives.length).toBeGreaterThan(0);
+}, 90000);

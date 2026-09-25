@@ -287,6 +287,13 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           <Button className="button button-quiet" onPress={() => void download('standard')} data-testid="export-project">
             프로젝트보내기
           </Button>
+          <Button
+            className="button button-secondary"
+            onPress={() => navigate(`#/project/${projectId}/plan`)}
+            data-testid="goto-plan"
+          >
+            계획 검토 →
+          </Button>
         </div>
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
       </section>
@@ -313,7 +320,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
   );
 }
 
-function Shell({ name, children }: { name: string; children: ReactNode }) {
+export function Shell({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="zari-ui app-shell">
       <header className="app-header">
