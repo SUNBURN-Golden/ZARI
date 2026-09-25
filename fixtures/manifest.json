@@ -496,6 +496,58 @@
       "introducedBy": "ZARI-002"
     },
     {
+      "id": "catalog-import-valid",
+      "caseKind": "catalogImport",
+      "inputPath": "fixtures/domain/catalog-import-valid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-import-valid.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-008"
+    },
+    {
+      "id": "catalog-import-invalid",
+      "caseKind": "catalogImport",
+      "inputPath": "fixtures/domain/catalog-import-invalid.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-import-invalid.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-008"
+    },
+    {
+      "id": "catalog-import-decode-error",
+      "caseKind": "catalogImport",
+      "inputPath": "fixtures/domain/catalog-import-decode-error.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-import-decode-error.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-008"
+    },
+    {
+      "id": "catalog-import-unknown-preservation",
+      "caseKind": "catalogImport",
+      "inputPath": "fixtures/domain/catalog-import-unknown-preservation.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/catalog-import-unknown-preservation.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-008"
+    },
+    {
       "id": "project-dangling-compat-ref",
       "caseKind": "projectNormalize",
       "inputPath": "fixtures/domain/project-dangling-compat-ref.json",

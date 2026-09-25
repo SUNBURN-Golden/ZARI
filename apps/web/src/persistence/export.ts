@@ -37,6 +37,12 @@ export async function exportProject(
     .equals(projectId)
     .toArray();
   const quarantine = kind === 'recovery' ? await repo.quarantined() : [];
+  // The project pins one catalog, but recovery must preserve every catalog
+  // the user could re-pin plus the global owned-container library.
+  const catalogs = await repo.listCatalogs().catch(() =>
+    bundle.catalog !== null ? [bundle.catalog] : [],
+  );
+  const ownedContainers = await repo.listOwnedContainers().catch(() => []);
   return {
     exportVersion: EXPORT_VERSION,
     kind,
@@ -47,8 +53,8 @@ export async function exportProject(
     inputs,
     snapshots: bundle.snapshots,
     actionProgress: progress,
-    catalogs: bundle.catalog !== null ? [bundle.catalog] : [],
-    ownedContainers: [],
+    catalogs,
+    ownedContainers,
     quarantine,
     // Photos/attachments do not exist in this schema version; listed so the
     // exclusion is explicit rather than silently absent.

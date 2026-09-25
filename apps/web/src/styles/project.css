@@ -202,6 +202,17 @@
   font-weight: 600;
 }
 
+/* Commerce columns make the BOM wider than a phone viewport; scroll the
+   table inside its section so the document itself never overflows.
+   `contain: inline-size` stops the table's intrinsic width from propagating
+   up to the grid track — a block-level scroll container still contributes
+   its content's min-content otherwise. */
+.table-scroll {
+  contain: inline-size;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
 .bom-table {
   border-collapse: collapse;
   margin: 0.5rem 0 1rem;

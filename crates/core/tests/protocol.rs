@@ -61,6 +61,7 @@ fn capability_subset_is_honest() {
             "evaluateProbe",
             "verifyRecord",
             "normalizeCatalogFields",
+            "validateCatalog",
             "validateCandidate",
             "evaluateLayoutEdit",
             "disposeProject"

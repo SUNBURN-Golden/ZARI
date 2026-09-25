@@ -317,6 +317,22 @@ export function readCatalogRow(value: unknown): CatalogRow {
     throw new Error('record_corrupt');
   return row;
 }
+export function readOwnedContainerRow(value: unknown): OwnedContainerRow {
+  const row = value as OwnedContainerRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.ownedContainerId) ||
+    !isCanonicalRevision(row.revision) ||
+    !row.container ||
+    typeof row.container !== 'object' ||
+    row.container.id !== row.ownedContainerId
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
 export function readActionProgressRow(value: unknown): ActionProgressRow {
   const row = value as ActionProgressRow;
   checkSchemaVersion(row);

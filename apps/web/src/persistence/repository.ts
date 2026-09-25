@@ -1,5 +1,6 @@
 import Dexie from 'dexie';
 import type {
+  OwnedContainer,
   PlanSnapshot,
   ProjectInput,
   RawProjectInputDto,
@@ -12,6 +13,7 @@ import {
   readCatalogRow,
   readDraftRow,
   readInputRow,
+  readOwnedContainerRow,
   readProjectRow,
   readSnapshotRow,
   type ActionProgressRow,
@@ -19,6 +21,7 @@ import {
   type DraftRow,
   type EditChain,
   type InputRow,
+  type OwnedContainerRow,
   type ProjectRow,
   type QuarantinePayload,
   type SnapshotRow,
@@ -76,6 +79,20 @@ export type CommitResult =
   | { status: 'committed'; projectRevision: string; inputRevision: string }
   | { status: 'conflict' }
   | { status: 'stale_draft' };
+export type ActionStepResult =
+  | { status: 'saved'; projectRevision: string }
+  | { status: 'conflict' }
+  /** Progress only attaches to the project's current accepted binding. */
+  | { status: 'not_accepted' }
+  /** The step id does not exist in the bound snapshot's action list. */
+  | { status: 'unknown_step' }
+  /** Done requires every prerequisite step to be done first. */
+  | { status: 'blocked_prerequisites'; missing: string[] }
+  /** Clearing a step is refused while dependent steps are still done. */
+  | { status: 'blocked_dependents'; dependents: string[] };
+export type OwnedSaveResult =
+  | { status: 'saved'; revision: string }
+  | { status: 'conflict'; revision: string };
 export type AcceptResult =
   | { status: 'committed'; projectRevision: string }
   | { status: 'conflict' }
@@ -680,6 +697,201 @@ export class ProjectRepository {
     } catch (error) {
       throw storeError(error);
     }
+  }
+  /**
+   * Every readable catalog row — synthetic bundled data and staged imports
+   * alike. Rows that fail the envelope guard are skipped here; the session's
+   * verifyRecord pass is what flags them as corrupt.
+   */
+  async listCatalogs(): Promise<CatalogRow[]> {
+    try {
+      const rows = await this.db.catalogs.toArray();
+      const readable: CatalogRow[] = [];
+      for (const row of rows) {
+        try {
+          readable.push(readCatalogRow(row));
+        } catch {
+          // Unreadable rows are surfaced by the integrity pass, not hidden
+          // here — a list screen must never crash on quarantined bytes.
+        }
+      }
+      return readable;
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /** The global owned-container library (normalized records only). */
+  async listOwnedContainers(): Promise<OwnedContainerRow[]> {
+    try {
+      const rows = await this.db.ownedContainers.toArray();
+      const readable: OwnedContainerRow[] = [];
+      for (const row of rows) {
+        try {
+          readable.push(readOwnedContainerRow(row));
+        } catch {
+          /* see listCatalogs */
+        }
+      }
+      return readable;
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /**
+   * CAS write to the owned-container library. `expectedRevision` is the
+   * library row revision the caller saw (`'0'` for a new entry); a mismatch
+   * means another write landed first and this one is refused, never merged.
+   */
+  saveOwnedContainer(
+    container: OwnedContainer,
+    expectedRevision: string,
+  ): Promise<OwnedSaveResult> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.ownedContainers,
+          async (): Promise<OwnedSaveResult> => {
+            const raw = await this.db.ownedContainers.get(container.id);
+            const current =
+              raw === undefined ? '0' : readOwnedContainerRow(raw).revision;
+            if (current !== expectedRevision)
+              return { status: 'conflict', revision: current };
+            const revision = current === '0' ? '1' : nextRevision(current);
+            await this.db.ownedContainers.put({
+              schemaVersion: SCHEMA_VERSION,
+              ownedContainerId: container.id,
+              revision,
+              container,
+              updatedAt: this.now(),
+            });
+            return { status: 'saved', revision };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  async deleteOwnedContainer(
+    ownedContainerId: string,
+    expectedRevision: string,
+  ): Promise<OwnedSaveResult> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.ownedContainers,
+          async (): Promise<OwnedSaveResult> => {
+            const raw = await this.db.ownedContainers.get(ownedContainerId);
+            const current =
+              raw === undefined ? '0' : readOwnedContainerRow(raw).revision;
+            if (current === '0' || current !== expectedRevision)
+              return { status: 'conflict', revision: current };
+            await this.db.ownedContainers.delete(ownedContainerId);
+            return { status: 'saved', revision: '0' };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
+   * One action-step toggle bound to the project's accepted immutable
+   * snapshot. Completion requires every declared prerequisite step to be
+   * done; clearing is refused while dependents stay done. CAS on
+   * `projectRevision` like every other project write.
+   */
+  setActionStep(args: {
+    projectId: string;
+    inputRevision: string;
+    planSnapshotId: string;
+    stepId: string;
+    done: boolean;
+  }): Promise<ActionStepResult> {
+    return this.enqueue(async () => {
+      const expected = await this.expectedRevision(args.projectId);
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.projects,
+          this.db.snapshots,
+          this.db.actionProgress,
+          async (): Promise<ActionStepResult> => {
+            const project = readProjectRow(await this.db.projects.get(args.projectId));
+            if (project.projectRevision !== expected) return { status: 'conflict' };
+            if (
+              project.accepted === null ||
+              project.accepted.inputRevision !== args.inputRevision ||
+              project.accepted.planSnapshotId !== args.planSnapshotId
+            ) {
+              return { status: 'not_accepted' };
+            }
+            const rawSnapshot = await this.db.snapshots.get([
+              args.projectId,
+              args.inputRevision,
+              args.planSnapshotId,
+            ]);
+            if (rawSnapshot === undefined) return { status: 'not_accepted' };
+            const snapshot = readSnapshotRow(rawSnapshot).snapshot;
+            const actions = snapshot.content.actions;
+            const step = actions.find((a) => a.id === args.stepId);
+            if (step === undefined) return { status: 'unknown_step' };
+            const progress = new Map(
+              (
+                await this.db.actionProgress
+                  .where('projectId')
+                  .equals(args.projectId)
+                  .toArray()
+              )
+                .map(readActionProgressRow)
+                .filter(
+                  (row) =>
+                    row.inputRevision === args.inputRevision &&
+                    row.planSnapshotId === args.planSnapshotId,
+                )
+                .map((row) => [row.stepId, row.status]),
+            );
+            if (args.done) {
+              const missing = step.prerequisiteStepIds.filter(
+                (id) => progress.get(id) !== 'done',
+              );
+              if (missing.length > 0)
+                return { status: 'blocked_prerequisites', missing };
+            } else {
+              const dependents = actions
+                .filter(
+                  (a) =>
+                    a.prerequisiteStepIds.includes(args.stepId) &&
+                    progress.get(a.id) === 'done',
+                )
+                .map((a) => a.id);
+              if (dependents.length > 0)
+                return { status: 'blocked_dependents', dependents };
+            }
+            await this.db.actionProgress.put({
+              schemaVersion: SCHEMA_VERSION,
+              projectId: args.projectId,
+              inputRevision: args.inputRevision,
+              planSnapshotId: args.planSnapshotId,
+              stepId: args.stepId,
+              status: args.done ? 'done' : 'todo',
+              updatedAt: this.now(),
+            });
+            const next = nextRevision(project.projectRevision);
+            await this.db.projects.update(args.projectId, {
+              projectRevision: next,
+              updatedAt: this.now(),
+            });
+            this.known.set(args.projectId, next);
+            return { status: 'saved', projectRevision: next };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
   }
   /**
    * Keep an exact byte copy of a damaged record in `metadata` for recovery.
