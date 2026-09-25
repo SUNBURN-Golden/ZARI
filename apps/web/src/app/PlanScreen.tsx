@@ -31,6 +31,7 @@ import {
   unassignedCount,
   type RectVm,
 } from '../features/plan/view';
+import { bomCsvRows, toCsv } from '../features/plan/csv';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import { Shell } from './ProjectScreen';
 import { navigate } from './router';
@@ -607,6 +608,27 @@ function PlanDetail({
             구매 없이 정리됩니다.
           </p>
         ) : (
+          <>
+          <div className="form-actions">
+            <Button
+              className="button button-quiet"
+              data-testid="bom-csv"
+              onPress={() => {
+                // A leading BOM keeps spreadsheet apps on the UTF-8 path.
+                const blob = new Blob(['\uFEFF', toCsv(bomCsvRows(content))], {
+                  type: 'text/csv',
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `zari-bom-${snapshot.planSnapshotId.slice(0, 12)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              구매 목록 CSV
+            </Button>
+          </div>
           <div className="table-scroll">
           <table className="bom-table" data-testid="bom-table">
             <thead>
@@ -679,6 +701,7 @@ function PlanDetail({
             </tfoot>
           </table>
           </div>
+          </>
         )}
       </section>
 

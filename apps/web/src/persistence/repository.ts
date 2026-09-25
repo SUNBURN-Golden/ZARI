@@ -6,10 +6,12 @@ import type {
   RawProjectInputDto,
 } from '../contracts/generated/dto';
 import {
+  ATTACHMENT_MAX_COUNT,
   SCHEMA_VERSION,
   ZariDb,
   nextRevision,
   readActionProgressRow,
+  readAttachmentRow,
   readCatalogRow,
   readDraftRow,
   readInputRow,
@@ -17,6 +19,7 @@ import {
   readProjectRow,
   readSnapshotRow,
   type ActionProgressRow,
+  type AttachmentRow,
   type CatalogRow,
   type DraftRow,
   type EditChain,
@@ -136,9 +139,31 @@ export class ProjectRepository {
   async open(): Promise<void> {
     try {
       await this.db.open();
+      await this.recordMigration();
     } catch (error) {
       throw storeError(error);
     }
+  }
+  /**
+   * PERSISTENCE §6: record the opened schema version in `metadata`. The
+   * migration journal itself is written inside the Dexie upgrade transaction
+   * (see `db.ts`), so it exists iff an upgrade really applied; this marker
+   * just lets a later open see which schema generation it is on.
+   */
+  private async recordMigration(): Promise<void> {
+    const verno = this.db.verno;
+    const prior = await this.db.metadata.get('db:verno');
+    if (
+      typeof (prior?.payload as { version?: unknown } | undefined)?.version ===
+      'number' &&
+      (prior!.payload as { version: number }).version === verno
+    )
+      return;
+    await this.db.metadata.put({
+      schemaVersion: SCHEMA_VERSION,
+      key: 'db:verno',
+      payload: { version: verno },
+    });
   }
   /** Expected CAS revision for a project: our own last commit, else the row. */
   private async expectedRevision(projectId: string): Promise<string> {
@@ -950,23 +975,266 @@ export class ProjectRepository {
       try {
         await this.db.transaction(
           'rw',
-          this.db.projects,
-          this.db.drafts,
-          this.db.inputs,
-          this.db.snapshots,
-          this.db.actionProgress,
+          [
+            this.db.projects,
+            this.db.drafts,
+            this.db.inputs,
+            this.db.snapshots,
+            this.db.actionProgress,
+            this.db.attachments,
+          ],
           async () => {
             await this.db.projects.delete(projectId);
             await this.db.drafts.delete(projectId);
             await this.db.inputs.where('projectId').equals(projectId).delete();
             await this.db.snapshots.where('projectId').equals(projectId).delete();
             await this.db.actionProgress.where('projectId').equals(projectId).delete();
+            // Attachment rows hold their own bytes — deleting the project's
+            // rows removes the orphan bytes with them.
+            await this.db.attachments.where('projectId').equals(projectId).delete();
           },
         );
       } catch (error) {
         throw storeError(error);
       }
       this.known.delete(projectId);
+    });
+  }
+  /**
+   * Local photo attachments (Ticket 009). Rows store derivative bytes inline,
+   * so listing validates each envelope and removing a row removes its bytes —
+   * no orphan cleanup pass is needed.
+   */
+  async listAttachments(projectId: string): Promise<AttachmentRow[]> {
+    try {
+      const rows = await this.db.attachments.where('projectId').equals(projectId).toArray();
+      const readable: AttachmentRow[] = [];
+      for (const row of rows) {
+        try {
+          readable.push(readAttachmentRow(row));
+        } catch {
+          /* see listCatalogs */
+        }
+      }
+      return readable;
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /**
+   * Insert one validated attachment under the per-project cap. The count
+   * check lives inside the same transaction so two tabs cannot both slip
+   * past the bound.
+   */
+  addAttachment(row: AttachmentRow): Promise<{ status: 'saved' | 'full' }> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction('rw', this.db.attachments, async () => {
+          const count = await this.db.attachments
+            .where('projectId')
+            .equals(row.projectId)
+            .count();
+          if (count >= ATTACHMENT_MAX_COUNT) return { status: 'full' as const };
+          readAttachmentRow(row);
+          await this.db.attachments.add(row);
+          return { status: 'saved' as const };
+        });
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /** Remove one attachment; its bytes leave storage with the row. */
+  async deleteAttachment(attachmentId: string): Promise<void> {
+    return this.enqueue(async () => {
+      try {
+        await this.db.attachments.delete(attachmentId);
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
+   * PERSISTENCE §7 duplication: fresh project id with `projectRevision` '1',
+   * the current normalized input and draft copied, and the accepted snapshot
+   * re-bound only when its bytes still resolve under the current input
+   * revision. Action progress starts empty — done states never transfer.
+   */
+  async duplicateProject(
+    sourceId: string,
+    name?: string,
+  ): Promise<ProjectRow> {
+    return this.enqueue(async () => {
+      const newId = crypto.randomUUID();
+      const at = this.now();
+      try {
+        await this.db.transaction(
+          'rw',
+          this.db.projects,
+          this.db.drafts,
+          this.db.inputs,
+          this.db.snapshots,
+          async () => {
+            const project = readProjectRow(await this.db.projects.get(sourceId));
+            const rawDraft = await this.db.drafts.get(sourceId);
+            const draft = rawDraft === undefined ? null : readDraftRow(rawDraft);
+            let input: InputRow | null = null;
+            if (project.currentInputDigest !== null) {
+              const raw = await this.db.inputs.get([
+                sourceId,
+                project.currentInputRevision,
+              ]);
+              if (raw === undefined)
+                throw new StoreError('record_corrupt', 'input_missing');
+              input = readInputRow(raw);
+            }
+            // Re-bind only a snapshot that still matches the current input
+            // revision and resolves as a durable row.
+            let accepted = project.accepted;
+            let snapshot: SnapshotRow | null = null;
+            if (
+              accepted !== null &&
+              accepted.inputRevision === project.currentInputRevision
+            ) {
+              const raw = await this.db.snapshots.get([
+                sourceId,
+                accepted.inputRevision,
+                accepted.planSnapshotId,
+              ]);
+              if (raw !== undefined) snapshot = readSnapshotRow(raw);
+            }
+            if (snapshot === null) accepted = null;
+            await this.db.projects.add({
+              schemaVersion: SCHEMA_VERSION,
+              projectId: newId,
+              name: name ?? `${project.name} (사본)`,
+              status: 'active',
+              projectRevision: '1',
+              currentInputRevision: project.currentInputRevision,
+              currentInputDigest: project.currentInputDigest,
+              accepted,
+              lastStep: project.lastStep,
+              createdAt: at,
+              updatedAt: at,
+              recovery: null,
+            });
+            if (draft !== null) {
+              await this.db.drafts.add({
+                schemaVersion: SCHEMA_VERSION,
+                projectId: newId,
+                generation: '0',
+                editorSessionId: crypto.randomUUID(),
+                baseInputRevision: project.currentInputRevision,
+                form: draft.form,
+                validation: draft.validation,
+                edit: null,
+                updatedAt: at,
+              });
+            }
+            if (input !== null) {
+              await this.db.inputs.add({
+                schemaVersion: SCHEMA_VERSION,
+                projectId: newId,
+                inputRevision: input.inputRevision,
+                inputDigest: input.inputDigest,
+                input: input.input,
+                engineBuildId: input.engineBuildId,
+                createdAt: at,
+              });
+            }
+            if (snapshot !== null) {
+              await this.db.snapshots.add({
+                schemaVersion: SCHEMA_VERSION,
+                projectId: newId,
+                inputRevision: snapshot.inputRevision,
+                planSnapshotId: snapshot.planSnapshotId,
+                snapshot: snapshot.snapshot,
+                acceptedAt: at,
+                engineBuildId: snapshot.engineBuildId,
+              });
+            }
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+      this.known.set(newId, '1');
+      const row = await this.db.projects.get(newId);
+      return row!;
+    });
+  }
+  /**
+   * PERSISTENCE §7 import commit: one transaction inserts the whole staged
+   * project under a fresh id plus its required catalogs (insert-if-absent —
+   * a catalog digest is a content key, so an existing identical row is
+   * correct). Owned-container library and quarantine are never touched, and
+   * a failure inserts no half-project.
+   */
+  commitImport(args: {
+    projectId: string;
+    name: string;
+    importedFrom: { sourceProjectId: string; exportedAt: string };
+    /** `null` when the source project had no readable draft row. */
+    draft: DraftRow | null;
+    project: Pick<
+      ProjectRow,
+      'currentInputRevision' | 'currentInputDigest' | 'accepted' | 'lastStep'
+    >;
+    inputs: InputRow[];
+    snapshots: SnapshotRow[];
+    actionProgress: ActionProgressRow[];
+    catalogs: CatalogRow[];
+  }): Promise<ProjectRow> {
+    return this.enqueue(async () => {
+      const at = this.now();
+      const projectId = args.projectId;
+      try {
+        await this.db.transaction(
+          'rw',
+          [
+            this.db.projects,
+            this.db.drafts,
+            this.db.inputs,
+            this.db.snapshots,
+            this.db.catalogs,
+            this.db.actionProgress,
+          ],
+          async () => {
+            await this.db.projects.add({
+              schemaVersion: SCHEMA_VERSION,
+              projectId,
+              name: args.name,
+              status: 'active',
+              projectRevision: '1',
+              currentInputRevision: args.project.currentInputRevision,
+              currentInputDigest: args.project.currentInputDigest,
+              accepted: args.project.accepted,
+              lastStep: args.project.lastStep,
+              createdAt: at,
+              updatedAt: at,
+              recovery: null,
+              importedFrom: args.importedFrom,
+            } as ProjectRow);
+            if (args.draft !== null)
+              await this.db.drafts.add({ ...args.draft, projectId });
+            for (const row of args.inputs)
+              await this.db.inputs.add({ ...row, projectId });
+            for (const row of args.snapshots)
+              await this.db.snapshots.add({ ...row, projectId });
+            for (const row of args.actionProgress)
+              await this.db.actionProgress.add({ ...row, projectId });
+            for (const row of args.catalogs) {
+              const existing = await this.db.catalogs.get(row.catalogDigest);
+              if (existing === undefined) await this.db.catalogs.add(row);
+            }
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+      this.known.set(projectId, '1');
+      const row = await this.db.projects.get(projectId);
+      return row!;
     });
   }
   /** Test/seed helper: write one action-progress row under exact CAS. */

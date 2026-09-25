@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Button } from 'react-aria-components';
 import type { Diagnostic, ProjectInput } from '../contracts/generated/dto';
+import { AttachmentManager } from '../features/attachments/model';
+import { reencodeImage } from '../features/attachments/image';
 import {
   fieldPathFor,
   getMeasurement,
@@ -9,7 +11,7 @@ import {
   type MeasurementField,
 } from '../features/project/draft';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
-import type { CatalogRow, OwnedContainerRow } from '../persistence/db';
+import type { AttachmentRow, CatalogRow, OwnedContainerRow } from '../persistence/db';
 import { ownedToRaw } from '../features/owned/model';
 import { DimensionField } from '../ui/DimensionField';
 import {
@@ -262,6 +264,150 @@ function CatalogAndOwned({
   );
 }
 
+/**
+ * Local-only photo attachments (Ticket 009). Thumbnails come from object
+ * URLs over the stored derivative bytes — no network request is involved in
+ * add, list, or remove. The stored bytes are a re-encoded display
+ * derivative; the UI says so and never calls them the original file.
+ */
+const attachmentManager = new AttachmentManager(repository, reencodeImage);
+
+const ATTACH_ERROR_TEXT: Record<string, string> = {
+  file_too_large: '10 MiB까지의 사진만 첨부할 수 있습니다.',
+  unsupported_type: 'JPEG·PNG·WebP 사진만 첨부할 수 있습니다.',
+  pixel_limit_exceeded: '사진 크기(픽셀)가 너무 큽니다.',
+  decode_failed: '사진을 읽을 수 없습니다.',
+  project_full: '사진은 프로젝트당 10장까지입니다.',
+  persist_failed: '사진을 저장하지 못했습니다.',
+};
+
+function PhotosPanel({ projectId }: { projectId: string }) {
+  const [rows, setRows] = useState<AttachmentRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const urls = useRef(new Map<string, string>());
+  useEffect(() => {
+    let alive = true;
+    void attachmentManager.list(projectId).then((list) => {
+      if (alive) setRows(list);
+    }).catch(() => undefined);
+    const kept = urls.current;
+    return () => {
+      alive = false;
+      for (const url of kept.values()) URL.revokeObjectURL(url);
+      kept.clear();
+    };
+  }, [projectId]);
+  const thumb = (row: AttachmentRow): string => {
+    let url = urls.current.get(row.attachmentId);
+    if (!url) {
+      url = URL.createObjectURL(new Blob([row.bytes], { type: row.mime }));
+      urls.current.set(row.attachmentId, url);
+    }
+    return url;
+  };
+  async function attach(file: File) {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await attachmentManager.attach(projectId, {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        bytes: await file.arrayBuffer(),
+      });
+      if (result.status === 'saved') {
+        setRows(await attachmentManager.list(projectId));
+      } else {
+        setError(ATTACH_ERROR_TEXT[result.code] ?? result.code);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function remove(attachmentId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await attachmentManager.remove(attachmentId);
+      urls.current.delete(attachmentId);
+      setRows(await attachmentManager.list(projectId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="measurement-panel" aria-labelledby="photos-title">
+      <div className="section-kicker">03 · 사진</div>
+      <h2 id="photos-title">공간 사진 (선택)</h2>
+      <p className="session-note">
+        사진은 이 기기에만 저장되며 계산에는 사용되지 않습니다. 저장되는 것은
+        위치·촬영 정보가 제거된 화면 표시용 사본이며 원본 파일이 아닙니다.
+        최대 10장, 장당 10 MiB까지.
+      </p>
+      {error && (
+        <p role="alert" className="notice notice-error" data-testid="photo-error">
+          {error}
+        </p>
+      )}
+      <ul className="plan-list" data-testid="photo-list">
+        {(rows ?? []).map((row) => (
+          <li key={row.attachmentId}>
+            <img
+              src={thumb(row)}
+              alt={row.name}
+              className="photo-thumb"
+              width={96}
+              height={96}
+            />
+            <span className="session-note">
+              {row.name} · {row.width}×{row.height}
+            </span>
+            <Button
+              className="button button-quiet"
+              data-testid={`photo-remove-${row.attachmentId}`}
+              isDisabled={busy}
+              onPress={() => void remove(row.attachmentId)}
+            >
+              삭제
+            </Button>
+          </li>
+        ))}
+        {rows !== null && rows.length === 0 && (
+          <li className="session-note">첨부된 사진이 없습니다.</li>
+        )}
+      </ul>
+      <div className="form-actions">
+        <Button
+          className="button button-secondary"
+          isDisabled={busy || (rows?.length ?? 0) >= 10}
+          data-testid="photo-add"
+          onPress={() => fileRef.current?.click()}
+        >
+          사진 추가
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          data-testid="photo-file"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) void attach(file);
+          }}
+        />
+      </div>
+    </section>
+  );
+}
+
 export function ProjectScreen({ projectId }: { projectId: string }) {
   const sessionRef = useRef<ProjectSession | null>(null);
   if (!sessionRef.current || sessionRef.current.snapshot.projectId !== projectId) {
@@ -426,6 +572,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
       </section>
       <CatalogAndOwned session={session} state={state} />
+      <PhotosPanel projectId={projectId} />
       <aside className="inspector" aria-labelledby="state-title">
         <div className="section-kicker">정규화 상태</div>
         <h2 id="state-title">Rust가 확인한 값</h2>
