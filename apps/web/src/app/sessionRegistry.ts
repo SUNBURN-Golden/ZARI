@@ -15,8 +15,10 @@ export const workerController = new WorkerController(
 const ENGINE_BUILD_ID = 'zari-web:005';
 
 const sessions = new Map<string, ProjectSession>();
+const refs = new Map<string, number>();
 
 export function acquireSession(projectId: string): ProjectSession {
+  refs.set(projectId, (refs.get(projectId) ?? 0) + 1);
   const existing = sessions.get(projectId);
   if (existing && !existing.isClosed) return existing;
   const session = new ProjectSession(repository, workerController, projectId, ENGINE_BUILD_ID);
@@ -25,19 +27,36 @@ export function acquireSession(projectId: string): ProjectSession {
   return session;
 }
 /**
- * Release on unmount: the close is best-effort async. If a pending save fails
- * the session stays in the registry so the next open can offer
- * retry/export/discard instead of dropping the draft.
+ * Release on unmount, deferred one macrotask: React mounts the next screen
+ * (and re-acquires the same session) before the old screen's effect cleanup
+ * runs, so a synchronous close here would kill the session being handed to
+ * the new screen — the Worker runtime gets `disposeProject` while the UI
+ * still believes the context is installed.
+ *
+ * The close is best-effort async. If a pending save fails the session stays
+ * in the registry so the next open can offer retry/export/discard instead of
+ * dropping the draft.
  */
 export function releaseSession(projectId: string): void {
+  const remaining = (refs.get(projectId) ?? 1) - 1;
+  refs.set(projectId, remaining);
+  if (remaining > 0) return;
   const session = sessions.get(projectId);
   if (!session || session.isClosed) return;
-  void session.close().then((ok) => {
-    if (ok) sessions.delete(projectId);
-  });
+  setTimeout(() => {
+    if ((refs.get(projectId) ?? 0) > 0) return;
+    if (session.isClosed) {
+      sessions.delete(projectId);
+      return;
+    }
+    void session.close().then((ok) => {
+      if (ok && (refs.get(projectId) ?? 0) === 0) sessions.delete(projectId);
+    });
+  }, 0);
 }
 /** Discard path after a close-blocked prompt. */
 export function discardSession(projectId: string): void {
+  refs.set(projectId, 0);
   const session = sessions.get(projectId);
   if (session) void session.close(true);
   sessions.delete(projectId);

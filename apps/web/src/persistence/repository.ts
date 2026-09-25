@@ -1,5 +1,9 @@
 import Dexie from 'dexie';
-import type { ProjectInput, RawProjectInputDto } from '../contracts/generated/dto';
+import type {
+  PlanSnapshot,
+  ProjectInput,
+  RawProjectInputDto,
+} from '../contracts/generated/dto';
 import {
   SCHEMA_VERSION,
   ZariDb,
@@ -71,6 +75,13 @@ export type CommitResult =
   | { status: 'committed'; projectRevision: string; inputRevision: string }
   | { status: 'conflict' }
   | { status: 'stale_draft' };
+export type AcceptResult =
+  | { status: 'committed'; projectRevision: string }
+  | { status: 'conflict' }
+  /** The committed input moved since the snapshot was evaluated. */
+  | { status: 'stale_input' }
+  /** The snapshot claims a binding the durable rows do not have. */
+  | { status: 'binding_mismatch' };
 
 const QUARANTINE_LIMIT = 10;
 const QUARANTINE_BYTES = 10 * 1024 * 1024;
@@ -429,6 +440,84 @@ export class ProjectRepository {
             });
             this.known.set(args.projectId, next);
             return { status: 'committed', projectRevision: next, inputRevision };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
+   * §3.3: persist an evaluated plan snapshot and bind it as the project's
+   * accepted plan in one transaction. The snapshot is immutable content — an
+   * existing row under the same key must be byte-identical. The input binding
+   * must still be the project's current one; a stale evaluation is refused
+   * rather than silently accepted under newer input.
+   */
+  acceptSnapshot(args: {
+    projectId: string;
+    snapshot: PlanSnapshot;
+    engineBuildId: string;
+  }): Promise<AcceptResult> {
+    return this.enqueue(async () => {
+      const expected = await this.expectedRevision(args.projectId);
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.projects,
+          this.db.inputs,
+          this.db.snapshots,
+          this.db.catalogs,
+          async (): Promise<AcceptResult> => {
+            const project = readProjectRow(await this.db.projects.get(args.projectId));
+            if (project.projectRevision !== expected) return { status: 'conflict' };
+            const content = args.snapshot.content;
+            if (
+              project.currentInputDigest === null ||
+              content.versions.inputDigest !== project.currentInputDigest ||
+              content.versions.catalogDigest !==
+                (await this.db.inputs.get([args.projectId, project.currentInputRevision]))
+                  ?.input.catalogPin.catalogDigest
+            ) {
+              return { status: 'stale_input' };
+            }
+            const catalog = await this.db.catalogs.get(content.versions.catalogDigest);
+            if (catalog === undefined) return { status: 'binding_mismatch' };
+            const key = [
+              args.projectId,
+              project.currentInputRevision,
+              args.snapshot.planSnapshotId,
+            ] as [string, string, string];
+            const existing = await this.db.snapshots.get(key);
+            if (existing !== undefined) {
+              const row = readSnapshotRow(existing);
+              if (
+                JSON.stringify(row.snapshot) !== JSON.stringify(args.snapshot)
+              ) {
+                throw new StoreError('record_corrupt', 'snapshot_content_mismatch');
+              }
+            } else {
+              await this.db.snapshots.add({
+                schemaVersion: SCHEMA_VERSION,
+                projectId: args.projectId,
+                inputRevision: project.currentInputRevision,
+                planSnapshotId: args.snapshot.planSnapshotId,
+                snapshot: args.snapshot,
+                acceptedAt: this.now(),
+                engineBuildId: args.engineBuildId,
+              });
+            }
+            const next = nextRevision(project.projectRevision);
+            await this.db.projects.update(args.projectId, {
+              projectRevision: next,
+              accepted: {
+                inputRevision: project.currentInputRevision,
+                planSnapshotId: args.snapshot.planSnapshotId,
+              },
+              updatedAt: this.now(),
+            });
+            this.known.set(args.projectId, next);
+            return { status: 'committed', projectRevision: next };
           },
         );
       } catch (error) {

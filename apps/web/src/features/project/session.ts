@@ -1,7 +1,13 @@
 import type {
   Diagnostic,
+  PlanSnapshot,
   ProjectInput,
   RawProjectInputDto,
+  RejectedCandidate,
+  SearchCounters,
+  SearchTermination,
+  Strategy,
+  StrategyDecision,
   Unit,
   VerifiableRecordDto,
 } from '../../contracts/generated/dto';
@@ -15,7 +21,11 @@ import {
 } from '../../persistence/repository';
 import type { ProbeClient } from '../../worker/client';
 import { StaleRequest } from '../../worker/client';
-import { WorkerController, type WorkerLifecycle } from '../../worker/controller';
+import {
+  SearchPump,
+  WorkerController,
+  type WorkerLifecycle,
+} from '../../worker/controller';
 import {
   getMeasurement,
   setMeasurementText,
@@ -33,6 +43,35 @@ export type SaveState =
   | 'unsupported';
 export type SessionStatus = 'loading' | 'ready' | 'not-found' | 'unsupported' | 'unavailable';
 export type ContextState = 'none' | 'installing' | 'installed' | 'degraded';
+export type SearchState =
+  | 'idle'
+  | 'running'
+  | 'cancelling'
+  | 'done'
+  | 'cancelled'
+  | 'failed';
+export type AcceptState = 'idle' | 'saving' | 'saved' | 'error';
+
+/** Plan/search side of the session: Worker output and durable bindings only. */
+export interface PlanState {
+  strategies: StrategyDecision[] | null;
+  strategiesError: string | null;
+  search: SearchState;
+  progress: SearchCounters | null;
+  searchError: string | null;
+  /** Evaluated alternatives from the last completed search, ranked by Rust. */
+  alternatives: PlanSnapshot[];
+  termination: SearchTermination | null;
+  diagnostics: RejectedCandidate[];
+  selectedId: string | null;
+  /** Input digest the alternatives were evaluated against. */
+  resultInputDigest: string | null;
+  /** Durable acceptance binding on the project row. */
+  accepted: { inputRevision: string; planSnapshotId: string } | null;
+  acceptedSnapshot: PlanSnapshot | null;
+  acceptState: AcceptState;
+  acceptError: string | null;
+}
 
 export interface SessionSnapshot {
   status: SessionStatus;
@@ -57,6 +96,7 @@ export interface SessionSnapshot {
   /** Integrity results from `verifyRecord` on open; `null` = not run. */
   integrity: { record: string; verified: boolean; diagnostics: Diagnostic[] }[] | null;
   closeBlocked: string | null;
+  plan: PlanState;
 }
 
 const AUTOSAVE_MS = 400;
@@ -81,6 +121,7 @@ export class ProjectSession {
   private channel: BroadcastChannel | null = null;
   private closed = false;
   private reconcileQueue: Promise<unknown> = Promise.resolve();
+  private pump: SearchPump | null = null;
   constructor(
     private readonly repo: ProjectRepository,
     private readonly controller: WorkerController,
@@ -108,9 +149,32 @@ export class ProjectSession {
       workerError: null,
       integrity: null,
       closeBlocked: null,
+      plan: {
+        strategies: null,
+        strategiesError: null,
+        search: 'idle',
+        progress: null,
+        searchError: null,
+        alternatives: [],
+        termination: null,
+        diagnostics: [],
+        selectedId: null,
+        resultInputDigest: null,
+        accepted: null,
+        acceptedSnapshot: null,
+        acceptState: 'idle',
+        acceptError: null,
+      },
     };
     controller.onLifecycle((worker, error) => {
       this.patch({ worker, workerError: error?.message ?? null });
+      // A crash takes the activated context with it; do not keep advertising
+      // 'installed' from the dead Worker session. The first open skips this —
+      // status is still 'loading' while open() runs its own installContext.
+      if (worker === 'failed' && !this.closed && this.state.status === 'ready')
+        this.patch({ context: 'none' });
+      if (worker === 'ready' && !this.closed && this.state.status === 'ready')
+        this.patch({ context: 'installing' });
       if (worker === 'ready' && !this.closed) void this.recoverContext();
     });
     try {
@@ -142,6 +206,9 @@ export class ProjectSession {
   private patch(part: Partial<SessionSnapshot>): void {
     this.state = { ...this.state, ...part };
     for (const listener of this.listeners) listener(this.state);
+  }
+  private patchPlan(part: Partial<PlanState>): void {
+    this.patch({ plan: { ...this.state.plan, ...part } });
   }
   get snapshot(): SessionSnapshot {
     return this.state;
@@ -206,6 +273,11 @@ export class ProjectSession {
     this.form = bundle.draft?.form ?? null;
     this.generation = Number(bundle.draft?.generation ?? 0);
     this.lastCommittedGeneration = this.generation;
+    const accepted = bundle.project.accepted;
+    const acceptedSnapshot = accepted
+      ? (bundle.snapshots.find((s) => s.planSnapshotId === accepted.planSnapshotId)
+          ?.snapshot ?? null)
+      : null;
     this.patch({
       name: bundle.project.name,
       form: this.form,
@@ -215,6 +287,15 @@ export class ProjectSession {
       inputDigest: bundle.project.currentInputDigest,
       corrupt: bundle.corrupt,
       saveState: 'idle',
+    });
+    this.patchPlan({
+      accepted,
+      acceptedSnapshot,
+      // An accepted binding without its snapshot row is a corrupt bundle:
+      // surface it as a corrupt record rather than hiding the acceptance.
+      acceptState: accepted && !acceptedSnapshot ? 'error' : 'idle',
+      acceptError:
+        accepted && !acceptedSnapshot ? 'accepted_snapshot_missing' : null,
     });
     // Quarantine envelope-invalid rows; bytes are preserved for export.
     for (const entry of bundle.corrupt) {
@@ -311,6 +392,7 @@ export class ProjectSession {
           catalog: catalog.catalog,
         });
         this.patch({ context: 'installed', degradedReason: null });
+        await this.refreshStrategies(client);
         return;
       } catch (error) {
         // Catalog pin mismatch/unavailable → degraded, not silent substitution.
@@ -554,8 +636,16 @@ export class ProjectSession {
     }
     this.patch({ diagnostics, normalizedInput: normalized ?? this.state.normalizedInput });
     // Skip the write when nothing semantic changed and the stored draft
-    // already carries the same validation state (e.g. a plain reload).
-    if (opts.skipWriteIfSame && generation === String(this.lastCommittedGeneration)) return;
+    // already carries the same validation state (e.g. a plain reload). The
+    // normalize round-trip still ran, so the restored draft is confirmed —
+    // clear staleInput rather than leaving the project dirty forever.
+    if (opts.skipWriteIfSame && generation === String(this.lastCommittedGeneration)) {
+      this.patch({
+        staleInput: false,
+        inputDigest: inputDigest ?? this.state.inputDigest,
+      });
+      return;
+    }
     const result = await this.repo
       .commitNormalizedInput({
         projectId: this.projectId,
@@ -585,9 +675,205 @@ export class ProjectSession {
       inputDigest: inputDigest ?? this.state.inputDigest,
     });
     if (revisionChanged && normalized) {
+      // The committed input moved: any in-flight search belongs to the old
+      // context — `activateProject` drops it engine-side, so retire the pump
+      // rather than let its steps fail against a stale search id.
+      if (this.pump?.isRunning || this.state.plan.search === 'running' || this.state.plan.search === 'cancelling') {
+        this.pump?.dispose();
+        this.patchPlan({ search: 'idle', progress: null, searchError: null });
+      }
       const catalog = await this.repo.getCatalog(normalized.catalogPin.catalogDigest).catch(() => null);
       await this.installContext(client, normalized, catalog);
     }
+  }
+
+  // ---------- plan / search / accept ----------
+
+  /** Rust strategy proposals for the activated input; display only. */
+  private async refreshStrategies(client: ProbeClient): Promise<void> {
+    try {
+      const reply = await client.request({ kind: 'proposeStrategies' });
+      if (this.closed || reply.kind !== 'strategiesProposed') return;
+      this.patchPlan({ strategies: reply.decisions, strategiesError: null });
+    } catch (error) {
+      if (this.closed || error instanceof StaleRequest) return;
+      this.patchPlan({
+        strategies: null,
+        strategiesError: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  /** Change the strategy on the raw draft; the input commit re-evaluates. */
+  setStrategy(strategy: Strategy): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    if (this.form.strategyChoice === strategy) return;
+    this.form = { ...this.form, strategyChoice: strategy };
+    this.bump();
+    this.patch({
+      form: this.form,
+      staleInput: true,
+      saveState: this.state.conflict ? 'conflict' : 'dirty',
+    });
+    this.scheduleAutosave();
+  }
+  /**
+   * One continuous search on the activated context. Steps are bounded WASM
+   * calls on macrotasks so a cancel request is always serviced between them.
+   * Starting a new search disposes the old one (Rust does the same).
+   */
+  startSearch(options?: { stepAllowance?: number }): void {
+    const client = this.controller.current;
+    if (
+      !client ||
+      this.state.status !== 'ready' ||
+      this.state.context !== 'installed' ||
+      this.state.inputDigest === null
+    ) {
+      this.patchPlan({
+        searchError:
+          this.state.context !== 'installed'
+            ? 'context_not_installed'
+            : 'no_committed_input',
+      });
+      return;
+    }
+    this.pump?.dispose();
+    const pump = new SearchPump(client, {
+      stepAllowance: options?.stepAllowance,
+    });
+    this.pump = pump;
+    const resultInputDigest = this.state.inputDigest;
+    this.patchPlan({
+      search: 'running',
+      progress: null,
+      searchError: null,
+      alternatives: [],
+      termination: null,
+      diagnostics: [],
+      selectedId: null,
+      resultInputDigest: null,
+    });
+    void pump
+      .start('continuous', {
+        onProgress: (event) => {
+          this.patchPlan({ progress: event.consumed });
+        },
+        onCompleted: (event) => {
+          const alternatives = event.result.alternatives;
+          this.patchPlan({
+            search: 'done',
+            progress: event.result.consumed,
+            alternatives,
+            termination: event.result.termination,
+            diagnostics: event.result.diagnosticCandidates,
+            selectedId: alternatives[0]?.planSnapshotId ?? null,
+            resultInputDigest,
+          });
+        },
+        onCancelled: (event) => {
+          this.patchPlan({ search: 'cancelled', progress: event.consumed });
+        },
+        onFailed: (error) => {
+          this.patchPlan({ search: 'failed', searchError: error.message });
+        },
+        onCancelTimeout: () => {
+          this.patchPlan({ searchError: 'cancel_timeout' });
+        },
+        onStalled: () => {
+          this.patchPlan({ searchError: 'search_stalled' });
+        },
+      })
+      .catch((error: unknown) => {
+        if (error instanceof StaleRequest) return;
+        this.patchPlan({
+          search: 'failed',
+          searchError: error instanceof Error ? error.message : String(error),
+        });
+      });
+  }
+  /** Cooperative cancel; the pump settles it into 'cancelled' or 'failed'. */
+  cancelSearch(): void {
+    if (!this.pump?.isRunning) return;
+    this.patchPlan({ search: 'cancelling' });
+    this.pump.cancel();
+  }
+  selectAlternative(planSnapshotId: string): void {
+    if (
+      this.state.plan.alternatives.some(
+        (a) => a.planSnapshotId === planSnapshotId,
+      )
+    ) {
+      this.patchPlan({ selectedId: planSnapshotId });
+    }
+  }
+  /**
+   * §3.3 accept: Rust re-verifies the snapshot bytes, then the repository
+   * binds it to the still-current input in one CAS transaction. A stale
+   * evaluation is refused, never silently re-pinned.
+   */
+  async acceptPlan(planSnapshotId: string): Promise<void> {
+    const snapshot =
+      this.state.plan.alternatives.find(
+        (a) => a.planSnapshotId === planSnapshotId,
+      ) ??
+      (this.state.plan.acceptedSnapshot?.planSnapshotId === planSnapshotId
+        ? this.state.plan.acceptedSnapshot
+        : null);
+    if (!snapshot || this.state.plan.acceptState === 'saving') return;
+    this.patchPlan({ acceptState: 'saving', acceptError: null });
+    const client = this.controller.current;
+    if (client) {
+      const reply = await client
+        .request({ kind: 'verifyRecord', record: { kind: 'snapshot', snapshot } })
+        .catch((error: unknown) => error as Error);
+      if (reply instanceof Error) {
+        this.patchPlan({ acceptState: 'error', acceptError: reply.message });
+        return;
+      }
+      if (reply.kind !== 'recordVerified' || !reply.verified) {
+        this.patchPlan({ acceptState: 'error', acceptError: 'integrity_failed' });
+        return;
+      }
+    }
+    try {
+      const result = await this.repo.acceptSnapshot({
+        projectId: this.projectId,
+        snapshot,
+        engineBuildId: this.engineBuildId,
+      });
+      if (result.status === 'committed') {
+        this.broadcast(result.projectRevision);
+        this.patch({ projectRevision: result.projectRevision });
+        this.patchPlan({
+          accepted: {
+            inputRevision: this.state.inputRevision,
+            planSnapshotId,
+          },
+          acceptedSnapshot: snapshot,
+          acceptState: 'saved',
+        });
+      } else if (result.status === 'conflict') {
+        this.patch({ conflict: { remoteRevision: 'unknown' }, saveState: 'conflict' });
+        this.patchPlan({ acceptState: 'error', acceptError: 'conflict' });
+      } else {
+        this.patchPlan({ acceptState: 'error', acceptError: result.status });
+      }
+    } catch (error) {
+      this.patchPlan({
+        acceptState: 'error',
+        acceptError: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  /** Whether a snapshot was evaluated against the currently committed input. */
+  isCurrentSnapshot(snapshot: PlanSnapshot): boolean {
+    return (
+      !this.state.staleInput &&
+      this.state.inputDigest !== null &&
+      snapshot.content.versions.inputDigest === this.state.inputDigest &&
+      snapshot.content.versions.catalogDigest ===
+        this.state.normalizedInput?.catalogPin.catalogDigest
+    );
   }
 
   // ---------- conflict recovery / export ----------
@@ -602,6 +888,7 @@ export class ProjectSession {
       this.generation = Number(bundle.draft.generation);
       this.lastCommittedGeneration = this.generation;
     }
+    const accepted = bundle.project.accepted;
     this.patch({
       form: this.form,
       normalizedInput: bundle.input?.input ?? this.state.normalizedInput,
@@ -613,6 +900,13 @@ export class ProjectSession {
       saveError: null,
       staleInput: false,
       corrupt: bundle.corrupt,
+    });
+    this.patchPlan({
+      accepted,
+      acceptedSnapshot: accepted
+        ? (bundle.snapshots.find((s) => s.planSnapshotId === accepted.planSnapshotId)
+            ?.snapshot ?? null)
+        : null,
     });
   }
   /** Conflict path: copy the dirty draft into a fresh project. */
@@ -656,6 +950,7 @@ export class ProjectSession {
       return false;
     }
     this.closed = true;
+    this.pump?.dispose();
     this.channel?.close();
     const client = this.controller.current;
     if (client) {

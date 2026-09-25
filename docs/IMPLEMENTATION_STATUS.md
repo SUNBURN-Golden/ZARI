@@ -1,6 +1,79 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-005 저장 측정 흐름과 Worker 수명주기 (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-006 검증된 계획 수직 슬라이스 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #18이며 base는 ZARI-005 이후 main
+`35dc9ce864aa7487c200de93675dc4d3014a8d87`입니다. 브랜치
+`devin/zari-006-verified-plan-slice`에서 작업했고 Cloud Devin·production
+runner·`runtime_enabled=true`는 사용하지 않았습니다. 도메인/스키마 재설계·
+baseline 승인·merge는 범위 밖이며 수행하지 않았습니다.
+
+구현한 범위:
+
+- `persistence/repository.ts`: `acceptSnapshot` — PlanSnapshot 행과
+  프로젝트 accepted 바인딩을 하나의 트랜잭션으로 기록하되 `projectRevision`
+  CAS, `currentInputDigest`/`catalogPin` 일치, 카탈로그 행 존재, 동일 키
+  스냅샷의 바이트 동일성을 요구합니다. 거절은 `conflict`·`stale_input`·
+  `binding_mismatch`로 구분하고 내용이 다른 기존 행은 `record_corrupt`로
+  덮어쓰지 않습니다.
+- `features/project/session.ts`: plan 상태(전략 결정·검색 진행/종료·대안·
+  거절 후보·선택·채택 바인딩)를 세션에 연결하고 `startSearch`/`cancelSearch`/
+  `selectAlternative`/`acceptPlan`/`isCurrentSnapshot`을 제공합니다.
+  accept는 Worker `verifyRecord` 재검증 뒤 repository CAS를 거치며, 입력
+  커밋으로 리비전이 바뀌면 진행 중 검색을 폐기하고 새 context를 설치합니다.
+- `features/plan/view.ts` + `app/PlanScreen.tsx`: 선택된 PlanSnapshot 하나를
+  평면/정면 SVG, 배치 목록, 미배치(사유·수량 미확인 포함), 독립 검증 결과,
+  BOM(구매 없음은 명시적 상태), 실행 단계로 투영합니다. UI는 도메인 수치를
+  재계산하지 않고 snapshot fact를 그대로 옮깁니다. 경로는
+  `#/project/<id>/plan`이며 측정 화면과 왕복합니다.
+- `app/sessionRegistry.ts`: 화면 전환 시 React가 새 화면의 acquire를 기존
+  화면의 release보다 먼저 실행하므로, refcount + 한 macrotask 지연 close로
+  살아있는 세션을 닫아버리는(`disposeProject` 후에도 context가
+  'installed'로 남는) 경합을 없앴습니다.
+- 데모 fixture: staging `minY`를 -400으로 고쳐 실제 anchor가 생기게 하고,
+  `var-2`/`offer-2`를 추가해 구매 포함 계획이 실제로 상위 후보가 되게 했으며,
+  카탈로그 digest를 새 내용에 맞춰 갱신했습니다(`249cfb41…`, draft.ts의
+  CATALOG_PIN과 일치).
+
+수정한 실제 결함(회귀 테스트 포함):
+
+- `Op::Advance` 롤백 누락: 빈 옵션(생성 객체 0)의 Advance 프레임이 마크 없이
+  팝되어 해당 옵션의 unassigned 항목이 형제 옵션으로 새어 후보가 같은
+  ordinal을 배치+미배치로 보고 `ordinal_partition_overlap`에 걸렸습니다.
+  Advance 프레임의 마크를 continuation 프레임으로 넘겨 경계를 보존합니다.
+- `step(allowance)` 정지: `RunEval`은 `64+p²+4a`로 256(프로토콜 허용 하한)
+  이상이 될 수 있는데, 비용이 남은 양보다 크면 실행 없이 Progress를 반환해
+  pump가 진행 없는 이벤트를 무한 수신했습니다. 이제 한 스텝에 분할 불가능한
+  op 하나는 반드시 실행합니다(allowance 초과분은 그 한 개에 한정).
+- `open` 시 `skipWriteIfSame` reconcile이 normalize 왕복 후에도 staleInput을
+  지우지 않아 재연 프로젝트가 영구 dirty로 보이던 것을 수정했습니다.
+- Worker crash 후 lifecycle이 'ready'로 돌아올 때 context가 이전 세션의
+  'installed'로 남아 검색이 `project_not_active`로 실패하던 것을, 실패/복구
+  시점에 context를 명시적으로 낮추도록 수정했습니다.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
+  --locked -- -D warnings`, `cargo test --workspace --locked`: 통과 —
+  solver 14개(새 회귀 3개: 빈 옵션 unassigned 누수, 허용치 이하 op 비용의
+  종료, 번들 데모의 구매+무구매 대안) 포함.
+- `npm run contracts:check`, `npm run typecheck`, `npm run lint`: 통과.
+- `npm test`: unit 33개 — session에 실 WASM 검색 완료/accept CAS 저장·
+  재열 복원/stale_input 거절/취소 후 재검색/Worker crash 실패 보고를 추가.
+- `npm run test:browser -- --project=chromium`: 13개 통과 — plan.spec 3개가
+  실 Chromium+WASM Worker로 동일 스냅샷 SVG/검사/BOM/가이드, accept→실
+  reload 복원, 입력 변경 시 stale 표시+CAS 거절, 취소→재검색, 390px을 검증.
+- `npm run test:parity`: 85 fixture native 대조 일치.
+- `node scripts/check-design-tokens.mjs --self-test`: 통과.
+
+미구현(이 task의 범위 밖): catalog import(008), 서버 동기화, 임의 편집/드래그
+도구, production runtime, 실 상품 연동. 합성 카탈로그는 시연용 데이터이며 실제
+상품·재고·가격이 아닙니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
+review(GROK 이후 GLM, 동시 1명)이며 merge는 User만 결정합니다.
+
+## 이전 구현: ZARI-005 저장 측정 흐름과 Worker 수명주기 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #15이며 base는 ZARI-004 병합 커밋
 `2bfd9f79441dc57370d7249f60aea6b44cbae62a`입니다. 브랜치

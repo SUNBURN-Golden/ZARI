@@ -9,7 +9,7 @@ import template from './default-form.json';
 export const CATALOG_PIN = {
   catalogVersion: 'catalog-2025-01',
   catalogDigest:
-    '802a109192357c493fd4effc09ccef51c109a7ab05b18a927d109572505cff1a',
+    '249cfb4185353ecb69c140ba6e7830b8670dd07708efa1d8cf0d5cee6e96be81',
 } as const;
 
 /**

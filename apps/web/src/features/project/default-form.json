@@ -107,7 +107,8 @@
      ]
     },
     "allowedRetrievalModes": [
-     "directFrontExtraction"
+     "directFrontExtraction",
+     "pullContainerThenRetrieve"
     ],
     "handling": {
      "left": {
@@ -231,8 +232,7 @@
      ]
     },
     "allowedRetrievalModes": [
-     "pullContainerThenRetrieve",
-     "directFrontExtraction"
+     "pullContainerThenRetrieve"
     ],
     "handling": {
      "left": {
@@ -276,10 +276,8 @@
       }
      }
     },
-    "mandatoryCompatibility": [
-     "item-a"
-    ],
-    "mustStayTogether": true
+    "mandatoryCompatibility": [],
+    "mustStayTogether": false
    },
    "stockRole": {
     "evidenceIds": [],
@@ -300,10 +298,10 @@
  },
  "search": {
   "budget": {
-   "maxAlternatives": 3,
+   "maxAlternatives": 6,
    "maxCandidatesPerGroup": 4,
-   "maxNodes": 64,
-   "maxWorkUnits": "1000"
+   "maxNodes": 8192,
+   "maxWorkUnits": "200000"
   },
   "profile": {
    "id": "default",
@@ -491,7 +489,7 @@
     "minY": {
      "evidenceIds": [],
      "origin": "userDeclared",
-     "text": "0",
+     "text": "-400",
      "uncertainty": {
       "state": "unknown"
      }

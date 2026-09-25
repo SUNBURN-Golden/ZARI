@@ -297,3 +297,157 @@ fn container_option_packs_pullable_items_and_leaves_the_rest_honest() {
     }
     assert_snapshots_valid(&catalog, &result);
 }
+
+#[test]
+fn empty_option_unassigned_entries_do_not_leak_into_sibling_options() {
+    // Regression: an option that produces zero placeable objects routes its
+    // `unassigned` emission through a bare `Advance` frame. If that frame's
+    // subtree marks are not carried into the continuation, the entries outlive
+    // the option and poison every later sibling option: an ordinal then appears
+    // as both assigned and unassigned (`ordinal_partition_overlap`), so every
+    // containerized candidate is silently rejected.
+    let (mut input, catalog) = fixture(true);
+    for item in &mut input.items {
+        item.requirement.allowed_retrieval_modes = vec![RetrievalMode::PullContainerThenRetrieve];
+    }
+    // Break the fixture's atomic cluster: the two items must pack as
+    // independent units so item-a can open a container alone.
+    input.items[1].requirement.must_stay_together = false;
+    input.items[1].requirement.mandatory_compatibility = vec![];
+    // One unit of item-a: two 190×100 units could not share the 290×190
+    // cavity of var-1 and the leftover would be honestly unassigned, which is
+    // not what this regression isolates.
+    let Fact::Known { provenance, .. } = input.items[0].quantity.clone() else {
+        unreachable!("fixture quantities are known")
+    };
+    input.items[0].quantity = Fact::Known {
+        value: Quantity::new(1).unwrap(),
+        provenance,
+    };
+    let engine = SolverEngine;
+    let mut session = engine.start(&input, &catalog);
+    let result = run(session.as_mut(), u32::MAX);
+    assert_eq!(result.termination, SearchTermination::ScopeComplete);
+    // The direct option yields zero objects (nothing permits front
+    // extraction); the var-1 container option must still publish a plan that
+    // packs item-a — item-b is honestly too large for the cavity.
+    let containerized = result.alternatives.iter().find(|s| {
+        s.content
+            .placements
+            .iter()
+            .any(|p| matches!(p.subject, PlacementSubject::NewContainer { .. }))
+    });
+    let snapshot = containerized.expect(
+        "a container alternative must publish; stale unassigned entries would \
+         reject it via ordinal_partition_overlap",
+    );
+    assert!(snapshot.content.assignments.iter().any(|a| {
+        a.item_id.as_str() == "item-a" && matches!(a.location, ItemLocation::Contained { .. })
+    }));
+    assert!(
+        snapshot
+            .content
+            .unassigned
+            .iter()
+            .all(|u| u.item_id.as_str() != "item-a")
+    );
+    assert!(
+        snapshot
+            .content
+            .unassigned
+            .iter()
+            .any(|u| u.item_id.as_str() == "item-b")
+    );
+    assert_snapshots_valid(&catalog, &result);
+}
+
+/// Regression: `RunEval` is priced `64 + p² + 4a` — above the 256 protocol
+/// floor once ~14 items are placed. Before the fix, `step(256)` returned
+/// `Progress` forever once such an op was next, stalling the host pump with
+/// non-advancing progress replies. One indivisible op must always run, so a
+/// sub-cost allowance still terminates.
+#[test]
+fn step_allowance_below_indivisible_op_cost_still_terminates() {
+    let raw_form: Value = serde_json::from_str(include_str!(
+        "../../../apps/web/src/features/project/default-form.json"
+    ))
+    .unwrap();
+    let mut form: RawProjectInputDto = serde_json::from_value(raw_form).unwrap();
+    let catalog_snapshot: CatalogSnapshot = serde_json::from_str(include_str!(
+        "../../../apps/web/src/features/project/synthetic-catalog.json"
+    ))
+    .unwrap();
+    form.catalog_pin = zari_core::input::CatalogPin {
+        catalog_version: catalog_snapshot.catalog_version.clone(),
+        catalog_digest: catalog_snapshot.catalog_digest.clone(),
+    };
+    let (input, diagnostics) = normalize::normalize_project_input(&form);
+    assert!(diagnostics.is_empty(), "{diagnostics:?}");
+    let catalog = CatalogContent::from(&catalog_snapshot);
+    let engine = SolverEngine;
+    let reference = {
+        let mut session = engine.start(&input, &catalog);
+        serde_json::to_value(run(session.as_mut(), u32::MAX)).unwrap()
+    };
+    for allowance in [256u32, 1] {
+        let mut session = engine.start(&input, &catalog);
+        let result = run(session.as_mut(), allowance);
+        assert_eq!(
+            serde_json::to_value(&result).unwrap(),
+            reference,
+            "allowance {allowance} diverged or stalled"
+        );
+    }
+}
+
+/// The bundled web demo (default form + synthetic catalog) must exercise the
+/// whole slice: a purchase alternative with a real BOM, a no-purchase
+/// alternative with an honestly unassigned item, and scope-complete
+/// termination. `var-1`'s empty option precedes `var-2`, so this also covers
+/// the sibling-option rollback path.
+#[test]
+fn bundled_demo_produces_container_and_no_purchase_alternatives() {
+    let raw_form: Value = serde_json::from_str(include_str!(
+        "../../../apps/web/src/features/project/default-form.json"
+    ))
+    .unwrap();
+    let mut form: RawProjectInputDto = serde_json::from_value(raw_form).unwrap();
+    let catalog_snapshot: CatalogSnapshot = serde_json::from_str(include_str!(
+        "../../../apps/web/src/features/project/synthetic-catalog.json"
+    ))
+    .unwrap();
+    form.catalog_pin = zari_core::input::CatalogPin {
+        catalog_version: catalog_snapshot.catalog_version.clone(),
+        catalog_digest: catalog_snapshot.catalog_digest.clone(),
+    };
+    let (input, diagnostics) = normalize::normalize_project_input(&form);
+    assert!(diagnostics.is_empty(), "{diagnostics:?}");
+    let catalog = CatalogContent::from(&catalog_snapshot);
+    let engine = SolverEngine;
+    let mut session = engine.start(&input, &catalog);
+    let result = run(session.as_mut(), u32::MAX);
+    assert_eq!(result.termination, SearchTermination::ScopeComplete);
+    let purchase = result.alternatives.iter().find(|s| {
+        s.content
+            .placements
+            .iter()
+            .any(|p| matches!(p.subject, PlacementSubject::NewContainer { .. }))
+    });
+    let purchase = purchase.expect("the demo must surface a containerized plan");
+    assert!(!purchase.content.bom.is_empty());
+    assert!(purchase.content.unassigned.is_empty());
+    // The no-purchase outcome is a normal alternative, not an error.
+    let no_purchase = result
+        .alternatives
+        .iter()
+        .find(|s| s.content.bom.is_empty())
+        .expect("the demo must surface a no-purchase plan");
+    assert!(
+        no_purchase
+            .content
+            .unassigned
+            .iter()
+            .any(|u| u.item_id.as_str() == "item-b")
+    );
+    assert_snapshots_valid(&catalog, &result);
+}

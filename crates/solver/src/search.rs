@@ -606,17 +606,23 @@ impl Machine {
             }
             Op::Advance => {
                 let Some(StackFrame {
+                    marks,
                     frame: Frame::Advance { next_group },
-                    ..
                 }) = self.stack.pop()
                 else {
                     return;
                 };
-                if next_group < self.prepared.groups.len() {
-                    self.push(Frame::Group {
+                // The subtree-boundary marks travel into the continuation
+                // frame. An `Advance` pushed by `FinishPack` for an option
+                // with zero objects carries marks that predate that option's
+                // unassigned emission; handing them to the next group/offers
+                // frame keeps the option's unassigned entries scoped to its
+                // own subtree, so sibling options cannot observe them.
+                let frame = if next_group < self.prepared.groups.len() {
+                    Frame::Group {
                         group: next_group,
                         next: 0,
-                    });
+                    }
                 } else {
                     // One slot per used variant, in variant-id order. The
                     // validator binds offers per variant and requires every
@@ -631,11 +637,12 @@ impl Machine {
                             .id
                             .cmp(&self.catalog.variants[b].id)
                     });
-                    self.push(Frame::Offers {
+                    Frame::Offers {
                         slots,
                         cursor: None,
-                    });
-                }
+                    }
+                };
+                self.stack.push(StackFrame { marks, frame });
             }
             Op::EmitTuple => {
                 let (tuple, slots) = {
@@ -1063,9 +1070,13 @@ impl Machine {
         self.counters.clone()
     }
 
-    /// One bounded step: consume at most `allowance` work units.
+    /// One bounded step: consume at most `allowance` work units, except that a
+    /// single indivisible op always runs even when its cost exceeds the
+    /// allowance — otherwise an op priced above the allowance would stall the
+    /// search forever, emitting progress replies that never advance.
     pub(crate) fn step(&mut self, allowance: u32) -> SearchStep {
         let mut remaining = allowance as u64;
+        let mut executed = false;
         loop {
             if self.cancelled {
                 self.terminated = Some(SearchTermination::Cancelled);
@@ -1092,14 +1103,15 @@ impl Machine {
                 self.terminated = Some(SearchTermination::BudgetExhausted);
                 continue;
             }
-            if cost > remaining {
+            if cost > remaining && executed {
                 return SearchStep::Progress {
                     consumed: self.counters.clone(),
                 };
             }
+            executed = true;
             self.counters.work_units =
                 WorkCount::new(self.counters.work_units.get() + cost).expect("bounded");
-            remaining -= cost;
+            remaining = remaining.saturating_sub(cost);
             self.exec(op);
         }
     }
