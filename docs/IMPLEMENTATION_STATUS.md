@@ -1,6 +1,93 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-007 신뢰 가능한 편집과 비교 가능한 대안 (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-008 실제 카탈로그·보유 수납함·실행 진행 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #23이며 base는 ZARI-007 병합 후 main
+`ab95a53e657144fc7281623d564c887512468b64`입니다. 브랜치
+`devin/zari-008-real-catalog`에서 작업했고 Cloud Devin·production
+runner·`runtime_enabled=true`는 사용하지 않았습니다. 도메인/스키마 재설계·
+baseline 승인·merge는 범위 밖이며 수행하지 않았습니다.
+
+구현한 범위:
+
+- `core/protocol.rs`: capability·command `validateCatalog`, 이벤트
+  `catalogValidated`(snapshot·diagnostics — `validateCandidate`와 같은 삼중)를
+  추가했습니다. system identity로 실행되는 무상태 연산으로, Rust가 전체
+  카탈로그를 검증하고 digest를 계산해 유효한 경우에만 불변
+  `CatalogSnapshot`을 반환합니다. 거절된 import는 `snapshot: null`이며
+  스냅샷이 없습니다. 저장·pin·활성화·context 변경을 하지 않습니다.
+- 공유 fixture 4종(`fixtures/domain/catalog-import-*.json`, manifest 등록):
+  유효 import·구조 위반·디코드 오류·unknown 상업 필드 보존 —
+  `snapshotDigest` 핀으로 byte-stable identity를 고정했습니다.
+- `worker/client.ts`: `validateCatalog` → `catalogValidated` 매핑과
+  capability 요구를 추가했습니다.
+- `features/catalog/import.ts` + `manager.ts`: 수동 입력·CSV·JSON을
+  `CatalogImportDto`로 조립하고, Rust `normalizeCatalogFields` →
+  `validateCatalog` 순서로 staged 검증합니다. 검증 전에는 어떤 입력도
+  카탈로그로 쓰이지 않고, `commit` 시에만 digest 키로 영속화합니다.
+  digest는 호스트가 만들지 않고 Rust가 계산한 값입니다.
+- `features/owned/model.ts` + `manager.ts`: 보유 수납함을 프로젝트 입력
+  캐리어로 Rust `normalizeInput`에 통과시켜 물리적 fact를 by-value로
+  정규화한 뒤 라이브러리에 영속화합니다. CAS revision 검사가 편집·삭제를
+  보호하고 unknown 물리 fact는 0·기본값으로 채워지지 않습니다.
+- `persistence/db.ts` + `repository.ts`: `listCatalogs`·`putCatalog`,
+  보유 수납함 목록·저장·삭제(revision CAS), `setActionStep`·
+  `actionProgressFor`(프로젝트·input revision·planSnapshotId·stepId 키 —
+  수용된 스냅샷 바인딩과 선행·후속 단계 순서를 강제)를 추가했습니다.
+  `export.ts`가 카탈로그 행과 보유 라이브러리를 보내기에 포함합니다.
+- `features/project/session.ts`: `setCatalogPin`(다음 입력 커밋에 묶일
+  정확한 catalog digest), `upsertOwnedContainer`/`removeOwnedContainer`
+  (draft에 by-value 삽입), `toggleActionStep`·`loadActionProgress`
+  (수용 바인딩에만 진행을 연결하고 오래된 바인딩의 진행은 옮기지 않음)을
+  추가했습니다.
+- `app/CatalogScreen.tsx`(`#/catalog`): staged import UI(수동·CSV·JSON —
+  진단 표시, 검증 전 미커밋)와 보유 수납함 라이브러리, 카탈로그 목록의
+  `데모 · 합성 데이터`/`가져온 카탈로그` 출처 라벨을 추가했습니다.
+- `app/ProjectScreen.tsx`: 카탈로그 pin 선택(목록에 없는 pin은 그대로
+  표시)과 프로젝트 draft의 보유 수납함 연결·제거를 추가했습니다.
+- `app/PlanScreen.tsx`: BOM에 재고·배송·링크 열과 상품 소계·배송비 합계·
+  합계 행을 추가하고, offer fact의 unknown은 `미확인`으로 표시해 0·재고
+  있음·확인됨으로 올리지 않습니다. 실행 순서에 수용된 스냅샷 바인딩의
+  단계별 진행 체크박스를 추가했습니다 — 선행 단계가 끝나지 않은 단계는
+  잠기고, 미수용 계획에는 진행이 비활성으로 표시됩니다.
+- 회귀 수정 2건: `focus-context` 안내 줄이 blur 시 unmount되어 버튼이
+  pointerdown~pointerup 사이에 이동해 react-aria press가 취소되던 결함을,
+  빈 줄을 예약해 해결했습니다. BOM 표는 `.table-scroll` +
+  `contain: inline-size`로 390px 뷰포트에서 문서 오버플로를 막았습니다.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지 않습니다):
+
+- `cargo fmt --check`, `cargo test --workspace`, `cargo clippy
+  --workspace --all-targets --all-features -- -D warnings`: 통과 —
+  capability 목록 테스트에 `validateCatalog` 광고를 반영했습니다.
+- `npm run contracts:check`: 통과 — 생성 DTO/schema/validators가 Rust
+  원본과 일치(95 fixture 구조 유효).
+- `npm run wasm:build`: wasm-bindgen 0.2.128 실 WASM 빌드 성공.
+- `npm run typecheck`, `npm run lint`: 통과. 단위 harness의 fake port
+  capability 목록에 `validateCatalog`를 추가했습니다.
+- `npm test`(vitest unit): 43개 통과 — `catalogOwned.test.ts`가 실 WASM
+  harness로 staged import 검증·거절·커밋 영속화, 보유 수납함 by-value
+  등록·CAS 충돌, 실행 진행의 스냅샷 바인딩·선행/후속 강제를 검증합니다.
+- `npx playwright test --grep-invert "@parity|@capture"`: 17개 통과 —
+  새 `catalog.spec.ts`가 실 Chromium+WASM Worker로 수동 import의
+  stage→Rust 검증→commit 영속화·거부된 JSON 미목록·합성 라벨 유지,
+  보유 수납함 등록·reload 유지, 수용 계획의 진행 기록·reload 유지를
+  검증합니다.
+- `npm run test:parity`: 95 fixture native↔browser WASM 대조 일치
+  (4개 catalog-import fixture 포함).
+- `node scripts/check-design-tokens.mjs --self-test`: 통과 (33/33).
+- `npm run build`: 프로덕션 빌드 성공.
+
+미구현(이 task의 범위 밖): 구매 링크 열 외의 실제 주문 실행, 판매처 API
+연동·실시간 재고(상업 접근은 미승인), catalog 행의 UI 단위 편집(재import로
+대체), 서버 동기화, production runtime. 합성 카탈로그는 시연용 데이터이며
+실제 상품·재고·가격이 아니고, 가져온 카탈로그는 입력된 출처 기준 라벨만
+표시합니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
+review(GROK 이후 GLM, 동시 1명)이며 merge는 User만 결정합니다.
+
+## 이전 구현: ZARI-007 신뢰 가능한 편집과 비교 가능한 대안 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #21이며 base는 ZARI-006 이후 main
 `9807bf30cf1df37bab345ae6cbcc0cc542335948`입니다. 브랜치

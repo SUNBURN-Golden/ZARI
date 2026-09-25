@@ -1,5 +1,7 @@
 import type { CatalogSnapshot } from '../contracts/generated/dto';
 import { validateCatalogSnapshot } from '../contracts/generated/validators.mjs';
+import { CatalogManager } from '../features/catalog/manager';
+import { OwnedManager } from '../features/owned/manager';
 import { CATALOG_PIN } from '../features/project/draft';
 import { ProjectSession } from '../features/project/session';
 import bundledCatalog from '../features/project/synthetic-catalog.json';
@@ -11,6 +13,15 @@ export const repository = new ProjectRepository();
 export const workerController = new WorkerController(
   () => new Worker(new URL('../worker/entry.ts', import.meta.url), { type: 'module' }),
 );
+/**
+ * A second Worker for the catalog/owned library so import validation and
+ * owned registration never clobber an open project's activated context.
+ */
+export const libraryController = new WorkerController(
+  () => new Worker(new URL('../worker/entry.ts', import.meta.url), { type: 'module' }),
+);
+export const catalogManager = new CatalogManager(libraryController, repository);
+export const ownedManager = new OwnedManager(libraryController, repository);
 
 const ENGINE_BUILD_ID = 'zari-web:005';
 

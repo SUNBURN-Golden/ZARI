@@ -9,8 +9,16 @@ import {
   type MeasurementField,
 } from '../features/project/draft';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
+import type { CatalogRow, OwnedContainerRow } from '../persistence/db';
+import { ownedToRaw } from '../features/owned/model';
 import { DimensionField } from '../ui/DimensionField';
-import { acquireSession, discardSession, releaseSession, workerController } from './sessionRegistry';
+import {
+  acquireSession,
+  discardSession,
+  releaseSession,
+  repository,
+  workerController,
+} from './sessionRegistry';
 import { navigate } from './router';
 
 const FIELD_LABELS: Record<MeasurementField, string> = {
@@ -129,6 +137,128 @@ function FieldGroup({
         );
       })}
     </>
+  );
+}
+
+/**
+ * Catalog pin + owned-container library panels (Ticket 008). The pin selects
+ * the exact catalog digest the next committed input binds; owned entries are
+ * embedded by value so a later catalog edit cannot rewrite stored facts.
+ */
+function CatalogAndOwned({
+  session,
+  state,
+}: {
+  session: ProjectSession;
+  state: SessionSnapshot;
+}) {
+  const [catalogs, setCatalogs] = useState<CatalogRow[] | null>(null);
+  const [owned, setOwned] = useState<OwnedContainerRow[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([repository.listCatalogs(), repository.listOwnedContainers()])
+      .then(([c, o]) => {
+        if (alive) {
+          setCatalogs(c);
+          setOwned(o);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!state.form) return null;
+  const pin = state.form.catalogPin;
+  const inDraft = new Set(state.form.ownedContainers.map((o) => o.id));
+  return (
+    <section className="measurement-panel" aria-labelledby="catalog-title">
+      <div className="section-kicker">02.5 · 카탈로그와 보유 수납함</div>
+      <h2 id="catalog-title">계산에 사용할 자료</h2>
+      <label className="edit-inspector-field">
+        <span>카탈로그 선택</span>
+        <select
+          value={pin.catalogDigest}
+          data-testid="catalog-pin-select"
+          onChange={(e) => {
+            const row = catalogs?.find((c) => c.catalogDigest === e.target.value);
+            if (row)
+              session.setCatalogPin({
+                catalogVersion: row.catalogVersion,
+                catalogDigest: row.catalogDigest,
+              });
+          }}
+        >
+          {!(catalogs ?? []).some((c) => c.catalogDigest === pin.catalogDigest) && (
+            <option value={pin.catalogDigest}>
+              {pin.catalogVersion} (목록에 없음 — 저장된 카탈로그와 다를 수 있습니다)
+            </option>
+          )}
+          {(catalogs ?? []).map((row) => (
+            <option key={row.catalogDigest} value={row.catalogDigest}>
+              {row.catalogVersion}
+              {row.origin === 'synthetic-bundled' ? ' — 데모·합성' : ` — ${row.origin}`}
+            </option>
+          ))}
+        </select>
+      </label>
+      {catalogs?.find((c) => c.catalogDigest === pin.catalogDigest)?.origin ===
+        'synthetic-bundled' && (
+        <p className="session-note" data-testid="catalog-demo-note">
+          현재 선택은 데모·합성 데이터입니다 — 실제 상품이 아닙니다.
+        </p>
+      )}
+      <ul className="plan-list" data-testid="draft-owned-list">
+        {state.form.ownedContainers.map((o) => (
+          <li key={o.id}>
+            <strong>{o.id}</strong>
+            <span className="session-note">
+              {o.variantRef ? ` · 옵션 ${o.variantRef.variantId} 기반` : ' · 직접 입력'}
+            </span>
+            <Button
+              className="button button-quiet"
+              data-testid={`draft-owned-remove-${o.id}`}
+              onPress={() => session.removeOwnedContainer(o.id)}
+            >
+              빼기
+            </Button>
+          </li>
+        ))}
+        {state.form.ownedContainers.length === 0 && (
+          <li className="session-note">이 프로젝트에 연결된 보유 수납함이 없습니다.</li>
+        )}
+      </ul>
+      {(owned ?? []).filter((row) => !inDraft.has(row.ownedContainerId)).length > 0 && (
+        <ul className="plan-list" data-testid="library-owned-list">
+          {(owned ?? [])
+            .filter((row) => !inDraft.has(row.ownedContainerId))
+            .map((row) => (
+              <li key={row.ownedContainerId}>
+                <span className="session-note">{row.ownedContainerId}</span>
+                <Button
+                  className="button button-quiet"
+                  data-testid={`draft-owned-add-${row.ownedContainerId}`}
+                  onPress={() => session.upsertOwnedContainer(ownedToRaw(row.container))}
+                >
+                  이 프로젝트에 연결
+                </Button>
+              </li>
+            ))}
+        </ul>
+      )}
+      <p className="session-note">
+        <a
+          href="#/catalog"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('#/catalog');
+          }}
+          data-testid="goto-catalog"
+        >
+          카탈로그 가져오기 · 보유 수납함 등록 →
+        </a>
+      </p>
+    </section>
   );
 }
 
@@ -261,11 +391,9 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           focused={focused}
           setFocused={setFocused}
         />
-        {focused && (
-          <p className="focus-context" data-testid="focus-context">
-            지금 {FIELD_LABELS[focused]} 치수를 입력하고 있습니다.
-          </p>
-        )}
+        <p className="focus-context" data-testid="focus-context" aria-hidden={!focused}>
+          {focused ? `지금 ${FIELD_LABELS[focused]} 치수를 입력하고 있습니다.` : '\u00A0'}
+        </p>
         {otherDiagnostics.length > 0 && (
           <ul className="diagnostic-list" data-testid="diagnostic-list">
             {otherDiagnostics.map((d, i) => (
@@ -297,6 +425,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         </div>
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
       </section>
+      <CatalogAndOwned session={session} state={state} />
       <aside className="inspector" aria-labelledby="state-title">
         <div className="section-kicker">정규화 상태</div>
         <h2 id="state-title">Rust가 확인한 값</h2>

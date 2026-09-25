@@ -24,7 +24,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-3";
-const CAPABILITIES: [&str; 10] = [
+const CAPABILITIES: [&str; 11] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -32,6 +32,7 @@ const CAPABILITIES: [&str; 10] = [
     "evaluateProbe",
     "verifyRecord",
     "normalizeCatalogFields",
+    "validateCatalog",
     "validateCandidate",
     "evaluateLayoutEdit",
     "disposeProject",
@@ -43,13 +44,14 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 13] = [
+const COMMAND_KINDS: [&str; 14] = [
     "initialize",
     "activateProject",
     "normalizeInput",
     "evaluateProbe",
     "verifyRecord",
     "normalizeCatalogFields",
+    "validateCatalog",
     "validateCandidate",
     "evaluateLayoutEdit",
     "disposeProject",
@@ -203,6 +205,13 @@ pub enum Command {
     NormalizeCatalogFields {
         fields: Vec<RawCatalogFieldDto>,
     },
+    /// Complete-catalog import validation (Ticket 008): checks the whole
+    /// bounded catalog body and answers with an immutable snapshot whose
+    /// digest Rust computes. Stateless — it never persists, pins, activates
+    /// or mutates any context, and it never fabricates a project.
+    ValidateCatalog {
+        catalog: CatalogImportDto,
+    },
     /// Independent validation and finalization boundary (Ticket 003). The
     /// proposal is rechecked from the activated context; a caller can never
     /// assert solver pass state because none exists on the wire.
@@ -298,6 +307,15 @@ pub enum Event {
     },
     CatalogFieldsNormalized {
         fields: Vec<NormalizedCatalogField>,
+    },
+    /// Result of `validateCatalog`: the validated immutable snapshot — with
+    /// the Rust-computed digest — or `null` plus the field diagnostics that
+    /// blocked publication. The event upgrades no trust and touches no state.
+    CatalogValidated {
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<CatalogSnapshot>")]
+        snapshot: Option<CatalogSnapshot>,
+        diagnostics: Vec<Diagnostic>,
     },
     /// Result of `validateCandidate`: the independently computed report, the
     /// finalized snapshot only when no blocking failure exists, and the
@@ -413,6 +431,8 @@ pub enum DomainOperation {
     NormalizeProjectInput,
     VerifyRecord,
     NormalizeCatalogFields,
+    /// Whole-catalog import under system identity (no project activation).
+    ValidateCatalog,
     ValidateCandidate,
     /// One layout edit command against an embedded base snapshot.
     EvaluateLayoutEdit,
@@ -507,6 +527,16 @@ pub enum DomainFixtureExpected {
     NormalizeCatalogFields {
         decode_error: bool,
         fields: Vec<ExpectedCatalogField>,
+    },
+    /// `snapshotDigest` doubles as the snapshot-presence assertion: `null`
+    /// requires the event to carry no snapshot (rejected imports), a value
+    /// pins the exact immutable catalog identity Rust produced.
+    ValidateCatalog {
+        decode_error: bool,
+        diagnostics: Vec<ExpectedDiagnostic>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<Digest>")]
+        snapshot_digest: Option<Digest>,
     },
     /// `snapshotDigest` doubles as the snapshot-presence assertion: `null`
     /// requires the event to carry no snapshot (rejected candidates), a value
@@ -640,6 +670,15 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
             request(
                 meta("fixture-operation", true, None),
                 json!({ "kind": "normalizeCatalogFields", "fields": fixture.input.clone() }),
+            ),
+        ],
+        DomainOperation::ValidateCatalog => vec![
+            // First-open import: validation runs under the initialized system
+            // identity — no project is fabricated to reach the operation.
+            initialize,
+            request(
+                meta("fixture-operation", true, None),
+                json!({ "kind": "validateCatalog", "catalog": fixture.input.clone() }),
             ),
         ],
         DomainOperation::ValidateCandidate => {
@@ -910,6 +949,7 @@ pub fn execute_domain_fixture_with(
         DomainFixtureExpected::NormalizeProjectInput { decode_error, .. }
         | DomainFixtureExpected::VerifyRecord { decode_error, .. }
         | DomainFixtureExpected::NormalizeCatalogFields { decode_error, .. }
+        | DomainFixtureExpected::ValidateCatalog { decode_error, .. }
         | DomainFixtureExpected::ValidateCandidate { decode_error, .. }
         | DomainFixtureExpected::EvaluateLayoutEdit { decode_error, .. }
         | DomainFixtureExpected::ProposeStrategies { decode_error, .. }
@@ -985,6 +1025,41 @@ pub fn execute_domain_fixture_with(
             if sorted_diagnostics(&event) != expected_sorted {
                 return Err(format!(
                     "{}: diagnostics mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+        }
+        DomainFixtureExpected::ValidateCatalog {
+            diagnostics,
+            snapshot_digest,
+            ..
+        } => {
+            if event["kind"] != "catalogValidated" {
+                return Err(format!(
+                    "{}: expected catalogValidated event, got {event}",
+                    fixture.case_id
+                ));
+            }
+            let mut expected_sorted = diagnostics.clone();
+            expected_sorted.sort();
+            if sorted_diagnostics(&event) != expected_sorted {
+                return Err(format!(
+                    "{}: diagnostics mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            let actual_digest = event["snapshot"]["catalogDigest"]
+                .as_str()
+                .map(str::to_owned);
+            if actual_digest != snapshot_digest.as_ref().map(|d| d.as_str().to_owned()) {
+                return Err(format!(
+                    "{}: snapshot digest mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+            if event["snapshot"].is_null() != snapshot_digest.is_none() {
+                return Err(format!(
+                    "{}: snapshot presence must match snapshotDigest: {event}",
                     fixture.case_id
                 ));
             }
@@ -1494,7 +1569,9 @@ impl Runtime {
         if system_identity
             && matches!(
                 request.command,
-                Command::VerifyRecord { .. } | Command::NormalizeCatalogFields { .. }
+                Command::VerifyRecord { .. }
+                    | Command::NormalizeCatalogFields { .. }
+                    | Command::ValidateCatalog { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -1664,9 +1741,9 @@ impl Runtime {
             Command::EvaluateProbe { probe } => Event::ProbeEvaluated {
                 result: evaluate_probe(probe),
             },
-            Command::VerifyRecord { .. } | Command::NormalizeCatalogFields { .. } => {
-                self.execute_stateless(&request.command)
-            }
+            Command::VerifyRecord { .. }
+            | Command::NormalizeCatalogFields { .. }
+            | Command::ValidateCatalog { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -1926,6 +2003,27 @@ impl Runtime {
                 }
                 Event::CatalogFieldsNormalized {
                     fields: normalize_catalog_fields(fields),
+                }
+            }
+            Command::ValidateCatalog { catalog } => {
+                let content = CatalogContent::from(catalog);
+                let diagnostics = validate::validate_catalog_content(&content);
+                // A snapshot is emitted only when the whole catalog passed:
+                // partial validation never fabricates a publishable record.
+                Event::CatalogValidated {
+                    snapshot: diagnostics.is_empty().then(|| CatalogSnapshot {
+                        schema_version: content.schema_version,
+                        catalog_version: content.catalog_version.clone(),
+                        catalog_digest: canonical::catalog_digest(&content),
+                        source_kind: content.source_kind.clone(),
+                        products: content.products.clone(),
+                        variants: content.variants.clone(),
+                        offers: content.offers.clone(),
+                        evidence: content.evidence.clone(),
+                        ingestion_version: content.ingestion_version.clone(),
+                        source_observations: content.source_observations.clone(),
+                    }),
+                    diagnostics,
                 }
             }
             _ => failure("invalid_state"),

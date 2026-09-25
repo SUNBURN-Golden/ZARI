@@ -354,6 +354,31 @@ function Inspector({
   );
 }
 
+/** Honest commerce display: every offer field is a fact — unknown stays unknown. */
+function offerFactsText(content: SnapshotContent, offerId: string | null) {
+  if (offerId === null)
+    return { price: '판매 항목 없음', inventory: '미확인', shipping: '미확인', url: null };
+  const offer = content.referencedCatalog.offers.find((o) => o.id === offerId);
+  if (!offer)
+    return { price: '미확인', inventory: '미확인', shipping: '미확인', url: null };
+  const inventory =
+    offer.inventory.state === 'known'
+      ? offer.inventory.value === 'inStock'
+        ? '재고 있음'
+        : '품절'
+      : '미확인';
+  const shipping =
+    offer.shipping.state === 'known'
+      ? offer.shipping.value.kind === 'free'
+        ? '무료 배송'
+        : offer.shipping.value.kind === 'fixedPerSeller'
+          ? `배송비 ${moneyText(offer.shipping.value.fee)}`
+          : '배송비 조건부'
+      : '미확인';
+  const url = offer.url.state === 'known' ? offer.url.value : null;
+  return { price: moneyText(offer.packPrice), inventory, shipping, url };
+}
+
 /** One alternative's detail pane: diagram, placements, checks, BOM, guide. */
 function PlanDetail({
   session,
@@ -582,6 +607,7 @@ function PlanDetail({
             구매 없이 정리됩니다.
           </p>
         ) : (
+          <div className="table-scroll">
           <table className="bom-table" data-testid="bom-table">
             <thead>
               <tr>
@@ -589,57 +615,153 @@ function PlanDetail({
                 <th>필요</th>
                 <th>주문 팩</th>
                 <th>상품 소계</th>
+                <th>재고</th>
+                <th>배송</th>
+                <th>링크</th>
               </tr>
             </thead>
             <tbody>
-              {content.bom.map((line) => (
-                <tr key={line.id}>
-                  <td>
-                    {line.variantId
-                      ? (content.referencedCatalog.variants.find(
-                          (v) => v.id === line.variantId,
-                        )?.optionLabel ?? line.variantId)
-                      : (line.ownedId ?? '—')}
-                  </td>
-                  <td>{line.physicalNeeded}</td>
-                  <td>{qtyText(line.packsToOrder)}</td>
-                  <td>{moneyText(line.productSubtotal)}</td>
-                </tr>
-              ))}
+              {content.bom.map((line) => {
+                const offer = offerFactsText(content, line.offerId);
+                return (
+                  <tr key={line.id}>
+                    <td>
+                      {line.variantId
+                        ? (content.referencedCatalog.variants.find(
+                            (v) => v.id === line.variantId,
+                          )?.optionLabel ?? line.variantId)
+                        : (line.ownedId ?? '—')}
+                    </td>
+                    <td>{line.physicalNeeded}</td>
+                    <td>{qtyText(line.packsToOrder)}</td>
+                    <td data-testid={`bom-price-${line.id}`}>
+                      {moneyText(line.productSubtotal)}
+                    </td>
+                    <td data-testid={`bom-stock-${line.id}`}>{offer.inventory}</td>
+                    <td data-testid={`bom-shipping-${line.id}`}>{offer.shipping}</td>
+                    <td>
+                      {offer.url ? (
+                        <a
+                          href={offer.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-testid={`bom-link-${line.id}`}
+                        >
+                          상품 페이지
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={3}>합계(배송비 미포함 상태 포함)</td>
-                <td data-testid="cost-summary">
+                <td colSpan={3}>상품 소계</td>
+                <td colSpan={4} data-testid="cost-subtotal">
+                  {moneyText(content.costSummary.productSubtotal)}
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={3}>배송비 합계</td>
+                <td colSpan={4} data-testid="cost-shipping">
+                  {moneyText(content.costSummary.shippingTotal)}
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={3}>합계</td>
+                <td colSpan={4} data-testid="cost-summary">
                   {moneyText(content.costSummary.grandTotal)}
                 </td>
               </tr>
             </tfoot>
           </table>
+          </div>
         )}
       </section>
 
       <section aria-labelledby="guide-title">
         <div className="section-kicker">실행 순서</div>
         <h3 id="guide-title">정리 단계</h3>
-        <ol className="plan-list" data-testid="guide-list">
-          {content.actions.map((a) => (
-            <li key={a.id}>
-              {ACTION_TEXT[a.kind] ?? a.kind}
-              <span className="session-note">
-                {' '}
-                ({a.subjectIds
-                  .map((s) => {
-                    const placement = content.placements.find((p) => p.id === s);
-                    if (placement) return subjectLabel(content, placement.subject);
-                    return itemById.get(s)?.label ?? s;
-                  })
-                  .join(', ')})
-              </span>
-            </li>
-          ))}
-          {content.actions.length === 0 && <li>실행할 단계가 없습니다.</li>}
-        </ol>
+        {/**
+         * Progress binds to the accepted snapshot only. A prerequisite that
+         * is not yet done keeps its dependents locked — checking a locked step
+         * is refused by the repository, never silently written.
+         */}
+        {(() => {
+          const isAccepted =
+            state.plan.accepted?.planSnapshotId === snapshot.planSnapshotId &&
+            state.plan.accepted.inputRevision === state.inputRevision;
+          const progress = isAccepted ? (state.plan.actionProgress ?? {}) : {};
+          const stepDone = (id: string) => progress[id] === 'done';
+          const blocked = (a: (typeof content.actions)[number]) =>
+            a.prerequisiteStepIds.filter((p) => !stepDone(p));
+          return (
+            <>
+              {!isAccepted && content.actions.length > 0 && (
+                <p className="session-note" data-testid="progress-inactive">
+                  이 계획을 채택하면 단계별 완료를 기록할 수 있습니다.
+                </p>
+              )}
+              {isAccepted && state.plan.actionProgress === null && (
+                <p className="notice notice-error" data-testid="progress-unavailable">
+                  진행 기록을 읽지 못했습니다.
+                </p>
+              )}
+              {state.plan.actionError && (
+                <p className="field-error" role="alert" data-testid="action-error">
+                  {state.plan.actionError === 'blocked_prerequisites'
+                    ? '먼저 해야 할 단계가 남아 있습니다.'
+                    : state.plan.actionError === 'blocked_dependents'
+                      ? '이 단계에 의존하는 단계가 완료되어 있습니다.'
+                      : state.plan.actionError === 'not_accepted'
+                        ? '현재 채택된 계획이 아닙니다.'
+                        : `진행 저장 실패: ${state.plan.actionError}`}
+                </p>
+              )}
+              <ol className="plan-list" data-testid="guide-list">
+                {content.actions.map((a) => {
+                  const missing = blocked(a);
+                  return (
+                    <li key={a.id} data-status={stepDone(a.id) ? 'done' : undefined}>
+                      {isAccepted ? (
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={stepDone(a.id)}
+                            disabled={!stepDone(a.id) && missing.length > 0}
+                            data-testid={`action-${a.id}`}
+                            onChange={(e) =>
+                              void session.toggleActionStep(a.id, e.target.checked)
+                            }
+                          />{' '}
+                          {ACTION_TEXT[a.kind] ?? a.kind}
+                        </label>
+                      ) : (
+                        <>{ACTION_TEXT[a.kind] ?? a.kind}</>
+                      )}
+                      <span className="session-note">
+                        {' '}
+                        ({a.subjectIds
+                          .map((s) => {
+                            const placement = content.placements.find((p) => p.id === s);
+                            if (placement)
+                              return subjectLabel(content, placement.subject);
+                            return itemById.get(s)?.label ?? s;
+                          })
+                          .join(', ')})
+                        {isAccepted && missing.length > 0 && ' · 선행 단계 필요'}
+                      </span>
+                    </li>
+                  );
+                })}
+                {content.actions.length === 0 && <li>실행할 단계가 없습니다.</li>}
+              </ol>
+            </>
+          );
+        })()}
       </section>
 
       <div className="form-actions">
@@ -666,7 +788,10 @@ function PlanDetail({
       <p className="session-note" data-testid="snapshot-id">
         스냅샷 {snapshot.planSnapshotId.slice(0, 16)}… · 입력{' '}
         {snapshot.content.versions.inputDigest.slice(0, 12)}… · 카탈로그{' '}
-        {snapshot.content.versions.catalogVersion} (합성 데이터 — 실제 상품이 아닙니다)
+        {snapshot.content.versions.catalogVersion}
+        {state.plan.catalog?.sourceKind === 'synthetic'
+          ? ' (합성 데이터 — 실제 상품이 아닙니다)'
+          : ' (가져온 카탈로그 — 입력된 출처 기준)'}
       </p>
     </div>
   );

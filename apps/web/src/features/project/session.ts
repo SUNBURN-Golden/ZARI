@@ -1,9 +1,11 @@
 import type {
+  CatalogPin,
   CatalogSnapshot,
   Diagnostic,
   LayoutEditCommand,
   PlanSnapshot,
   ProjectInput,
+  RawOwnedContainerDto,
   RawProjectInputDto,
   RejectedCandidate,
   SearchCounters,
@@ -101,6 +103,14 @@ export interface PlanState {
   acceptError: string | null;
   /** Activated catalog body — inspector offers/variants come from here. */
   catalog: CatalogSnapshot | null;
+  /**
+   * Step completion for the accepted binding only (`inputRevision` +
+   * `planSnapshotId`). `null` means progress could not be read — never
+   * treated as "all todo". Progress from any older binding is absent by
+   * construction.
+   */
+  actionProgress: Record<string, 'done' | 'todo'> | null;
+  actionError: string | null;
   edit: EditState;
 }
 
@@ -200,6 +210,8 @@ export class ProjectSession {
         acceptState: 'idle',
         acceptError: null,
         catalog: null,
+        actionProgress: null,
+        actionError: null,
         edit: {
           selectedPlacementId: null,
           pending: null,
@@ -348,6 +360,7 @@ export class ProjectSession {
       bundle.snapshots.map((s) => [s.planSnapshotId, s.snapshot]),
     );
     this.patchPlan({ catalog: bundle.catalog?.catalog ?? null });
+    await this.loadActionProgress();
     this.restoreEditChain(bundle.draft?.edit ?? null, bundle.project.currentInputDigest);
     // Quarantine envelope-invalid rows; bytes are preserved for export.
     for (const entry of bundle.corrupt) {
@@ -772,6 +785,117 @@ export class ProjectSession {
     this.scheduleAutosave();
   }
   /**
+   * Explicit catalog pin change (Ticket 008). The digest the user picked is
+   * what the next input commit binds — activation uses exactly that catalog
+   * row and degrades rather than substituting a different one.
+   */
+  setCatalogPin(pin: CatalogPin): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    if (
+      this.form.catalogPin.catalogDigest === pin.catalogDigest &&
+      this.form.catalogPin.catalogVersion === pin.catalogVersion
+    )
+      return;
+    this.form = { ...this.form, catalogPin: { ...pin } };
+    this.bump();
+    this.patch({
+      form: this.form,
+      staleInput: true,
+      saveState: this.state.conflict ? 'conflict' : 'dirty',
+    });
+    this.scheduleAutosave();
+  }
+  /**
+   * Embed a library container in the draft (Ticket 008). `raw` is the exact
+   * by-value re-serialization of the normalized record — Rust re-normalizes
+   * it on commit, so stored physical facts never move under a catalog change.
+   */
+  upsertOwnedContainer(raw: RawOwnedContainerDto): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    const owned = this.form.ownedContainers.filter((o) => o.id !== raw.id);
+    owned.push(raw);
+    this.form = { ...this.form, ownedContainers: owned };
+    this.bump();
+    this.patch({
+      form: this.form,
+      staleInput: true,
+      saveState: this.state.conflict ? 'conflict' : 'dirty',
+    });
+    this.scheduleAutosave();
+  }
+  removeOwnedContainer(ownedId: string): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    if (!this.form.ownedContainers.some((o) => o.id === ownedId)) return;
+    this.form = {
+      ...this.form,
+      ownedContainers: this.form.ownedContainers.filter((o) => o.id !== ownedId),
+    };
+    this.bump();
+    this.patch({
+      form: this.form,
+      staleInput: true,
+      saveState: this.state.conflict ? 'conflict' : 'dirty',
+    });
+    this.scheduleAutosave();
+  }
+  /**
+   * Progress rows for the current accepted binding only. An unreadable or
+   * absent binding yields `null`/`{}` — never a fabricated all-todo state
+   * carried across snapshots.
+   */
+  private async loadActionProgress(): Promise<void> {
+    const accepted = this.state.plan.accepted;
+    if (!accepted) {
+      this.patchPlan({ actionProgress: {}, actionError: null });
+      return;
+    }
+    const rows = await this.repo
+      .actionProgressFor(this.projectId, accepted.inputRevision, accepted.planSnapshotId)
+      .catch(() => null);
+    if (rows === null) {
+      this.patchPlan({ actionProgress: null, actionError: 'progress_unavailable' });
+      return;
+    }
+    this.patchPlan({
+      actionProgress: Object.fromEntries(rows.map((r) => [r.stepId, r.status])),
+      actionError: null,
+    });
+  }
+  /**
+   * One accepted-plan step toggle. The repository enforces the exact
+   * snapshot/input binding plus prerequisite/dependent ordering; this session
+   * only surfaces the result — progress never migrates to a newer snapshot.
+   */
+  async toggleActionStep(stepId: string, done: boolean): Promise<void> {
+    const accepted = this.state.plan.accepted;
+    if (!accepted) {
+      this.patchPlan({ actionError: 'not_accepted' });
+      return;
+    }
+    const result = await this.repo
+      .setActionStep({
+        projectId: this.projectId,
+        inputRevision: accepted.inputRevision,
+        planSnapshotId: accepted.planSnapshotId,
+        stepId,
+        done,
+      })
+      .catch((error: unknown) => error as Error);
+    if (result instanceof Error) {
+      this.patchPlan({ actionError: result.message });
+      return;
+    }
+    if (result.status === 'saved') {
+      this.broadcast(result.projectRevision);
+      this.patch({ projectRevision: result.projectRevision });
+      const progress = { ...(this.state.plan.actionProgress ?? {}) };
+      progress[stepId] = done ? 'done' : 'todo';
+      this.patchPlan({ actionProgress: progress, actionError: null });
+      return;
+    }
+    this.patchPlan({ actionError: result.status });
+  }
+  /**
    * One continuous search on the activated context. Steps are bounded WASM
    * calls on macrotasks so a cancel request is always serviced between them.
    * Starting a new search disposes the old one (Rust does the same).
@@ -911,6 +1035,8 @@ export class ProjectSession {
           acceptedSnapshot: snapshot,
           acceptState: 'saved',
         });
+        // A new binding starts with its own rows — reload rather than carry.
+        void this.loadActionProgress();
       } else if (result.status === 'conflict') {
         this.patch({ conflict: { remoteRevision: 'unknown' }, saveState: 'conflict' });
         this.patchPlan({ acceptState: 'error', acceptError: 'conflict' });
@@ -1309,6 +1435,7 @@ export class ProjectSession {
             ?.snapshot ?? null)
         : null,
     });
+    void this.loadActionProgress();
   }
   /** Conflict path: copy the dirty draft into a fresh project. */
   async saveAsCopy(name?: string): Promise<string | null> {

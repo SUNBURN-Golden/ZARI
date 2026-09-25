@@ -64,6 +64,7 @@ const readyEvent = {
     'evaluateProbe',
     'verifyRecord',
     'normalizeCatalogFields',
+    'validateCatalog',
     'validateCandidate',
     'evaluateLayoutEdit',
     'disposeProject',

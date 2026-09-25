@@ -646,6 +646,12 @@ export type DomainFixtureExpected =
       kind: 'normalizeCatalogFields';
     }
   | {
+      decodeError: boolean;
+      diagnostics: ExpectedDiagnostic[];
+      kind: 'validateCatalog';
+      snapshotDigest: Digest | null;
+    }
+  | {
       checks: ExpectedCheck[];
       commerceReadiness: CommerceReadiness | null;
       decodeError: boolean;
@@ -740,6 +746,7 @@ export type SearchTermination = 'scopeComplete' | 'budgetExhausted' | 'cancelled
  */
 export type DomainOperation =
   | ('normalizeProjectInput' | 'verifyRecord' | 'normalizeCatalogFields' | 'validateCandidate')
+  | 'validateCatalog'
   | 'evaluateLayoutEdit'
   | 'proposeStrategies'
   | 'runSearch';
@@ -1035,6 +1042,10 @@ export type Command =
   | {
       fields: RawCatalogFieldDto[];
       kind: 'normalizeCatalogFields';
+    }
+  | {
+      catalog: CatalogImportDto;
+      kind: 'validateCatalog';
     }
   | {
       kind: 'validateCandidate';
@@ -1431,6 +1442,11 @@ export type Event =
   | {
       fields: NormalizedCatalogField[];
       kind: 'catalogFieldsNormalized';
+    }
+  | {
+      diagnostics: Diagnostic[];
+      kind: 'catalogValidated';
+      snapshot: CatalogSnapshot | null;
     }
   | {
       diagnostics: Diagnostic[];

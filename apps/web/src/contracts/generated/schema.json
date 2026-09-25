@@ -1026,6 +1026,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Complete-catalog import validation (Ticket 008): checks the whole\nbounded catalog body and answers with an immutable snapshot whose\ndigest Rust computes. Stateless — it never persists, pins, activates\nor mutates any context, and it never fabricates a project.",
+          "properties": {
+            "catalog": {
+              "$ref": "#/definitions/CatalogImportDto"
+            },
+            "kind": {
+              "const": "validateCatalog",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "catalog"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Independent validation and finalization boundary (Ticket 003). The\nproposal is rechecked from the activated context; a caller can never\nassert solver pass state because none exists on the wire.",
           "properties": {
             "kind": {
@@ -1558,6 +1576,42 @@
         },
         {
           "additionalProperties": false,
+          "description": "`snapshotDigest` doubles as the snapshot-presence assertion: `null`\nrequires the event to carry no snapshot (rejected imports), a value\npins the exact immutable catalog identity Rust produced.",
+          "properties": {
+            "decodeError": {
+              "type": "boolean"
+            },
+            "diagnostics": {
+              "items": {
+                "$ref": "#/definitions/ExpectedDiagnostic"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "validateCatalog",
+              "type": "string"
+            },
+            "snapshotDigest": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Digest"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "diagnostics",
+            "snapshotDigest"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "`snapshotDigest` doubles as the snapshot-presence assertion: `null`\nrequires the event to carry no snapshot (rejected candidates), a value\npins the exact immutable identity.",
           "properties": {
             "checks": {
@@ -1800,6 +1854,11 @@
           "type": "string"
         },
         {
+          "const": "validateCatalog",
+          "description": "Whole-catalog import under system identity (no project activation).",
+          "type": "string"
+        },
+        {
           "const": "evaluateLayoutEdit",
           "description": "One layout edit command against an embedded base snapshot.",
           "type": "string"
@@ -2025,6 +2084,38 @@
           "required": [
             "kind",
             "fields"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `validateCatalog`: the validated immutable snapshot — with\nthe Rust-computed digest — or `null` plus the field diagnostics that\nblocked publication. The event upgrades no trust and touches no state.",
+          "properties": {
+            "diagnostics": {
+              "items": {
+                "$ref": "#/definitions/Diagnostic"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "catalogValidated",
+              "type": "string"
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CatalogSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot",
+            "diagnostics"
           ],
           "type": "object"
         },
