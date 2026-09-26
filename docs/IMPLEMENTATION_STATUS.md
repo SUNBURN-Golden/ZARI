@@ -853,3 +853,12 @@ TASKS/TEMPLATE에는 CURSOR 예시와 선택적 EXECUTION_PROFILE_POINTER를 추
 로컬 JSON 파싱, 후보 pin, AGENTS 고유 규칙 보존과 템플릿 필드를 대조했습니다.
 앱 테스트·독립 감사·운영 설치·활성화 완료를 주장하지 않습니다.
 다음 단계는 중앙 후보와 이 PR의 정확한 HEAD 검토 및 정책 채택입니다.
+
+
+### CP-OPT-002 소스 보완 (2026-09-26 UTC)
+
+중앙 후보 `aaa3e0544926dc2789faabc1fbe33fb611a12377`로 정책 참조만 갱신했습니다.
+중앙 변경에는 Cursor CLI 송신 잠금·호출자 검증과 Astra 수신 claim이 포함됩니다.
+ZARI 제품 코드·계약·디자인 baseline·역사적 기록은 그대로입니다.
+JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions 한도 소진으로
+새 HEAD의 제품 CI는 미검증입니다. 호스트 설치·Slack 연결·운영 활성화는 별도입니다.
