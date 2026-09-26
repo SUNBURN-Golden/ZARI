@@ -842,3 +842,14 @@ KIX `f179be8fc3c0c590b3194c26663aecdfe7a4a679`의 runtime/flow/boundary 실행 �
 Shared engineering source extraction candidate; application code unchanged.
 Tracking: https://github.com/BeautifulMind-JT/ai-ops-control-plane/issues/1
 Source/PR preparation only. No application test PASS, independent audit, deployment or activation claimed.
+
+
+## 공통 관제 정책 참조 갱신 후보 (2026-09-26 UTC)
+
+중앙 ai-ops의 검토 대상 정책 pin과 실행 profile 참조를 연결하고,
+기존 중복 관제 포인터는 단일 문서로 안내하도록 정리했습니다.
+TASKS/TEMPLATE에는 CURSOR 예시와 선택적 EXECUTION_PROFILE_POINTER를 추가했습니다.
+기존 ZARI 규칙·제품 코드·보존 원문·SOURCE_MANIFEST·디자인 baseline은 변경하지 않습니다.
+로컬 JSON 파싱, 후보 pin, AGENTS 고유 규칙 보존과 템플릿 필드를 대조했습니다.
+앱 테스트·독립 감사·운영 설치·활성화 완료를 주장하지 않습니다.
+다음 단계는 중앙 후보와 이 PR의 정확한 HEAD 검토 및 정책 채택입니다.
