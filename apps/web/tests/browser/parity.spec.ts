@@ -29,15 +29,23 @@ test('@parity native and real Chromium Worker WASM agree on every fixture', asyn
           ) as BootstrapFixture,
       ),
   );
-  const domain = await Promise.all(
-    (await readdir('fixtures/domain'))
-      .filter((file) => file.endsWith('.json'))
-      .sort()
-      .map(
-        async (file) =>
-          JSON.parse(await readFile(`fixtures/domain/${file}`, 'utf8')) as DomainFixture,
+  const domain = (
+    await Promise.all(
+      ['fixtures/domain', 'fixtures/bench'].map(async (dir) =>
+        Promise.all(
+          (await readdir(dir))
+            .filter((file) => file.endsWith('.json'))
+            .sort()
+            .map(
+              async (file) =>
+                JSON.parse(
+                  await readFile(`${dir}/${file}`, 'utf8'),
+                ) as DomainFixture,
+            ),
+        ),
       ),
-  );
+    )
+  ).flat();
   const browser: { caseId: string; result: unknown }[] = [];
   const wasm = page.waitForResponse(
     (response) => response.url().endsWith('.wasm') && response.ok(),

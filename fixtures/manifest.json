@@ -1235,6 +1235,97 @@
         "browserWasm"
       ],
       "introducedBy": "ZARI-004"
+    },
+    {
+      "id": "bench-normalize-small",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/bench/bench-normalize-small.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bench/bench-normalize-small.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-010"
+    },
+    {
+      "id": "bench-normalize-reference",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/bench/bench-normalize-reference.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bench/bench-normalize-reference.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-010"
+    },
+    {
+      "id": "bench-normalize-boundary",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/bench/bench-normalize-boundary.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bench/bench-normalize-boundary.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-010"
+    },
+    {
+      "id": "bench-search-small",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/bench/bench-search-small.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bench/bench-search-small.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-010"
+    },
+    {
+      "id": "bench-search-reference",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/bench/bench-search-reference.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bench/bench-search-reference.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-010"
+    },
+    {
+      "id": "bench-search-adversarial",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/bench/bench-search-adversarial.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bench/bench-search-adversarial.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-010"
+    },
+    {
+      "id": "bench-search-cancel",
+      "caseKind": "runSearch",
+      "inputPath": "fixtures/bench/bench-search-cancel.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/bench/bench-search-cancel.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-010"
     }
   ]
 }

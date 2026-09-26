@@ -1,6 +1,120 @@
 # ZARI 구현 상태
 
-## 현재 구현: ZARI-009 복구·프라이버시·이식 가능한 로컬 프로젝트 (작성자 DEVIN local CLI)
+## 현재 구현: ZARI-010 측정된 베타 준비도 (작성자 DEVIN local CLI)
+
+정본 작업은 GitHub issue #27이며 base는 ZARI-009 병합 후 main
+`bb0ca20f472f1bf0329d6d826339b5949b263d6e`입니다. 브랜치
+`devin/zari-010-beta-readiness`에서 작업했고 Cloud Devin·production
+runner·`runtime_enabled=true`·baseline 자동 교체·merge는 사용하지
+않았습니다. 이것은 측정된 준비도 증거이며 베타 릴리스가 아닙니다.
+
+구현한 범위:
+
+- `fixtures/bench/` 7종 + `scripts/bench-fixtures.mjs`: 정상
+  (small/reference)·스트레스(adversarial)·경계(boundary)·취소(cancel)
+  워크로드. expected oracle은 `domain_tool oracle` 서브커맨드가 실제
+  Rust 실행에서 계산한 값(termination·plan digest·consumed·
+  diagnostics)으로 고정하며 손으로 추정한 값이 아닙니다.
+  `fixtures/manifest.json`·`scripts/contracts.mjs`·parity에 등록해
+  native↔browser 대조 대상에 포함했습니다.
+- `apps/web/tests/harness.ts` `window.bench`: 네이티브 fixture runner가
+  보내는 것과 동일한 wire 요청(`domainFixtureRequests`)을 실제 Worker에
+  보내고, 요청당 encode·worker 왕복·decode·인페이지 `handle_json`
+  (direct) 네 구간을 분리 측정합니다. `residualMs = workerMs -
+  directMs`로 transport 잔여비용을 Rust 계산과 분리합니다. 실제
+  `ProjectRepository`/IndexedDB 경로로 open·draft·commit·catalog·
+  snapshot accept·reload를 측정하고 corrupt row는 0을 단언합니다.
+- `apps/web/tests/browser/bench.spec.ts` + `npm run bench:browser`:
+  cold 단계는 매 표본 새 브라우저 프로필·빈 HTTP 캐시에서 page load·
+  무캐시 WASM fetch+compile·Worker spawn+init+initialize 왕복을 잽니다.
+  warm 단계는 fixture당 기본 50회 반복 후 최종 터미널 이벤트를 Rust
+  oracle과 대조합니다. `ZARI_BENCH_COLD`/`ZARI_BENCH_WARM`으로 표본 수
+  조정. `test-results/bench/bench-<engine>.json` 아티팩트에 환경·
+  표본·p50/p95/max·payload bytes·heap delta·stage 목표표를 기록합니다.
+  TEST_STRATEGY.md §10에 명령·측정 경계·아티팩트 해석을 문서화했습니다.
+- `playwright.config.ts`: Chromium·Firefox·WebKit 3개 프로젝트.
+  root 권한이 없는 host를 위해 `scripts/setup-webkit-deps.sh`가 Mesa/
+  EGL/GTK 계열 사용자 공간 라이브러리를 `~/.cache/zari-webkit-deps`에
+  설치하고 `env.json` 마커를 씁니다. 마커가 있으면 config가
+  software-rendering env를 WebKit launch에 주입하고 host 검증을
+  건너뜁니다. 마커가 없으면 스톡 설정입니다.
+- `apps/web/tests/browser/responsive.spec.ts`: 320/390/768/1280/1440
+  레이아웃·가로 오버플로 없음, 390/1440 계산 결과 화면, 200% CSS zoom,
+  reduced-motion reduce/no-preference 양방향, forced-colors.
+- `apps/web/tests/browser/a11y.spec.ts`: axe-core 스캔(프로젝트 목록·
+  채운 편집기·오류 상태·plan idle/results·카탈로그)과 keyboard-only
+  생성→편집→커밋→plan→취소 흐름.
+- 접근성 수정: `CatalogScreen.tsx`의 가져오기 방식 선택을 잘못된
+  `role="tablist"`에서 `role="radiogroup"`+`role="radio"`/`aria-checked`
+  로 교정(axe `aria-required-children` critical). `ProjectScreen.tsx`
+  숨겨진 파일 입력에 `tabIndex={-1}`·`aria-hidden`을 추가해 키보드
+  탐색에서 제외했습니다.
+
+실제로 실행한 검증(이 checkout에서 실행한 결과이며 CI·독립 감사를 대체하지
+않습니다):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets
+  --locked -- -D warnings`, `cargo test --workspace --locked`: 통과
+  (75개).
+- `cargo run -p zari-core --locked --example fixture_runner -- fixtures`:
+  102 fixture 전부 통과(bench 7종 포함).
+- `npm run contracts:check`: 102 fixture 구조 유효. `npm run typecheck`,
+  `npm run lint`, `npm test`(vitest 55개), `npm run build` 통과.
+- `npm run test:parity`: 102 fixture native↔실제 Chromium Worker/WASM
+  대조 일치.
+- 브라우저 스위트: 프로젝트별 실행으로 Chromium 38/38, Firefox 49/49
+  (@bench 포함), WebKit 37+1(격리 재실행 통과)이며, 3엔진 동시 실행은
+  이 host에서 과부하 flake를 보였습니다(아래 한계 참조).
+- `npm run bench:browser` 전 표본(cold 20·warm 50)을 3엔진에서 실행 —
+  `test-results/bench/bench-*.json`. 측정 p95(데스크톱 목표 대비):
+  - wasmTransferCompile: Chromium 194ms·Firefox 251ms·WebKit 222ms /
+    1,000ms — met.
+  - normalization: Chromium 33.7ms·WebKit 27ms / 20ms — **exceeded**;
+    Firefox 20ms — 경계에서 met.
+  - searchStep: 0.7–1.0ms / 8ms — met.
+  - messagingResidual(workerMs−directMs): Chromium 37.9ms·Firefox 52ms·
+    WebKit 40ms / 10ms — **exceeded**. WASM 문자열 왕복을 포함한
+    transport 잔여비용입니다.
+  - serialization(encode+decode p95 합): Chromium 5.8ms·WebKit 6ms met;
+    Firefox 28ms / 20ms — **exceeded**.
+  - cancelAck: ≤1ms / 100ms — met. draftTransaction ≤13ms / 50ms — met.
+    snapshotSaveReload ≤41ms / 200ms — met.
+- `node scripts/check-design-tokens.mjs --self-test`: 통과 (33/33).
+
+미구현·한계·공개된 shortfall:
+
+- 실제 물리 기기(Android Chrome/Samsung Internet·iOS Safari)는 테스트하지
+  않았습니다. 모든 수치는 데스크톱 headless 바이너리이며 모바일 목표
+  열은 미측정으로 남습니다. Playwright WebKit은 실제 iPhone 증거가
+  아닙니다.
+- 이 host에서 WebKit은 시스템 GTK/WPE가 없어 사용자 공간 추출
+  라이브러리 + software EGL로 동작합니다. 정상 프로비전된 host에서는
+  `setup-webkit-deps.sh` 불필요합니다.
+- WebKit(WPE)에서 `context.setOffline(true)` 후 `page.reload()`가
+  엔진 내부 오류로 실패(빈 페이지에서도 재현 — 앱 결함 아님).
+  portable.spec.ts의 오프라인 재방문 테스트는 WebKit에서 stage된
+  manifest의 모든 자산이 Cache Storage에서 검색 가능한지를 대신
+  단언하고, 실제 reload 검증은 Chromium/Firefox에서 수행합니다.
+- Firefox는 문서 끝에서 Tab이 페이지 첫 요소로 돌아오지 않고 브라우저
+  chrome으로 빠져나가며, WebKit은 React Aria Button에 대한 포인터 클릭
+  직후 Shift+Tab 순차 포커스 상태가 어긋납니다. 키보드 테스트는 실제
+  키보드 경로(포커스 앵커 + Enter/Shift+Tab)만 사용하며 엔진 차이를
+  그대로 따릅니다.
+- normalization·messagingResidual·(Firefox)serialization p95가 초안
+  목표를 초과합니다 — 수치는 숨기지 않고 bench 아티팩트와 이 문서에
+  기록했으며 예산을 변경하지 않았습니다.
+- 3엔진 동시 실행 시 WASM worker 부팅이 30s를 넘는 과부하 flake가
+  관측되었습니다(expect 대기는 30s로 상향, 단언 내용 불변). 단일
+  프로젝트 순차 실행에서는 재현되지 않습니다. CI에서는 엔진별 분리
+  실행을 권장합니다.
+- `performance.memory`는 Chromium만 노출하며 나머지 엔진의 heap 수치는
+  null로 기록됩니다. 화면 시각 baseline 승인·베타 릴리스·배포를
+  주장하지 않습니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
+review(GROK 이후 GLM, 동시 1명)이며 merge는 User만 결정합니다.
+
+## 이전 구현: ZARI-009 복구·프라이버시·이식 가능한 로컬 프로젝트 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #25이며 base는 ZARI-008 병합 후 main
 `178f6289542ba67f3da52237f3cab1a8072b3150`입니다. 브랜치

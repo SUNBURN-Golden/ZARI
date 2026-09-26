@@ -397,6 +397,8 @@ function PhotosPanel({ projectId }: { projectId: string }) {
           accept="image/jpeg,image/png,image/webp"
           data-testid="photo-file"
           hidden
+          tabIndex={-1}
+          aria-hidden="true"
           onChange={(e) => {
             const file = e.target.files?.[0];
             e.target.value = '';

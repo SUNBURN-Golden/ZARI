@@ -88,6 +88,121 @@ fn main() {
             };
             println!("{kind} {digest}");
         }
+        Some("oracle") => {
+            // Compute the `expected` block a fixture would need to match the
+            // real Runtime+SolverEngine output. Authoring aid only — the
+            // resulting oracles are reviewed like any other fixture change.
+            // Usage: domain_tool oracle <fixture.json>
+            let bytes = read(&args[2]);
+            let header: Value = serde_json::from_slice(&bytes).expect("fixture parses");
+            let operation = header["operation"].as_str().unwrap_or_default().to_owned();
+            let fixture: DomainFixture = serde_json::from_slice(&bytes).expect("fixture decodes");
+            let mut runtime = Runtime::new();
+            runtime.set_search_engine(Box::new(zari_solver::SolverEngine));
+            let mut event = Value::Null;
+            for request in domain_fixture_requests(&fixture) {
+                let response: Value =
+                    serde_json::from_str(&runtime.handle_json(&request.to_string()))
+                        .expect("response is JSON");
+                event = response["event"].clone();
+                if fixture.operation == DomainOperation::RunSearch
+                    && matches!(
+                        event["kind"].as_str(),
+                        Some("searchCompleted") | Some("searchCancelled") | Some("operationFailed")
+                    )
+                {
+                    break;
+                }
+            }
+            let expected = match operation.as_str() {
+                "runSearch" => {
+                    let kind = event["kind"].as_str().unwrap_or_default();
+                    let (result, counters) = match kind {
+                        "searchCompleted" => {
+                            (event["result"].clone(), event["result"]["consumed"].clone())
+                        }
+                        "searchCancelled" => (Value::Null, event["consumed"].clone()),
+                        "operationFailed" => (Value::Null, Value::Null),
+                        _ => (Value::Null, Value::Null),
+                    };
+                    let decode_error =
+                        kind == "operationFailed" && event["code"] == "invalid_input";
+                    let termination = if kind == "searchCancelled" {
+                        json!("cancelled")
+                    } else {
+                        result["termination"].clone()
+                    };
+                    let digests: Vec<Value> = result["alternatives"]
+                        .as_array()
+                        .map(|alts| alts.iter().map(|a| a["planSnapshotId"].clone()).collect())
+                        .unwrap_or_default();
+                    let mut reasons: Vec<String> = result["diagnosticCandidates"]
+                        .as_array()
+                        .map(|ds| {
+                            ds.iter()
+                                .filter_map(|d| d["reasonCode"].as_str().map(str::to_owned))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    reasons.sort();
+                    reasons.dedup();
+                    let mut restrictions: Vec<String> = result["scope"]["restrictions"]
+                        .as_array()
+                        .map(|rs| {
+                            rs.iter()
+                                .filter_map(|r| r["code"].as_str().map(str::to_owned))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    restrictions.sort();
+                    restrictions.dedup();
+                    json!({
+                        "kind": "runSearch",
+                        "decodeError": decode_error,
+                        "termination": termination,
+                        "alternativeDigests": digests,
+                        "diagnosticReasons": reasons,
+                        "restrictionCodes": restrictions,
+                        "consumed": counters,
+                    })
+                }
+                "normalizeProjectInput" => {
+                    let decode_error =
+                        event["kind"] == "operationFailed" && event["code"] == "invalid_input";
+                    let mut diagnostics: Vec<Value> = event["diagnostics"]
+                        .as_array()
+                        .map(|ds| {
+                            ds.iter()
+                                .map(|d| {
+                                    json!({
+                                        "fieldPath": d["fieldPath"],
+                                        "code": d["code"],
+                                    })
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    diagnostics.sort_by(|a, b| {
+                        (a["fieldPath"].as_str(), a["code"].as_str())
+                            .cmp(&(b["fieldPath"].as_str(), b["code"].as_str()))
+                    });
+                    json!({
+                        "kind": "normalizeProjectInput",
+                        "decodeError": decode_error,
+                        "diagnostics": diagnostics,
+                        "inputDigest": event["inputDigest"].clone(),
+                    })
+                }
+                other => panic!("oracle supports runSearch/normalizeProjectInput, got {other}"),
+            };
+            println!(
+                "{}",
+                serde_json::to_string_pretty(
+                    &json!({"caseId": fixture.case_id, "event": event, "expected": expected})
+                )
+                .unwrap()
+            );
+        }
         Some("report") => {
             let mut paths = vec![];
             fn collect(dir: PathBuf, paths: &mut Vec<PathBuf>) {
