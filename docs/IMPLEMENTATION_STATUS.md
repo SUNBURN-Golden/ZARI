@@ -842,3 +842,31 @@ KIX `f179be8fc3c0c590b3194c26663aecdfe7a4a679`의 runtime/flow/boundary 실행 �
 Shared engineering source extraction candidate; application code unchanged.
 Tracking: https://github.com/BeautifulMind-JT/ai-ops-control-plane/issues/1
 Source/PR preparation only. No application test PASS, independent audit, deployment or activation claimed.
+
+
+## 공통 관제 정책 참조 갱신 후보 (2026-09-26 UTC)
+
+중앙 ai-ops의 검토 대상 정책 pin과 실행 profile 참조를 연결하고,
+기존 중복 관제 포인터는 단일 문서로 안내하도록 정리했습니다.
+TASKS/TEMPLATE에는 CURSOR 예시와 선택적 EXECUTION_PROFILE_POINTER를 추가했습니다.
+기존 ZARI 규칙·제품 코드·보존 원문·SOURCE_MANIFEST·디자인 baseline은 변경하지 않습니다.
+로컬 JSON 파싱, 후보 pin, AGENTS 고유 규칙 보존과 템플릿 필드를 대조했습니다.
+앱 테스트·독립 감사·운영 설치·활성화 완료를 주장하지 않습니다.
+다음 단계는 중앙 후보와 이 PR의 정확한 HEAD 검토 및 정책 채택입니다.
+
+
+### CP-OPT-002 소스 보완 (2026-09-26 UTC)
+
+중앙 후보 `4ab3ff90274e493c770968174349ae9e2303d712`로 정책 참조만 갱신했습니다.
+중앙 변경에는 Cursor CLI 송신 잠금·호출자 검증과 Astra 수신 claim이 포함됩니다.
+ZARI 제품 코드·계약·디자인 baseline·역사적 기록은 그대로입니다.
+JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions 한도 소진으로
+새 HEAD의 제품 CI는 미검증입니다. 호스트 설치·Slack 연결·운영 활성화는 별도입니다.
+
+
+### CP-OPT-002 main 통합 후보 (2026-09-27 UTC)
+
+중앙 후보 `3e7c64a515e908b312604e82405b963d100caa07`로 현재 포인터를 갱신했습니다.
+네 제품 deployment_enabled=true는 유지하고, 이전 SHA 감사 근거를 재사용한
+중앙 activation은 새 검증 전까지 비활성/PENDING으로 바로잡았습니다.
+제품 코드·계약·baseline·과거 기록은 그대로이며 새 제품 CI/운영 PASS를 주장하지 않습니다.
