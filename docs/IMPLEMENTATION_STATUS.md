@@ -1071,3 +1071,18 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 1. 10월 1일 이후 Actions를 복구하고 main·PR #28·이 PR의 CI를 재실행합니다.
 2. PR #28 검토 때 INV-01 결과를 반영해 messagingResidual 측정 정의를 고칠지와 성능 기준 host를 정합니다(ASTRA·사용자).
 3. 독립 read-only review를 거쳐 사용자가 병합 여부를 결정합니다.
+
+
+## 병합 기록: PR #28(ZARI-010)·PR #30 (2026-09-28 UTC)
+
+사용자가 "10월 1일까지는 CI 없이 바로 병합"하도록 지시해, 두 PR을 GitHub Actions CI와 독립 감사(GROK→GLM) 없이 병합했습니다. AGENTS.md가 요구하는 비작성자 exact-HEAD 감사는 두 PR 모두 거치지 않았습니다.
+
+- PR #28 HEAD `94a6b2c` → main 병합 커밋 `7540811`
+- PR #30 HEAD `135e12a` → main 병합 커밋 `efef8a1`
+- 병합 전 로컬 검증: main `ef0edfe`에 두 PR을 합친 트리를 따로 만들어 확인했습니다. `contracts:check`(102 fixture), `typecheck`, `lint`, `vitest` 62개, `test:browser --project=chromium` 39개, `test:parity` 102 fixture, 토큰 검사 33/33이 모두 통과했습니다. Rust는 PR #28 HEAD에서 75개 테스트·fixture 102개를 확인했고, PR #30에는 Rust 변경이 없습니다.
+
+다음 작업:
+
+1. 10월 1일 이후 Actions가 복구되면 main의 CI를 재실행합니다.
+2. 필요하면 병합된 main을 대상으로 GROK→GLM 감사를 사후에 진행합니다. 감사 기록 이관은 이슈 #31에서 추적합니다.
+3. Firefox·WebKit에서 `zari-bench-2` 벤치를 재측정하고, 성능 기준 host를 정합니다.
