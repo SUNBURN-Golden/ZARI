@@ -1,4 +1,11 @@
-import { useEffect, useRef, useSyncExternalStore, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+} from 'react';
 import { Button } from 'react-aria-components';
 import type {
   LayoutEditCommand,
@@ -14,21 +21,27 @@ import {
   CHECK_STATUS_TEXT,
   EDIT_COMMAND_TEXT,
   EDIT_REJECTION_TEXT,
+  MOVE_AXES,
+  MOVE_INPUT_TEXT,
   ORIENTATIONS,
   ORIENTATION_TEXT,
   REJECTION_TEXT,
   STRATEGY_TEXT,
   UNASSIGNED_TEXT,
   allowedOrientations,
+  catalogSourceText,
   frontViewRects,
   ghostRect,
   interiorBox,
   isNoPurchase,
   moneyText,
   qtyText,
+  readMovePosition,
   subjectLabel,
   topViewRects,
   unassignedCount,
+  type MoveAxis,
+  type MoveInputError,
   type RectVm,
 } from '../features/plan/view';
 import { bomCsvRows, toCsv } from '../features/plan/csv';
@@ -175,6 +188,15 @@ function Inspector({
     (p) => p.id === edit.selectedPlacementId,
   );
   const moveForm = useRef<HTMLFormElement | null>(null);
+  // Host-side refusals of unreadable coordinate text, bound to the placement
+  // they were raised on so a new selection never inherits them.
+  const [moveErrors, setMoveErrors] = useState<{
+    placementId: string;
+    errors: Partial<Record<MoveAxis, MoveInputError>>;
+  } | null>(null);
+  // More than one inspector can be on screen (alternative + 편집안), so the
+  // error ids that aria-describedby points at must be unique per instance.
+  const errorIdBase = useId();
   if (!placement) {
     return (
       <div className="edit-inspector" data-testid="inspector-empty">
@@ -198,19 +220,30 @@ function Inspector({
   const applyMove = () => {
     const form = moveForm.current;
     if (!form) return;
-    const read = (name: string) =>
-      Number((form.elements.namedItem(name) as HTMLInputElement | null)?.value);
+    const field = (axis: MoveAxis) =>
+      form.elements.namedItem(`pos-${axis}`) as HTMLInputElement | null;
+    const read = readMovePosition({
+      x: { text: field('x')?.value ?? '', badInput: field('x')?.validity.badInput ?? false },
+      y: { text: field('y')?.value ?? '', badInput: field('y')?.validity.badInput ?? false },
+      z: { text: field('z')?.value ?? '', badInput: field('z')?.validity.badInput ?? false },
+    });
+    if (!read.ok) {
+      // Nothing is sent: an absent coordinate is not 0mm.
+      setMoveErrors({ placementId: placement.id, errors: read.errors });
+      const first = MOVE_AXES.find((axis) => read.errors[axis]);
+      if (first) field(first)?.focus();
+      return;
+    }
+    setMoveErrors(null);
     const command: LayoutEditCommand = {
       kind: 'movePlacement',
       placementId: placement.id,
-      position: {
-        x: read('pos-x'),
-        y: read('pos-y'),
-        z: read('pos-z'),
-      },
+      position: read.position,
     };
     session.requestLayoutEdit(command, snapshot.planSnapshotId);
   };
+  const axisErrors =
+    moveErrors && moveErrors.placementId === placement.id ? moveErrors.errors : {};
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -221,17 +254,21 @@ function Inspector({
     <div className="edit-inspector" data-testid="inspector">
       <div className="section-kicker">편집</div>
       <h4>{subjectLabel(content, subject)}</h4>
+      {/* noValidate: the button and Enter share one gate (readMovePosition)
+          with field-linked Korean errors, instead of the browser's own
+          step/range bubble on click only. */}
       <form
         ref={moveForm}
         className="edit-inspector-fields"
         data-testid="move-form"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
           applyMove();
         }}
         onKeyDown={onKey}
       >
-        {(['x', 'y', 'z'] as const).map((axis) => (
+        {MOVE_AXES.map((axis) => (
           <label key={axis} className="edit-inspector-field">
             <span>{axis.toUpperCase()} mm</span>
             <input
@@ -241,6 +278,8 @@ function Inspector({
               min="-20000"
               max="20000"
               defaultValue={placement.position[axis]}
+              aria-invalid={axisErrors[axis] ? true : undefined}
+              aria-describedby={axisErrors[axis] ? `${errorIdBase}-${axis}` : undefined}
               data-testid={`move-${axis}`}
             />
           </label>
@@ -254,6 +293,15 @@ function Inspector({
           이동 적용
         </Button>
       </form>
+      {Object.keys(axisErrors).length > 0 && (
+        <ul className="diagnostic-list" role="alert" data-testid="move-input-errors">
+          {MOVE_AXES.filter((axis) => axisErrors[axis]).map((axis) => (
+            <li key={axis} id={`${errorIdBase}-${axis}`} className="field-error">
+              {axis.toUpperCase()} mm: {MOVE_INPUT_TEXT[axisErrors[axis] as MoveInputError]}
+            </li>
+          ))}
+        </ul>
+      )}
       <fieldset className="edit-inspector-fields" data-testid="rotate-field">
         <legend>방향</legend>
         {allowed === null ? (
@@ -811,10 +859,8 @@ function PlanDetail({
       <p className="session-note" data-testid="snapshot-id">
         스냅샷 {snapshot.planSnapshotId.slice(0, 16)}… · 입력{' '}
         {snapshot.content.versions.inputDigest.slice(0, 12)}… · 카탈로그{' '}
-        {snapshot.content.versions.catalogVersion}
-        {state.plan.catalog?.sourceKind === 'synthetic'
-          ? ' (합성 데이터 — 실제 상품이 아닙니다)'
-          : ' (가져온 카탈로그 — 입력된 출처 기준)'}
+        {snapshot.content.versions.catalogVersion} (
+        {catalogSourceText(state.plan.catalog, snapshot.content.versions.catalogDigest)})
       </p>
     </div>
   );

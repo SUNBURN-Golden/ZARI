@@ -1,4 +1,5 @@
 import type {
+  CatalogSnapshot,
   FactFor_MeasuredLength,
   FactFor_MoneyKrw,
   FactFor_PackQuantity,
@@ -266,10 +267,72 @@ export const REJECTION_TEXT: Record<string, string> = {
   budget_exceeded: '예산을 초과합니다',
 };
 
+/**
+ * Origin label for the catalog a snapshot was compiled against. The loaded
+ * catalog row speaks for the snapshot only when its digest is exactly the
+ * snapshot's; otherwise the origin is not known here and is never presented
+ * as an imported (or synthetic) catalog by default.
+ */
+export function catalogSourceText(
+  catalog: CatalogSnapshot | null,
+  snapshotCatalogDigest: string,
+): string {
+  if (!catalog || catalog.catalogDigest !== snapshotCatalogDigest)
+    return '출처 확인 불가';
+  return catalog.sourceKind === 'synthetic'
+    ? '합성 데이터 — 실제 상품이 아닙니다'
+    : '가져온 카탈로그 — 입력된 출처 기준';
+}
+
 // ---------- ZARI-007 editing views ----------
 
 /** Every orientation value in display order. */
 export const ORIENTATIONS: Orientation[] = ['upright0', 'upright90'];
+
+export const MOVE_AXES = ['x', 'y', 'z'] as const;
+export type MoveAxis = (typeof MOVE_AXES)[number];
+export type MoveInputError = 'position_missing' | 'position_not_integer_mm';
+
+export const MOVE_INPUT_TEXT: Record<MoveInputError, string> = {
+  position_missing:
+    '값이 비어 있거나 숫자로 읽을 수 없습니다 — 빈 칸을 0mm로 보내지 않습니다',
+  position_not_integer_mm: '1mm 단위 정수로 입력하세요',
+};
+
+/** Raw inspector text for one axis plus the browser's own parse verdict. */
+export interface MoveFieldText {
+  text: string;
+  /** `ValidityState.badInput`: the browser could not read the typed text. */
+  badInput: boolean;
+}
+
+export type MovePositionRead =
+  | { ok: true; position: Extract<LayoutEditCommand, { kind: 'movePlacement' }>['position'] }
+  | { ok: false; errors: Partial<Record<MoveAxis, MoveInputError>> };
+
+/**
+ * Gate the inspector's raw coordinate text before a `movePlacement` command
+ * exists. A blank or unreadable field is an absent value — never 0mm — and
+ * only a plain integer literal passes, so the JS number parser never coerces
+ * forms such as `1e3` or `12.0` into a coordinate. The gate only refuses:
+ * range and physical validity stay with the generated request validator and
+ * Rust.
+ */
+export function readMovePosition(
+  fields: Record<MoveAxis, MoveFieldText>,
+): MovePositionRead {
+  const errors: Partial<Record<MoveAxis, MoveInputError>> = {};
+  const values: Partial<Record<MoveAxis, number>> = {};
+  for (const axis of MOVE_AXES) {
+    const { text, badInput } = fields[axis];
+    const trimmed = text.trim();
+    if (badInput || trimmed === '') errors[axis] = 'position_missing';
+    else if (!/^-?\d+$/.test(trimmed)) errors[axis] = 'position_not_integer_mm';
+    else values[axis] = Number(trimmed);
+  }
+  if (Object.keys(errors).length > 0) return { ok: false, errors };
+  return { ok: true, position: { x: values.x!, y: values.y!, z: values.z! } };
+}
 
 export const ORIENTATION_TEXT: Record<string, string> = {
   upright0: '정면 0°',

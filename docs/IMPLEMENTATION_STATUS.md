@@ -1026,3 +1026,48 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 네 제품 deployment_enabled=true는 유지하고, 이전 SHA 감사 근거를 재사용한
 중앙 activation은 새 검증 전까지 비활성/PENDING으로 바로잡았습니다.
 제품 코드·계약·baseline·과거 기록은 그대로이며 새 제품 CI/운영 PASS를 주장하지 않습니다.
+
+
+## 유지보수: 편집 좌표 가드·카탈로그 출처 표시·README 현행화·INV-01 조사 (2026-09-28 UTC, 작성자 Claude Code)
+
+사용자 지시(현재 할 수 있는 작업 전부 진행, GitHub Actions 사용량은 10월 1일 복구 전까지 보류)에 따라 main `ef0edfee00c7ff79a08553b2ac92ad2324ac4b1a` 기준 브랜치 `claude/brave-einstein-kgk17h`에서 작업했습니다. ZARI-010(PR #28)의 브랜치·HEAD는 수정하지 않았습니다. PR #28이 문서 맨 위 "현재 구현" 절을 바꾸므로, 충돌을 피하려고 이 기록은 문서 끝에 둡니다.
+
+변경:
+
+- **편집 좌표 가드** (`features/plan/view.ts` `readMovePosition`, `app/PlanScreen.tsx` Inspector): 빈 칸이 `Number('')`=0으로 바뀌어 `movePlacement`에 0mm로 전송되던 결함을 고쳤습니다. 수정 전 코드에서 실제 Chromium으로 재현했습니다. X=75 칸을 비우고 적용하면 `{x:0,y:145,z:0}`이 전송되었고, Rust 거절이 물리 실패처럼 표시되었습니다. 이제 빈 값·브라우저가 읽지 못한 값은 `position_missing`, 정수 리터럴이 아닌 값(`1e3`·`12.0`·`12.5`)은 `position_not_integer_mm`로 처리합니다. 이 경우 요청을 만들지 않고, `aria-invalid`·`aria-describedby`로 연결된 한국어 오류를 보여주며, 첫 오류 칸으로 초점을 옮깁니다. 이 gate는 거절만 하고 값을 만들지 않습니다. 범위와 물리 판정은 계속 생성 validator와 Rust가 합니다. Wire 계약(`Vec3Mm` 정수)은 바꾸지 않았습니다.
+- **클릭과 Enter 경로 일치**: 기존에는 버튼 클릭만 브라우저 자체 검증(step·min·max 영어 풍선)을 거치고 Enter는 건너뛰었습니다. 폼에 `noValidate`를 붙여 두 경로가 같은 gate를 지나게 했습니다. ±20000mm 밖의 정수는 생성 요청 validator가 Worker 전송 전에 거절하고, 기존 편집 거절 설명(`invalid_request_shape`)으로 표시합니다.
+- **inspector 오류 id 고유화**: 검증된 편집안이 생기면 inspector가 두 개 표시되므로 오류 id를 `useId`로 인스턴스별로 만듭니다.
+- **카탈로그 출처 표시** (`features/project/session.ts` `installContext`, `features/plan/view.ts` `catalogSourceText`): 새 프로젝트에서 첫 입력을 커밋하면 context는 pin된 카탈로그로 활성화되지만, 화면 쪽 `plan.catalog`는 새로고침 전까지 null로 남았습니다. 그 결과 **합성 데모 카탈로그가 "(가져온 카탈로그 — 입력된 출처 기준)"으로 표시**되고 수납함 옵션 목록이 비었습니다. 실제 Chromium에서 재현했습니다(새로고침 전 옵션 0개·"가져온 카탈로그", 새로고침 후 옵션 2개·"합성 데이터"). 이제 context 설치 때마다 같은 카탈로그를 plan 상태에 넣습니다. 출처 문구는 로드된 카탈로그 digest가 스냅샷의 `catalogDigest`와 같을 때만 표시하고, 다르거나 없으면 "출처 확인 불가"로 둡니다.
+- **README** "현재 구현 범위"를 Task 001 기준에서 main의 Task 001–009 상태와 Task 010 검토 중 상태로 갱신했습니다. 저장·계획·편집·카탈로그·복구 흐름, 합성 데이터 표시, 범위 밖 기능, 승인 화면 0개를 적었습니다.
+- **INV-01 조사 보고서** [INV01_MESSAGING_RESIDUAL.md](INV01_MESSAGING_RESIDUAL.md): PR #28 HEAD `a824f2d`를 read-only로 재현·분해했습니다.
+  - 벤치의 messagingResidual 초과(이 환경 56.9ms / 목표 10ms)는 오래 걸리는 Rust 명령(activateProject·startSearch)을 Worker와 페이지에서 따로 실행한 **계산 시간 편차**였습니다.
+  - 같은 실행 안에서 분리한 실제 전송은 908KB 요청 기준 p95 1.9ms 이하였고, echo worker 왕복은 최대 3.6ms였습니다.
+  - normalization p95는 이 환경에서 14.0ms로 목표 안이었습니다.
+  - 새 아키텍처는 필요 없고, 측정 정의 수정이 최소 다음 범위라고 제안했습니다(추론이며 결정은 ASTRA·사용자).
+- **GitHub 이슈 정리**: 병합 완료 댓글이 있는데 열려 있던 task 이슈 #5·#9·#11·#13·#18·#21·#23을 completed로 닫았습니다(#15·#25와 같은 처리). 이슈 #27(ZARI-010)은 열린 채로 둡니다.
+
+실제로 실행한 검증(이 checkout의 로컬 실행입니다. GitHub Actions는 사용량 한도로 실행되지 않아 CI 근거가 없습니다):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: 통과. `cargo test --workspace --locked`: 75개 통과.
+- `cargo run -p zari-core --locked --example fixture_runner -- fixtures`: 통과. `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: 성공.
+- `npm run wasm:build`, `npm run contracts:check`(95 fixture 구조 유효), `npm run typecheck`, `npm run lint`, `npm run build`: 통과.
+- `npm test`(vitest): 62개 통과. 새 `planView.test.ts` 7개(좌표 gate 5, 카탈로그 출처 2)를 포함합니다.
+- `npm run test:browser -- --project=chromium`: 27개 통과. `edit.spec.ts`에 새 테스트를 추가했습니다. 빈 칸·`12.5`·범위 밖 값에서 Worker로 가는 `evaluateLayoutEdit` 요청 0건, 오류 연결·초점을 확인하고, 원래 값으로 요청 1건·편집안 생성을 확인합니다. 기존 `edit`·`plan` 테스트에는 새로고침 없이 옵션 표시와 "합성 데이터" 표시를 단언했습니다.
+- `npm run test:parity`: 95 fixture native↔실제 Chromium Worker/WASM 일치.
+- `node scripts/check-design-tokens.mjs --self-test`: 33/33 통과. 새 색 조합·토큰은 없고, 기존 `diagnostic-list`·`field-error`만 사용합니다.
+- 실제 화면 확인: 오류 상태 inspector를 1440px·390px에서 캡처해 확인했습니다. 가로 넘침은 없었습니다. 캡처는 세션 로컬 파일이며 baseline으로 등록하지 않았습니다.
+- 환경: Node 24.19.0, npm 11.17.0, Rust 1.98.1, wasm-bindgen 0.2.128, Playwright 1.63.0. Chromium은 환경에 설치된 141.0.7390.37을 `ZARI_CHROMIUM_EXECUTABLE`로 지정했습니다.
+
+미실행·한계:
+
+- GitHub Actions CI: 사용량 한도로 ZARI-009 병합 이후 main·PR #28·이 변경 모두 미실행입니다. 사용자 확인 기준 10월 1일 이후 재실행이 필요합니다.
+- Firefox·WebKit·실제 모바일 기기는 실행하지 않았습니다.
+- 편집 좌표 입력은 여전히 `type="number"` 입력입니다. COMPONENTS.md의 "원문 문자열 + Rust 정규화" 원칙과 완전히 같지 않습니다. 좌표용 Rust 텍스트 정규화 명령이 없어 wire 계약을 바꾸지 않는 host 구문 gate로 한정했습니다. 정식 해결은 계약 변경 task입니다.
+- GROK·GLM 감사의 `PASS_WITH_NOTES` 내용은 이 세션에서 접근할 수 없는 로컬 경로(`/workspace/zari-ops`)에만 있습니다. 이슈나 PR로 옮기는 것은 해당 파일을 가진 운영자의 작업입니다.
+- 화면 baseline 승인은 0개 그대로이며, Task 005 이후 화면의 draft 캡처는 없습니다.
+
+작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 작업:
+
+1. 10월 1일 이후 Actions를 복구하고 main·PR #28·이 PR의 CI를 재실행합니다.
+2. PR #28 검토 때 INV-01 결과를 반영해 messagingResidual 측정 정의를 고칠지와 성능 기준 host를 정합니다(ASTRA·사용자).
+3. 독립 read-only review를 거쳐 사용자가 병합 여부를 결정합니다.
