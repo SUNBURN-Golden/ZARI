@@ -23,6 +23,12 @@ export interface BenchRequestTiming {
   decodeMs: number;
   /** In-page Runtime.handle_json on the same request (no Worker hop). */
   directMs: number;
+  /**
+   * Runtime.handle_json inside the Worker for this same round trip, reported
+   * by the instrumented bench worker (`spawnTimedWorker`); null for the
+   * production entry. `workerMs - workerComputeMs` is the messaging residual.
+   */
+  workerComputeMs: number | null;
   requestBytes: number;
   responseBytes: number;
 }
@@ -35,6 +41,11 @@ export interface BenchApi {
   requestsFor(fixture: DomainFixture): string[];
   /** Fresh uninstrumented Worker. */
   spawnWorker(): Worker;
+  /**
+   * Fresh Worker running the test-only instrumented entry (tests/bench-entry.ts):
+   * identical replies plus in-worker compute timing for each request.
+   */
+  spawnTimedWorker(): Worker;
   /**
    * Send one request through a real Worker, then replay the same request on an
    * in-page Runtime so worker-vs-direct residual is measured on identical
@@ -163,6 +174,12 @@ const benchRepoInstance = async (): Promise<ProjectRepository> => {
 const draftGenerations = new Map<string, number>();
 const WORKER_ENTRY = () =>
   new Worker(new URL('../src/worker/entry.ts', import.meta.url), { type: 'module' });
+const timedWorkers = new WeakSet<Worker>();
+const TIMED_WORKER_ENTRY = () => {
+  const worker = new Worker(new URL('./bench-entry.ts', import.meta.url), { type: 'module' });
+  timedWorkers.add(worker);
+  return worker;
+};
 window.bench = {
   requestsFor(fixture) {
     const requests = JSON.parse(
@@ -171,6 +188,7 @@ window.bench = {
     return requests.map((request) => JSON.stringify(request));
   },
   spawnWorker: () => WORKER_ENTRY(),
+  spawnTimedWorker: () => TIMED_WORKER_ENTRY(),
   directRuntime: () => new Runtime(),
   async send(worker, direct, requestJson) {
     // Encode the parsed request exactly like ProbeClient.send does, then post
@@ -178,13 +196,29 @@ window.bench = {
     const encodeStart = now();
     const wire = JSON.stringify(JSON.parse(requestJson));
     const encodeMs = now() - encodeStart;
+    const timed = timedWorkers.has(worker);
     const start = now();
-    const reply = await new Promise<unknown>((resolve, reject) => {
-      worker.onmessage = (e) => resolve(e.data);
+    let workerMs = 0;
+    // The round trip ends at the reply itself; an instrumented worker then
+    // posts its compute timing as a separate message outside that window.
+    const { reply, workerComputeMs } = await new Promise<{
+      reply: unknown;
+      workerComputeMs: number | null;
+    }>((resolve, reject) => {
+      let first: { data: unknown } | null = null;
+      worker.onmessage = (e) => {
+        if (first === null) {
+          workerMs = now() - start;
+          first = { data: e.data };
+          if (!timed) resolve({ reply: e.data, workerComputeMs: null });
+          return;
+        }
+        const ms = (e.data as { benchComputeMs?: unknown } | null)?.benchComputeMs;
+        resolve({ reply: first.data, workerComputeMs: typeof ms === 'number' ? ms : null });
+      };
       worker.onerror = (e) => reject(new Error(`worker_error:${e.message ?? 'unknown'}`));
       worker.postMessage(wire);
     });
-    const workerMs = now() - start;
     const decodeStart = now();
     const response = typeof reply === 'string' ? JSON.parse(reply) : reply;
     const decodeMs = now() - decodeStart;
@@ -197,6 +231,7 @@ window.bench = {
         workerMs,
         decodeMs,
         directMs,
+        workerComputeMs,
         requestBytes: encoder.encode(wire).length,
         responseBytes: encoder.encode(typeof reply === 'string' ? reply : JSON.stringify(reply))
           .length,

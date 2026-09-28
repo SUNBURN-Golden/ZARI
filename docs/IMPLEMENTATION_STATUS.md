@@ -114,6 +114,48 @@ runner·`runtime_enabled=true`·baseline 자동 교체·merge는 사용하지
 작성자는 자신의 변경에 PASS를 부여하지 않습니다. 다음 단계는 독립 read-only
 review(GROK 이후 GLM, 동시 1명)이며 merge는 User만 결정합니다.
 
+### ZARI-010 측정 정의 보완 (2026-09-28 UTC, 작성자 Claude Code)
+
+사용자가 ZARI-010 처리 방향을 위임해, 이 PR의 HEAD `a824f2d` 위에 커밋을 추가했습니다. 기존 커밋은 다시 쓰지 않았습니다. 위 원 기록은 역사 기록으로 그대로 둡니다. 원 기록의 messagingResidual 수치(Chromium 37.9ms·Firefox 52ms·WebKit 40ms, "exceeded")는 `zari-bench-1` 정의에서 나온 값이며 **전송 비용이 아닙니다**. 이 보완으로 대체합니다.
+
+- 이유: INV-01 조사(PR #30의 `docs/INV01_MESSAGING_RESIDUAL.md`)에서 `workerMs − directMs`가 오래 걸리는 Rust 명령(activateProject·startSearch)을 Worker와 페이지에서 따로 실행한 **계산 시간 편차**를 재고 있음을 확인했습니다. 같은 실행 안에서 분리한 실제 전송은 908KB 요청에서도 p95 1.9ms 이하였습니다.
+- `apps/web/tests/bench-entry.ts`(test build 전용, 앱 빌드 미포함): `src/worker/entry.ts`와 같은 메시지 처리에 Worker 내부 `handle_json` 시간 측정을 더했습니다. 응답 문자열은 그대로 보내고, 시간은 그 뒤에 별도 메시지로 보냅니다. 운영 `entry.ts`는 바꾸지 않았습니다.
+- `apps/web/tests/harness.ts`: `spawnTimedWorker()`와 `workerComputeMs`를 추가했습니다. 왕복 시간은 응답 문자열 수신 시점까지만 잽니다.
+- `apps/web/tests/browser/bench.spec.ts`:
+  - warm 단계는 계측 Worker를 씁니다.
+  - `transportMs = workerMs − workerComputeMs`를 messagingResidual로 씁니다.
+  - `crossRealmDeltaMs = workerComputeMs − directMs`는 참고값으로만 남깁니다.
+  - 최댓값으로 집계하는 stage 행에는 최댓값을 낸 (fixture, command)를 `at`으로 기록합니다.
+  - 아티팩트 contract를 `zari-bench-2`로 올렸습니다.
+  - 예산·fixture·oracle 대조는 바꾸지 않았습니다.
+- `docs/TEST_STRATEGY.md` §10에 위 정의를 반영했습니다.
+- `package.json`: `@axe-core/playwright`를 `^4.13.0`에서 lockfile과 같은 `4.13.0`으로 정확히 고정했습니다(다른 devDependencies와 같은 정책). lockfile은 `npm install --package-lock-only`로 갱신했고, 루트 선언 한 줄만 바뀌었습니다.
+
+재측정(`npm run bench:browser -- --project=chromium`, cold 20·warm 50, 10개 테스트 통과·모든 oracle 일치). 환경은 Chromium 141.0.7390.37 headless, Intel Xeon 2.10GHz 4코어, 16 GiB, Node 24.19.0입니다.
+
+| stage | p95 | 목표 | 판정 | 최댓값 위치 |
+|---|---|---|---|---|
+| wasmTransferCompile | 448.5ms | 1000ms | met | — |
+| normalization | 18.5ms | 20ms | met | bench-normalize-reference/normalizeInput |
+| searchStep | 0.5ms | 8ms | met | bench-search-cancel/stepSearch |
+| messagingResidual | **1.6ms** | 10ms | met | bench-search-adversarial/activateProject |
+| serialization | 9.2ms | 20ms | met | bench-search-adversarial/activateProject |
+| cancelAck | 0.5ms | 100ms | met | bench-search-cancel/cancelSearch |
+| draftTransaction | 12.0ms | 50ms | met | — |
+| snapshotSaveReload | 46.9ms | 200ms | met | — |
+
+참고값 `crossRealmDeltaMs` p95는 명령별로 최대 34.0ms(adversarial startSearch)였습니다. 원 정의가 "잔여비용"으로 보고하던 크기가 바로 이것입니다.
+
+남은 한계:
+
+- Firefox·WebKit은 이 환경에 없어 `zari-bench-2`로 재측정하지 않았습니다. 두 엔진의 messagingResidual은 **미측정**입니다(원 기록 값은 대체됨). serialization(Firefox 28ms)과 normalization(WebKit 27ms)의 원 기록 초과도 이 환경에서는 확인하지 않았습니다.
+- normalization p95는 같은 host에서도 14.0ms(INV-01 재현)와 18.5ms(이번)로 흔들렸고, 원 작성자 host에서는 33.7ms였습니다. 목표 20ms에 가까워 host에 따라 판정이 바뀝니다. 기준 host와 브라우저는 아직 정하지 않았습니다.
+- wasmTransferCompile(cold) p95는 INV-01 재현 때 181.9ms, 이번에 448.5ms로 같은 host에서도 차이가 큽니다. 목표 안이지만 cold 수치의 편차가 큽니다.
+- 문서 목표 중 첫 유효 후보 시간, 검증·BOM·확정 시간, React 반영 시간은 여전히 측정하지 않았습니다.
+- GitHub Actions는 사용량 한도로 이 HEAD에서도 실행되지 않습니다.
+
+이 보완의 작성자도 자신의 변경에 PASS를 부여하지 않습니다. 독립 read-only review(GROK 이후 GLM)는 새 HEAD를 대상으로 하며, merge는 User만 결정합니다.
+
 ## 이전 구현: ZARI-009 복구·프라이버시·이식 가능한 로컬 프로젝트 (작성자 DEVIN local CLI)
 
 정본 작업은 GitHub issue #25이며 base는 ZARI-008 병합 후 main

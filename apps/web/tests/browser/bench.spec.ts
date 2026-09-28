@@ -98,7 +98,7 @@ test.describe.configure({ mode: 'serial' });
 test.setTimeout(15 * 60 * 1000);
 
 const report: Record<string, unknown> = {
-  contract: 'zari-bench-1',
+  contract: 'zari-bench-2',
   generatedAt: new Date().toISOString(),
   samples: { cold: COLD_SAMPLES, warm: WARM_SAMPLES },
   environment: {
@@ -121,12 +121,20 @@ test.afterAll(async () => {
   const path = join(outDir, `bench-${engine}.json`);
   await writeFile(path, `${JSON.stringify(report, null, 2)}\n`);
   const rows =
-    (report.targets as { stage: string; p95: number | null; target: number; status: string }[]) ??
-    [];
+    (report.targets as {
+      stage: string;
+      p95: number | null;
+      target: number;
+      status: string;
+      at?: { fixture: string; command: string } | null;
+    }[]) ?? [];
   console.log(`[bench] ${engine}: report -> ${path}`);
   for (const row of rows) {
     const observed = row.p95 === null ? 'n/a' : `${row.p95.toFixed(2)}ms`;
-    console.log(`[bench]   ${row.stage.padEnd(24)} p95=${observed} target=${row.target}ms ${row.status}`);
+    const at = row.at ? ` at ${row.at.fixture}/${row.at.command}` : '';
+    console.log(
+      `[bench]   ${row.stage.padEnd(24)} p95=${observed} target=${row.target}ms ${row.status}${at}`,
+    );
   }
 });
 
@@ -210,7 +218,9 @@ for (const caseId of [...NORMALIZE_CASES, ...SEARCH_CASES]) {
     for (let i = 0; i < WARM_SAMPLES; i += 1) {
       const run = await page.evaluate(async (f) => {
         const requests = window.bench.requestsFor(f);
-        const worker = window.bench.spawnWorker();
+        // Instrumented entry: same replies, plus in-worker compute timing so
+        // the messaging residual is measured within one execution.
+        const worker = window.bench.spawnTimedWorker();
         const direct = window.bench.directRuntime();
         const heapBefore = window.bench.memory()?.usedJSHeapSize ?? null;
         const steps: ({ command: string; event: string } & BenchRequestTiming)[] =
@@ -284,12 +294,23 @@ for (const caseId of [...NORMALIZE_CASES, ...SEARCH_CASES]) {
       }
     const perCommand: Record<string, unknown> = {};
     for (const [command, rows] of byCommand) {
+      const timed = rows.filter(
+        (r): r is BenchRequestTiming & { workerComputeMs: number } => r.workerComputeMs !== null,
+      );
       perCommand[command] = {
         workerMs: stats(rows.map((r) => r.workerMs)),
         directMs: stats(rows.map((r) => r.directMs)),
         encodeMs: stats(rows.map((r) => r.encodeMs)),
         decodeMs: stats(rows.map((r) => r.decodeMs)),
-        residualMs: stats(rows.map((r) => r.workerMs - r.directMs)),
+        // Rust handle_json inside the Worker for the same round trip.
+        workerComputeMs: stats(timed.map((r) => r.workerComputeMs)),
+        // Messaging residual: round trip minus that same execution's compute
+        // (postMessage copy both ways, Worker queueing, reply dispatch).
+        transportMs: stats(timed.map((r) => r.workerMs - r.workerComputeMs)),
+        // Informational only: the same request's Rust compute in the Worker
+        // versus a separate in-page run. It carries run-to-run compute
+        // variance and is not a transport cost (docs/INV01_MESSAGING_RESIDUAL.md).
+        crossRealmDeltaMs: stats(timed.map((r) => r.workerComputeMs - r.directMs)),
         requestBytes: stats(rows.map((r) => r.requestBytes)),
         responseBytes: stats(rows.map((r) => r.responseBytes)),
         n: rows.length,
@@ -401,7 +422,7 @@ test('@bench stage targets vs measured p95', async ({ browserName }, info) => {
         string,
         {
           workerMs: { p95: number | null };
-          residualMs: { p95: number | null };
+          transportMs: { p95: number | null };
           encodeMs: { p95: number | null };
           decodeMs: { p95: number | null };
         }
@@ -413,27 +434,33 @@ test('@bench stage targets vs measured p95', async ({ browserName }, info) => {
     string,
     { p95: number | null } | undefined
   >;
-  const p95of = (command: string) =>
-    Object.values(fixtures)
-      .map((f) => f.perCommand[command]?.workerMs?.p95)
-      .filter((v): v is number => v !== null && v !== undefined);
-  const cancelP95 = p95of('cancelSearch');
-  const serializeP95 = Math.max(
-    0,
-    ...Object.values(fixtures).flatMap((f) =>
-      Object.values(f.perCommand).map((c) => (c.encodeMs.p95 ?? 0) + (c.decodeMs.p95 ?? 0)),
-    ),
-  );
+  type PerCommand = (typeof fixtures)[string]['perCommand'][string];
+  // Max-aggregated stage rows also record which (fixture, command) produced
+  // the maximum, so one heavy request cannot silently define a whole stage.
+  const maxOver = (
+    pick: (command: string, c: PerCommand) => number | null | undefined,
+  ): { p95: number | null; at: { fixture: string; command: string } | null } => {
+    let best: { p95: number; at: { fixture: string; command: string } } | null = null;
+    for (const [fixture, f] of Object.entries(fixtures))
+      for (const [command, c] of Object.entries(f.perCommand)) {
+        const value = pick(command, c);
+        if (value === null || value === undefined) continue;
+        if (!best || value > best.p95) best = { p95: value, at: { fixture, command } };
+      }
+    return best ?? { p95: null, at: null };
+  };
+  const onCommand = (name: string) => (command: string, c: PerCommand) =>
+    command === name ? c.workerMs.p95 : null;
   // Messaging residual is a steady-state transport cost: initialize carries a
-  // one-time WASM instantiate inside the worker, so it stays reported under
-  // perCommand but is excluded from the residual target row.
-  const residualP95 = Math.max(
-    0,
-    ...Object.values(fixtures).flatMap((f) =>
-      Object.entries(f.perCommand)
-        .filter(([command]) => command !== 'initialize')
-        .map(([, c]) => c.residualMs.p95 ?? 0),
-    ),
+  // one-time WASM instantiate outside the timed handle_json, so it stays
+  // reported under perCommand but is excluded from the residual target row.
+  const residual = maxOver((command, c) =>
+    command === 'initialize' ? null : c.transportMs?.p95,
+  );
+  const serialization = maxOver((_, c) =>
+    c.encodeMs.p95 === null && c.decodeMs.p95 === null
+      ? null
+      : (c.encodeMs.p95 ?? 0) + (c.decodeMs.p95 ?? 0),
   );
   const wasmP95 =
     cold.wasmFetchMs?.p95 !== null && cold.wasmFetchMs !== undefined
@@ -441,27 +468,18 @@ test('@bench stage targets vs measured p95', async ({ browserName }, info) => {
         (cold.wasmCompileMs?.p95 ?? 0) +
         (cold.workerInitMs?.p95 ?? 0)
       : null;
-  const rows = [
+  const rows: {
+    stage: string;
+    p95: number | null;
+    target: number;
+    at?: { fixture: string; command: string } | null;
+  }[] = [
     { stage: 'wasmTransferCompile', p95: wasmP95, target: TARGETS.wasmTransferCompile },
-    {
-      stage: 'normalization',
-      p95: p95of('normalizeInput').length
-        ? Math.max(...p95of('normalizeInput'))
-        : null,
-      target: TARGETS.normalization,
-    },
-    {
-      stage: 'searchStep',
-      p95: p95of('stepSearch').length ? Math.max(...p95of('stepSearch')) : null,
-      target: TARGETS.searchStep,
-    },
-    { stage: 'messagingResidual', p95: residualP95 || null, target: TARGETS.messagingResidual },
-    { stage: 'serialization', p95: serializeP95 || null, target: TARGETS.serialization },
-    {
-      stage: 'cancelAck',
-      p95: cancelP95.length ? Math.max(...cancelP95) : null,
-      target: TARGETS.cancelAck,
-    },
+    { stage: 'normalization', ...maxOver(onCommand('normalizeInput')), target: TARGETS.normalization },
+    { stage: 'searchStep', ...maxOver(onCommand('stepSearch')), target: TARGETS.searchStep },
+    { stage: 'messagingResidual', ...residual, target: TARGETS.messagingResidual },
+    { stage: 'serialization', ...serialization, target: TARGETS.serialization },
+    { stage: 'cancelAck', ...maxOver(onCommand('cancelSearch')), target: TARGETS.cancelAck },
     {
       stage: 'draftTransaction',
       p95: persistence.commitNormalizedMs?.p95 ?? persistence.createProjectMs?.p95 ?? null,
