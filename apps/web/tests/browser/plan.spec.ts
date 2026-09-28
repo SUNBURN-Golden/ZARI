@@ -52,6 +52,9 @@ test('real WASM search renders one snapshot as SVG, checks, BOM and guide; accep
   const cards = page.locator('[data-testid^="plan-card-"]');
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);
+  // Same session as the first input commit (no reload): the bundled demo
+  // catalog is labeled synthetic, never defaulted to an imported catalog.
+  await expect(page.getByTestId('snapshot-id')).toContainText('합성 데이터');
 
   // The selected alternative renders every panel off the SAME snapshot.
   await expect(page.getByTestId('plan-diagram-top')).toBeVisible();

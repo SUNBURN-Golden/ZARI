@@ -444,6 +444,10 @@ export class ProjectSession {
     input: ProjectInput | null,
     catalog: ProjectBundle['catalog'],
   ): Promise<void> {
+    // The plan view reads options and catalog origin from the same pinned
+    // catalog the context activates with — also after an input commit, not
+    // only on open.
+    this.patchPlan({ catalog: catalog?.catalog ?? null });
     if (!client) {
       this.patch({ context: 'none' });
       return;

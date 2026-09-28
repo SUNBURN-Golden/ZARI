@@ -148,3 +148,76 @@ test('editing is verified by Rust: provisional ghost → verified snapshot → u
   ).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('a blank or non-integer coordinate is refused before any edit request — never sent as 0mm', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  collectErrors(page, errors);
+  // Count evaluateLayoutEdit requests actually posted to the real Worker.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __zariEditRequests: number };
+    w.__zariEditRequests = 0;
+    const post = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function (this: Worker, ...args: unknown[]) {
+      if (typeof args[0] === 'string' && args[0].includes('"evaluateLayoutEdit"'))
+        w.__zariEditRequests += 1;
+      return (post as (...a: unknown[]) => void).apply(this, args);
+    } as Worker['postMessage'];
+  });
+  const editRequests = () =>
+    page.evaluate(() => (window as unknown as { __zariEditRequests: number }).__zariEditRequests);
+  await seededProject(page);
+  await computeDone(page);
+  await page.getByTestId('plan-card-0').click();
+  await page.locator('.placement-pick').first().click();
+  await expect(page.getByTestId('inspector')).toBeVisible();
+  // Without a reload, the inspector already offers the pinned catalog's options.
+  await expect(page.getByTestId('variant-select').locator('option')).not.toHaveCount(0);
+  const x0 = await page.getByTestId('move-x').inputValue();
+
+  // Blank X: explained on the field, focus returns to it, nothing is sent.
+  await page.getByTestId('move-x').fill('');
+  await page.getByTestId('move-apply').click();
+  await expect(page.getByTestId('move-input-errors')).toContainText('X mm');
+  await expect(page.getByTestId('move-input-errors')).toContainText('0mm로 보내지 않습니다');
+  await expect(page.getByTestId('move-x')).toHaveAttribute('aria-invalid', 'true');
+  // The field's description is the X error line itself.
+  expect(
+    await page.getByTestId('move-x').evaluate((el) => {
+      const id = el.getAttribute('aria-describedby');
+      return id ? (document.getElementById(id)?.textContent ?? null) : null;
+    }),
+  ).toContain('X mm');
+  await expect(page.getByTestId('move-x')).toBeFocused();
+  // Enter from the field takes the same gate.
+  await page.getByTestId('move-x').press('Enter');
+  await expect(page.getByTestId('move-input-errors')).toBeVisible();
+
+  // A non-integer is refused rather than coerced — on click as well as Enter,
+  // with the same field-linked message instead of a browser-only bubble.
+  await page.getByTestId('move-x').fill('12.5');
+  await page.getByTestId('move-apply').click();
+  await expect(page.getByTestId('move-input-errors')).toContainText('1mm 단위 정수');
+  expect(await editRequests()).toBe(0);
+  await expect(page.getByTestId('edit-pending')).toBeHidden();
+  await expect(page.getByTestId('edit-rejected')).toBeHidden();
+
+  // Range stays a downstream decision: the generated request validator
+  // refuses an out-of-protocol integer before it reaches the Worker.
+  await page.getByTestId('move-x').fill('99999');
+  await page.getByTestId('move-apply').click();
+  await expect(page.getByTestId('move-input-errors')).toBeHidden();
+  await expect(page.getByTestId('edit-rejected')).toContainText('±20000mm');
+  expect(await editRequests()).toBe(0);
+
+  // The original value goes through Rust as one request and clears the errors.
+  await page.getByTestId('move-x').fill(x0);
+  await page.getByTestId('move-apply').click();
+  await expect(page.getByTestId('edit-section')).toBeVisible({ timeout: 15000 });
+  // The verified 편집안 adds a second inspector; the one used above is first.
+  await expect(page.getByTestId('move-input-errors')).toHaveCount(0);
+  await expect(page.getByTestId('move-x').first()).not.toHaveAttribute('aria-invalid', 'true');
+  expect(await editRequests()).toBe(1);
+  expect(errors).toEqual([]);
+});
