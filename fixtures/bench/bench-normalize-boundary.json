@@ -1,0 +1,1700 @@
+{
+ "caseId": "bench-normalize-boundary",
+ "engineContext": {
+  "buildId": "zari-domain-3"
+ },
+ "expected": {
+  "decodeError": false,
+  "diagnostics": [
+   {
+    "code": "input_limit_exceeded",
+    "fieldPath": "space.obstacles"
+   }
+  ],
+  "inputDigest": null,
+  "kind": "normalizeProjectInput"
+ },
+ "fixtureSchemaVersion": 1,
+ "input": {
+  "catalogPin": {
+   "catalogDigest": "b07c1cbff63a033f85d4379116fee1fc550878e6efe3ba851be107efdb1c8134",
+   "catalogVersion": "catalog-bench-1"
+  },
+  "constraints": {
+   "hardBudget": {
+    "evidenceIds": [],
+    "origin": "userDeclared",
+    "state": "known",
+    "value": {
+     "text": "200000"
+    }
+   },
+   "hardOneActionAccess": false,
+   "lockedZones": [],
+   "purchaseAllowed": true,
+   "safetyRestrictions": [],
+   "softBudget": {
+    "evidenceIds": [],
+    "origin": "userDeclared",
+    "state": "known",
+    "value": {
+     "text": "100000"
+    }
+   }
+  },
+  "evidence": [],
+  "groups": [
+   {
+    "id": "group-1",
+    "itemIds": [
+     "item-1"
+    ],
+    "label": "Boundary group",
+    "splitPolicy": "oneTarget"
+   }
+  ],
+  "items": [
+   {
+    "activityIds": [],
+    "category": "clothing",
+    "dimensions": {
+     "envelope": {
+      "depth": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "80",
+       "uncertainty": {
+        "state": "unknown"
+       },
+       "unit": "mm"
+      },
+      "height": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "40",
+       "uncertainty": {
+        "state": "unknown"
+       },
+       "unit": "mm"
+      },
+      "width": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "120",
+       "uncertainty": {
+        "state": "unknown"
+       },
+       "unit": "mm"
+      }
+     },
+     "storageState": "folded"
+    },
+    "frequency": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": "weekly"
+    },
+    "id": "item-1",
+    "label": "Bench item 1",
+    "massEach": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "474"
+     }
+    },
+    "quantity": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "2"
+     }
+    },
+    "requirement": {
+     "allowedOrientations": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "state": "known",
+      "value": [
+       "upright0"
+      ]
+     },
+     "allowedRetrievalModes": [
+      "directFrontExtraction",
+      "pullContainerThenRetrieve"
+     ],
+     "handling": {
+      "left": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "state": "known",
+       "value": {
+        "text": "5"
+       }
+      },
+      "liftAboveRim": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "state": "known",
+       "value": {
+        "text": "0"
+       }
+      },
+      "pullExtraDepth": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "state": "known",
+       "value": {
+        "text": "0"
+       }
+      },
+      "right": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "state": "known",
+       "value": {
+        "text": "5"
+       }
+      },
+      "top": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "state": "known",
+       "value": {
+        "text": "5"
+       }
+      }
+     },
+     "mandatoryCompatibility": [],
+     "mustStayTogether": false
+    },
+    "stockRole": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": "active"
+    }
+   }
+  ],
+  "ownedContainers": [],
+  "preferences": {
+   "color": null,
+   "material": null,
+   "objectiveRanking": [
+    "minimumPurchase"
+   ],
+   "visualNotes": []
+  },
+  "search": {
+   "budget": {
+    "maxAlternatives": 6,
+    "maxCandidatesPerGroup": 4,
+    "maxNodes": 8192,
+    "maxWorkUnits": "200000"
+   },
+   "profile": {
+    "id": "default",
+    "version": 1
+   },
+   "seed": null
+  },
+  "space": {
+   "clearances": {
+    "back": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "0"
+     }
+    },
+    "betweenUnits": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "5"
+     }
+    },
+    "front": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "0"
+     }
+    },
+    "left": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "5"
+     }
+    },
+    "right": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "5"
+     }
+    },
+    "ruleIds": [
+     "rule:clearance-v1"
+    ],
+    "top": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "10"
+     }
+    }
+   },
+   "id": "space-1",
+   "interior": {
+    "depth": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "500",
+     "uncertainty": {
+      "state": "unknown"
+     },
+     "unit": "mm"
+    },
+    "height": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "700",
+     "uncertainty": {
+      "state": "unknown"
+     },
+     "unit": "mm"
+    },
+    "width": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "1200",
+     "uncertainty": {
+      "state": "unknown"
+     },
+     "unit": "mm"
+    }
+   },
+   "kind": "rectangularCompartment",
+   "obstacles": [
+    {
+     "id": "obs-1",
+     "role": "accessExclusion",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-2",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "55",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "90",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-3",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "110",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "180",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-4",
+     "role": "accessExclusion",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "165",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "270",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-5",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "220",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "360",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-6",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "275",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "450",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-7",
+     "role": "accessExclusion",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "330",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "540",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-8",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "385",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "630",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-9",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "440",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "70",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-10",
+     "role": "accessExclusion",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "495",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "160",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-11",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "550",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "250",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-12",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "605",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "340",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-13",
+     "role": "accessExclusion",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "660",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "430",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-14",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "715",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "520",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-15",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "770",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "610",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-16",
+     "role": "accessExclusion",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "825",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "50",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-17",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "880",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "140",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-18",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "935",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "230",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-19",
+     "role": "accessExclusion",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "990",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "320",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-20",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "1045",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "410",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    },
+    {
+     "id": "obs-21",
+     "role": "physicalSolid",
+     "bounds": {
+      "extent": {
+       "width": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "30",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "depth": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "20",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       },
+       "height": {
+        "evidenceIds": [],
+        "origin": "userDeclared",
+        "text": "40",
+        "uncertainty": {
+         "state": "unknown"
+        },
+        "unit": "mm"
+       }
+      },
+      "minX": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minY": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "0",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      },
+      "minZ": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "500",
+       "uncertainty": {
+        "state": "unknown"
+       }
+      }
+     }
+    }
+   ],
+   "opening": {
+    "bottom": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "0",
+     "uncertainty": {
+      "state": "unknown"
+     }
+    },
+    "height": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "700",
+     "uncertainty": {
+      "state": "unknown"
+     },
+     "unit": "mm"
+    },
+    "left": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "0",
+     "uncertainty": {
+      "state": "unknown"
+     }
+    },
+    "plane": "frontYZero",
+    "width": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "1200",
+     "uncertainty": {
+      "state": "unknown"
+     },
+     "unit": "mm"
+    }
+   },
+   "staging": {
+    "baseSupport": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "loadLimit": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "state": "known",
+       "value": {
+        "text": "50000"
+       }
+      }
+     }
+    },
+    "freeVolume": {
+     "extent": {
+      "depth": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "500",
+       "uncertainty": {
+        "state": "unknown"
+       },
+       "unit": "mm"
+      },
+      "height": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "700",
+       "uncertainty": {
+        "state": "unknown"
+       },
+       "unit": "mm"
+      },
+      "width": {
+       "evidenceIds": [],
+       "origin": "userDeclared",
+       "text": "1200",
+       "uncertainty": {
+        "state": "unknown"
+       },
+       "unit": "mm"
+      }
+     },
+     "minX": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "text": "0",
+      "uncertainty": {
+       "state": "unknown"
+      }
+     },
+     "minY": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "text": "-500",
+      "uncertainty": {
+       "state": "unknown"
+      }
+     },
+     "minZ": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "text": "0",
+      "uncertainty": {
+       "state": "unknown"
+      }
+     }
+    }
+   },
+   "support": {
+    "elevation": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "text": "0",
+     "uncertainty": {
+      "state": "unknown"
+     }
+    },
+    "footprint": {
+     "depth": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "text": "500",
+      "uncertainty": {
+       "state": "unknown"
+      },
+      "unit": "mm"
+     },
+     "width": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "text": "1200",
+      "uncertainty": {
+       "state": "unknown"
+      },
+      "unit": "mm"
+     },
+     "x": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "text": "0",
+      "uncertainty": {
+       "state": "unknown"
+      }
+     },
+     "y": {
+      "evidenceIds": [],
+      "origin": "userDeclared",
+      "text": "0",
+      "uncertainty": {
+       "state": "unknown"
+      }
+     }
+    },
+    "id": "floor-1",
+    "kind": "establishedFloor",
+    "loadLimit": {
+     "evidenceIds": [],
+     "origin": "userDeclared",
+     "state": "known",
+     "value": {
+      "text": "50000"
+     }
+    }
+   }
+  },
+  "strategyChoice": "minimumPurchase"
+ },
+ "operation": "normalizeProjectInput",
+ "schemaVersion": 1
+}

@@ -221,7 +221,9 @@ function CatalogImport({ onCommitted }: { onCommitted: () => void }) {
         0이나 &lsquo;있음&rsquo;이 아니라 &lsquo;미확인&rsquo;으로 남습니다.
         업로드만으로 실측·검증 상태가 되지는 않습니다.
       </p>
-      <div className="form-actions" role="tablist" aria-label="가져오기 방식">
+      {/* Single-choice input-mode selector: radiogroup semantics, not a
+          tablist (there are no tab panels or arrow-key tab behaviour). */}
+      <div className="form-actions" role="radiogroup" aria-label="가져오기 방식">
         {(
           [
             ['manual', '직접 입력'],
@@ -229,17 +231,20 @@ function CatalogImport({ onCommitted }: { onCommitted: () => void }) {
             ['csv', 'CSV 붙여넣기'],
           ] as const
         ).map(([kind, label]) => (
-          <Button
+          <button
             key={kind}
+            type="button"
+            role="radio"
+            aria-checked={source === kind}
             className={`button ${source === kind ? 'button-primary' : 'button-secondary'}`}
-            onPress={() => {
+            onClick={() => {
               setSource(kind);
               setResult(null);
             }}
             data-testid={`import-source-${kind}`}
           >
             {label}
-          </Button>
+          </button>
         ))}
       </div>
       {source !== 'json' && (

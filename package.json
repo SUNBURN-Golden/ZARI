@@ -20,13 +20,15 @@
     "test": "vitest run",
     "build": "npm run wasm:build && vite build",
     "test:build": "npm run wasm:build && vite build --mode test",
-    "test:browser": "npm run test:build && playwright test --grep-invert \"@parity|@capture\"",
+    "test:browser": "npm run test:build && playwright test --grep-invert \"@parity|@capture|@bench\"",
     "test:parity": "node scripts/parity.mjs",
     "dev": "vite",
     "preview": "vite preview",
-    "capture:baselines": "npm run test:build && playwright test --grep @capture"
+    "capture:baselines": "npm run test:build && playwright test --grep @capture",
+    "bench:browser": "npm run test:build && playwright test --grep \"@bench\""
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.6",

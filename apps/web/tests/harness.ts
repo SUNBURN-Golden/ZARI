@@ -1,18 +1,85 @@
 import { ProbeClient } from '../src/worker/client';
+import { ProjectRepository } from '../src/persistence/repository';
 import type {
   BootstrapProbeDto,
   BootstrapProbeResult,
   DomainFixture,
+  PlanSnapshot,
+  ProjectInput,
+  RawProjectInputDto,
 } from '../src/contracts/generated/dto';
 import init, {
+  Runtime,
   domainFixtureRequests,
 } from '../../../crates/wasm/pkg/zari_wasm.js';
 import wasmUrl from '../../../crates/wasm/pkg/zari_wasm_bg.wasm?url';
+
+export interface BenchRequestTiming {
+  /** JSON.stringify of the wire request, in the page. */
+  encodeMs: number;
+  /** postMessage send -> response received (worker queue + Rust + reply). */
+  workerMs: number;
+  /** JSON.parse of the wire response, in the page. */
+  decodeMs: number;
+  /** In-page Runtime.handle_json on the same request (no Worker hop). */
+  directMs: number;
+  /**
+   * Runtime.handle_json inside the Worker for this same round trip, reported
+   * by the instrumented bench worker (`spawnTimedWorker`); null for the
+   * production entry. `workerMs - workerComputeMs` is the messaging residual.
+   */
+  workerComputeMs: number | null;
+  requestBytes: number;
+  responseBytes: number;
+}
+export interface BenchStepResult {
+  timing: BenchRequestTiming;
+  event: unknown;
+}
+export interface BenchApi {
+  /** Request wire strings the native fixture runner would send. */
+  requestsFor(fixture: DomainFixture): string[];
+  /** Fresh uninstrumented Worker. */
+  spawnWorker(): Worker;
+  /**
+   * Fresh Worker running the test-only instrumented entry (tests/bench-entry.ts):
+   * identical replies plus in-worker compute timing for each request.
+   */
+  spawnTimedWorker(): Worker;
+  /**
+   * Send one request through a real Worker, then replay the same request on an
+   * in-page Runtime so worker-vs-direct residual is measured on identical
+   * bytes. Both runtimes see the identical sequence when the caller drives
+   * them in lockstep.
+   */
+  send(worker: Worker, direct: Runtime, requestJson: string): Promise<BenchStepResult>;
+  /** Fresh in-page Runtime for the direct (no-Worker) lane. */
+  directRuntime(): Runtime;
+  /** Uncached download of the WASM module plus compile timing. */
+  wasmTransfer(): Promise<{ bytes: number; fetchMs: number; compileMs: number }>;
+  /** performance.memory snapshot where the engine exposes it. */
+  memory(): { usedJSHeapSize: number; totalJSHeapSize: number } | null;
+  idb: {
+    open(): Promise<number>;
+    createProject(form: RawProjectInputDto): Promise<{ projectId: string; draft: { generation: string; editorSessionId: string }; ms: number }>;
+    commitNormalized(
+      projectId: string,
+      form: RawProjectInputDto,
+      normalized: ProjectInput,
+      inputDigest: string,
+    ): Promise<{ status: string; ms: number }>;
+    putCatalog(catalog: unknown): Promise<number>;
+    acceptSnapshot(projectId: string, snapshot: PlanSnapshot): Promise<{ status: string; ms: number }>;
+    loadBundle(projectId: string): Promise<{ ms: number; snapshots: number; corrupt: number }>;
+    close(): void;
+  };
+}
 declare global {
   interface Window {
     runProbeFixture: (probe: BootstrapProbeDto) => Promise<BootstrapProbeResult>;
     runDomainFixture: (fixture: DomainFixture) => Promise<unknown>;
     runRawRequest: (request: string) => Promise<unknown>;
+    bench: BenchApi;
   }
 }
 const wasmReady = init({ module_or_path: wasmUrl });
@@ -85,4 +152,188 @@ window.runDomainFixture = async (fixture) => {
   } finally {
     worker.terminate();
   }
+};
+
+/**
+ * ZARI-010 instrumented benchmark surface. Every measurement uses the same
+ * wire requests the native fixture runner produces (domainFixtureRequests is
+ * the WASM export), the same Worker entry point the app uses, and the real
+ * ProjectRepository/IndexedDB stack. Timings are split so Worker transport,
+ * Rust compute, JSON serialization, and IndexedDB commits stay separate.
+ */
+const encoder = new TextEncoder();
+const now = () => performance.now();
+let benchRepo: ProjectRepository | null = null;
+const benchRepoInstance = async (): Promise<ProjectRepository> => {
+  if (!benchRepo) {
+    benchRepo = new ProjectRepository();
+    await benchRepo.open();
+  }
+  return benchRepo;
+};
+const draftGenerations = new Map<string, number>();
+const WORKER_ENTRY = () =>
+  new Worker(new URL('../src/worker/entry.ts', import.meta.url), { type: 'module' });
+const timedWorkers = new WeakSet<Worker>();
+const TIMED_WORKER_ENTRY = () => {
+  const worker = new Worker(new URL('./bench-entry.ts', import.meta.url), { type: 'module' });
+  timedWorkers.add(worker);
+  return worker;
+};
+window.bench = {
+  requestsFor(fixture) {
+    const requests = JSON.parse(
+      domainFixtureRequests(JSON.stringify(fixture)),
+    ) as unknown[];
+    return requests.map((request) => JSON.stringify(request));
+  },
+  spawnWorker: () => WORKER_ENTRY(),
+  spawnTimedWorker: () => TIMED_WORKER_ENTRY(),
+  directRuntime: () => new Runtime(),
+  async send(worker, direct, requestJson) {
+    // Encode the parsed request exactly like ProbeClient.send does, then post
+    // the freshly serialized bytes so encodeMs is a real measurement.
+    const encodeStart = now();
+    const wire = JSON.stringify(JSON.parse(requestJson));
+    const encodeMs = now() - encodeStart;
+    const timed = timedWorkers.has(worker);
+    const start = now();
+    let workerMs = 0;
+    // The round trip ends at the reply itself; an instrumented worker then
+    // posts its compute timing as a separate message outside that window.
+    const { reply, workerComputeMs } = await new Promise<{
+      reply: unknown;
+      workerComputeMs: number | null;
+    }>((resolve, reject) => {
+      let first: { data: unknown } | null = null;
+      worker.onmessage = (e) => {
+        if (first === null) {
+          workerMs = now() - start;
+          first = { data: e.data };
+          if (!timed) resolve({ reply: e.data, workerComputeMs: null });
+          return;
+        }
+        const ms = (e.data as { benchComputeMs?: unknown } | null)?.benchComputeMs;
+        resolve({ reply: first.data, workerComputeMs: typeof ms === 'number' ? ms : null });
+      };
+      worker.onerror = (e) => reject(new Error(`worker_error:${e.message ?? 'unknown'}`));
+      worker.postMessage(wire);
+    });
+    const decodeStart = now();
+    const response = typeof reply === 'string' ? JSON.parse(reply) : reply;
+    const decodeMs = now() - decodeStart;
+    const directStart = now();
+    direct.handle_json(requestJson);
+    const directMs = now() - directStart;
+    return {
+      timing: {
+        encodeMs,
+        workerMs,
+        decodeMs,
+        directMs,
+        workerComputeMs,
+        requestBytes: encoder.encode(wire).length,
+        responseBytes: encoder.encode(typeof reply === 'string' ? reply : JSON.stringify(reply))
+          .length,
+      },
+      event: (response as { event?: unknown }).event ?? null,
+    };
+  },
+  async wasmTransfer() {
+    const start = now();
+    const buffer = await (await fetch(wasmUrl, { cache: 'no-store' })).arrayBuffer();
+    const fetchMs = now() - start;
+    const compileStart = now();
+    await WebAssembly.compile(buffer);
+    const compileMs = now() - compileStart;
+    return { bytes: buffer.byteLength, fetchMs, compileMs };
+  },
+  memory() {
+    const memory = (
+      performance as Performance & {
+        memory?: { usedJSHeapSize: number; totalJSHeapSize: number };
+      }
+    ).memory;
+    return memory ? { usedJSHeapSize: memory.usedJSHeapSize, totalJSHeapSize: memory.totalJSHeapSize } : null;
+  },
+  idb: {
+    async open() {
+      const start = now();
+      if (benchRepo) {
+        benchRepo.db.close();
+        benchRepo = null;
+      }
+      benchRepo = new ProjectRepository();
+      await benchRepo.open();
+      return now() - start;
+    },
+    async createProject(form) {
+      const repo = await benchRepoInstance();
+      const start = now();
+      const row = await repo.createProject(`bench-${crypto.randomUUID()}`, form);
+      const ms = now() - start;
+      const bundle = await repo.loadBundle(row.projectId);
+      const draft = bundle.draft;
+      draftGenerations.set(row.projectId, 0);
+      return {
+        projectId: row.projectId,
+        draft: {
+          generation: draft?.generation ?? '0',
+          editorSessionId: draft?.editorSessionId ?? '',
+        },
+        ms,
+      };
+    },
+    async commitNormalized(projectId, form, normalized, inputDigest) {
+      const repo = await benchRepoInstance();
+      const generation = (draftGenerations.get(projectId) ?? 0) + 1;
+      draftGenerations.set(projectId, generation);
+      const start = now();
+      const result = await repo.commitNormalizedInput({
+        projectId,
+        generation: String(generation),
+        editorSessionId: `bench-${projectId}`,
+        form,
+        validation: { status: 'valid', diagnostics: [] },
+        normalized,
+        inputDigest,
+        engineBuildId: 'zari-domain-3',
+      });
+      return { status: result.status, ms: now() - start };
+    },
+    async putCatalog(catalog) {
+      const repo = await benchRepoInstance();
+      const start = now();
+      await repo.putCatalog(
+        catalog as Parameters<ProjectRepository['putCatalog']>[0],
+        'bench-fixture',
+      );
+      return now() - start;
+    },
+    async acceptSnapshot(projectId, snapshot) {
+      const repo = await benchRepoInstance();
+      const start = now();
+      const result = await repo.acceptSnapshot({
+        projectId,
+        snapshot,
+        engineBuildId: 'zari-domain-3',
+      });
+      return { status: result.status, ms: now() - start };
+    },
+    async loadBundle(projectId) {
+      const repo = await benchRepoInstance();
+      const start = now();
+      const bundle = await repo.loadBundle(projectId);
+      return {
+        ms: now() - start,
+        snapshots: bundle.snapshots.length,
+        corrupt: bundle.corrupt.length,
+      };
+    },
+    close() {
+      benchRepo?.db.close();
+      benchRepo = null;
+      draftGenerations.clear();
+    },
+  },
 };
