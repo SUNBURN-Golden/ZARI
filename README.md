@@ -4,7 +4,7 @@ Rust-first organization compiler. 공간·물건·생활습관을 정리 전략,
 
 ## 현재 구현 범위
 
-main에는 Task 001–009가 병합되어 있습니다. Task 010(성능·접근성·브라우저 매트릭스 측정)은 Draft PR로 검토 중이며 main에 포함되지 않았습니다. 병합은 각 task의 범위 안에서 검토를 거쳤다는 뜻이며 제품 적합성·베타 출시·배포를 뜻하지 않습니다. 배포된 서비스는 없습니다.
+main에는 계획된 Task 001–010이 모두 병합되어 있습니다. Task 001–009는 독립 감사(조건부 통과) 후 병합했습니다. Task 010(성능·접근성·브라우저 매트릭스 측정)과 유지보수 PR #30은 GitHub Actions 사용량 한도 기간에 사용자 지시로 CI와 독립 감사 없이 병합했습니다. 병합은 제품 적합성·베타 출시·배포를 뜻하지 않으며, 배포된 서비스는 없습니다.
 
 단일 직사각형 수납 공간을 대상으로 아래 흐름이 로컬 브라우저에서 동작합니다. 단위 정규화·배치 탐색·적합성 검증·BOM 계산은 Rust(WebAssembly, Web Worker)가 담당하고, React는 Rust 결과를 그대로 표시합니다.
 
@@ -71,7 +71,7 @@ node scripts/check-design-tokens.mjs --self-test
 - [테스트](docs/TEST_STRATEGY.md) / [성능·보안·실패](docs/PERFORMANCE_SECURITY_FAILURES.md)
 - [Devin 작업 그래프](docs/DEVIN_EXECUTION_PLAN.md) / [Task 001 계약](docs/DEVIN_TASK_001.md)
 
-남은 계획 작업은 Task 010의 베타 준비도 측정과 그 검토입니다. 측정 결과와 목표 초과 항목은 해당 PR과 [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)에 기록합니다. 계정·클라우드·외부 AI·스크레이퍼·GPU·DuckDB·Polars는 현재 앱의 요구사항이 아닙니다.
+Task 001–010의 계획 범위는 병합되었습니다. 성능 측정은 `npm run bench:browser`로 재현하며, 측정 정의·결과·미측정 항목(Firefox·WebKit 재측정, 실제 모바일 기기, 일부 성능 목표)은 [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)와 [INV-01 보고서](docs/INV01_MESSAGING_RESIDUAL.md)에 기록합니다. 베타 출시·배포는 별도의 사용자 결정입니다. 계정·클라우드·외부 AI·스크레이퍼·GPU·DuckDB·Polars는 현재 앱의 요구사항이 아닙니다.
 
 ## 원문과 디자인 계약
 
