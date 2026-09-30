@@ -86,3 +86,8 @@ Task 001–010의 계획 범위는 병합되었습니다. 성능 측정은 `npm 
 - [baseline 관리](design/baselines/README.md) / [baseline manifest](design/baselines/manifest.json)
 
 Motion·Storybook·Impeccable·일반 DnD 기반은 도입하지 않았습니다. 토큰 검사와 스크린샷 비교만으로 접근성 인증이나 디자인 승인을 주장하지 않습니다.
+
+
+### 전체 제품 완성 후속 후보 — 2026-10-01 KST
+
+[측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. `.aiops/program.json`과 전체 pending sidecar는 같은 후보이고, 최초 7단계 sidecar는 역사 checkpoint입니다. 구현·승인·실제 기기 qualification·새 화면 채택·런타임 활성화·배포를 완료한 것은 아닙니다.

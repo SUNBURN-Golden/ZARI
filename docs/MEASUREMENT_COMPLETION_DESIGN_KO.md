@@ -257,3 +257,7 @@ activation·credential·host·모델 호출·추가 사용/과금 설정·기존
 기존 원문 MASTER_PROMPT_KO/RUST_ADDENDUM_KO/SOURCE_MANIFEST는 보존한다.
 
 중앙 bootstrap의 현 채택 검토 후보는 #44/#45를 통합·보완한 [#46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46)이다. 기존 #44 감사의 DECISION_REQUIRED를 통과한 것으로 간주하지 않는다. PA-1 권한 예외는 PENDING이며, 보호된 reconcile과 실제 host qualification 전에는 전체 실행 NOT_READY다. 기존 중앙 포인터는 이전 체크포인트 기록이고 최종 승인 registration에는 실제 채택·qualification commit을 pin해야 한다.
+
+## 11. 전체 제품 완성 후속 소유 — 2026-10-01 KST
+
+SP-008–011의 입력·query·새 화면 인계 범위를 보존하고 [제품 완성 고도화](PRODUCT_COMPLETION_EVOLUTION_KO.md)의 SP-012–016을 그 뒤에 연결한다. 이번 계약은 이전 snapshot/action 의미를 조용히 바꾸지 않는다. 새 physical guide·condition·evaluation meaning은 SP-012의 별도 A3 ADR와 실제 rule/solver/profile/schema/canonical 영향 채택 뒤에만 구현하며, 기존 역사 snapshot/progress를 유지한다. 전체 pending 분모는 16, 원래 7-node sidecar는 최초 설계 checkpoint다. 중앙 #47 회복 source 후보는 설치/독립 A3/User/host qualification 근거가 아니다.
