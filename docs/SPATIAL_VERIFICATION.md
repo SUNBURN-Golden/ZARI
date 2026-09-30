@@ -141,6 +141,8 @@ G0 design adoption: exact docs HEAD, task/DTO/status conflicts, frozen invariant
 
 G1 projection/domain after SP-001: source integrity, parent/yaw/offset, unknown, unchanged PlanSnapshot hashes/BOM/actions, fixture/native/browser parity, exact capability handshake. Green types do not prove physical coordinate correctness. Wrong world child or silently fabricated geometry stops dependent tasks.
 
+G1b workspace/selection after SP-002: one WorkspaceState and typed selection/focus adapter, no physical recomputation or Worker/DB traffic from focus, view or selection changes, accessible text mirrors. The selection contract is frozen here because 003–005 build on it.
+
 G2 interaction after SP-003: success/failure keyboard/touch/browser evidence, one gesture one command/history, zero per-frame Worker calls, stale/late/conflict guards. Green component tests do not prove actual pointer/IME/keyboard behavior.
 
 G3 guide after SP-004: exact typed targets, current accepted binding/CAS/progress unknown and late response tests. Checkbox/animation success never proves real-world execution or physical safety.

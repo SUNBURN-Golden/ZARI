@@ -6,7 +6,7 @@
 
 기존 routes 유지: `#/project/<id>`는 측정, `#/project/<id>/plan`은 계획/실행. 3D는 plan의 보조 view이며 새 상품 페이지/전체 방 route를 만들지 않는다. plan toolbar: `평면 / 정면 / 공간 보기`, `축소 / 확대 / 맞춤`, `치수 / 내용물 / 검사`와 현재 범위·stale 안내. 아직 구현되지 않은 공간 보기 버튼은 앞선 태스크에서 노출하지 않는다.
 
-wide(>=1200 CSS px): 왼쪽 문맥·대안, 중앙 도면, 오른쪽 inspector. 중앙은 가장 큰 영역이고 최소 24rem가 확보되지 않으면 보조 pane을 접는다. medium(>=720, <1200): 중앙+하나의 pane; inspector와 목록을 명시적으로 전환. compact(<720): 단계 입력/도면 전체 폭/선택 inspector sheet/목록. compact sheet는 modal이며 focus trap/닫기 후 복귀; 뒤 도면을 조작하려면 닫아야 한다. view toolbar는 줄바꿈하며 일반 콘텐츠 가로 overflow 금지. keyboard/safe-area에 가려지면 sticky controls를 문서 flow로 돌린다.
+wide(≥75rem): 왼쪽 문맥·대안, 중앙 도면, 오른쪽 inspector. 중앙은 가장 큰 영역이고 최소 24rem가 확보되지 않으면 보조 pane을 접는다. medium(48–75rem): 중앙+하나의 pane; inspector와 목록을 명시적으로 전환. compact(<48rem, DESIGN.md·FRONTEND.md·WORKSPACE_BLUEPRINT의 rem 계약과 같음): 단계 입력/도면 전체 폭/선택 inspector sheet/목록. compact sheet는 modal이며 focus trap/닫기 후 복귀; 뒤 도면을 조작하려면 닫아야 한다. view toolbar는 줄바꿈하며 일반 콘텐츠 가로 overflow 금지. keyboard/safe-area에 가려지면 sticky controls를 문서 flow로 돌린다.
 
 객체 수·비용·저장·검사를 장식 KPI 카드로 늘리지 않는다. 도면·실물 단위·근거·다음 행동을 우선한다. 현재 main의 기술 metadata를 사용자 주 작업 면에서 확장하지 않는다. 긴 SKU명/한글/200% 확대에서 잘라내지 않는다. 탭·숫자 목록으로 같은 조작을 할 수 있어야 한다.
 
@@ -76,7 +76,7 @@ stateDiagram-v2
 - 성공 drag는 undo transition 하나. 거절/no-op/cancel은 0. undo/redo는 기존 restoreLayout과 Rust 재검증. gesture preview를 history나 draft에 저장하지 않는다.
 - Escape, pointercancel, 두 번째 touch, window blur, hidden document, resize/CTM 변화, project/snapshot/input/catalog change, conflict, worker replacement는 preview/armed를 취소. 이미 요청된 evaluation의 late 결과는 기존 seq/activation fencing + displayed-binding fence로 배제한다. cancel과 정상 releasePointerCapture 후 lostpointercapture를 구분한다. 움직이지 않고 클릭하면 선택만 수행한다.
 
-숫자·키보드 동등성: 기존 화살표=10mm, Shift+화살표=1mm, R=허용 회전, Ctrl/Meta+Z와 redo 유지. textbox/textarea/select/contenteditable 안에서는 workspace 단축키 가로채지 않는다. 같은 move를 모든 입력 경로에서 같은 command로 보낸다. keyboard 목록 선택 후 수치 이동으로 마우스 없는 전 과정을 완료할 수 있다.
+숫자·키보드 동등성: 이동 단위는 FRONTEND.md 계약(기본 1mm, 명시적 수정키 10mm)을 따르고 화면에 단위를 표시한다. 현재 구현(화살표=10mm, Shift+화살표=1mm, PlanScreen)은 이 계약과 반대라서 SP-003에서 계약에 맞춘다. R=허용 회전, Ctrl/Meta+Z와 redo 유지. textbox/textarea/select/contenteditable 안에서는 workspace 단축키 가로채지 않는다. 같은 move를 모든 입력 경로에서 같은 command로 보낸다. keyboard 목록 선택 후 수치 이동으로 마우스 없는 전 과정을 완료할 수 있다.
 
 ## 5. viewport와 touch
 
