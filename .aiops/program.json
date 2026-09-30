@@ -3,8 +3,8 @@
   "program": "ZARI-SPATIAL",
   "repository": "BeautifulMind-JT/ZARI",
   "project": "ZARI",
-  "approval_pointer": "https://github.com/BeautifulMind-JT/ZARI/pull/35 (spatial design package; the User chose option A on the Fable G0 DECISION_REQUIRED https://github.com/BeautifulMind-JT/ZARI/pull/35#issuecomment-5905430288, recorded as design/DECISIONS.md D007; scope and start are approved by the User's merge of #35 and of this registration PR) ; Fable G0 re-audit of the revised #35 head: ASTRA_AUDIT_V1 comment on #35, link recorded before this PR leaves draft",
-  "authoritative_doc_pointers": "AGENTS.md ; docs/SPATIAL_INTERACTION_PLAN.md ; docs/SPATIAL_VIEW_CONTRACT.md ; design/SPATIAL_WORKSPACE.md ; docs/SPATIAL_VERIFICATION.md ; docs/AIOPS_SPATIAL_EXECUTION_PLAN.md ; docs/AIOPS_SPATIAL_HANDOFF.md ; docs/DOMAIN_MODEL.md ; docs/WASM_PROTOCOL.md ; docs/PERSISTENCE.md ; DESIGN.md ; design/DECISIONS.md ; docs/ARCHITECTURE.md ; docs/TEST_STRATEGY.md (read at the plan commit)",
+  "approval_pointer": "PENDING_APPROVAL_DO_NOT_DISPATCH; https://github.com/BeautifulMind-JT/ZARI/pull/35 (spatial design package; the User chose option A on the Fable G0 DECISION_REQUIRED https://github.com/BeautifulMind-JT/ZARI/pull/35#issuecomment-5905430288, recorded as design/DECISIONS.md D007; scope and start are approved by the User's merge of #35 and of this registration PR) ; Fable G0 re-audit of the revised #35 head: ASTRA_AUDIT_V1 comment on #35, link recorded before this PR leaves draft; protected program Astra bridge requires adoption/qualification of BeautifulMind-JT/ai-ops-control-plane#44 at 3c7dd38d69d2992ed25fe97f39f6ed4a37360ea3; replace pending metadata with actual current-head audit, User approval/merge and host qualification evidence before start",
+  "authoritative_doc_pointers": "AGENTS.md ; docs/SPATIAL_INTERACTION_PLAN.md ; docs/SPATIAL_VIEW_CONTRACT.md ; design/SPATIAL_WORKSPACE.md ; docs/SPATIAL_VERIFICATION.md ; docs/AIOPS_SPATIAL_EXECUTION_PLAN.md ; docs/AIOPS_SPATIAL_HANDOFF.md ; docs/DOMAIN_MODEL.md ; docs/WASM_PROTOCOL.md ; docs/PERSISTENCE.md ; DESIGN.md ; design/DECISIONS.md ; docs/ARCHITECTURE.md ; docs/TEST_STRATEGY.md (read at the plan commit) ; docs/aiops/PROGRAM_ASTRA_DELEGATION.md (immutable plan commit)",
   "nodes": [
     {
       "id": "001",
@@ -13,7 +13,8 @@
       "depends_on": [],
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
-      "deliverable_mode": "PR"
+      "deliverable_mode": "PR",
+      "astra_auto_merge": true
     },
     {
       "id": "002",
@@ -24,7 +25,8 @@
       ],
       "audit_floor": "A2",
       "astra_gate": "MILESTONE",
-      "deliverable_mode": "PR"
+      "deliverable_mode": "PR",
+      "astra_auto_merge": true
     },
     {
       "id": "003",
@@ -35,7 +37,8 @@
       ],
       "audit_floor": "A2",
       "astra_gate": "MILESTONE",
-      "deliverable_mode": "PR"
+      "deliverable_mode": "PR",
+      "astra_auto_merge": true
     },
     {
       "id": "004",
@@ -46,7 +49,8 @@
       ],
       "audit_floor": "A2",
       "astra_gate": "MILESTONE",
-      "deliverable_mode": "PR"
+      "deliverable_mode": "PR",
+      "astra_auto_merge": true
     },
     {
       "id": "005",
@@ -57,7 +61,8 @@
       ],
       "audit_floor": "A2",
       "astra_gate": "MILESTONE",
-      "deliverable_mode": "PR"
+      "deliverable_mode": "PR",
+      "astra_auto_merge": true
     },
     {
       "id": "006",
@@ -68,7 +73,8 @@
       ],
       "audit_floor": "A2",
       "astra_gate": "MILESTONE",
-      "deliverable_mode": "PR"
+      "deliverable_mode": "PR",
+      "astra_auto_merge": true
     },
     {
       "id": "007",
@@ -79,7 +85,8 @@
       ],
       "audit_floor": "A1",
       "astra_gate": "MILESTONE",
-      "deliverable_mode": "PR"
+      "deliverable_mode": "PR",
+      "astra_auto_merge": true
     }
   ]
 }
