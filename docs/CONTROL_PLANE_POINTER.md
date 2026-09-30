@@ -9,7 +9,8 @@ candidate is not evidence of installed runtime, builder qualification or activat
 
 The machine-readable pin is `.github/control-plane-client.json`.
 Project defaults come from pinned `engineering/projects/ZARI.md`.
-Builder/model qualification and Astra Slack routing use the pinned central policy.
+Builder/model qualification uses the pinned central policy. Astra is Claude Fable, run by the
+central `aiops-fable` tool (User decision M5, 2026-09-30).
 Product contracts, task specifications, protected files and product CI remain here.
 GitHub task/decision/audit records remain authoritative; Slack is a collaboration surface.
 
@@ -17,7 +18,8 @@ Migration history: https://github.com/BeautifulMind-JT/ai-ops-control-plane/issu
 Historical source, audit and activation evidence retains its original SHA and scope.
 No local dispatcher is installed by this reference change. Existing deployment,
 fence and rollout decisions are unchanged; never run two dispatchers for one task.
-User-only merge; no automatic fallback, retries, polling or standing routines.
+User-authorized merge; program mode delegates only the merge executor (User decision M1,
+`AGENTS.md` program mode section). No automatic fallback, retries, polling or standing routines.
 
 All four central target profiles retain deployment_enabled=true (eligibility).
 The candidate global runtime is disabled pending fresh implementation/host evidence;
