@@ -1086,3 +1086,13 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 1. 10월 1일 이후 Actions가 복구되면 main의 CI를 재실행합니다.
 2. 필요하면 병합된 main을 대상으로 GROK→GLM 감사를 사후에 진행합니다. 감사 기록 이관은 이슈 #31에서 추적합니다.
 3. Firefox·WebKit에서 `zari-bench-2` 벤치를 재측정하고, 성능 기준 host를 정합니다.
+
+## 공간 작업대 확장 설계 후보 (2026-09-30 KST)
+
+사용자 요청에 따라 측정·선택·검사 레이어, 평면 드래그, 읽기 전용 구획 절개 3D, 2D/3D/BOM/검사 선택 연동, 실행 단계 시각화의 상세 설계와 AIOPS 일곱 작업 계획을 문서로 작성했습니다. 기준 main은 `7269c142d2e2c3becc43088d64e516389228527e`입니다.
+
+- 시작 문서: [SPATIAL_INTERACTION_PLAN.md](SPATIAL_INTERACTION_PLAN.md); DTO/좌표: [SPATIAL_VIEW_CONTRACT.md](SPATIAL_VIEW_CONTRACT.md); 화면: [SPATIAL_WORKSPACE.md](../design/SPATIAL_WORKSPACE.md).
+- AIOPS 작업/인계: [AIOPS_SPATIAL_EXECUTION_PLAN.md](AIOPS_SPATIAL_EXECUTION_PLAN.md), [AIOPS_SPATIAL_HANDOFF.md](AIOPS_SPATIAL_HANDOFF.md), 비활성 [program draft](aiops/ZARI_SPATIAL_PROGRAM_DRAFT.json).
+- 실제 변경은 문서뿐입니다. 구현·dependency 설치·lockfile 생성·앱 실행·capture·독립 감사·AIOPS dispatch·런타임/클라이언트 설정·merge·배포는 수행하지 않았습니다. 기존 구현 완료/테스트 기록/approved baseline 0을 바꾸지 않습니다.
+- 문서의 JSON 구조·일곱 node DAG·참조 링크·문서만 변경한 범위는 작성자 self-check 대상입니다. 결과와 미검증 사항은 [SPATIAL_DESIGN_REVIEW.md](SPATIAL_DESIGN_REVIEW.md)에 기록하며, 이를 native/WASM/브라우저/CI 또는 Fable PASS라고 부르지 않습니다.
+- 다음: exact-HEAD Fable 설계 채택 → 승인된 program 별도 등록/pin → SP-001 공통 Rust 공간 투영부터 구현. 사용자 화면 승인/출시는 별도입니다.
