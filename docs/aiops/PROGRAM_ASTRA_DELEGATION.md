@@ -37,3 +37,28 @@ registered main plan commit, and let the central layer materialize canonical tas
 issues. Do not manufacture task envelopes, MACs, session receipts, audit verdicts
 or host state. The bootstrap PRs themselves are not program tasks and are not
 self-authorized for automatic merge.
+
+## Measurement-completion follow-up candidate (2026-09-30 KST)
+
+The follow-up [measurement-completion design](../MEASUREMENT_COMPLETION_DESIGN_KO.md)
+adds candidate nodes 008–011 after existing node 007. Original nodes 001–007 keep
+their specifications, DAG, audit floors and capture-approval boundary unchanged.
+This prepares bounded uncertainty/evidence input, supported v1 detail facts and
+a Rust-derived next-needed-fact list; the original 11-field scope is not silently
+rewritten. The new scope needs its own exact-head architecture adoption and actual
+User scope/start approval, recorded in the revised immutable plan before dispatch.
+The existing pending approval pointer remains pending.
+
+Node 008 uses A3/ARCHITECTURE; 009–011 use A2/MILESTONE. Delegation remains inside
+adopted scope only, with the protected central bridge, independent current-head
+reviews and CI. Old node 007 capture acceptance never approves the changed detail
+and guidance screens. Node 011 makes a new exact-head draft capture set; only a
+later durable User decision may change an approved baseline. Actual device,
+external-service and host qualification are not manufactured by code or tests.
+
+Completion reporting keeps independent axes: `node_state` is `DONE` only after
+the qualified exact task delivery is merged under the host-pinned gates;
+`qualification_state` is `NOT_REQUIRED/UNQUALIFIED/PARTIAL/QUALIFIED`;
+`acceptance_state` is `NOT_REQUIRED/PENDING/ACCEPTED/REJECTED`;
+`release_state` is `NOT_AUTHORIZED/NOT_RELEASED/RELEASED`. This candidate grants no
+release, paid-resource, credential, external-upload, runtime or activation right.
