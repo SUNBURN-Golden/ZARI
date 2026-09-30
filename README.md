@@ -62,6 +62,8 @@ node scripts/check-design-tokens.mjs --self-test
 
 ## 제품 설계와 다음 단계
 
+후속 공간 작업대 확장 다섯 기능의 **설계 후보**는 [SPATIAL_INTERACTION_PLAN](docs/SPATIAL_INTERACTION_PLAN.md)에서 시작합니다. [공통 공간 투영·선택 계약](docs/SPATIAL_VIEW_CONTRACT.md), [화면·드래그·절개 뷰](design/SPATIAL_WORKSPACE.md), [검증 기준](docs/SPATIAL_VERIFICATION.md), [AIOPS 일곱 작업 계획](docs/AIOPS_SPATIAL_EXECUTION_PLAN.md), [AIOPS 인계문](docs/AIOPS_SPATIAL_HANDOFF.md)을 제공합니다. 이 문서 추가는 신규 기능 구현·독립 감사·화면 승인·AIOPS 실행을 뜻하지 않습니다. program 후보는 `docs/aiops/`의 비활성 자료이며 `.aiops/program.json`과 런타임을 변경하지 않습니다.
+
 상세 설계의 시작점은 [구현 설계도](docs/BLUEPRINT.md)입니다. [전체 계산 예제](docs/COMPILER_WALKTHROUGH.md), [화면별 작업대 설계](design/WORKSPACE_BLUEPRINT.md), [Task 001–010 위임 계약](docs/DEVIN_PROGRAM.md), [Devin 전달문](docs/DEVIN_PROGRAM_PROMPT.md)을 함께 제공합니다.
 
 - [제품 명세](docs/PRODUCT_SPEC.md) / [아키텍처](docs/ARCHITECTURE.md) / [저장소 감사](docs/REPOSITORY_AUDIT.md)
