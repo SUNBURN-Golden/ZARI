@@ -34,6 +34,18 @@ React Aria를 기본 동작의 우선 후보, Motion을 제한적 전환 후보,
 
 D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화하며, D001 방향과 D005 사용자 시각 승인 규칙을 유지합니다. 실제 패키지 호환성은 Task001, 새 토큰 대비와 화면은 관련 UI 작업에서 검증합니다. 구현·사용자 화면 승인 완료를 뜻하지 않습니다. 되돌리기는 실제 도입 전 제안 변경이며, 도입 후에는 새 결정과 변경 영향 검토가 필요합니다.
 
+## D007 — 읽기 전용 3D 절개 보기에 Three.js 도입 / 채택
+
+- 상태: 채택(사용자 결정 2026-09-30). 실제 dependency 설치와 exact pin은 SP-005에서 한다.
+- 문제: 공간 작업대 설계(#35)의 읽기 전용 구획 3D는 [ARCHITECTURE.md](../docs/ARCHITECTURE.md) 선택 기록 "SVG top/front, no 3D dependency"와 충돌한다. Fable G0 감사([#35 댓글](https://github.com/BeautifulMind-JT/ZARI/pull/35#issuecomment-5905430288))가 이 점을 사용자 결정으로 올렸다.
+- 변경 대상: ARCHITECTURE.md 선택 기록(편집은 SVG 유지, 3D는 읽기 전용 보조 보기), SP-001의 WASM 계약(새 projectSpatialView 명령, BUILD_ID zari-domain-3→zari-domain-4, capability 목록, 새 DomainOperation, 생성 DTO)과 [WASM_PROTOCOL.md](../docs/WASM_PROTOCOL.md)·[TEST_STRATEGY.md](../docs/TEST_STRATEGY.md) 갱신, SP-005의 package.json·lock.
+- 검토한 대안: (A) 설계대로 Three.js 읽기 전용 절개 보기. (B) dependency 없는 SVG 사선·등각 투영. (C) SP-001~004만 먼저 하고 3D는 나중.
+- 선택: A. 사용자가 요청한 다섯 기능 중 하나이고, [MASTER_PROMPT_KO.md](../docs/MASTER_PROMPT_KO.md)가 3D를 후속 보조 보기로 예정하고 threejs.org를 기준으로 든다.
+- 조건: MIT, SP-005에서 upstream 0.186.1의 registry availability·라이선스·타입을 확인한 뒤 exact pin. lazy 로컬 chunk, CDN·원격 asset 없음, demand render, 정리·복구, WebGL을 쓸 수 없으면 2D로 대체. R3F·Drei·3D 편집 없음.
+- 접근성·성능: 3D는 보조 보기다. 모든 정보와 조작은 2D와 텍스트 목록으로 가능하다. 번들·렌더 시작 비용은 SP-005·SP-006에서 측정하고 목표와 실적을 구분해 기록한다.
+- 사용자 승인 근거: 2026-09-30 AIOPS 세션에서 사용자가 Fable G0 결정 질문에 "A"로 답했다.
+- 되돌리기: SP-005 병합 전에는 이 결정만 바꾸면 된다. 병합 뒤에는 새 결정으로 dependency와 3D 보기를 제거하며, 2D·Rust 계약은 3D와 독립이라 영향이 없다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

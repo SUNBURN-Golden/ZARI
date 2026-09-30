@@ -42,3 +42,9 @@
 실제 기능 구현/설치/lockfile 변경/앱 기동/화면 캡처/native·WASM·browser·CI tests/physical-device 성능/independent review/Fable 실행/AIOPS task 생성·dispatch/active program·client·runtime 변경/merge/배포를 수행하지 않았다.
 
 남는 전제: Fable exact-HEAD 설계 채택, actual central host/runtime qualification과 pin 확인, approved program 등록, SP-005 dependency qualification, actual current CI failures 조사, physical-device 측정, 사용자 exact capture 승인. 테스트 계획·목표·문서 JSON 유효성을 이 전제의 완료로 부르지 않는다. 구현 시작 시 SP-001부터 수행하며 새 runtime/유료서비스/새 product scope가 필요하면 별도 consequential decision을 요청한다.
+
+## Fable G0 감사 결과와 반영 (2026-09-30)
+
+- G0 감사([#35 댓글](https://github.com/BeautifulMind-JT/ZARI/pull/35#issuecomment-5905430288), head `10c59f1`): DECISION_REQUIRED. 사용자가 선택지 A(Three.js 읽기 전용 절개 보기)를 골랐고 [D007](../design/DECISIONS.md#d007--읽기-전용-3d-절개-보기에-threejs-도입--채택)에 기록했다.
+- 반영한 노트: F1 ARCHITECTURE.md 선택 기록과 D007, F2 SP-001·SP-005 파일 목록에 WASM_PROTOCOL.md·TEST_STRATEGY.md·ARCHITECTURE.md·DECISIONS.md, F3 fixture buildId 재고정 문구, F4 rem 기준 반응형 경계, F5 키보드 이동 단위는 FRONTEND.md 계약(SP-003에서 맞춤), F6 SP-002에 Fable MILESTONE G1b, F7 PR 번호 정정.
+- F7의 나머지: 이 문서와 PR 본문의 중앙 control plane 서술(중앙 main, 검증기 모양, 레인 순서 등)은 작성자 확인이며 증거가 아니다. 등록 PR은 실제로 pin된 중앙 소스로 계획을 다시 검증한다.

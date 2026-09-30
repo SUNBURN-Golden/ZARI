@@ -25,7 +25,7 @@
 | 이전 검토 main | `026342a478eb72c891c01c15b36ef2b433815df8`; PR #34 규약 변경으로 이동 |
 | 기존 구현 | Task 001–010 병합; core/solver/wasm, React/Aria, SVG top/front, Dexie/CAS, 수치 편집/회전/undo, action progress, 수동 catalog, export/import/offline |
 | 신규 기능 | 드래그·3D·공통 공간 투영 DTO·검사 부피 레이어·단계 focus는 아직 없음 |
-| 품질 기록 | Task 010/PR #30은 당시 사용자 지시로 CI·독립 감사 없이 병합; PR #34 기록에도 browser timeout이 있음. 기록된 로컬 통과를 이번 실행 결과로 전용하지 않음 |
+| 품질 기록 | Task 010(ZARI-010, PR #28)과 PR #30은 당시 사용자 지시로 CI·독립 감사 없이 병합; PR #34 기록에도 browser timeout이 있음. 기록된 로컬 통과를 이번 실행 결과로 전용하지 않음 |
 | 화면 | approved baseline 0; 이 패키지는 화면 캡처나 승인 아님 |
 | AIOPS 참고 main | `f079b7e7ec71a8e47c03fca8d7ead2ef9a2fc960` |
 | 운영 확인 범위 | 중앙 source를 읽었음. host 설치/qualified lanes/현재 활성 runtime SHA 일치를 시험하지 않음. client의 구형 candidate pin과 중앙 최신 source는 동일하지 않음 |
@@ -82,6 +82,7 @@ flowchart TD
 ## 7. 외부 자료와 채택 판단
 
 - 아이디어 출처: [floorplan-3d pinned source](https://github.com/wy51ai/floorplan-3d/tree/a03136c86842968a3de5da4c33549d3df3313c51). 배치와 뷰 연동/절개 개념만 참고. 소스·assets·스타일을 복제하지 않는다.
+- 채택: 사용자 결정 2026-09-30(Fable G0 감사의 선택지 A, [design/DECISIONS.md D007](../design/DECISIONS.md#d007--읽기-전용-3d-절개-보기에-threejs-도입--채택)). 편집은 SVG top/front 그대로이고 3D는 읽기 전용 보조 보기다.
 - 렌더러 후보: 직접 Three.js + 하나의 React lifecycle adapter, `OrbitControls`만 필요한 범위 사용. React Three Fiber/Drei/Motion/generic DnD foundation은 추가하지 않는다.
 - 공식 upstream 검토 기준: [three.js `9b4a2ac`](https://github.com/mrdoob/three.js/tree/9b4a2ac29c63ccb43fd51c5661f2f873ac2c39b8), package `0.186.1`, MIT license. 이 값은 Git source 확인값이며 npm publish/registry integrity/타입 package/브라우저 호환성까지 검증했다는 뜻이 아니다. SP-005 시작 때 이 version의 registry availability와 matching 타입을 확인해 exact pin/lock/evidence를 기록한다. unavailable이면 임의 fork/CDN/다른 엔진으로 대체하지 않고 최소 dependency exception을 제출한다.
 - [공식 demand rendering](https://github.com/mrdoob/three.js/blob/9b4a2ac29c63ccb43fd51c5661f2f873ac2c39b8/manual/pages/rendering-on-demand.html), [cleanup](https://github.com/mrdoob/three.js/blob/9b4a2ac29c63ccb43fd51c5661f2f873ac2c39b8/manual/pages/cleanup.html)을 따른다. 새 버전을 이유로 현재 핵심 toolchain을 일괄 업데이트하지 않는다.

@@ -120,7 +120,7 @@ ProjectInput includes the selected catalog pin and search profile/budget/seed; e
 | Single-thread Worker with bounded continuations | Cooperative cancellation plus hard recovery without COOP/COEP requirement |
 | Deterministic recipe-driven constructive search + bounded DFS | Small finite workload, explainable limitation; no general CP engine requirement |
 | React reducer/context, React Aria + native HTML | Clear state ownership and accessible composites; avoid duplicate foundations |
-| SVG top/front, no 3D dependency | Physical coordinates are inspectable and editable with numeric alternatives |
+| SVG top/front for editing; read-only 3D cutaway via Three.js only ([D007](../design/DECISIONS.md#d007--읽기-전용-3d-절개-보기에-threejs-도입--채택), User decision 2026-09-30, supersedes "no 3D dependency") | Physical coordinates are inspectable and editable with numeric alternatives; the 3D view is lazy, local, read-only and keeps a 2D fallback |
 | Dexie + explicit transactions | Local-first persistence; revisions belong to the app contract |
 | CSS functional motion only | Existing 120/180/240ms tokens suffice; no Motion until a proven interaction requires it |
 | Storybook deferred | Adopt after reused stateful components benefit; app browser tests start immediately |
