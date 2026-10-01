@@ -1096,3 +1096,22 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 - 실제 변경은 문서뿐입니다. 구현·dependency 설치·lockfile 생성·앱 실행·capture·독립 감사·AIOPS dispatch·런타임/클라이언트 설정·merge·배포는 수행하지 않았습니다. 기존 구현 완료/테스트 기록/approved baseline 0을 바꾸지 않습니다.
 - 문서의 JSON 구조·일곱 node DAG·참조 링크·문서만 변경한 범위는 작성자 self-check 대상입니다. 결과와 미검증 사항은 [SPATIAL_DESIGN_REVIEW.md](SPATIAL_DESIGN_REVIEW.md)에 기록하며, 이를 native/WASM/브라우저/CI 또는 Fable PASS라고 부르지 않습니다.
 - 다음: exact-HEAD Fable 설계 채택 → 승인된 program 별도 등록/pin → SP-001 공통 Rust 공간 투영부터 구현. 사용자 화면 승인/출시는 별도입니다.
+
+
+## 프로젝트 시작 간헐 실패: 반복 진단 준비 (2026-10-01, Codex)
+
+main `7fc125e0748ed3bb52ef9f561f7d5d6b2e44766f` 기준으로, 기존 CI와 같은
+Ubuntu·Node·Rust·wasm-bindgen·Chromium 설정을 사용하는 별도 진단 workflow를
+추가합니다. 기존 `app-ci.yml`과 앱·시험 코드는 바꾸지 않습니다.
+`portable.spec.ts`의 `a corrupted draft quarantines evidence and recovery export downloads`와
+`photo attach/remove stays fully local — zero network requests`를 각각 20회 실행하고
+실패 trace와 보고서를 보관합니다. 실제 Rust WASM·Worker·IndexedDB·서비스 워커를
+그대로 사용하며 mock으로 대체하지 않습니다.
+
+기존 두 CI trace(artifact `11133862064`, `11133529670`)에서 목록 로딩 전 클릭과
+`worker-state` 미발견은 확인했습니다. 클릭이 무시된 원인은 아직 확정하지 못했습니다.
+로컬 `npm run test:browser -- --project=chromium --repeat-each=20`은
+`spawnSync wasm-bindgen ENOENT`로 빌드 단계에서 멈췄고 브라우저 시험은 0건입니다.
+이 기록은 반복 시험 통과 또는 수정 완료를 주장하지 않습니다. 다음 작업은 별도
+진단 PR의 반복 CI 결과를 확인하고, 원인이 재현된 경우에만 앱 수정과 전후 반복
+회귀 검증을 진행하는 것입니다. #36의 문서·등록 계획에는 섞지 않습니다.
