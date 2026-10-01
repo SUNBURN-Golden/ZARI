@@ -3,8 +3,8 @@
   "program": "ZARI-SPATIAL",
   "repository": "BeautifulMind-JT/ZARI",
   "project": "ZARI",
-  "approval_pointer": "PENDING_FULL_SCOPE_ADOPTION_DO_NOT_DISPATCH; docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md; manifest .aiops/registration-scope.json binds the whole plan and every pending catalogue; inherited approvals do not adopt follow-up definitions; independent exact-HEAD A3 and actual User scope/start decision, adopted full-scope reader, approved registration revision and qualified central service are required; central #47 15f7fe67726c04efd5a6d289ef985041f40c511a is a source candidate, not an audit/adoption/install/activation grant; prior scope references: PENDING_APPROVAL_DO_NOT_DISPATCH; https://github.com/BeautifulMind-JT/ZARI/pull/35 (spatial design package; the User chose option A on the Fable G0 DECISION_REQUIRED https://github.com/BeautifulMind-JT/ZARI/pull/35#issuecomment-5905430288, recorded as design/DECISIONS.md D007; scope and start are approved by the User's merge of #35 and of this registration PR) ; Fable G0 re-audit of the revised #35 head: ASTRA_AUDIT_V1 comment on #35, link recorded before this PR leaves draft; protected program Astra bridge requires adoption/qualification of BeautifulMind-JT/ai-ops-control-plane#46 replacement candidate at a8b7355712c58de8d27c85a535fb241a09a4037c (PA-1 adoption, exact-HEAD non-author audit and actual host qualification/activation remain PENDING; #44 DECISION_REQUIRED is not a grant); replace pending metadata with actual current-head audit, User approval/merge and host qualification evidence before start; MEASUREMENT_COMPLETION_DESIGN_KO candidate SP-008..011 requires its own exact-HEAD independent architecture adoption and actual User scope/start approval before pending registration can be replaced; old SP-007 approval is not approval of changed measurement UI; PRODUCT_COMPLETION_EVOLUTION_KO SP-012..016 is additional PENDING architecture/scope/start adoption; existing SP-001..011 adoption does not approve the new guide/rule/evaluation/migration contract; central #47 94a768e19df12703ea0b9a49e49972feb2f6ef4f is a recovery source candidate stacked on #46, NOT independently audited/adopted/installed/qualified/activated; no UNKNOWN bypass or standing retry routine; final plan registration must pin real adopted current-head evidence",
-  "authoritative_doc_pointers": "AGENTS.md ; docs/SPATIAL_INTERACTION_PLAN.md ; docs/SPATIAL_VIEW_CONTRACT.md ; design/SPATIAL_WORKSPACE.md ; docs/SPATIAL_VERIFICATION.md ; docs/AIOPS_SPATIAL_EXECUTION_PLAN.md ; docs/AIOPS_SPATIAL_HANDOFF.md ; docs/DOMAIN_MODEL.md ; docs/WASM_PROTOCOL.md ; docs/PERSISTENCE.md ; DESIGN.md ; design/DECISIONS.md ; docs/ARCHITECTURE.md ; docs/TEST_STRATEGY.md (read at the plan commit) ; docs/aiops/PROGRAM_ASTRA_DELEGATION.md (immutable plan commit) ; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md (immutable candidate plan commit) ; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md (immutable candidate plan commit) ; docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json (byte-identical pending candidate mirror; original seven-node sidecar is historical) ; docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md (full candidate scope; pending adoption)",
+  "approval_pointer": "PENDING_APPROVAL_DO_NOT_DISPATCH",
+  "authoritative_doc_pointers": "AGENTS.md ; docs/SPATIAL_INTERACTION_PLAN.md ; docs/SPATIAL_VIEW_CONTRACT.md ; design/SPATIAL_WORKSPACE.md ; docs/SPATIAL_VERIFICATION.md ; docs/AIOPS_SPATIAL_EXECUTION_PLAN.md ; docs/AIOPS_SPATIAL_HANDOFF.md ; docs/DOMAIN_MODEL.md ; docs/WASM_PROTOCOL.md ; docs/PERSISTENCE.md ; DESIGN.md ; design/DECISIONS.md ; docs/ARCHITECTURE.md ; docs/TEST_STRATEGY.md (read at the plan commit) ; docs/aiops/PROGRAM_ASTRA_DELEGATION.md (immutable plan commit) ; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md (immutable candidate plan commit) ; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md (immutable candidate plan commit) ; docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json (byte-identical pending candidate mirror; original seven-node sidecar is historical) ; docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md (full candidate scope; pending adoption) ; NON_EXECUTABLE_DRAFT: docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json",
   "nodes": [
     {
       "id": "001",
@@ -14,7 +14,8 @@
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
       "deliverable_mode": "PR",
-      "astra_auto_merge": true
+      "astra_auto_merge": false,
+      "user_merge": true
     },
     {
       "id": "002",
@@ -98,7 +99,8 @@
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
       "deliverable_mode": "PR",
-      "astra_auto_merge": true
+      "astra_auto_merge": false,
+      "user_merge": true
     },
     {
       "id": "009",
@@ -122,7 +124,8 @@
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
       "deliverable_mode": "PR",
-      "astra_auto_merge": true
+      "astra_auto_merge": false,
+      "user_merge": true
     },
     {
       "id": "011",
@@ -146,7 +149,8 @@
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
       "deliverable_mode": "PR",
-      "astra_auto_merge": true
+      "astra_auto_merge": false,
+      "user_merge": true
     },
     {
       "id": "013",
@@ -158,7 +162,8 @@
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
       "deliverable_mode": "PR",
-      "astra_auto_merge": true
+      "astra_auto_merge": false,
+      "user_merge": true
     },
     {
       "id": "014",
@@ -170,7 +175,8 @@
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
       "deliverable_mode": "PR",
-      "astra_auto_merge": true
+      "astra_auto_merge": false,
+      "user_merge": true
     },
     {
       "id": "015",
@@ -210,10 +216,5 @@
       "deliverable_mode": "PR",
       "astra_auto_merge": true
     }
-  ],
-  "registration_scope": {
-    "state": "PENDING_FULL_SCOPE_ADOPTION",
-    "manifest_path": ".aiops/registration-scope.json",
-    "runtime_rule": "ANY_PRESENT_MARKER_REJECTED_UNTIL_FULL_SCOPE_READER_ADOPTION"
-  }
+  ]
 }

@@ -6,9 +6,9 @@
 SOURCE_MANIFEST, 이미 작성한 SP-001–011의 spec·의존·감사 경계는 유지한다.
 이 문서는 그 뒤 SP-012–016을 추가한다. 방 전체·적층·계정·AI·자동 주문·안전 인증을 추가하지 않는다.
 
-중앙 [#46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46)의 승인 범위 bridge에
+중앙 [#47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47)의 승인 범위 bridge에
 [회복 구현 후보 #47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47),
-HEAD `94a768e19df12703ea0b9a49e49972feb2f6ef4f`가 쌓여 있다. 실패 기록 보존·검증된 한도
+HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 보존·검증된 한도
 사건의 한 번 재시도 소스 후보이며 설치·독립 A3·PA-1 채택·host qualification·activation 근거가 아니다.
 이 제품 문서는 런타임 pin이나 승인 포인터를 활성화하지 않는다.
 
@@ -224,10 +224,9 @@ SP-007·011과 기존 approved manifest의 승인 count는 고치지 않는다. 
 
 ## 8. 비활성 실행 그래프와 전체 분모
 
-등록 후보 정본은 `.aiops/program.json`이며 동일 바이트의 전체 후보 복사본은
-`docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`이다. 기존 7-node
+등록 후보 정본은 `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json` 하나이며 NON_EXECUTABLE_DRAFT다. 실행 경로의 `.aiops/program.json`은 이 PR에 없다. 기존 7-node
 `ZARI_SPATIAL_PROGRAM_DRAFT.json`은 최초 공간 설계 checkpoint이며 최신 전체 실행 분모가 아니다.
-모든 기존 001–011 spec/flags/deps를 그대로 보존하고 아래 노드를 append한다.
+기존 001–011 spec/deps는 보존하고, 계약 변경 노드의 병합 flag는 정책 C에 맞춰 대표님 몫으로 바꾼다. 아래 노드를 append한다.
 
 | Node | Outcome / 소유 | Depends | 독립 gate |
 |---|---|---|---|

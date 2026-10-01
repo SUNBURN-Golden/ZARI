@@ -62,7 +62,7 @@ node scripts/check-design-tokens.mjs --self-test
 
 ## 제품 설계와 다음 단계
 
-후속 공간 작업대 확장 다섯 기능의 **설계 후보**는 [SPATIAL_INTERACTION_PLAN](docs/SPATIAL_INTERACTION_PLAN.md)에서 시작합니다. [공통 공간 투영·선택 계약](docs/SPATIAL_VIEW_CONTRACT.md), [화면·드래그·절개 뷰](design/SPATIAL_WORKSPACE.md), [검증 기준](docs/SPATIAL_VERIFICATION.md), [AIOPS 일곱 작업 계획](docs/AIOPS_SPATIAL_EXECUTION_PLAN.md), [AIOPS 인계문](docs/AIOPS_SPATIAL_HANDOFF.md)을 제공합니다. 이 문서 추가는 신규 기능 구현·독립 감사·화면 승인·AIOPS 실행을 뜻하지 않습니다. program 후보는 `docs/aiops/`의 비활성 자료이며 `.aiops/program.json`과 런타임을 변경하지 않습니다.
+후속 공간 작업대 확장 다섯 기능의 **설계 후보**는 [SPATIAL_INTERACTION_PLAN](docs/SPATIAL_INTERACTION_PLAN.md)에서 시작합니다. [공통 공간 투영·선택 계약](docs/SPATIAL_VIEW_CONTRACT.md), [화면·드래그·절개 뷰](design/SPATIAL_WORKSPACE.md), [검증 기준](docs/SPATIAL_VERIFICATION.md), [AIOPS 일곱 작업 계획](docs/AIOPS_SPATIAL_EXECUTION_PLAN.md), [AIOPS 인계문](docs/AIOPS_SPATIAL_HANDOFF.md)을 제공합니다. 이 문서 추가는 신규 기능 구현·독립 감사·화면 승인·AIOPS 실행을 뜻하지 않습니다. program 후보는 `docs/aiops/`의 비활성 자료이며 `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`과 런타임을 변경하지 않습니다.
 
 상세 설계의 시작점은 [구현 설계도](docs/BLUEPRINT.md)입니다. [전체 계산 예제](docs/COMPILER_WALKTHROUGH.md), [화면별 작업대 설계](design/WORKSPACE_BLUEPRINT.md), [Task 001–010 위임 계약](docs/DEVIN_PROGRAM.md), [Devin 전달문](docs/DEVIN_PROGRAM_PROMPT.md)을 함께 제공합니다.
 
@@ -90,4 +90,4 @@ Motion·Storybook·Impeccable·일반 DnD 기반은 도입하지 않았습니다
 
 ### 전체 제품 완성 후속 후보 — 2026-10-01 KST
 
-[측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. `.aiops/program.json`과 전체 pending sidecar는 같은 후보이고, 최초 7단계 sidecar는 역사 checkpoint입니다. 구현·승인·실제 기기 qualification·새 화면 채택·런타임 활성화·배포를 완료한 것은 아닙니다.
+[측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`가 비실행 전체 후보 정본이며, 최초 7단계 sidecar는 역사 checkpoint입니다. 구현·승인·실제 기기 qualification·새 화면 채택·런타임 활성화·배포를 완료한 것은 아닙니다.
