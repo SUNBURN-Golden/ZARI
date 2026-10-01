@@ -1,0 +1,61 @@
+name: ZARI project startup repeated diagnostic
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/project-startup-diagnostic.yml
+      - apps/web/src/app/ProjectsScreen.tsx
+      - apps/web/tests/browser/portable.spec.ts
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zari-startup-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repeated-portable-startup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact event commit
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Pinned Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Pinned Rust and WASM tools
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
+          cargo install wasm-bindgen-cli --version 0.2.128 --locked
+      - name: Record source and tools
+        run: |
+          git rev-parse HEAD
+          rustc --version
+          cargo --version
+          wasm-bindgen --version
+          node --version
+          npm --version
+      - name: Locked web dependencies
+        run: npm ci
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Repeat the two failed portable startup cases with actual WASM
+        run: >-
+          npm run test:browser -- --project=chromium --workers=1
+          --repeat-each=20 apps/web/tests/browser/portable.spec.ts
+          --grep 'a corrupted draft|photo attach/remove'
+      - name: Retain repeated diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zari-startup-diagnostic-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
