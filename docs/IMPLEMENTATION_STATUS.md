@@ -1096,3 +1096,12 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 - 실제 변경은 문서뿐입니다. 구현·dependency 설치·lockfile 생성·앱 실행·capture·독립 감사·AIOPS dispatch·런타임/클라이언트 설정·merge·배포는 수행하지 않았습니다. 기존 구현 완료/테스트 기록/approved baseline 0을 바꾸지 않습니다.
 - 문서의 JSON 구조·일곱 node DAG·참조 링크·문서만 변경한 범위는 작성자 self-check 대상입니다. 결과와 미검증 사항은 [SPATIAL_DESIGN_REVIEW.md](SPATIAL_DESIGN_REVIEW.md)에 기록하며, 이를 native/WASM/브라우저/CI 또는 Fable PASS라고 부르지 않습니다.
 - 다음: exact-HEAD Fable 설계 채택 → 승인된 program 별도 등록/pin → SP-001 공통 Rust 공간 투영부터 구현. 사용자 화면 승인/출시는 별도입니다.
+
+
+## 제품 완성 고도화 설계 후보 — 2026-10-01 KST
+
+조사 기준은 ZARI #37 HEAD `f328251d06b891b27fefa1180b6b767c6aacfd92`다. 실제 `finalize.rs::build_actions`의 Install→TransferContents 순서/빈 condition refs, solver full-candidate RunEval의 indivisible allowance 예외를 source review로 확인했다. 앱·성능·실물을 실행한 재현 결과라는 주장은 아니다.
+
+[PRODUCT_COMPLETION_EVOLUTION_KO.md](PRODUCT_COMPLETION_EVOLUTION_KO.md)에 새 A3 ADR, physical guide/condition guard, bounded independent evaluator, 저장·자료·역사·Worker lifecycle, 전체 qualification/capture 인계를 명세했다. 기존 program001–011은 그대로 보존하고012–016을 append해 분모16으로 연결했다. 전체 pending sidecar를 같은 바이트로 작성했고 승인 포인터는 PENDING이다. 최초7-node sidecar는 역사 checkpoint로 보존한다.
+
+실제 변경은 문서/비활성 계획뿐이다. 원본 MASTER/RUST/SOURCE_MANIFEST·앱·schema·dependency·approved baseline·runtime/client pin·activation·host·계정·모델 감사·배포를 변경하지 않았다. 작성 단계 검증은 JSON 구조·중복·DAG·분모·001–011 보존·mirror 일치·참조/범위 검사다. 앱/native/WASM/browser/parity/성능·독립 Fable 감사·User 채택·새 화면 승인은 이번 작업에서 미실행이다. 후속 구현에서 기존 record와 progress를 새 의미로 덮어쓰지 않으며, 별도 architecture/rule adoption과 실제 qualification 근거를 요구한다.
