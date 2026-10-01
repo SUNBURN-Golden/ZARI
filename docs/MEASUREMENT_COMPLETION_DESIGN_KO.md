@@ -61,8 +61,16 @@ wide에서는 도면 옆 inspector와 같은 대상/field reference를 사용한
 `bounded`를 선택하고 한 bound가 비거나 invalid이면 원문을 보존하고 제출을 막는다.
 한쪽 누락을 0으로 변환하지 않는다. `unknown`으로 명시 전환하면 비활성 raw bound text는
 로컬 편집 UI에 남길 수 있지만 canonical input에는 bounds를 동시에 남기지 않는다.
-nominal−minus가 양의 길이 범위를 벗어나거나 nominal+plus가 범위를 넘으면 구조화된 오류다.
-offset의 interval은 signed/checked이고, available 최소·occupied 최대 적용은 기존 Rust 규칙이다.
+positive length에만 nominal−minus>0 및 LengthMm 상한을 적용한다. signed offset은
+checked i64로 `[nominal−minus, nominal+plus]`를 계산하고 nominal과 양 끝이
+PositionMm의 −20000..20000 안에 있는지 검사한다. bounds는 기존 ClearanceMm의
+0..10000을 유지한다. `abs(nominal)`에 양수 길이 검증을 재사용하거나 0을 unknown으로
+바꾸지 않으며 구간이 0을 가로질러도 유효하다. offset0±0은 [0,0],
+offset0−2/+3은 [−2,3], offset−2−3/+4는 [−5,2]다.
+SP-008(A3)은 raw 정규화와 typed record 검증의 같은 offset 규칙을 구현하고 native/실제
+Worker에서 위 손 계산 사례와 ±20000 경계·넘침을 확인한다. 이는 현재 구현의 성적이 아니다.
+기존에 유효했던 fixtures/snapshot 결과는 보존하고, 종전 양수 검증으로 거절된 offset의
+신규 수용 기대값만 별도로 명시한다. available 최소·occupied 최대 등 물리 판정은 유지한다.
 
 단위 전환은 nominal과 활성 bound를 **한 그룹의 동일 editor epoch**에서 Rust에 요청한다.
 하나라도 미완성/invalid이면 그룹 전체를 전환하지 않고 원래 문자열·단위와 이유를 유지한다.
@@ -112,8 +120,13 @@ SP-009는 새 일반 프로젝트 생성 경로에서 baseSupport 전체를 unkn
 
 ## 5. 다음 확인 목록의 Rust read model
 
-SP-008에서 additive ephemeral DTO/Worker API를 확정하고 SP-010에서 실제 query를 구현한다.
-별도 persisted plan schema나 solver 목적함수는 만들지 않는다. 입력은 정상화된 ProjectInput과
+SP-008(A3)에서 additive ephemeral query DTO/Worker API·정확한 operation/capability 이름을
+ADR로 확정한다. 미구현 query의 executable DomainOperation·생성 runtime schema·client
+호출 경로·capability는 이 단계에서 추가/광고하지 않는다. SP-010(A3/ARCHITECTURE)이
+실제 query handler와 DTO/생성 TS·schema·Worker entry/client·harness/fixtures를 함께
+구현하고 그 완성된 capability와 실제 BUILD_ID를 원자적으로 배포한다.
+SP-009(A2)는 008에서 구현·검증한 기존 normalizeInput raw surface만 소비하며 query의
+사전 광고나 stub 성공 응답을 추가하지 않는다. 별도 persisted plan schema나 solver 목적함수는 만들지 않는다. 입력은 정상화된 ProjectInput과
 그 digest, optional displayed PlanSnapshot이다. snapshot의 input/catalog/rule binding이 맞지
 않으면 current 안내를 만들지 않고 `historical/stale`과 재계산 행동을 반환한다.
 snapshot이 없으면 supported input completeness만 표시하고 미실행 물리 검사 결과를 생성하지 않는다.
@@ -167,10 +180,14 @@ Worker/decode/render는 SP-006 방식으로 분리 측정하며 실제 성적과
   component generation을 포함한다. await 동안 input·snapshot·catalog·worker가 바뀌면 reply를 버린다.
 - source별 coalesced request 하나와 bounded ephemeral cache만 사용한다. hover/focus/pan/selection에서
   request 0. Worker trap 후 persisted bytes는 보존하고 explicit recovery 뒤 matching source로 다시 조회한다.
-- 새 API capability/BUILD_ID는 Rust/client/entry/harness/fixtures에서 원자적으로 갱신한다. 기존 capability
-  exact handshake를 약화하지 않는다. old page/new Worker와 반대 조합은 명시적 recovery다.
-- supported schema/rule/BOM/action/PlanSnapshot 의미는 유지한다. 기존 expected outputs는 unchanged이며
-  engineContext BUILD_ID만 실제 새 버전으로 재고정한다. 데이터 구조 추가가 migration을 요구하면
+- 008의 implemented normalization 수정과 010의 query 기능은 각각 owning A3 delivery에서
+  Rust/client/entry/harness/fixtures와 실제 BUILD_ID를 원자적으로 갱신한다. 미래 query를
+  008/009 capability에 광고하지 않는다. 010은 완성된 handler/생성 계약과 exact handshake를
+  함께 검증한 뒤에만 query capability를 추가한다. 기존 exact handshake를 약화하지 않으며
+  old page/new Worker와 반대 조합은 명시적 recovery다.
+- supported schema/rule/BOM/action/PlanSnapshot 의미는 유지한다. 기존 유효한 fixtures의 authoritative outputs는 unchanged이며
+  engineContext BUILD_ID만 실제 새 버전으로 재고정한다. signed-offset 버그로 이전에
+  거절된 입력의 신규 기대값은 008의 명시적 correction fixtures에만 기록한다. 데이터 구조 추가가 migration을 요구하면
   관련 작업만 DECISION_REQUIRED로 멈추고 별도 채택 전 existing record를 바꾸지 않는다.
 
 ## 7. 실구현 수용 사례와 근거
@@ -182,7 +199,7 @@ Worker/decode/render는 SP-006 방식으로 분리 측정하며 실제 성적과
 | MC-01 fresh→기본 치수→상세 bounds | JSON 편집 없이 bounds/evidence 입력; unknown 오차가 0으로 변하지 않음; 새 일반 프로젝트의 baseSupport와 모든 item handling fact가 unknown이며 샘플의 50000g·5mm·0을 상속하지 않음; 실제 Worker 정규화→저장→재로드 후에도 유지; 명시적 샘플·기존 저장 프로젝트는 보존 |
 | MC-02 nominal 600mm, minus2/plus3; occupied 590mm, minus1/plus4 | native/actual Worker가 동일 interval을 반환; 최소 available/최대 occupied를 현행 validator가 평가 |
 | MC-03 60.01cm / 한 bound 빈 값 / nominal-minus≤0 / overflow | 원문 유지·명명된 오류·저장 차단; JS 반올림 없음 |
-| MC-04 음수 staging minY / offset0 / offset unknown | 동일 signed grammar/범위; 위치0과 unknown 분리; 지원되지 않는 staging 조건 명시 |
+| MC-04 음수 staging minY / offset0 / offset unknown | native/actual Worker의 offset0−0/+0=[0,0], offset0−2/+3=[−2,3], offset−2−3/+4=[−5,2]가 손 계산과 일치; ±20000 nominal/endpoint 경계와 out-of-range/overflow 거절; 값0과 unknown 분리; length의 양수 조건을 offset에 적용하지 않음; 지원되지 않는 staging 조건 명시 |
 | MC-05 받침 footprint known, 하중 unknown | 기하 근거와 load unknown을 분리; 위치/치수만으로 load pass 없음 |
 | MC-06 handling/lift requirement 미상 | 동작 mode와 실제 관련 checks 연결; 지원 안 되는 확인 절차를 완료 checkbox로 대체하지 않음 |
 | MC-07 한 fact가 여러 checks에서 요구됨 | 목록은 1행, exact check IDs 전부; 삭제한 evidence로 상태가 개선되지 않음 |
@@ -218,9 +235,9 @@ Chromium/Firefox/WebKit·keyboard-only·390/1440·200%·IME·forced-colors·redu
 
 | Node | Outcome | Depends | 독립 gate |
 |---|---|---|---|
-| 008 | measurement-completion ADR, typed field routing/normalization·API schema/capability와 fixture 계약 | 007 | A3 / ARCHITECTURE |
+| 008 | measurement-completion ADR·typed routing/query 계약 확정; signed-offset/raw 정규화 구현·검증; 미래 query capability는 광고하지 않음 | 007 | A3 / ARCHITECTURE |
 | 009 | bounds/evidence와 v1 staging/support/handling 상세 입력→Rust→CAS→reload 통합 | 008 | A2 / MILESTONE |
-| 010 | Rust의 다음 확인 query·안정 우선순위·field navigation·lease 연결 | 009 | A2 / MILESTONE |
+| 010 | Rust의 다음 확인 query·생성 DTO/schema/TS·Worker/client·capability/BUILD_ID 원자 배포·navigation/lease | 009 | A3 / ARCHITECTURE |
 | 011 | full parity/실브라우저/성능·failure 근거와 변경 UI의 새 draft capture 인계 | 010 | A2 / MILESTONE |
 
 008에서 v1 scope/raw evidence/path mapping/persistent compatibility가 모호하면 영향을 받는

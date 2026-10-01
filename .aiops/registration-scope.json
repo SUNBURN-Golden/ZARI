@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "state": "PENDING_FULL_SCOPE_ADOPTION",
+  "repository": "BeautifulMind-JT/ZARI",
+  "program": "ZARI-SPATIAL",
+  "encoding": "UTF8_JSON_SORTED_KEYS_COMPACT_ENSURE_ASCII_FALSE",
+  "plan_definition": {
+    "path": ".aiops/program.json",
+    "excluded_root_fields": [
+      "approval_pointer",
+      "registration_scope"
+    ],
+    "definition_sha256": "88bb78283220de2519adce785e6cb49156e2a9bf72ec4fa7acb0b69bb0f12482",
+    "node_count": 16
+  },
+  "pending_catalogues": [],
+  "finance_subset": null,
+  "candidate_node_count": 16,
+  "user_only_nodes": [],
+  "node_definitions": [
+    {
+      "id": "001",
+      "definition_sha256": "08d45420ec0495eeb5a505a66d97d5e7618433c3af009ce62c1fd8e9918db806"
+    },
+    {
+      "id": "002",
+      "definition_sha256": "23cb11a9bd7ac77960b90a9778252e60072d7d4534d786cc08833746149e94a2"
+    },
+    {
+      "id": "003",
+      "definition_sha256": "b5e5f3359fada8ef7aa9e3eda35db05f4448e11e1246908e366f1b2c92ed4d13"
+    },
+    {
+      "id": "004",
+      "definition_sha256": "bc4113a83bbc91d3e6128a8574f31397b947e79307bf71b6f71e872b1d9363f4"
+    },
+    {
+      "id": "005",
+      "definition_sha256": "6a2e4533cbdab67da6795235ad6894cdbb18ac53eaa7745a4e49281c21221318"
+    },
+    {
+      "id": "006",
+      "definition_sha256": "54297bc2adb122d0249fa8890b38dcc8212cdc87389cec3a5c837a5bea34a8a7"
+    },
+    {
+      "id": "007",
+      "definition_sha256": "0380b92b07633e186b1b97e92459dfd8209a04bb5e29fc1ae0662129604f008f"
+    },
+    {
+      "id": "008",
+      "definition_sha256": "2ccb5d4f68a73e31d91858454f8f7160a9a184a93ec9186775824a15bc22d326"
+    },
+    {
+      "id": "009",
+      "definition_sha256": "7f579312d6ec165362c4fadbeb8d55c879799bfc8336d165c928260290b9c37e"
+    },
+    {
+      "id": "010",
+      "definition_sha256": "583a8737d1c27be066a854bbd68d343baf9998c8abc7316d70a0da9892148e18"
+    },
+    {
+      "id": "011",
+      "definition_sha256": "3284a6f9467a9942d3135bf5bff8c1a218e6d24b24bbb1128978fce9027a4246"
+    },
+    {
+      "id": "012",
+      "definition_sha256": "aa6e75ab8399bfb0534467ea28db6155457aea0c41b64b7dbd07ddc547c9bfda"
+    },
+    {
+      "id": "013",
+      "definition_sha256": "b25e183a4b934dcd1074550ff4892492dcefd82ef6f3594b3a10ac50a1138f75"
+    },
+    {
+      "id": "014",
+      "definition_sha256": "53b5cbbb59f39075af2ebbe479c136764d8890efd0744d46a64e81973b343dd7"
+    },
+    {
+      "id": "015",
+      "definition_sha256": "6dfb14c653fa276c503788f83eb0a83f744352bebb704d691e034ac957e734d3"
+    },
+    {
+      "id": "016",
+      "definition_sha256": "6dafc60641b57c5ef0260a01b8b4ee01aa5eb7832afe355a0be0de7589c3fd3b"
+    }
+  ],
+  "definition_document_sha256": {
+    "docs/WASM_PROTOCOL.md": "07118f028c4499e12717accb9b837170c11265c19eb5152215522f26b1d8714f",
+    "docs/MEASUREMENT_COMPLETION_DESIGN_KO.md": "b7bbd112e44cd061d66ad69994a8a979ef1ea8c05fb47bb6a791a6bafac4e2fc",
+    "docs/PRODUCT_COMPLETION_EVOLUTION_KO.md": "a9ea50d43b14c3c8cc28b93ab29faf6b5ee224c6db73ff5a3781cb096bfaf861",
+    "docs/DOMAIN_MODEL.md": "f52a4a3b8280d327e8f2e7fbde6158f6dc5d964b9e0c029cefddf0dc811510e1",
+    "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "47266e564ee350ada9040ec2c3c2ebd7a55cb293f890792c2c04af19345d7656",
+    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "dd90f04da65e0a114d8111c87d6eac2db192e9a0900e95e3537ad8e03741b774"
+  },
+  "approval_evidence": {
+    "scope_decision_pointer": "PENDING_EXACT_WHOLE_SCOPE_USER_DECISION",
+    "audit_pointer": "PENDING_NON_AUTHOR_EXACT_HEAD_A3",
+    "registration_revision_pointer": "PENDING_APPROVED_FULL_SCOPE_READER_AND_REVISION"
+  },
+  "central_source_candidate": {
+    "pr": "BeautifulMind-JT/ai-ops-control-plane#47",
+    "head": "e34868c6a12e5488224095b3248e59c8be9128f1",
+    "authority": "SOURCE_ONLY_NOT_ADOPTED_INSTALLED_QUALIFIED_OR_ACTIVATED"
+  },
+  "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference."
+}

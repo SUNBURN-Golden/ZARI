@@ -90,6 +90,12 @@ The complete catalog is then validated once; invalid required data rejects publi
 
 No aggregate import session lives in WASM. The host stages individually verified records, checks cross-record references and commits the complete project atomically as PERSISTENCE specifies. Each record must fit the5 MiB message cap; a10 MiB archive containing an oversized indivisible record is rejected, not secretly chunked into an unbounded decoder. Worker restart discards staging request receipts; reverify before commit. Identity fencing follows the explicit system/project cases above.
 
+### Measurement-completion candidate: complete handler before capability
+
+Candidate SP-008 (A3/ARCHITECTURE) freezes the completion-query operation/capability and DTO contract in its ADR, and implements/qualifies the signed-offset correction through existing normalization/verification surfaces. It does not register or advertise the unimplemented completion query, export an executable query operation/schema, or add a client that can receive a stub success. SP-009 consumes only the implemented, reviewed raw normalization contract and cannot change Worker capability/BUILD_ID or generated public contracts.
+
+Candidate SP-010 is A3/ARCHITECTURE. It owns the first complete query implementation together with Rust DTO/DomainOperation, generated schema/TS, Worker entry/client, native/browser fixture runner and capability handshake. The same delivered HEAD atomically updates actual BUILD_ID and the exact capability set only after the handler is usable. Unknown/unadvertised operations remain operation_not_supported; old/new page-Worker pairs explicitly recover instead of assuming compatibility. The ADR pin alone is not runtime support. This staging is DESIGN_ONLY/PENDING and does not alter the current operation table or claim an implemented API.
+
 ## 3. Search lifecycle and scheduling
 
 ```mermaid
@@ -160,3 +166,4 @@ RawCountDto trims whitespace, accepts digits only, empty means Unknown, validate
 Expected fixtures: 60cm=600mm; 60.1cm=601mm; nonintegral-mm/zero-size/negative/oversized input errors; empty width unknown. With 600 width,3 units at190 and gaps5/5/5, required590 and width pass;195 gives605/fail. Need5 pack2 yields3/6/1. Known need0 produces0/0/0; pack0 invalid. Unknown width yields width Unknown while independent valid pack calculation still works; zero is never substituted. UI calls Rust and displays matching outputs, a scaled width illustration and “폭 조건 검사 · 전체 배치 검증 전”. Test same fixtures in native and actual browser Worker/WASM, reject delayed responses after raw edit, terminate/restart and verify next probe succeeds.
 
 All results must clearly distinguish probe output from PlanSnapshot. No invented strategy, catalog, full physical validity, accepted-plan storage or business completion is shown by Task001. Required command/evidence contract is in DEVIN_TASK_001.md and TEST_STRATEGY.md.
+

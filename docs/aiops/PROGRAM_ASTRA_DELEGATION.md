@@ -61,7 +61,7 @@ The new scope needs its own exact-head architecture adoption and actual
 User scope/start approval, recorded in the revised immutable plan before dispatch.
 The existing pending approval pointer remains pending.
 
-Node 008 uses A3/ARCHITECTURE; 009–011 use A2/MILESTONE. Delegation remains inside
+Nodes 008 and 010 use A3/ARCHITECTURE; 009 and 011 use A2/MILESTONE. Node008 owns the signed-offset normalization correction and freezes the future query contract without advertising an unimplemented capability. Node010 first ships the complete query/DTO/generated schema/TS/Worker/client/harness and actual capability/BUILD_ID atomically; node009 consumes only the already implemented node008 raw contract and cannot change that public surface. Delegation remains inside
 adopted scope only, with the protected central bridge, independent current-head
 reviews and CI. Old node 007 capture acceptance never approves the changed detail
 and guidance screens. Node 011 makes a new exact-head draft capture set; only a
