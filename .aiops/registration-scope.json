@@ -89,7 +89,7 @@
     "docs/PRODUCT_COMPLETION_EVOLUTION_KO.md": "a9ea50d43b14c3c8cc28b93ab29faf6b5ee224c6db73ff5a3781cb096bfaf861",
     "docs/DOMAIN_MODEL.md": "f52a4a3b8280d327e8f2e7fbde6158f6dc5d964b9e0c029cefddf0dc811510e1",
     "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "47266e564ee350ada9040ec2c3c2ebd7a55cb293f890792c2c04af19345d7656",
-    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "dd90f04da65e0a114d8111c87d6eac2db192e9a0900e95e3537ad8e03741b774"
+    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "8cc75e9c7ff7b04e3831bd33c01745b645191a7dfebf4789862d3b80a017f42a"
   },
   "approval_evidence": {
     "scope_decision_pointer": "PENDING_EXACT_WHOLE_SCOPE_USER_DECISION",
@@ -98,7 +98,7 @@
   },
   "central_source_candidate": {
     "pr": "BeautifulMind-JT/ai-ops-control-plane#47",
-    "head": "e34868c6a12e5488224095b3248e59c8be9128f1",
+    "head": "15f7fe67726c04efd5a6d289ef985041f40c511a",
     "authority": "SOURCE_ONLY_NOT_ADOPTED_INSTALLED_QUALIFIED_OR_ACTIVATED"
   },
   "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference."
