@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "program": "ZARI-SPATIAL",
+  "repository": "BeautifulMind-JT/ZARI",
+  "status": "PENDING_NOT_EXECUTABLE",
+  "rule": "Candidate definitions only. Promotion requires separately reviewed and approved plan revision; cross-repository dependencies are not supported by active schema v1.",
+  "nodes": [
+    {
+      "id": "z-multispace-contract",
+      "title": "집·방·가구·구획의 다중 공간 계약",
+      "spec": "목표: 단일 구획에서 집 전체 정리로 확장할 데이터·권위·배정 모델을 정한다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. 공간 계층과 공유 물건/용기의 전역 수량을 정의한다\n2. 공간 간 이동·접근 경로·지원 기하와 unsupported를 구분한다\n3. 기존 단일 구획 데이터의 손실 없는 migration을 정의한다\n\n필수 산출물:\n- 다중 공간 ADR·타입·migration 설계\n- 방 간 중복 배정·이동·unknown fixture 정의\n\n완료 판정/실패 검증:\n1. 같은 물건이 서로 다른 방에 중복 배정되지 않는다\n2. 방 전체 3D와 실제 이동 경로를 구획 AABB 판정으로 대체하지 않는다\n3. 단일 구획 모델과 이전 파일을 읽을 수 있다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-product-contract",
+        "z-inventory-lifecycle"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-multispace-solver",
+      "title": "여러 공간의 전역 배정과 부분 탐색",
+      "spec": "목표: 가정 전체의 수량·사용 빈도·공간 목적을 함께 고려해 배정한다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. 공간 간 배정과 공간 내부 검증을 계층화한다\n2. 사용자 고정·전역 구매 예산·공간별 제약을 연결한다\n3. 결정적 탐색 예산과 독립 수량/접근 validator를 구현한다\n\n필수 산출물:\n- Rust 다중 공간 solver/validator\n- 전체집→구획 drill-down UI\n\n완료 판정/실패 검증:\n1. 예산 소진을 최적해로 표시하지 않는다\n2. 부분 실패 공간 때문에 다른 물건이 사라지지 않는다\n3. native/browser parity와 취소 후 입력 보존을 확인한다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-multispace-contract",
+        "z-incremental-replan"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-primitive-expansion",
+      "title": "서랍·칸막이·선반·벽 수납의 지원 프로파일",
+      "spec": "목표: 수납 방식별 물리적 요구를 검증한 경우에만 추천 범위를 넓힌다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. closedBin/drawerUnit/divider/shelfRiser별 열림·설치·지지 조건을 분리한다\n2. 회전대/매달림/벽 시스템은 고정·하중 근거를 별도 프로파일로 둔다\n3. 지원 불가 후보를 solver에서 제외한다\n\n필수 산출물:\n- primitive별 계약·검증 fixture·catalog 매핑\n- 지원/미지원 이유 UI\n\n완료 판정/실패 검증:\n1. 치수 적합성이 안전 보증으로 표시되지 않는다\n2. 부피 합만으로 내부 적재를 통과시키지 않는다\n3. 실제 검증 없는 프로파일은 추천에 들어가지 않는다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-multispace-contract",
+        "z-catalog-provenance"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-photo-assistance",
+      "title": "사진 보조 입력과 사용자 확인",
+      "spec": "목표: 사진을 물건 분류·입력 보조에 쓰되 실측과 확인을 유지한다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. 로컬/외부 분석 방식과 동의·보존 정책을 먼저 결정한다\n2. 모델 후보와 사용자 확인 사실을 분리한다\n3. 실패·불확실성·지원 불가 결과를 수정 가능한 draft로 가져온다\n\n필수 산출물:\n- 사진 입력 보조 adapter 계약과 UI\n- 동의 취소·추정 거절·오인식 fixture\n\n완료 판정/실패 검증:\n1. 사진 추정 치수가 확정 실측이 되지 않는다\n2. 동의 전 외부 업로드가 없다\n3. AI 출력이 Rust 검증을 우회하지 않는다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-product-contract",
+        "z-privacy-offline"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-supplier-feeds",
+      "title": "다중 브랜드·공급사 카탈로그 연결",
+      "spec": "목표: 공식 공급사 데이터와 판매처 정보를 추적 가능한 방식으로 연결한다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. 허가된 feed/API별 이용 범위·갱신·삭제·옵션 매핑을 정한다\n2. 출처별 충돌·상품 단종·가격 stale을 처리한다\n3. 자체 제품도 동일 Variant/Offer 모델로 수용한다\n\n필수 산출물:\n- 공급사 adapter·변경 검토 큐\n- 출처 충돌/재고 stale/단종 fixture\n\n완료 판정/실패 검증:\n1. 무제한 크롤링이나 실시간 재고를 약속하지 않는다\n2. 공급사 정보도 물리 검증 상태와 분리한다\n3. 제휴/자체 상품의 노출이 적합성 조건을 낮추지 않는다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-catalog-provenance",
+        "z-offer-bundles"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-household-sync",
+      "title": "가족 공유·기기 동기화의 명시적 권한",
+      "spec": "목표: 여러 가족·기기가 같은 정리 계획을 수정해도 소유권과 충돌을 설명한다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. local-first와 선택적 sync의 권위·충돌·접근 범위를 ADR로 정한다\n2. 사진·가정 위치·계정 탈퇴·초대 취소의 데이터 흐름을 정의한다\n3. 오프라인 수정 병합과 채택 snapshot 보호를 검증한다\n\n필수 산출물:\n- 동기화/권한 ADR 및 구현\n- 다기기 충돌·삭제·초대 철회 qualification\n\n완료 판정/실패 검증:\n1. 마지막 저장이 다른 가족의 채택안을 묵시 삭제하지 않는다\n2. 철회한 접근권으로 새 데이터가 전달되지 않는다\n3. cloud 부재에도 로컬 기능이 동작한다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-portable-project",
+        "z-multispace-contract",
+        "z-privacy-offline"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-professional-handoff",
+      "title": "전문 정리 서비스·설치 담당자 협업",
+      "spec": "목표: 집 전체 프로젝트를 전문 담당자와 검토하고 실행 증거를 인계한다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. 측정자/설계자/실행자/사용자별 권한을 구분한다\n2. 의견·대안·실측 변경과 승인 snapshot을 연결한다\n3. 비용 견적·개인정보 공개 범위·최종 인계를 버전 관리한다\n\n필수 산출물:\n- 역할별 협업 화면과 인계 패키지\n- 실측 변경 후 재검수 여정\n\n완료 판정/실패 검증:\n1. 댓글이 물리 판정이나 사용자 승인을 대체하지 않는다\n2. 다른 고객의 프로젝트가 섞이지 않는다\n3. 작업별 현재 근거와 미완료가 추적된다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-household-sync",
+        "z-print-share",
+        "z-multispace-solver"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-optional-native-analytics",
+      "title": "선택적 대규모 카탈로그·네이티브 계산",
+      "spec": "목표: 측정된 필요가 있을 때만 native 데이터 처리와 분석을 추가한다.\n\n작업 묶음: 다음 제품 세대\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. DuckDB/Polars/native solver/GPU 후보를 동일 workload로 비교한다\n2. 기본 WASM에서 선택 의존성을 분리한다\n3. 결과 동일성 또는 별도 프로파일의 품질·비용·fallback을 명시한다\n\n필수 산출물:\n- 선택적 feature ADR와 실측 비교\n- WASM/native 의존성 검사와 적합성 결과\n\n완료 판정/실패 검증:\n1. Python/CUDA/DB가 기본 웹 빌드에 요구되지 않는다\n2. CPU 기준 없는 속도 주장을 하지 않는다\n3. 변경된 병렬 탐색을 deterministic 기준 결과와 혼동하지 않는다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-performance-budget",
+        "z-supplier-feeds"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "z-expanded-release",
+      "title": "확장 세대 전체 검수와 출시 결정 패키지",
+      "spec": "목표: 가정 전체 정리 플랫폼의 선택된 출시 범위를 실제 증거로 닫는다.\n\n작업 묶음: 출시와 운영\n\n설계 근거: docs/MASTER_PROMPT_KO.md §§7–14,24; docs/RUST_ADDENDUM_KO.md; docs/BLUEPRINT.md; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md\n\n구현 범위:\n1. 범위별 기능/기기/실상품/보안/접근성/실사용 증거를 집계한다\n2. 연기한 기능은 별도 scope revision으로 남긴다\n3. 설치·지원·데이터 이동·운영 인계안을 검수한다\n\n필수 산출물:\n- 확장 전체 coverage와 현재 소스의 release 후보\n- 사용자 검수·미해결 항목·운영 안내\n\n완료 판정/실패 검증:\n1. 부분 범위 출시를 전체 완성으로 표시하지 않는다\n2. 보안·실상품·기기 미검증을 NOT_REQUIRED로 면제하지 않는다\n3. 실제 출시 결정 없이 공개 활성화하지 않는다\n\n공통 경계: Rust가 계산·수량·적합성의 단일 권위다. 동일 PlanSnapshot에서 도면/BOM/가이드를 만든다. unknown을 pass/0으로 승격하지 않는다. 기존 불변식과 보존 프롬프트를 바꾸지 않는다. 새 도메인 계약은 선행 ADR의 명시적 채택 후 구현한다. 실상품·사진·클라우드·구매 연결은 출처/동의/실제 검증을 분리한다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "z-local-delivery",
+        "z-multispace-solver",
+        "z-primitive-expansion",
+        "z-photo-assistance",
+        "z-supplier-feeds",
+        "z-household-sync",
+        "z-professional-handoff",
+        "z-optional-native-analytics"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "RELEASE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    }
+  ]
+}
