@@ -10,19 +10,35 @@
       "approval_pointer",
       "registration_scope"
     ],
-    "definition_sha256": "adb470b3fe0be8b9dfe3f1119e02da9cf0b276f42be753b057401ea975e472d1",
-    "node_count": 16
+    "definition_sha256": "d70b7e3a0237f858a3307c8cd2daf082ecb8fbb602cb5132b31bd5e920a4f3ed",
+    "node_count": 36
   },
-  "pending_catalogues": [],
+  "pending_catalogues": [
+    {
+      "path": "docs/aiops/PENDING_NODES.json",
+      "definition_sha256": "bcc8512f8ff9a5852e1b30ef2090264a9ff123281cf30016ae2daf45a371b19c",
+      "node_count": 9
+    }
+  ],
   "finance_subset": null,
-  "candidate_node_count": 16,
+  "candidate_node_count": 45,
   "user_only_nodes": [
     "001",
     "008",
     "010",
     "012",
     "013",
-    "014"
+    "014",
+    "z-product-contract",
+    "z-multispace-contract",
+    "z-multispace-solver",
+    "z-primitive-expansion",
+    "z-photo-assistance",
+    "z-supplier-feeds",
+    "z-household-sync",
+    "z-professional-handoff",
+    "z-optional-native-analytics",
+    "z-expanded-release"
   ],
   "node_definitions": [
     {
@@ -88,6 +104,122 @@
     {
       "id": "016",
       "definition_sha256": "6dafc60641b57c5ef0260a01b8b4ee01aa5eb7832afe355a0be0de7589c3fd3b"
+    },
+    {
+      "id": "z-product-contract",
+      "definition_sha256": "72c41eb7bf8151d8f02f852850e46dd70bc5cd7715cae3e28fc2985ae58c1cda"
+    },
+    {
+      "id": "z-inventory-lifecycle",
+      "definition_sha256": "0bfe18a269e1c754cee30220ed0a227a82d10a28a1a99c8b8c77d34fdada6591"
+    },
+    {
+      "id": "z-catalog-provenance",
+      "definition_sha256": "d435491a827148508c5332f9fd71ecd77e28b586ae2fe96f2592ebef02b092b0"
+    },
+    {
+      "id": "z-offer-bundles",
+      "definition_sha256": "b1e26a52972ff01312680dc57d3756264aa1012ba41622c244b86364e3c1234f"
+    },
+    {
+      "id": "z-strategy-library",
+      "definition_sha256": "21858498f0e51273caeb95adf914b83494f07c34b879fba72722e098a191adbf"
+    },
+    {
+      "id": "z-pareto-comparison",
+      "definition_sha256": "19735c8ff5c53061fe455792950714dcad29d963ad7ee7e975fcac30c5a30387"
+    },
+    {
+      "id": "z-incremental-replan",
+      "definition_sha256": "ac723322614882f981b023dbff92e9ac875518455c1d4bdb7b39bce005b66673"
+    },
+    {
+      "id": "z-search-diagnostics",
+      "definition_sha256": "ae068d7e58e37484dd6265848bc7328e41a7a4ee40b1af7f61c313734cb7a186"
+    },
+    {
+      "id": "z-accessibility-workspace",
+      "definition_sha256": "0ed4a8e12480d6c7ddbfed887edd749ebc40f5eace45fd0ef218a700dc3235ba"
+    },
+    {
+      "id": "z-portable-project",
+      "definition_sha256": "b926e4943cc1fecdc4be30def6c3e97f3b5eaabe39050687fb1bf5bf5e2d5f3f"
+    },
+    {
+      "id": "z-purchase-handoff",
+      "definition_sha256": "39749f4e845078815637cbb5fd67b8ba06667a4272a4e929cb5a6b75a4b7952d"
+    },
+    {
+      "id": "z-execution-checklist",
+      "definition_sha256": "4545141f08903549425e1ea1d5b0ab034950d86c96a543506a59d4d1a6d8c83e"
+    },
+    {
+      "id": "z-location-search",
+      "definition_sha256": "6ebfcf0fa367d267fba2ed5fe375bc23bbe9f9843444c3f8871027b777f56dcc"
+    },
+    {
+      "id": "z-feedback-reorganize",
+      "definition_sha256": "00a28246c12fde3f90db34946e41e7913f793aa90b4dfad735f12fa6eb337f26"
+    },
+    {
+      "id": "z-print-share",
+      "definition_sha256": "0220790c263905266d531cee30d729ca20dc493b7eaa60a9bc1017745e2de45c"
+    },
+    {
+      "id": "z-performance-budget",
+      "definition_sha256": "381014d391f2ea85ef5d9c78871e392f2c4461c9546cccd446c8581c7143a830"
+    },
+    {
+      "id": "z-privacy-offline",
+      "definition_sha256": "5fa77e27df236e66225b73bb8568dd0f20b8e47ddaf751ed6340b6b44f709738"
+    },
+    {
+      "id": "z-guided-onboarding",
+      "definition_sha256": "fa98dcd13e3b15e06c615344593cc840f58b6e662c2fc92e708ed5d25768b59c"
+    },
+    {
+      "id": "z-product-qualification",
+      "definition_sha256": "44817b782ef46420d0b11c523066348987a52034aa4e9d15ee9c3fd222973384"
+    },
+    {
+      "id": "z-local-delivery",
+      "definition_sha256": "1d3e3c7479bd31c7bee5c67f7f0a0f458061a924488f1e3e30f46fb5f7f464cb"
+    },
+    {
+      "id": "z-multispace-contract",
+      "definition_sha256": "8fe82a972bfcb79b96a77d053c37f92783a302feadf024274831a20513d2016a"
+    },
+    {
+      "id": "z-multispace-solver",
+      "definition_sha256": "93dc6ef6b05b130ae0fb3612a48d1ba639cfb1364d65029fe66ffffe3a991eca"
+    },
+    {
+      "id": "z-primitive-expansion",
+      "definition_sha256": "96a7eafb9fdd82ad8f872cf54de1a960cfde3faf9584ae129c27fdb5ded7aa28"
+    },
+    {
+      "id": "z-photo-assistance",
+      "definition_sha256": "3d96890efbd4e34cce5086fa973ab4950fba52a6b3f3fbf06172c63c337cfae6"
+    },
+    {
+      "id": "z-supplier-feeds",
+      "definition_sha256": "07b035a9033e5a012f5fd8b38015dfa233577721d69baa393dddc58ebf8c8a5e"
+    },
+    {
+      "id": "z-household-sync",
+      "definition_sha256": "5dcd6baa01d172c4f5b342144959a5ff2d0fdcbc83dc456ccdfa1341e2045c12"
+    },
+    {
+      "id": "z-professional-handoff",
+      "definition_sha256": "a92febf3ad065d44b12765e98ee9eba1bad6682145960aed66548ed1743a6a6f"
+    },
+    {
+      "id": "z-optional-native-analytics",
+      "definition_sha256": "164d36a9cd87cb26b3da7aec6513b90e3ebfa4ffd99533b1466351ff862629f2"
+    },
+    {
+      "id": "z-expanded-release",
+      "definition_sha256": "b63f6633ebc24f76c493fe995313b3b3b928ff0c3b78f66fa7c058e32ec25951"
     }
   ],
   "definition_document_sha256": {
@@ -95,8 +227,9 @@
     "docs/MEASUREMENT_COMPLETION_DESIGN_KO.md": "71980e213442adf4d9cf9b8bc5763ec3771b5ed59d38c63dcec65206b23d2dd5",
     "docs/PRODUCT_COMPLETION_EVOLUTION_KO.md": "ce0818529d10ce3835155f55396d433f4b877b1976acb02f31350572f74443cc",
     "docs/DOMAIN_MODEL.md": "77a7c29619b33b71c602795ae981b7fa9f285a0e30d638bfa11f9adfcb9dbd0b",
-    "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "61123f99cda2e7c45883157b99614625a7fc23c92a0a0fea5a7dbc1415cefc4f",
-    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "7c862de88028ca0ac077a820db29bcf3a1ed378a3b10d1ec4ad5432fdc137429"
+    "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "9c153e578e5c512928ea6ab163b34cfcf860aab4477f9421a12112baace3d5db",
+    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "7c862de88028ca0ac077a820db29bcf3a1ed378a3b10d1ec4ad5432fdc137429",
+    "docs/aiops/PROGRAM_EXPANSION_20261002_KO.md": "ddc6c474c9e9b9a232cc111b3239837be93abc979f421154a4afd282430cfcf3"
   },
   "approval_evidence": {
     "scope_decision_pointer": "PENDING_EXACT_WHOLE_SCOPE_USER_DECISION",
@@ -108,5 +241,20 @@
     "head": "09e161caa652d75e9617caf632b3b9899be35740",
     "authority": "SOURCE_ONLY_NOT_ADOPTED_INSTALLED_QUALIFIED_OR_ACTIVATED"
   },
-  "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference."
+  "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference.",
+  "authoring_request": {
+    "date_kst": "2026-10-02",
+    "instruction": "네 제품의 .aiops/program.json을 원대하고 자세히 작성",
+    "prior_start_decision": "https://github.com/BeautifulMind-JT/ai-ops-control-plane/issues/57",
+    "existing_start_pr": "https://github.com/BeautifulMind-JT/ZARI/pull/39",
+    "existing_start_head": "dbbf3d9b33602011065dc221732d4b0a2a2a85b3",
+    "observed_main": "0fd69ac4aa9d24adfe7de3e7c0d2a2cd6fba2dac",
+    "authority": "PLAN_AUTHORING_ONLY_NOT_EXPANDED_START_OR_RELEASE_APPROVAL"
+  },
+  "validation_reader": {
+    "repository": "BeautifulMind-JT/ai-ops-control-plane",
+    "source_sha": "a34a38b73f096c9f6597b38a111d95ca12ecd159",
+    "path": "engineering/scripts/control_plane_program.py",
+    "authority": "SOURCE_FORMAT_CHECK_ONLY"
+  }
 }
