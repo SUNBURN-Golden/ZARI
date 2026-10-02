@@ -3,7 +3,7 @@
   "program": "ZARI-SPATIAL",
   "repository": "BeautifulMind-JT/ZARI",
   "project": "ZARI",
-  "approval_pointer": "PENDING_EXPANDED_SCOPE_REVIEW_DO_NOT_DISPATCH",
+  "approval_pointer": "https://github.com/BeautifulMind-JT/ai-ops-control-plane/issues/58",
   "authoritative_doc_pointers": "AGENTS.md ; docs/SPATIAL_INTERACTION_PLAN.md ; docs/SPATIAL_VIEW_CONTRACT.md ; design/SPATIAL_WORKSPACE.md ; docs/SPATIAL_VERIFICATION.md ; docs/AIOPS_SPATIAL_EXECUTION_PLAN.md ; docs/AIOPS_SPATIAL_HANDOFF.md ; docs/DOMAIN_MODEL.md ; docs/WASM_PROTOCOL.md ; docs/PERSISTENCE.md ; DESIGN.md ; design/DECISIONS.md ; docs/ARCHITECTURE.md ; docs/TEST_STRATEGY.md (read at the plan commit) ; docs/aiops/PROGRAM_ASTRA_DELEGATION.md (immutable plan commit) ; docs/MEASUREMENT_COMPLETION_DESIGN_KO.md (immutable candidate plan commit) ; docs/PRODUCT_COMPLETION_EVOLUTION_KO.md (immutable candidate plan commit) ; docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json (non-executable candidate source; original seven-node sidecar is historical) ; docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md (full candidate scope; pending adoption) ; NON_EXECUTABLE_DRAFT: docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json ; docs/aiops/PROGRAM_EXPANSION_20261002_KO.md (expanded candidate; source and acceptance scope, not execution approval) ; docs/aiops/PENDING_NODES.json (NON_EXECUTABLE pending catalogue; do not erase cross-repository prerequisites)",
   "nodes": [
     {
