@@ -1,3 +1,33 @@
+# 2026-10-06 — ZARI-SPATIAL-005 읽기 전용 구획 3D
+
+정본은 GitHub issue #51, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-005`이다. 관찰한 base SHA는 `dd726ef30e20f95f1d2f03c082462dc019a0b118`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+구현:
+
+- 같은 verified/conditional 투영을 구획 절개 3D로 본다. 좌표는 `(X, Y, Z) = (x, z, -y) / 1000` 미터이고, yaw가 적용된 world box를 다시 돌리지 않는다. 높이·오프셋 미확인과 두께 없는 면은 입체로 만들지 않는다. 벽은 경계 평면이다.
+- 선택·BOM·검사·현재 단계는 002–004의 `WorkspaceState` 그대로다. 카메라·절개·줌은 스냅샷을 고치거나 이동 명령을 보내지 않는다. 뷰를 바꿔도 focus와 source가 남는다.
+- Three.js `0.186.1`과 `@types/three` `0.186.0`만 exact pin했다. `@types/three@0.186.1`은 레지스트리에 없다. R3F·Drei·WebGPU·원격 asset은 없다. 청크는 첫 “입체” 클릭 때 로컬에서만 로드되고, 프로덕션 HTML은 그 청크를 preload하지 않는다. `zari-build.json`에는 기존 out-dir 순회로 들어 있다.
+- WebGL·청크·context 실패는 2D로 남긴다. 계획 작업대 안에서는 2D/3D를 오가도 렌더러를 다시 만들지 않고, 실패하거나 작업대가 빠질 때 정리한다. 유휴 상태에서는 프레임을 그리지 않는다.
+- `docs/ARCHITECTURE.md`, `docs/FRONTEND.md` 물리 작업대 표, `design/DECISIONS.md` D007에 pin과 SVG/2D fallback을 적었다. 새 색 토큰은 없다. Rust·fixture·생성 계약·`Cargo.lock`은 바꾸지 않았다.
+
+이 머신에서 실행한 검증(통과):
+
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- `cargo test --workspace --locked`: 83개 (core lib 19, bootstrap 9, domain 11, edit 6, protocol 13, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 107건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`
+- `npm run wasm:build`, `npm run contracts:check` (107), `npm run typecheck`, `npm run lint`, `npm test` (vitest 12 files / 105), `npm run build`, `node scripts/check-design-tokens.mjs --self-test` (39/39)
+- `npm run test:browser -- --project=chromium`: 53 passed (37.7s). `spatial3d.spec.ts` 4건 포함. 이 실행에서 PR #38 프로젝트 시작 flake는 재현되지 않았다.
+- Firefox와 WebKit에서 `spatial3d.spec.ts` 각 4 passed. 세 엔진 모두 headless WebGL로 3D 경로가 열렸다. WebKit은 오프라인 reload를 하지 않고 캐시만 확인했다.
+- `npm run test:parity`: native↔Chromium, parity 2 passed (14.8s)
+
+측정: 프로덕션 `SpatialView` 청크 raw 576,274바이트, gzip 143,511바이트(140.15 KiB), Brotli 118,053바이트(115.29 KiB). 250 KiB 목표 이내. 클릭→ready는 Chromium 827 ms, Firefox 550 ms, WebKit 602 ms(목표 1000 ms 이내, 로컬 preview 1회). `renderer.render`는 0.3–1 ms. 클릭부터 다음 `data-renders`까지는 React·Playwright가 포함되어 46–167 ms이며 16 ms 프레임 목표로 치지 않는다. 5초 유휴 동안 렌더 횟수는 그대로였다. 20회 전환에서 geometry 수는 3으로 유지됐다.
+
+하지 않은 것: 노드 006–007, 3D 편집, 실기기, 전용 GPU 타이밍. 샘플 계획에는 `배치 N곳` BOM 줄이 없다. 다중 배치 강조는 단위 테스트가 담당한다. 상세는 `docs/evidence/ZARI-SPATIAL-005.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 006은 이 읽기 전용 3D 위에서 이어진다.
+
 # 2026-10-06 — ZARI-SPATIAL-004 실행 단계 focus와 accepted-progress 정합
 
 정본은 GitHub issue #49, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-004`이다. 관찰한 base SHA는 `58d1edb11fdb8902c47ca29ce25a7a13f25252ba`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

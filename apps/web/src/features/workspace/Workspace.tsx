@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
 import type { LayoutEditCommand, SnapshotContent, SpatialProjection, SpatialTarget } from '../../contracts/generated/dto';
 import type { RectVm } from '../plan/projection';
 import { spaceFrame } from '../plan/projection';
@@ -26,6 +26,11 @@ import {
   type PlaneView,
   type Viewport,
 } from './viewport';
+import type { SpatialHandle } from '../spatial3d/SpatialView';
+
+const SpatialView = lazy(() => import('../spatial3d/SpatialView'));
+
+type SpatialFailure = 'import' | 'webgl_unavailable' | 'context_lost';
 
 export function useWorkspace(binding: DisplayBinding) {
   const [state, setState] = useState(() => initialWorkspace(binding));
@@ -108,6 +113,10 @@ export function PlanWorkspace({
   const coarse = useCoarsePointer();
   const explicit = band === 'compact' || coarse;
   const [mode, setMode] = useState<'select' | 'move' | 'pan'>('select');
+  const [spatialDown, setSpatialDown] = useState<SpatialFailure | null>(null);
+  const [spatialArmed, setSpatialArmed] = useState(false);
+  const [spatialRetry, setSpatialRetry] = useState(0);
+  const spatialRef = useRef<SpatialHandle>(null);
   const [spacePan, setSpacePan] = useState(false);
   const [preview, setPreview] = useState<MmPoint | null>(null);
   const [phase, setPhase] = useState<'idle' | 'armed' | 'preview'>('idle');
@@ -116,8 +125,12 @@ export function PlanWorkspace({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const active: PlaneView = state.view === 'front' ? 'front' : 'top';
+  const spatialShowing = state.view === 'spatial' && spatialDown === null;
+  const moveAllowed = state.view === 'top' || (state.view === 'spatial' && spatialDown !== null);
   const directMove = !explicit && mode !== 'pan';
-  const moveOn = Boolean(placement && nominal && !gestureBlocked && !editLocked && (mode === 'move' || directMove));
+  const moveOn = Boolean(
+    placement && nominal && !gestureBlocked && !editLocked && moveAllowed && (mode === 'move' || directMove),
+  );
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -132,9 +145,42 @@ export function PlanWorkspace({
     setPorts((current) => ({ ...current, [view]: next }));
   }
 
+  function showPlane(view: 'top' | 'front') {
+    workspace.setView(view);
+  }
+
+  function zoomClicked(factor: number) {
+    if (spatialShowing) {
+      spatialRef.current?.zoom(factor);
+      return;
+    }
+    zoomActive(projection, active, ports[active], factor, setPort);
+  }
+
+  function fitClicked() {
+    if (spatialShowing) {
+      spatialRef.current?.fit();
+      return;
+    }
+    setPort(active, fitViewport());
+  }
+
   function onZoomKey(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     if (isTypingTarget(target)) return;
+    if (spatialShowing) {
+      if (event.key === '+' || event.key === '=') {
+        event.preventDefault();
+        spatialRef.current?.zoom(ZOOM_STEP);
+      } else if (event.key === '-' || event.key === '_') {
+        event.preventDefault();
+        spatialRef.current?.zoom(1 / ZOOM_STEP);
+      } else if (event.key === '0') {
+        event.preventDefault();
+        spatialRef.current?.fit();
+      }
+      return;
+    }
     if (event.key === ' ' || event.code === 'Space') {
       if (event.target instanceof Element && event.target.closest('.plan-diagram')) {
         event.preventDefault();
@@ -225,25 +271,39 @@ export function PlanWorkspace({
       data-band={band}
       data-canvas-mode={mode}
       data-pointer={explicit ? 'explicit' : 'direct'}
+      data-view={state.view}
       data-move={moveOn ? 'on' : 'off'}
       data-gesture-phase={phase}
       onKeyDown={onZoomKey}
       onKeyUp={onZoomKeyUp}
     >
       <div className="workspace-toolbar" role="toolbar" aria-label="도면">
-        <button type="button" className="button button-quiet" aria-pressed={active === 'top'} data-testid="view-top" onClick={() => workspace.setView('top')}>
+        <button type="button" className="button button-quiet" aria-pressed={state.view === 'top'} data-testid="view-top" onClick={() => showPlane('top')}>
           평면
         </button>
-        <button type="button" className="button button-quiet" aria-pressed={active === 'front'} data-testid="view-front" onClick={() => workspace.setView('front')}>
+        <button type="button" className="button button-quiet" aria-pressed={state.view === 'front'} data-testid="view-front" onClick={() => showPlane('front')}>
           정면
         </button>
-        <button type="button" className="button button-quiet" data-testid="zoom-out" onClick={() => zoomActive(projection, active, ports[active], 1 / ZOOM_STEP, setPort)}>
+        <button
+          type="button"
+          className="button button-quiet"
+          aria-pressed={state.view === 'spatial'}
+          data-testid="view-spatial"
+          onClick={() => {
+            setSpatialArmed(true);
+            setSpatialDown(null);
+            workspace.setView('spatial');
+          }}
+        >
+          입체
+        </button>
+        <button type="button" className="button button-quiet" data-testid="zoom-out" onClick={() => zoomClicked(1 / ZOOM_STEP)}>
           축소
         </button>
-        <button type="button" className="button button-quiet" data-testid="zoom-in" onClick={() => zoomActive(projection, active, ports[active], ZOOM_STEP, setPort)}>
+        <button type="button" className="button button-quiet" data-testid="zoom-in" onClick={() => zoomClicked(ZOOM_STEP)}>
           확대
         </button>
-        <button type="button" className="button button-quiet" data-testid="zoom-fit" onClick={() => setPort(active, fitViewport())}>
+        <button type="button" className="button button-quiet" data-testid="zoom-fit" onClick={fitClicked}>
           맞춤
         </button>
         <button
@@ -251,7 +311,7 @@ export function PlanWorkspace({
           className="button button-quiet"
           aria-pressed={mode === 'move'}
           data-testid="mode-move"
-          disabled={!placement || editLocked || gestureBlocked || active !== 'top'}
+          disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
           onClick={() => enterMode('move')}
         >
           평면에서 이동
@@ -322,7 +382,40 @@ export function PlanWorkspace({
       )}
       <div className="plan-workspace-body">
         <div className="plan-stage">
-          <div className="plan-diagrams">
+          {state.view === 'spatial' && spatialDown && (
+            <SpatialFallback
+              reason={spatialDown}
+              onPlane={() => showPlane('top')}
+              onRetry={() => {
+                setSpatialDown(null);
+                setSpatialRetry((value) => value + 1);
+              }}
+            />
+          )}
+          {state.view === 'spatial' && !spatialDown && !projection && (
+            <p className="session-note" data-testid="spatial-waiting">
+              배치 투영을 기다리는 중입니다. 목록은 사용할 수 있습니다.
+            </p>
+          )}
+          {spatialArmed && spatialDown === null && projection && (
+            <div hidden={!spatialShowing}>
+              <SpatialBoundary resetKey={spatialRetry} onFail={() => setSpatialDown('import')}>
+                <Suspense fallback={<p data-testid="spatial-loading">입체 보기를 불러오는 중</p>}>
+                  <SpatialView
+                    ref={spatialRef}
+                    projection={projection}
+                    content={content}
+                    selection={state.selection}
+                    focus={state.focus}
+                    layers={state.layers}
+                    onSelect={onSelect}
+                    onFatal={setSpatialDown}
+                  />
+                </Suspense>
+              </SpatialBoundary>
+            </div>
+          )}
+          <div className="plan-diagrams" hidden={spatialShowing}>
             <PlanDiagram
               content={content}
               projection={projection}
@@ -389,7 +482,7 @@ export function PlanWorkspace({
                   className="button button-secondary"
                   aria-pressed={mode === 'move'}
                   data-testid="mode-move"
-                  disabled={!placement || editLocked || gestureBlocked || active !== 'top'}
+                  disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
                   onClick={() => enterMode('move')}
                 >
                   평면에서 이동
@@ -462,3 +555,58 @@ function useLayoutBand(): 'compact' | 'medium' | 'wide' {
 }
 
 export type { RectVm };
+
+function SpatialFallback({
+  reason,
+  onPlane,
+  onRetry,
+}: {
+  reason: SpatialFailure;
+  onPlane: () => void;
+  onRetry: () => void;
+}) {
+  const text =
+    reason === 'context_lost'
+      ? '그래픽 연결이 끊겨 입체 보기를 멈췄습니다.'
+      : reason === 'import'
+        ? '입체 보기 파일을 불러오지 못했습니다.'
+        : '이 브라우저에서는 WebGL을 쓸 수 없어 입체 보기를 열지 못했습니다.';
+  return (
+    <div className="notice notice-error" role="alert" data-testid="spatial-fallback" data-reason={reason}>
+      <p>{text}</p>
+      <p>평면·정면·목록·구매·숫자 편집·단계 완료는 그대로 사용할 수 있습니다.</p>
+      <div className="form-actions">
+        <button type="button" className="button button-secondary" data-testid="spatial-use-2d" onClick={onPlane}>
+          평면으로 보기
+        </button>
+        <button type="button" className="button button-quiet" data-testid="spatial-retry" onClick={onRetry}>
+          입체 보기 다시 시도
+        </button>
+      </div>
+    </div>
+  );
+}
+
+class SpatialBoundary extends Component<
+  { resetKey: number; onFail: () => void; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  componentDidCatch(): void {
+    this.props.onFail();
+  }
+
+  componentDidUpdate(prev: { resetKey: number }): void {
+    if (prev.resetKey !== this.props.resetKey && this.state.failed) this.setState({ failed: false });
+  }
+
+  render(): ReactNode {
+    if (this.state.failed) return null;
+    return this.props.children;
+  }
+}

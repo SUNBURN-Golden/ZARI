@@ -81,7 +81,7 @@ export function rectFromBox(
   return { x: min[0], y: y0, width, height };
 }
 
-function elementLabel(content: SnapshotContent, element: SpatialElement): string {
+export function elementLabel(content: SnapshotContent, element: SpatialElement): string {
   const target = element.target;
   if (target.kind === 'placement') {
     const placement = content.placements.find((item) => item.id === target.placementId);

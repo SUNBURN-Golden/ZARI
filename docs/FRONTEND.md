@@ -235,7 +235,7 @@ React Aria Components is the primary composite-control foundation; native HTML p
 | Select/ComboBox | React Aria when richer interaction is needed | Exact IDs, synthetic labeling and allowed choices |
 | Dialog/popover | React Aria Modal/Dialog/Popover | Context, focus return, recovery content and mobile sheet sizing |
 | BOM/data | Native table/list/definition list | Same snapshot data, responsive labeling, unknown completeness |
-| Physical workspace | Custom SVG plus native text/numeric controls | Coordinates, ghost, commands, domain validation and accessible equivalent |
+| Physical workspace | Custom SVG for editing; optional read-only Three.js 0.186.1 cutaway under [D007](../design/DECISIONS.md#d007--읽기-전용-3d-절개-보기에-threejs-도입--채택) (`@types/three` 0.186.0) | Coordinates, ghost, commands, domain validation and accessible equivalent. SVG and the text list remain the fallback when WebGL, the chunk, or the context fails. The 3D view does not edit. |
 
 Use TextField instead of NumberField for physical measurement entry. TextField gives a string interface; numeric controls introduce number formatting/stepping behavior that is not ZARI's exact-decimal normalization. Neither React Aria nor Base UI NumberField is a replacement for the Rust contract. [React Aria TextField](https://react-aria.adobe.com/TextField), [React Aria NumberField](https://react-aria.adobe.com/NumberField), [Base UI Number Field](https://base-ui.com/react/components/number-field)
 

@@ -7,6 +7,10 @@
     "dexie": "4.4.6",
     "react": "19.3.0",
     "react-aria-components": "1.21.1",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.186.0"
   }
 }
