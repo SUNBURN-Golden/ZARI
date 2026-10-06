@@ -299,6 +299,7 @@ export function PlanWorkspace({
       <p className="workspace-legend" data-testid="workspace-legend">
         <span className="legend-selection">선택됨</span>
         <span className="legend-focus">목록 강조</span>
+        <span className="legend-step">현재 단계 대상</span>
       </p>
       <p className="session-note" data-testid="drag-quantum">
         드래그는 1mm 단위 · 정확한 값은 좌표 입력

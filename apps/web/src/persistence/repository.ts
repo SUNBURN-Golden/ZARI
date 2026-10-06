@@ -92,7 +92,17 @@ export type ActionStepResult =
   /** Done requires every prerequisite step to be done first. */
   | { status: 'blocked_prerequisites'; missing: string[] }
   /** Clearing a step is refused while dependent steps are still done. */
-  | { status: 'blocked_dependents'; dependents: string[] };
+  | { status: 'blocked_dependents'; dependents: string[] }
+  /**
+   * The accepted binding is not the project's current input. Progress stays
+   * on the old binding; nothing is written.
+   */
+  | { status: 'stale_input' }
+  /**
+   * The step names confirmations this app does not record. Completion is
+   * refused rather than stored as a pass.
+   */
+  | { status: 'confirmation_required' };
 export type OwnedSaveResult =
   | { status: 'saved'; revision: string }
   | { status: 'conflict'; revision: string };
@@ -824,8 +834,11 @@ export class ProjectRepository {
   }
   /**
    * One action-step toggle bound to the project's accepted immutable
-   * snapshot. Completion requires every declared prerequisite step to be
-   * done; clearing is refused while dependents stay done. CAS on
+   * snapshot. The transaction also requires that binding to still be the
+   * current input revision and digest. Completion requires every declared
+   * prerequisite to be done, and refuses a step that lists confirmations
+   * this store cannot record. Clearing is refused while dependents stay
+   * done. A refused write leaves existing rows untouched. CAS on
    * `projectRevision` like every other project write.
    */
   setActionStep(args: {
@@ -860,9 +873,19 @@ export class ProjectRepository {
             ]);
             if (rawSnapshot === undefined) return { status: 'not_accepted' };
             const snapshot = readSnapshotRow(rawSnapshot).snapshot;
+            if (
+              project.currentInputRevision !== args.inputRevision ||
+              project.currentInputDigest === null ||
+              snapshot.content.versions.inputDigest !== project.currentInputDigest
+            ) {
+              return { status: 'stale_input' };
+            }
             const actions = snapshot.content.actions;
             const step = actions.find((a) => a.id === args.stepId);
             if (step === undefined) return { status: 'unknown_step' };
+            if (args.done && step.requiredConfirmations.length > 0) {
+              return { status: 'confirmation_required' };
+            }
             const progress = new Map(
               (
                 await this.db.actionProgress

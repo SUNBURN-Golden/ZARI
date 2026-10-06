@@ -447,9 +447,43 @@
   padding: 0 var(--zari-space-2);
 }
 
-.legend-focus {
+.legend-focus,
+.legend-step {
   outline: 1px dashed var(--zari-info);
   padding: 0 var(--zari-space-2);
+}
+
+.guide-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  margin: var(--zari-space-2) 0;
+}
+
+.guide-nav .button {
+  min-height: var(--zari-control-min-height);
+}
+
+.guide-step {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.guide-step-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  align-items: center;
+  width: 100%;
+}
+
+.guide-step-row .button {
+  min-height: var(--zari-control-min-height);
+}
+
+.step-current {
+  outline: 1px dashed var(--zari-info);
+  outline-offset: 2px;
 }
 
 .plan-workspace-body {
@@ -589,6 +623,8 @@
   }
   .diagram-focus,
   .legend-focus,
+  .legend-step,
+  .step-current,
   .diagram-contained,
   .diagram-obstacle,
   .diagram-unknown,

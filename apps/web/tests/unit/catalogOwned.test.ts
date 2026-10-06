@@ -261,6 +261,8 @@ async function seedAccepted(repo: ProjectRepository) {
   });
   await repo.db.projects.update(project.projectId, {
     accepted: { inputRevision: '1', planSnapshotId: snapshot.planSnapshotId },
+    currentInputRevision: '1',
+    currentInputDigest: snapshot.content.versions.inputDigest,
   });
   return { project, snapshot };
 }
@@ -301,4 +303,74 @@ it('action progress enforces prerequisites, dependents, and exact binding', asyn
     ['act-1', 'done'],
     ['act-2', 'done'],
   ]);
+});
+
+it('progress writes do not change the snapshot and refuse a stale input or a confirmation', async () => {
+  const { repo } = world();
+  const { project, snapshot } = await seedAccepted(repo);
+  const before = JSON.stringify(snapshot);
+  const args = {
+    projectId: project.projectId,
+    inputRevision: '1',
+    planSnapshotId: snapshot.planSnapshotId,
+  };
+  const saved = await repo.setActionStep({ ...args, stepId: 'act-1', done: true });
+  expect(saved.status).toBe('saved');
+  const stored = await repo.db.snapshots.get([
+    project.projectId,
+    '1',
+    snapshot.planSnapshotId,
+  ]);
+  expect(JSON.stringify(stored?.snapshot)).toBe(before);
+  expect(stored?.snapshot.planSnapshotId).toBe(snapshot.planSnapshotId);
+  expect(stored?.snapshot.content.bom).toEqual(snapshot.content.bom);
+  expect(stored?.snapshot.content.placements).toEqual(snapshot.content.placements);
+
+  const digest = snapshot.content.versions.inputDigest;
+  const otherDigest = digest.startsWith('d') ? 'e'.repeat(64) : 'd'.repeat(64);
+  await repo.db.projects.update(project.projectId, { currentInputDigest: otherDigest });
+  const stale = await repo.setActionStep({ ...args, stepId: 'act-2', done: true });
+  expect(stale).toEqual({ status: 'stale_input' });
+  const afterStale = await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
+  expect(afterStale.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
+
+  await repo.db.projects.update(project.projectId, { currentInputDigest: digest });
+  const raw = await repo.db.snapshots.get([project.projectId, '1', snapshot.planSnapshotId]);
+  const next = structuredClone(raw!.snapshot);
+  const step = next.content.actions.find((item) => item.id === 'act-2');
+  if (!step) throw new Error('missing act-2');
+  step.requiredConfirmations = ['confirm-1'];
+  await repo.db.snapshots.put({ ...raw!, snapshot: next });
+  const blocked = await repo.setActionStep({ ...args, stepId: 'act-2', done: true });
+  expect(blocked).toEqual({ status: 'confirmation_required' });
+  const still = await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
+  expect(still.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
+  expect(JSON.stringify((await repo.db.snapshots.get([project.projectId, '1', snapshot.planSnapshotId]))?.snapshot.content.placements)).toBe(
+    JSON.stringify(snapshot.content.placements),
+  );
+});
+
+it('a second tab cannot overwrite action progress under a stale revision', async () => {
+  const db = new ZariDb(`test-${crypto.randomUUID()}`);
+  const tabA = new ProjectRepository(db);
+  const tabB = new ProjectRepository(db);
+  const { project, snapshot } = await seedAccepted(tabA);
+  const args = {
+    projectId: project.projectId,
+    inputRevision: '1',
+    planSnapshotId: snapshot.planSnapshotId,
+    stepId: 'act-2',
+    done: true,
+  };
+  // Tab B caches the current revision, then loses the race.
+  expect(await tabB.setActionStep(args)).toEqual({
+    status: 'blocked_prerequisites',
+    missing: ['act-1'],
+  });
+  expect(await tabA.setActionStep({ ...args, stepId: 'act-1' })).toMatchObject({ status: 'saved' });
+  expect(await tabB.setActionStep({ ...args, stepId: 'act-1', done: false })).toEqual({
+    status: 'conflict',
+  });
+  const rows = await tabA.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
+  expect(rows.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
 });

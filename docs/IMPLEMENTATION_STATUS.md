@@ -1,3 +1,29 @@
+# 2026-10-06 — ZARI-SPATIAL-004 실행 단계 focus와 accepted-progress 정합
+
+정본은 GitHub issue #49, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-004`이다. 관찰한 base SHA는 `58d1edb11fdb8902c47ca29ce25a7a13f25252ba`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+구현:
+
+- 실행 단계 focus는 기존 `WorkspaceState`의 `{ kind: 'action', stepId }`를 그대로 쓴다. 이전/다음과 “다음 실행 단계”는 focus만 바꾸고 Worker를 부르지 않는다. 단계 대상은 투영 링크의 step id와 같고, 반복 수납은 `unitOrdinal`로 남는다. 미배치·기하 없음은 문구만 보이고 상자를 만들지 않는다.
+- 완료 체크는 현재 수락본이면서 현재 입력(revision + digest)이고, 진행 기록을 읽은 뒤에만 쓸 수 있다. 작업 head와 미채택 대안은 읽기 전용이며 수락본의 done을 표시하지 않는다. null 진행은 unknown이고 전부 미완료로 바꾸지 않는다. `requiredConfirmations`가 있으면 완료를 막는다. 물리 확인 절차는 만들지 않았다.
+- 저장은 기존 `actionProgress` 행이다. 스키마·스토어·export는 그대로다. 거절된 쓰기(선행/후행, `stale_input`, `confirmation_required`, CAS 충돌)는 기존 done 행을 남긴다. 수락 전환 뒤 늦게 도착한 완료 응답은 새 맵에 합치지 않는다. 진행 저장은 PlanSnapshot·해시·BOM·기하를 바꾸지 않는다.
+- 단계 강조는 기존 `--zari-info` 점선이다. 선택 실선과 구분된다. 새 색 토큰은 없다. Rust·fixture·생성 계약·`Cargo.lock`은 바꾸지 않았다.
+
+이 머신에서 실행한 검증(통과):
+
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- `cargo test --workspace --locked`: 83개 (core lib 19, bootstrap 9, domain 11, edit 6, protocol 13, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 107건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`
+- `npm run wasm:build`, `npm run contracts:check` (107), `npm run typecheck`, `npm run lint`, `npm test` (vitest 11 files / 95), `npm run build`, `node scripts/check-design-tokens.mjs --self-test` (39/39)
+- `npm run test:browser -- --project=chromium`: 49 passed (30.6s). `progress.spec.ts` 3건은 수락→단계→막힘→저장/새로고침, 작업 head→수락 전환→늦은 응답, 두 탭 충돌/새로고침→stale 입력을 포함한다. 콘솔 error와 pageerror는 비어 있었다. 이 실행에서 PR #38 프로젝트 시작 flake는 재현되지 않았다.
+- `npm run test:parity`: native↔Chromium 107 fixture, parity 2 passed
+
+하지 않은 것: 노드 005–007, 3D, 업무 단계 재생성, 진행 스키마 이전, 클라우드. 샘플 생산자는 `requiredConfirmations`가 비어 있어 브라우저에 확인 단계가 나오지 않는다. 그 거절은 저장소 테스트가 담당한다. 디스크 쓰기 실패의 retry는 세션 단위 테스트로 확인했고 브라우저에서 IndexedDB 실패를 주입하지는 않았다. 390px는 에뮬레이션이지 실기기가 아니다. 증거 그림은 추가하지 않았다. 상세는 `docs/evidence/ZARI-SPATIAL-004.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 005는 이 단계 focus 위에서 읽기 전용 3D를 다룬다.
+
 # 2026-10-06 — ZARI-SPATIAL-003 평면 드래그와 동등한 숫자·키보드 편집
 
 정본은 GitHub issue #47, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-003`이다. 관찰한 base SHA는 `e6858355811ce1a9234fd86c280daf5c10ac3a68`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
