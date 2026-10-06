@@ -95,10 +95,9 @@ export function PlanDiagram({
 }: PlanDiagramProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const planeRef = useRef<SVGGElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
   const frame = projection && status === 'ready' ? spaceFrame(projection, view) : null;
   const pad = viewPad(view);
-  const pointer = useCanvasGesture(svgRef, planeRef, {
+  const pointer = useCanvasGesture(planeRef, {
     enabledMove: interaction?.enabledMove ?? false,
     enabledPan: interaction?.enabledPan ?? false,
     placementId: interaction?.placementId ?? null,
@@ -178,7 +177,7 @@ export function PlanDiagram({
   return (
     <div ref={hostRef} data-active={active ? 'true' : undefined}>
       <svg
-        ref={svgRef}
+        ref={pointer.bindSvg}
         className="plan-diagram"
         data-testid={testId}
         data-view={view}

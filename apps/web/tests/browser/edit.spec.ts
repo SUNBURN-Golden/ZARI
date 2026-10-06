@@ -100,11 +100,16 @@ test('editing is verified by Rust: provisional ghost → verified snapshot → u
 
   // Keyboard parity: Ctrl+Z / Ctrl+Shift+Z drive undo/redo from the focused
   // diagram surface; each is a fresh Rust-verified restoreLayout request.
+  // Wait until the history button is enabled so the shortcut is not sent
+  // while the previous save is still in flight. The saving-window case is
+  // covered by the session unit test.
+  await expect(page.getByTestId('undo-edit')).toBeEnabled();
   await page.getByTestId('plan-detail').first().focus();
   await page.keyboard.press('Control+z');
   await expect(page.getByTestId('undo-edit')).toContainText('(0)', {
     timeout: 15000,
   });
+  await expect(page.getByTestId('redo-edit')).toBeEnabled();
   await page.keyboard.press('Control+Shift+z');
   await expect(page.getByTestId('undo-edit')).toContainText('(1)', {
     timeout: 15000,

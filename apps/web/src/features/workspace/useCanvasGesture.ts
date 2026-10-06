@@ -1,4 +1,4 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import type { LayoutEditCommand } from '../../contracts/generated/dto';
 import {
   beginMove,
@@ -62,12 +62,14 @@ function hitSelectedSlop(svg: SVGSVGElement, placementId: string, client: Client
  * Pointer capture, threshold, and one command on pointerup.
  * pointermove only stores the latest sample and paints it on the next frame.
  */
-export function useCanvasGesture(
-  svgRef: RefObject<SVGSVGElement | null>,
-  planeRef: RefObject<SVGGElement | null>,
-  host: GestureHost,
-) {
+export function useCanvasGesture(planeRef: RefObject<SVGGElement | null>, host: GestureHost) {
   const hostRef = useRef(host);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [svgEl, setSvgEl] = useState<SVGSVGElement | null>(null);
+  const bindSvg = useCallback((node: SVGSVGElement | null) => {
+    svgRef.current = node;
+    setSvgEl(node);
+  }, []);
   hostRef.current = host;
   const gesture = useRef<Gesture | null>(null);
   const fenceAtStart = useRef<string>('');
@@ -172,19 +174,6 @@ export function useCanvasGesture(
     window.addEventListener('pointermove', onWindowMove);
     window.addEventListener('pointerup', onWindowUp);
     window.addEventListener('pointercancel', onWindowCancel);
-    const svg = svgRef.current;
-    let width = svg?.clientWidth ?? 0;
-    let height = svg?.clientHeight ?? 0;
-    const observer =
-      svg && typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => {
-            if (svg.clientWidth === width && svg.clientHeight === height) return;
-            width = svg.clientWidth;
-            height = svg.clientHeight;
-            if (gesture.current) cancel();
-          })
-        : null;
-    if (svg && observer) observer.observe(svg);
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('blur', onBlur);
@@ -194,10 +183,24 @@ export function useCanvasGesture(
       window.removeEventListener('pointermove', onWindowMove);
       window.removeEventListener('pointerup', onWindowUp);
       window.removeEventListener('pointercancel', onWindowCancel);
-      observer?.disconnect();
       cancelRaf();
     };
-  }, [svgRef]);
+  }, []);
+
+  useEffect(() => {
+    const svg = svgEl;
+    if (!svg || typeof ResizeObserver === 'undefined') return;
+    let width = svg.clientWidth;
+    let height = svg.clientHeight;
+    const observer = new ResizeObserver(() => {
+      if (svg.clientWidth === width && svg.clientHeight === height) return;
+      width = svg.clientWidth;
+      height = svg.clientHeight;
+      if (gesture.current) cancel();
+    });
+    observer.observe(svg);
+    return () => observer.disconnect();
+  }, [svgEl]);
 
   function onPointerDown(event: ReactPointerEvent<SVGSVGElement>) {
     const live = hostRef.current;
@@ -317,5 +320,5 @@ export function useCanvasGesture(
     cancel: onPointerCancel,
   };
 
-  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture, cancel };
+  return { bindSvg, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture, cancel };
 }

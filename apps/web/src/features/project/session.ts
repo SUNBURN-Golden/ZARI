@@ -191,6 +191,8 @@ export class ProjectSession {
   private snapshotIndex = new Map<string, PlanSnapshot>();
   /** Monotonic edit token: a late reply older than the newest request dies. */
   private editSeq = 0;
+  /** Latest undo/redo shortcut pressed while a command is pending or its save is in flight. */
+  private historyIntent: 'undo' | 'redo' | null = null;
   /** Drops a projection reply after close or a replaced session mount. */
   private projectionMounted = 0;
   private projectionCache = new ProjectionCache();
@@ -1148,6 +1150,18 @@ export class ProjectSession {
     const edit = this.state.plan.edit;
     if (edit.persist?.kind === persist?.kind) return;
     this.patchPlan({ edit: { ...edit, persist } });
+    this.flushHistoryIntent();
+  }
+  /**
+   * Keyboard undo/redo arrives while the toolbar buttons are still disabled.
+   * Keep the latest shortcut and run it once the edit is neither pending nor saving.
+   */
+  private flushHistoryIntent(): void {
+    const intent = this.historyIntent;
+    if (!intent || this.editLocked()) return;
+    this.historyIntent = null;
+    if (intent === 'undo') this.undoEdit();
+    else this.redoEdit();
   }
   private bumpWorkspaceGeneration(): void {
     this.patch({
@@ -1251,13 +1265,16 @@ export class ProjectSession {
    * request with a fresh request id — an old request token is never revived.
    */
   undoEdit(): void {
+    if (this.editLocked()) {
+      this.historyIntent = 'undo';
+      return;
+    }
+    this.historyIntent = null;
     const edit = this.state.plan.edit;
     const transition = edit.undo.at(-1);
     if (
       !transition ||
       !edit.head ||
-      edit.pending ||
-      edit.persist?.kind === 'saving' ||
       this.state.status !== 'ready' ||
       this.state.context !== 'installed'
     )
@@ -1283,13 +1300,16 @@ export class ProjectSession {
   }
   /** Redo replays the undone command against the current head. */
   redoEdit(): void {
+    if (this.editLocked()) {
+      this.historyIntent = 'redo';
+      return;
+    }
+    this.historyIntent = null;
     const edit = this.state.plan.edit;
     const transition = edit.redo.at(-1);
     if (
       !transition ||
       !edit.head ||
-      edit.pending ||
-      edit.persist?.kind === 'saving' ||
       this.state.status !== 'ready' ||
       this.state.context !== 'installed'
     )
@@ -1323,6 +1343,7 @@ export class ProjectSession {
     carried: EditTransition | null,
     lease: WorkspaceLease,
   ): Promise<void> {
+    try {
     const reply = await client
       .request({
         kind: 'evaluateLayoutEdit',
@@ -1430,6 +1451,9 @@ export class ProjectSession {
     });
     if (seq !== this.editSeq) return;
     await this.persistEditHead(next, base, seq);
+    } finally {
+      if (!this.closed) this.flushHistoryIntent();
+    }
   }
   /** Write the verified head. A failed write keeps the head and does not reject it. */
   private async persistEditHead(next: PlanSnapshot, base: PlanSnapshot, seq: number): Promise<void> {
@@ -1534,6 +1558,7 @@ export class ProjectSession {
   }
   /** Drop the working chain; called when the committed input moves. */
   private clearEditChain(): void {
+    this.historyIntent = null;
     const edit = this.state.plan.edit;
     if (!edit.chainBaseId && !edit.head && !edit.pending && !edit.rejection && !edit.persist) return;
     this.editSeq += 1;
@@ -1556,6 +1581,7 @@ export class ProjectSession {
 
   /** Discard local dirty state and reload the committed bundle. */
   async reloadLatest(): Promise<void> {
+    this.historyIntent = null;
     this.editSeq += 1;
     this.repo.refreshRevision(this.projectId);
     const bundle = await this.repo.loadBundle(this.projectId).catch(() => null);

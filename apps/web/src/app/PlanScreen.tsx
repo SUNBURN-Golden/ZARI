@@ -1005,7 +1005,12 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           <Button
             className="button button-primary"
             onPress={() => session.startSearch()}
-            isDisabled={searching || state.context !== 'installed'}
+            isDisabled={
+              searching ||
+              state.context !== 'installed' ||
+              plan.edit.pending !== null ||
+              plan.edit.persist?.kind === 'saving'
+            }
             data-testid="compute-plan"
           >
             {plan.search === 'running'
@@ -1119,11 +1124,6 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                 </Button>
               </div>
             </div>
-          )}
-          {plan.edit.persist?.kind === 'conflict' && !state.conflict && (
-            <p className="notice notice-stale" role="alert" data-testid="edit-conflict">
-              저장이 다른 기록과 충돌했습니다. 이 편집안은 채택되지 않았습니다.
-            </p>
           )}
           <div className="form-actions">
             <Button

@@ -5,7 +5,7 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. S
 - Task: GitHub issue #47, node 003, “평면 드래그와 동등한 숫자·키보드 편집”.
 - Plan commit: `0847d1b065627938acfad3a941de79e357570e43`.
 - Branch: `astra/zari-spatial-003`.
-- Observed base SHA: `e6858355811ce1a9234fd86c280daf5c10ac3a68` (origin/main at branch creation; plan commit is an ancestor). The supervisor commits this working tree and opens the ready PR.
+- Observed base SHA: `e6858355811ce1a9234fd86c280daf5c10ac3a68` (origin/main at branch creation; plan commit is an ancestor). The first delivery was commit `3c5176a930c49ee30224e328475bd6f4701f1450` (PR #48). This follow-up answers the blocking review on that head. The supervisor commits it.
 - Pinned docs: `docs/AIOPS_SPATIAL_EXECUTION_PLAN.md` §2, §3, §6 SP-003, §11; `design/SPATIAL_WORKSPACE.md` §§4–5,8; `docs/SPATIAL_VIEW_CONTRACT.md` §7; `docs/FRONTEND.md` (editor, history, keyboard step); `docs/SPATIAL_VERIFICATION.md`; `docs/evidence/ZARI-SPATIAL-001.md`; `docs/evidence/ZARI-SPATIAL-002.md`; `DESIGN.md`; `design/DECISIONS.md`; `design/SCREENS.md`; `design/COMPONENTS.md`; `design/REVIEW_CHECKLIST.md`. Candidate / NON_EXECUTABLE program drafts were not used as extra scope.
 
 ## Frozen WorkspaceState
@@ -18,8 +18,8 @@ Rust, fixtures, generated contracts, and `Cargo.lock` are unchanged. The move is
 
 - `features/workspace/drag.ts`: gesture math. Threshold 4 CSS px. 1 mm quantization with ties away from zero (`sign * floor(abs + 0.5)`, `+0` not `-0`). z copied from the origin. Protocol window ±20000 mm is a UI precheck only. Keyboard step 1 mm, Shift 10 mm. Arrow axes stay ArrowLeft −x, ArrowRight +x, ArrowUp −y, ArrowDown +y.
 - `features/workspace/lease.ts`: in-memory lease (project, snapshot, epoch, input revision/digest, catalog digest, project revision, activation, worker session, workspace generation). Compared again before commit.
-- `features/workspace/useCanvasGesture.ts`: pointer capture, RAF preview, one command on pointerup. Window listeners cover moves that leave the canvas. Escape, blur, hidden document, resize, a real size change, a second pointer, and a CTM change cancel. `pointermove` does not call the worker. Touch `button === -1` can start a move.
-- `session.ts`: a second `requestLayoutEdit`, alternative switch, or accept while pending or saving does not replace the in-flight command. `EditPersist` is `saving` | `unsaved` | `conflict` in memory. A disk error keeps the verified head and does not reject it. A CAS conflict sets the conflict state and does not overwrite. Epoch or input mismatch drops the reply. Undo/redo stay on `restoreLayout` and wait out a save.
+- `features/workspace/useCanvasGesture.ts`: pointer capture, RAF preview, one command on pointerup. Window listeners cover moves that leave the canvas. Escape, blur, hidden document, resize, a real size change, a second pointer, and a CTM change cancel. The resize observer is bound with a callback ref, so it attaches when the SVG mounts after a loading placeholder. `pointermove` does not call the worker. Touch `button === -1` can start a move.
+- `session.ts`: a second `requestLayoutEdit`, alternative switch, or accept while pending or saving does not replace the in-flight command. `EditPersist` is `saving` | `unsaved` | `conflict` in memory. A disk error keeps the verified head and does not reject it. A CAS conflict sets the conflict state and does not overwrite. Epoch or input mismatch drops the reply. Undo/redo stay on `restoreLayout`. A Ctrl/Meta+Z or Ctrl/Meta+Shift+Z (and Ctrl/Meta+Y) pressed while that command is pending or its save is still `saving` is kept as the latest history shortcut and run once the buttons would be enabled again. A move command during that window still cannot replace the in-flight edit.
 - `worker/client.ts`: read-only `transportIdentity` for the lease. Not persisted.
 - `PlanScreen.tsx`: step label “화살표: 1mm, Shift+화살표: 10mm”. Repeats coalesce into one command on keyup. Shift release resets the displayed step from a window `keyup`, including after focus leaves the detail. Save-failed copy “이 기기에 저장하지 못함” with retry/export. Conflict is explicit.
 - `Workspace.tsx` / `PlanDiagram.tsx`: desktop selection-mode drag moves the selected placement. Compact or coarse pointer requires “평면에서 이동”. “화면 이동”, middle button, and Space+drag pan. The same move control is inside the compact inspector dialog so it can be reached while the dialog is open; entering move mode closes the dialog. Ghost caption “검사 전” (`drag-preview`, `data-valid=false`) versus pending “검증 중”. The preview notice keeps its layout slot so showing it does not shift the canvas. `touch-action: none` only on the canvas while move, pan, or Space pan is active.
@@ -33,7 +33,8 @@ Rust, fixtures, generated contracts, and `Cargo.lock` are unchanged. The move is
 | Invalid, no-op, and cancel leave the prior plan | Mouse: 2 px under the threshold, Escape, second pointer, viewport resize, front-view drag. Each sends 0 `evaluateLayoutEdit`. Unit: click, no-op, lease/CTM/finite cancel |
 | Zero Worker/IndexedDB calls during `pointermove`; one command on pointerup | Browser counters around the move. Unit: `updateMove` returns no command |
 | Outside canvas, cancel, multitouch, resize | Mouse test, including a release outside the svg |
-| Numeric, keyboard, and drag cannot replace a pending edit | Keyboard test holds the first worker post and a second ArrowUp does not post. Unit: second `movePlacement` while pending is ignored; `selectAlternative` and `acceptPlan` do not start |
+| Numeric, keyboard, and drag cannot replace a pending edit | Keyboard test holds the first worker post and a second ArrowUp does not post. `compute-plan` is disabled for that window. Unit: second `movePlacement` while pending is ignored; `selectAlternative` and `acceptPlan` do not start |
+| Keyboard undo/redo during save is not dropped | Unit: `commitEditSnapshot` held in `saving`, `redoEdit` plus a move, then release; the redo runs one `restoreLayout` and the move does not. `edit.spec.ts` waits until the history button is enabled before Ctrl+Z / Ctrl+Shift+Z |
 | Integer coordinates and the same `movePlacement` as numeric/keyboard | Unit: `nudgePosition` + `movePlacementCommand`. Browser: two ArrowUp keydowns coalesce to y−2; Shift+ArrowUp is y−10; drag y matches origin−15 within 2 mm. z unchanged |
 | A move does not turn an unknown check into a pass | Mouse: unknown-row count unchanged; text stays `미확인` and does not contain `확인됨` |
 | Reload restores the committed edit chain | Mouse reload after the valid drag |
@@ -58,10 +59,10 @@ Shell prefix: `PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/bin:$HOME/.cargo/bi
 | `npm run wasm:build && npm run contracts:check` | wasm-bindgen 0.2.128. Contracts match; 107 fixture structures valid |
 | `npm run typecheck` | exit 0 |
 | `npm run lint` | exit 0 |
-| `npm test` | vitest 10 files, 85 tests, exit 0 |
+| `npm test` | vitest 10 files, 86 tests, exit 0 |
 | `npm run build` | exit 0 |
 | `node scripts/check-design-tokens.mjs --self-test` | 10 checker self-tests; 72 tokens; 39/39 contrast cases, including `preview-on-info-soft` |
-| `npm run test:browser -- --project=chromium` | 46 passed (21.9s). Chromium, locale `ko-KR`, default viewport 1440×1000 |
+| `npm run test:browser -- --project=chromium` | Three consecutive runs after the review fix: 46 passed (24.8s), 46 passed (22.6s), 46 passed (24.6s). Chromium, locale `ko-KR`, default viewport 1440×1000. One earlier run in the same session failed 1/46: `project.spec.ts` “project switch” never left the list (`worker-state` absent) and did not reproduce in the three runs above |
 | `npm run test:parity` | native and Chromium Worker/WASM agree on 107 fixtures; 2 `@parity` tests passed |
 
 `Cargo.lock` and generated `apps/web/src/contracts/` are unchanged.
@@ -70,7 +71,7 @@ Shell prefix: `PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/bin:$HOME/.cargo/bi
 
 - Route: plan (`#/project/<id>/plan`) after the existing fill-sample / 최소 구매 flow. Real IndexedDB and WASM Worker. No mocked solver in the browser specs.
 - Engine: Playwright Chromium. The three `drag.spec.ts` flows record `pageerror` and console `error`; those lists were empty.
-- Mouse, 1440×1000: no-op, Escape, second pointer, resize, release outside the canvas, one valid −15 mm drag, unknown checks unchanged, reload, undo/redo, front view sends nothing. Command counts stay flat during the move and increase by one on release.
+- Mouse, 1440×1000: no-op, Escape, second pointer, resize, release outside the canvas, one valid −15 mm drag, unknown checks unchanged, reload, undo/redo, front view sends nothing. Command counts stay flat during the move and increase by one on release. `ResizeObserver.observe` runs on `plan-diagram-top` after that diagram mounts.
 - Keyboard: two ArrowUp repeats become one command (y−2); Shift+ArrowUp is 10 mm; the step label returns to 1 mm; Space inside the coordinate field does not pan; a second arrow while the worker reply is held does not post.
 - Touch, 390×844, `hasTouch: true`: explicit “평면에서 이동”, page scroll not frozen, one touch drag of −15 mm, forced-colors ghost stroke is not transparent. The in-dialog move button closes the inspector sheet.
 - No draft screenshot was stored under `docs/evidence/`.

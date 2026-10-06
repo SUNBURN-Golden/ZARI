@@ -182,9 +182,30 @@ test.describe('plane drag matches one Rust move', () => {
     const errors: string[] = [];
     collectErrors(page, errors);
     await installCounters(page);
+    await page.addInitScript(() => {
+      const seen = new WeakSet<Element>();
+      const proto = ResizeObserver.prototype.observe;
+      ResizeObserver.prototype.observe = function (this: ResizeObserver, target: Element, options?: ResizeObserverOptions) {
+        if (
+          target instanceof SVGSVGElement &&
+          target.getAttribute('data-testid') === 'plan-diagram-top' &&
+          !seen.has(target)
+        ) {
+          seen.add(target);
+          const slot = window as unknown as { __zariResizeTargets: number };
+          slot.__zariResizeTargets = (slot.__zariResizeTargets ?? 0) + 1;
+        }
+        return proto.call(this, target, options);
+      };
+    });
     await seededProject(page);
     await computeDone(page);
     await openFirstPlan(page);
+    await expect
+      .poll(() =>
+        page.evaluate(() => (window as unknown as { __zariResizeTargets?: number }).__zariResizeTargets ?? 0),
+      )
+      .toBeGreaterThan(0);
     const detail = alternativeDetail(page);
     const beforeChecks = await checkStatuses(detail);
     const origin = await placementAt(detail);
@@ -433,6 +454,7 @@ test.describe('plane drag matches one Rust move', () => {
     await page.keyboard.press('ArrowUp');
     await expect(page.getByTestId('edit-pending').last()).toBeVisible();
     expect(await workerCount()).toBe(pendingBase + 1);
+    await expect(page.getByTestId('compute-plan')).toBeDisabled();
     await expect(detail.getByTestId('move-apply')).toBeDisabled();
     await page.keyboard.press('ArrowUp');
     expect(await workerCount()).toBe(pendingBase + 1);

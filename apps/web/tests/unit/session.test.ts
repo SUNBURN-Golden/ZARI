@@ -534,6 +534,76 @@ it('a layout edit is re-verified by Rust into a new snapshot; undo/redo ride res
   expect(reopened.snapshot.plan.edit.undo.length).toBe(1);
 }, 90000);
 
+it('a history shortcut pressed while the verified head is saving is applied once the write finishes', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  const base = done.plan.alternatives[0]!;
+  const placement = base.content.placements[0]!;
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: { ...placement.position },
+    },
+    base.planSnapshotId,
+  );
+  const moved = await until(
+    session,
+    (s) =>
+      s.plan.edit.pending === null &&
+      s.plan.edit.head !== null &&
+      s.plan.edit.persist?.kind !== 'saving',
+  );
+  const headId = moved.plan.edit.head!.planSnapshotId;
+  let hold = false;
+  let release = (): void => {};
+  const original = repo.commitEditSnapshot.bind(repo);
+  repo.commitEditSnapshot = (input) => {
+    const run = () => original(input);
+    if (!hold) return run();
+    return new Promise((resolve) => {
+      release = () => resolve(run());
+    });
+  };
+  hold = true;
+  session.undoEdit();
+  const saving = await until(
+    session,
+    (s) => s.plan.edit.persist?.kind === 'saving' && s.plan.edit.undo.length === 0,
+  );
+  expect(saving.plan.edit.redo.length).toBe(1);
+  expect(saving.plan.edit.pending).toBeNull();
+  // The shortcut is kept. A move command during the same window still cannot replace it.
+  session.redoEdit();
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: { ...placement.position, x: placement.position.x + 5 },
+    },
+    saving.plan.edit.head!.planSnapshotId,
+  );
+  expect(session.snapshot.plan.edit.pending).toBeNull();
+  expect(session.snapshot.plan.edit.redo.length).toBe(1);
+  expect(session.snapshot.plan.edit.undo.length).toBe(0);
+  hold = false;
+  release();
+  const redone = await until(
+    session,
+    (s) =>
+      s.plan.edit.pending === null &&
+      s.plan.edit.persist?.kind !== 'saving' &&
+      s.plan.edit.undo.length === 1,
+  );
+  expect(redone.plan.edit.redo.length).toBe(0);
+  expect(redone.plan.edit.head!.planSnapshotId).toBe(headId);
+}, 90000);
+
 it('a rejected edit is explained and never becomes a plan; a superseded reply cannot overwrite', async () => {
   const { repo, controller } = world();
   const projectId = await seedCommitted(repo);
