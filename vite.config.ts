@@ -62,6 +62,11 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2022',
     sourcemap: true,
+    modulePreload: {
+      resolveDependencies(_filename, deps) {
+        return deps.filter((dep) => !dep.includes('SpatialView') && !dep.includes('spatial3d'));
+      },
+    },
     rolldownOptions: {
       input: mode === 'test'
         ? { app: resolve('apps/web/index.html'), harness: resolve('apps/web/tests/harness.html') }

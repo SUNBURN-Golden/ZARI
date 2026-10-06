@@ -644,4 +644,68 @@
   .plan-list li[data-status='pass']::before {
     content: '통과 ';
   }
+  .spatial-label[data-selected='true'] {
+    outline: 2px solid Highlight;
+  }
+  .spatial-label[data-focus='true'] {
+    outline: 1px dashed CanvasText;
+  }
+}
+
+.spatial-stage {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
+
+.spatial-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  align-items: center;
+}
+
+.spatial-toolbar .button {
+  min-height: var(--zari-control-min-height);
+}
+
+.spatial-caption {
+  margin: 0;
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+  line-height: var(--zari-line-label);
+}
+
+.spatial-canvas-wrap {
+  position: relative;
+  height: 18rem;
+  background: var(--zari-canvas-bg);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  overflow: hidden;
+}
+
+.spatial-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.spatial-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spatial-label {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -120%);
+  padding: 0 var(--zari-space-1);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-sm);
+  line-height: var(--zari-line-label);
+  white-space: nowrap;
 }

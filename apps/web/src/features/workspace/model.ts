@@ -25,7 +25,7 @@ export type WorkspaceFocus =
   | { kind: 'bom'; bomLineId: string }
   | { kind: 'action'; stepId: string };
 
-/** `spatial` is reserved for SP-005. This node does not expose that control. */
+/** `spatial` is the read-only 3D cutaway. It does not edit the snapshot. */
 export type WorkspaceView = 'top' | 'front' | 'spatial';
 
 export type WorkspaceLayers = {
