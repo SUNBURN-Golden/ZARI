@@ -1,3 +1,6 @@
+import { beginMove, updateMove, type Matrix2D } from '../src/features/workspace/drag';
+import type { WorkspaceLease } from '../src/features/workspace/lease';
+import { measureSpatial as runSpatialStages, type SpatialStageSample } from './spatial-measure';
 import { ProbeClient } from '../src/worker/client';
 import { ProjectRepository } from '../src/persistence/repository';
 import type {
@@ -59,6 +62,18 @@ export interface BenchApi {
   wasmTransfer(): Promise<{ bytes: number; fetchMs: number; compileMs: number }>;
   /** performance.memory snapshot where the engine exposes it. */
   memory(): { usedJSHeapSize: number; totalJSHeapSize: number } | null;
+  /**
+   * `updateMove` plus one animation frame that writes a rect. No Worker and
+   * no Rust call. `jsMs` is the gesture function; `paintMs` includes that
+   * frame.
+   */
+  timePreview(samples: number): Promise<{ jsMs: number[]; paintMs: number[] }>;
+  /** Scene, frame, idle, and dispose timings for one already-projected source. */
+  measureSpatial(
+    projection: unknown,
+    content: unknown,
+    frameSamples: number,
+  ): Promise<SpatialStageSample>;
   idb: {
     open(): Promise<number>;
     createProject(form: RawProjectInputDto): Promise<{ projectId: string; draft: { generation: string; editorSessionId: string }; ms: number }>;
@@ -247,6 +262,60 @@ window.bench = {
     await WebAssembly.compile(buffer);
     const compileMs = now() - compileStart;
     return { bytes: buffer.byteLength, fetchMs, compileMs };
+  },
+  async timePreview(samples) {
+    const ctm: Matrix2D = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+    const lease: WorkspaceLease = {
+      projectId: 'bench',
+      displayedPlanSnapshotId: 'bench-plan',
+      editorEpoch: '0',
+      inputRevision: '0',
+      inputDigest: 'a'.repeat(64),
+      catalogDigest: 'b'.repeat(64),
+      projectRevision: '1',
+      projectActivationId: 'bench-activation',
+      workerSessionId: 'bench-worker',
+      workspaceGeneration: '0',
+    };
+    const gesture = beginMove({
+      pointerId: 1,
+      startClient: { x: 0, y: 0 },
+      origin: { x: 100, y: 80, z: 0 },
+      placementId: 'bench-placement',
+      ctm,
+      lease,
+    });
+    if (!gesture) return { jsMs: [], paintMs: [] };
+    const rect = document.createElement('div');
+    rect.style.width = '10px';
+    document.body.append(rect);
+    const jsMs: number[] = [];
+    const paintMs: number[] = [];
+    try {
+      for (let i = 0; i < samples; i += 1) {
+        const started = performance.now();
+        const jsStarted = performance.now();
+        const updated = updateMove(gesture, { x: 40 + (i % 7), y: 18 }, ctm);
+        jsMs.push(performance.now() - jsStarted);
+        if (updated.kind === 'preview') rect.style.width = `${10 + (updated.gesture.position.x % 30)}px`;
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            paintMs.push(performance.now() - started);
+            resolve();
+          });
+        });
+      }
+    } finally {
+      rect.remove();
+    }
+    return { jsMs, paintMs };
+  },
+  measureSpatial(projection, content, frameSamples) {
+    return runSpatialStages(
+      projection as Parameters<typeof runSpatialStages>[0],
+      content as Parameters<typeof runSpatialStages>[1],
+      frameSamples,
+    );
   },
   memory() {
     const memory = (

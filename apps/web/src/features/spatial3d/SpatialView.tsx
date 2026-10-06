@@ -65,15 +65,17 @@ export function SpatialView({
         element.target.kind === 'placement' &&
         element.target.placementId === selection.placementId,
     );
-  const plan = useMemo(
-    () =>
-      planScene(projection, content, layers, selection, focus, {
-        hideFront,
-        hideTop,
-        interiorPlacementId: interiorPlacementId(projection, selection, interior && Boolean(canInterior)),
-      }),
-    [projection, content, layers, selection, focus, hideFront, hideTop, interior, canInterior],
-  );
+  const sceneMs = useRef(0);
+  const plan = useMemo(() => {
+    const started = performance.now();
+    const next = planScene(projection, content, layers, selection, focus, {
+      hideFront,
+      hideTop,
+      interiorPlacementId: interiorPlacementId(projection, selection, interior && Boolean(canInterior)),
+    });
+    sceneMs.current = performance.now() - started;
+    return next;
+  }, [projection, content, layers, selection, focus, hideFront, hideTop, interior, canInterior]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -100,6 +102,8 @@ export function SpatialView({
   }, []);
 
   useEffect(() => {
+    const root = rootRef.current;
+    if (root) root.dataset.sceneMs = String(Math.round(sceneMs.current * 10) / 10);
     engineRef.current?.sync(plan, preset);
   }, [plan, preset]);
 

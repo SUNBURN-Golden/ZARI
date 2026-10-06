@@ -28,7 +28,12 @@ test('real WASM pass fail unknown invalid units and package arithmetic', async (
   await space.fill('0');
   await submit.click();
   await expect(space).toHaveAttribute('aria-invalid', 'true');
-  await page.getByRole('button', { name: '예제 값으로 되돌리기' }).click();
+  // Enter, not a synthesized click: Playwright's Firefox click does not deliver
+  // the pointer events React Aria uses for onPress. Keyboard activation is
+  // the same control.
+  const resetButton = page.getByRole('button', { name: '예제 값으로 되돌리기' });
+  await resetButton.focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('width-status')).toContainText('입력한 폭 안에 들어갑니다');
   await page.getByLabel('수납장 안쪽 폭 단위').selectOption('cm');
   await expect(space).toHaveValue('60');

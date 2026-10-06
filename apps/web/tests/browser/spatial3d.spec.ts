@@ -66,10 +66,16 @@ function note(testInfo: TestInfo, type: string, description: string) {
 
 async function waitForStagedBuild(page: Page) {
   await page.waitForFunction(() => navigator.serviceWorker?.controller != null);
-  await page.waitForFunction(async () => {
-    const meta = await caches.open('zari-shell-meta');
-    return (await meta.match('staged.json')) != null || (await meta.match('active.json')) != null;
-  });
+  await expect
+    .poll(async () =>
+      page.evaluate(async () => {
+        const meta = await caches.open('zari-shell-meta');
+        const staged = await meta.match('staged.json');
+        const active = await meta.match('active.json');
+        return staged != null || active != null;
+      }),
+    )
+    .toBe(true);
 }
 
 test('3D stays unloaded until requested, then shares selection with 2D, BOM, and steps', async ({ page }, testInfo) => {

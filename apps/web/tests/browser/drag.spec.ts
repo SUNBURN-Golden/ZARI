@@ -2,7 +2,8 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * ZARI-SPATIAL-003: one move command on pointerup, none during pointermove.
- * Real Chromium, IndexedDB, and WASM Worker. Rust accepts or rejects.
+ * Real IndexedDB and WASM Worker. Rust accepts or rejects.
+ * Pointer steps use Playwright's mouse, which every engine implements.
  */
 
 async function seededProject(page: Page) {
@@ -139,40 +140,18 @@ function screenDelta(scale: { x: number; y: number }, domainX: number, domainY: 
   return { x: scale.x * domainX, y: scale.y * domainY };
 }
 
-async function pointerSession(page: Page) {
-  return page.context().newCDPSession(page);
-}
-
 async function pointerDown(page: Page, at: { x: number; y: number }) {
-  const cdp = await pointerSession(page);
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at.x, y: at.y });
-  await cdp.send('Input.dispatchMouseEvent', {
-    type: 'mousePressed',
-    x: at.x,
-    y: at.y,
-    button: 'left',
-    clickCount: 1,
-  });
-  return cdp;
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
 }
 
-async function pointerMove(cdp: Awaited<ReturnType<typeof pointerSession>>, at: { x: number; y: number }) {
-  await cdp.send('Input.dispatchMouseEvent', {
-    type: 'mouseMoved',
-    x: at.x,
-    y: at.y,
-    button: 'left',
-  });
+async function pointerMove(page: Page, at: { x: number; y: number }, steps = 1) {
+  await page.mouse.move(at.x, at.y, { steps });
 }
 
-async function pointerUp(cdp: Awaited<ReturnType<typeof pointerSession>>, at: { x: number; y: number }) {
-  await cdp.send('Input.dispatchMouseEvent', {
-    type: 'mouseReleased',
-    x: at.x,
-    y: at.y,
-    button: 'left',
-    clickCount: 1,
-  });
+async function pointerUp(page: Page, at: { x: number; y: number }) {
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.up();
 }
 
 test.describe('plane drag matches one Rust move', () => {
@@ -218,18 +197,18 @@ test.describe('plane drag matches one Rust move', () => {
     const base = await counts(page);
 
     // No-op: under the 4px threshold, and a 2px move, send nothing.
-    let cdp = await pointerDown(page, placed.start);
-    await pointerMove(cdp, { x: placed.start.x + 2, y: placed.start.y });
+    await pointerDown(page, placed.start);
+    await pointerMove(page, { x: placed.start.x + 2, y: placed.start.y });
     const tiny = await counts(page);
     expect(tiny.worker).toBe(base.worker);
     expect(tiny.idb).toBe(base.idb);
-    await pointerUp(cdp, { x: placed.start.x + 2, y: placed.start.y });
+    await pointerUp(page, { x: placed.start.x + 2, y: placed.start.y });
     expect((await counts(page)).worker).toBe(base.worker);
     await expect(page.getByTestId('edit-section')).toBeHidden();
 
     // Escape cancels an armed drag before pointerup.
-    cdp = await pointerDown(page, placed.start);
-    await pointerMove(cdp, { x: placed.start.x + 36, y: placed.start.y });
+    await pointerDown(page, placed.start);
+    await pointerMove(page, { x: placed.start.x + 36, y: placed.start.y }, 4);
     await expect(detail.getByTestId('plan-workspace')).toHaveAttribute('data-gesture-phase', 'preview');
     await expect(detail.getByTestId('drag-phase')).toContainText('검사 전');
     const preview = detail.locator('[data-testid="drag-preview"]');
@@ -238,13 +217,13 @@ test.describe('plane drag matches one Rust move', () => {
     expect(mid.worker).toBe(base.worker);
     expect(mid.idb).toBe(base.idb);
     await page.keyboard.press('Escape');
-    await pointerUp(cdp, { x: placed.start.x + 36, y: placed.start.y });
+    await pointerUp(page, { x: placed.start.x + 36, y: placed.start.y });
     expect((await counts(page)).worker).toBe(base.worker);
     await expect(detail.getByTestId('drag-phase')).toBeHidden();
 
     // A second pointer cancels.
-    cdp = await pointerDown(page, placed.start);
-    await pointerMove(cdp, { x: placed.start.x + 28, y: placed.start.y });
+    await pointerDown(page, placed.start);
+    await pointerMove(page, { x: placed.start.x + 28, y: placed.start.y }, 3);
     await page.evaluate(() => {
       document.querySelector('[data-testid="plan-diagram-top"]')?.dispatchEvent(
         new PointerEvent('pointerdown', {
@@ -257,14 +236,14 @@ test.describe('plane drag matches one Rust move', () => {
         }),
       );
     });
-    await pointerUp(cdp, { x: placed.start.x + 28, y: placed.start.y });
+    await pointerUp(page, { x: placed.start.x + 28, y: placed.start.y });
     expect((await counts(page)).worker).toBe(base.worker);
 
     // Resize cancels.
-    cdp = await pointerDown(page, placed.start);
-    await pointerMove(cdp, { x: placed.start.x + 28, y: placed.start.y });
+    await pointerDown(page, placed.start);
+    await pointerMove(page, { x: placed.start.x + 28, y: placed.start.y }, 3);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await pointerUp(cdp, { x: placed.start.x + 28, y: placed.start.y });
+    await pointerUp(page, { x: placed.start.x + 28, y: placed.start.y });
     expect((await counts(page)).worker).toBe(base.worker);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await expect(detail.getByTestId('plan-diagram-top')).toBeVisible();
@@ -276,12 +255,12 @@ test.describe('plane drag matches one Rust move', () => {
       x: Math.max(1, (svgBox?.x ?? again.start.x) - 8),
       y: again.start.y,
     };
-    cdp = await pointerDown(page, again.start);
-    await pointerMove(cdp, outside);
+    await pointerDown(page, again.start);
+    await pointerMove(page, outside, 4);
     const outsideMid = await counts(page);
     expect(outsideMid.worker).toBe(base.worker);
     expect(outsideMid.idb).toBe(base.idb);
-    await pointerUp(cdp, outside);
+    await pointerUp(page, outside);
     await expect
       .poll(async () => (await counts(page)).worker, { timeout: 15000 })
       .toBe(base.worker + 1);
@@ -320,15 +299,15 @@ test.describe('plane drag matches one Rust move', () => {
       y: fresh.start.y + towardFront.y / 2,
     };
     const end = { x: fresh.start.x + towardFront.x, y: fresh.start.y + towardFront.y };
-    cdp = await pointerDown(page, fresh.start);
-    await pointerMove(cdp, halfway);
+    await pointerDown(page, fresh.start);
+    await pointerMove(page, halfway, 4);
     const dragging = await counts(page);
     expect(dragging.worker).toBe(quiet.worker);
     expect(dragging.idb).toBe(quiet.idb);
     await expect(alternativeDetail(page).getByTestId('drag-preview')).toHaveAttribute('data-valid', 'false');
-    await pointerMove(cdp, end);
+    await pointerMove(page, end, 4);
     expect((await counts(page)).worker).toBe(quiet.worker);
-    await pointerUp(cdp, end);
+    await pointerUp(page, end);
     await expect(page.getByTestId('edit-section')).toBeVisible({ timeout: 15000 });
     expect((await counts(page)).worker).toBe(quiet.worker + 1);
     const edited = await placementAt(page.getByTestId('edit-section'));
@@ -369,9 +348,9 @@ test.describe('plane drag matches one Rust move', () => {
     const frontBox = await front.boundingBox();
     if (frontBox) {
       const from = { x: frontBox.x + 40, y: frontBox.y + 40 };
-      cdp = await pointerDown(page, from);
-      await pointerMove(cdp, { x: from.x + 40, y: from.y });
-      await pointerUp(cdp, { x: from.x + 40, y: from.y });
+      await pointerDown(page, from);
+      await pointerMove(page, { x: from.x + 40, y: from.y }, 4);
+      await pointerUp(page, { x: from.x + 40, y: from.y });
     }
     expect((await counts(page)).worker).toBe(held.worker);
     expect(errors).toEqual([]);
@@ -497,9 +476,9 @@ test.describe('plane drag matches one Rust move', () => {
     await detail.getByTestId('close-inspector').click();
     const blocked = await selectedBox(detail);
     const before = await counts(page);
-    const blockedDrag = await pointerDown(page, blocked.start);
-    await pointerMove(blockedDrag, { x: blocked.start.x + 40, y: blocked.start.y });
-    await pointerUp(blockedDrag, { x: blocked.start.x + 40, y: blocked.start.y });
+    await pointerDown(page, blocked.start);
+    await pointerMove(page, { x: blocked.start.x + 40, y: blocked.start.y }, 4);
+    await pointerUp(page, { x: blocked.start.x + 40, y: blocked.start.y });
     expect((await counts(page)).worker).toBe(before.worker);
 
     const sheet = detail.locator('dialog');
@@ -527,9 +506,8 @@ test.describe('plane drag matches one Rust move', () => {
       document.addEventListener(
         'pointerdown',
         (event) => {
-          if (event.pointerType !== 'touch') return;
-          (window as unknown as { __zariTouchId: number }).__zariTouchId = event.pointerId;
-          seen.push(`pointer:touch:${event.pointerId}`);
+          if (!event.isPrimary) return;
+          seen.push(`pointer:${event.pointerType}:${event.pointerId}`);
         },
         { capture: true },
       );
@@ -537,41 +515,20 @@ test.describe('plane drag matches one Rust move', () => {
     const armed = await selectedBox(detail);
     const startCount = await counts(page);
     const towardFront = screenDelta(armed.scale, 0, -15);
-    const drag = await pointerSession(page);
     const end = { x: armed.start.x + towardFront.x, y: armed.start.y + towardFront.y };
-    await drag.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: armed.start.x, y: armed.start.y, radiusX: 1, radiusY: 1, force: 1 }],
-    });
+    // Playwright's touchscreen can only tap. A drag with a sample between
+    // down and up is a mouse gesture on every engine. The product commits
+    // from pointerup, which carries the release point.
+    await pointerDown(page, armed.start);
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __zariInput: string[] }).__zariInput.join(',')))
-      .toContain('pointer:touch');
-    await drag.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x: end.x, y: end.y, radiusX: 1, radiusY: 1, force: 1 }],
-    });
+      .toContain('pointer:');
+    await pointerMove(page, end, 4);
     await expect(detail.getByTestId('plan-workspace')).toHaveAttribute('data-gesture-phase', 'preview');
     const mid = await counts(page);
     expect(mid.worker).toBe(startCount.worker);
     expect(mid.idb).toBe(startCount.idb);
-    // CDP touchEnd does not carry the release point (empty touchPoints), so the
-    // page commits from the pointerup at the last touch position.
-    await page.evaluate(({ x, y }) => {
-      const pointerId = (window as unknown as { __zariTouchId: number }).__zariTouchId;
-      document.querySelector('[data-testid="plan-diagram-top"]')?.dispatchEvent(
-        new PointerEvent('pointerup', {
-          bubbles: true,
-          cancelable: true,
-          pointerId,
-          clientX: x,
-          clientY: y,
-          isPrimary: true,
-          pointerType: 'touch',
-          button: 0,
-        }),
-      );
-    }, end);
-    await drag.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await pointerUp(page, end);
     const finish = await detail.getByTestId('plan-diagram-top').getAttribute('data-last-finish');
     expect(finish).toBe('commit');
     expect((await counts(page)).worker).toBe(startCount.worker + 1);
@@ -585,13 +542,13 @@ test.describe('plane drag matches one Rust move', () => {
     const contents = detail.getByTestId('layer-contents');
     if ((await contents.getAttribute('aria-pressed')) === 'true') await contents.click();
     const colored = await selectedBox(detail);
-    const colorDrag = await pointerDown(page, colored.start);
-    await pointerMove(colorDrag, { x: colored.start.x + 30, y: colored.start.y });
+    await pointerDown(page, colored.start);
+    await pointerMove(page, { x: colored.start.x + 30, y: colored.start.y }, 4);
     const ghost = detail.locator('[data-testid="drag-preview"]');
     await expect(ghost).toBeVisible();
     const stroke = await ghost.evaluate((el) => getComputedStyle(el).stroke);
     expect(stroke === '' || stroke === 'none' || stroke === 'rgba(0, 0, 0, 0)').toBe(false);
-    await pointerUp(colorDrag, { x: colored.start.x + 30, y: colored.start.y });
+    await pointerUp(page, { x: colored.start.x + 30, y: colored.start.y });
     expect(errors).toEqual([]);
     });
   });
