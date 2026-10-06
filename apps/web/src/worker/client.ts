@@ -48,7 +48,32 @@ const multiExpected: Partial<Record<Command['kind'], readonly string[]>> = {
 };
 const sameMeta = (a: Meta, b: Meta) =>
   Object.keys(a).every((key) => a[key as keyof Meta] === b[key as keyof Meta]);
-export const WORKER_BUILD_ID = 'zari-domain-4';
+export const WORKER_BUILD_ID = 'zari-domain-5';
+/** Exact ready-event order. A swap, extra, or omission is a version mismatch. */
+export const WORKER_CAPABILITIES = [
+  'initialize',
+  'activateProject',
+  'normalizeInput(bootstrap)',
+  'normalizeInput(project)',
+  'evaluateProbe',
+  'verifyRecord',
+  'normalizeCatalogFields',
+  'validateCatalog',
+  'validateCandidate',
+  'evaluateLayoutEdit',
+  'projectSpatialView',
+  'disposeProject',
+  'proposeStrategies',
+  'startSearch',
+  'stepSearch',
+  'cancelSearch',
+] as const;
+function capabilitiesMatch(actual: readonly string[]): boolean {
+  return (
+    actual.length === WORKER_CAPABILITIES.length &&
+    WORKER_CAPABILITIES.every((capability, index) => actual[index] === capability)
+  );
+}
 /**
  * Identity and transport only. Never interprets measurements or computes a plan.
  * One instance owns one Worker session; on crash/restart the whole instance is
@@ -115,31 +140,12 @@ export class ProbeClient {
       expectedProtocolVersion: 1,
       expectedSchemaVersion: 1,
     });
-    const capabilities = [
-      'initialize',
-      'activateProject',
-      'normalizeInput(bootstrap)',
-      'normalizeInput(project)',
-      'evaluateProbe',
-      'verifyRecord',
-      'normalizeCatalogFields',
-      'validateCatalog',
-      'validateCandidate',
-      'evaluateLayoutEdit',
-      'projectSpatialView',
-      'disposeProject',
-      'proposeStrategies',
-      'startSearch',
-      'stepSearch',
-      'cancelSearch',
-    ];
     if (
       reply.kind !== 'ready' ||
       reply.buildId !== WORKER_BUILD_ID ||
       reply.protocolVersion !== 1 ||
       reply.schemaVersion !== 1 ||
-      capabilities.some((cap) => !reply.capabilities.includes(cap)) ||
-      reply.capabilities.length !== capabilities.length
+      !capabilitiesMatch(reply.capabilities)
     ) {
       const error = new Error('protocol_version_mismatch');
       this.fail(error);

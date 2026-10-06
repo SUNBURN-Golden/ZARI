@@ -360,8 +360,10 @@ pub fn parse_pack_quantity(text: &str) -> Result<Option<PackQuantity>, String> {
     parse_count(text)?.map(PackQuantity::new).transpose()
 }
 
-/// Signed integer millimetres: the explicit signed exception. `-0` is zero.
-pub fn parse_position(text: &str) -> Result<Option<PositionMm>, String> {
+/// Signed integer millimetres before the `PositionMm` range check.
+/// A magnitude that does not fit in `i64` is `numeric_overflow`, distinct
+/// from a value that fits `i64` but not `PositionMm`.
+pub fn parse_signed_i64(text: &str) -> Result<Option<i64>, String> {
     let Some(text) = raw_text(text)? else {
         return Ok(None);
     };
@@ -370,12 +372,21 @@ pub fn parse_position(text: &str) -> Result<Option<PositionMm>, String> {
         None => (false, text),
     };
     let magnitude = digits_to_u64(digits)?;
-    let magnitude = i64::try_from(magnitude).map_err(|_| "scalar_out_of_range".to_owned())?;
-    PositionMm::new(
-        i32::try_from(if negative { -magnitude } else { magnitude })
-            .map_err(|_| "scalar_out_of_range".to_owned())?,
-    )
-    .map(Some)
+    // `i64::MIN` is the one negative value whose magnitude does not fit in `i64`.
+    if negative && magnitude == 1_u64 << 63 {
+        return Ok(Some(i64::MIN));
+    }
+    let magnitude = i64::try_from(magnitude).map_err(|_| "numeric_overflow".to_owned())?;
+    Ok(Some(if negative { -magnitude } else { magnitude }))
+}
+
+/// Signed integer millimetres: the explicit signed exception. `-0` is zero.
+pub fn parse_position(text: &str) -> Result<Option<PositionMm>, String> {
+    let Some(value) = parse_signed_i64(text)? else {
+        return Ok(None);
+    };
+    let value = i32::try_from(value).map_err(|_| "scalar_out_of_range".to_owned())?;
+    PositionMm::new(value).map(Some)
 }
 
 pub fn parse_mass_grams(text: &str) -> Result<Option<MassGrams>, String> {
@@ -398,7 +409,15 @@ pub fn parse_work_count(text: &str) -> Result<Option<WorkCount>, String> {
 }
 
 pub fn format_length(length: LengthMm, unit: Unit) -> String {
-    let value = length.get();
+    format_nonnegative_mm(length.get(), unit)
+}
+
+/// Format a clearance, including a user-entered zero. Zero is not unknown.
+pub fn format_clearance(value: ClearanceMm, unit: Unit) -> String {
+    format_nonnegative_mm(value.get(), unit)
+}
+
+fn format_nonnegative_mm(value: u32, unit: Unit) -> String {
     match unit {
         Unit::Mm => value.to_string(),
         Unit::Cm if value.is_multiple_of(10) => (value / 10).to_string(),

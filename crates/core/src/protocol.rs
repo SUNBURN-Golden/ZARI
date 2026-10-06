@@ -4,6 +4,7 @@ use crate::{
     facts::*,
     finalize,
     input::*,
+    measurement::*,
     normalize::*,
     plan::*,
     probe::*,
@@ -24,7 +25,7 @@ use std::{
     fmt,
 };
 
-pub const BUILD_ID: &str = "zari-domain-4";
+pub const BUILD_ID: &str = "zari-domain-5";
 const CAPABILITIES: [&str; 12] = [
     "initialize",
     "activateProject",
@@ -195,6 +196,10 @@ pub enum Command {
         #[schemars(with = "crate::RequiredNullable<String>")]
         prior_input_digest: Option<String>,
         format_requests: Vec<FieldFormatRequest>,
+        /// Nominal and active bounds, converted together. Omitted requests
+        /// are an empty group. A read-only or unknown path fails the command.
+        #[serde(default)]
+        group_format_requests: Vec<MeasurementGroupFormatRequest>,
     },
     EvaluateProbe {
         probe: BootstrapProbeDto,
@@ -297,6 +302,7 @@ pub enum Event {
         input_digest: Option<String>,
         equivalent_to_prior: bool,
         formatted_fields: Vec<FormattedField>,
+        formatted_groups: Vec<FormattedMeasurementGroup>,
         diagnostics: Vec<Diagnostic>,
     },
     ProbeEvaluated {
@@ -624,6 +630,12 @@ pub enum DomainFixtureExpected {
         #[serde(deserialize_with = "crate::required_option")]
         #[schemars(with = "crate::RequiredNullable<Digest>")]
         input_digest: Option<Digest>,
+        /// Hand-checked signed-offset intervals. Empty for older fixtures.
+        #[serde(default)]
+        offset_intervals: Vec<ExpectedOffsetInterval>,
+        /// Group format results. Empty when the fixture requests none.
+        #[serde(default)]
+        formatted_groups: Vec<FormattedMeasurementGroup>,
     },
     VerifyRecord {
         decode_error: bool,
@@ -726,6 +738,17 @@ pub enum DomainFixtureExpected {
         consumed: Option<SearchCounters>,
     },
 }
+/// Hand-checked signed-offset interval on one normalized field.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExpectedOffsetInterval {
+    pub field_path: String,
+    pub nominal: i64,
+    pub minus_mm: u64,
+    pub plus_mm: u64,
+    pub low: i64,
+    pub high: i64,
+}
 /// One shared domain interchange case, executed through the identical
 /// `Runtime::handle_json` path natively and inside the real browser
 /// Worker/WASM. `input` stays untyped so malformed payloads reach the Rust
@@ -740,6 +763,9 @@ pub struct DomainFixture {
     pub input: Value,
     pub engine_context: EngineContext,
     pub expected: DomainFixtureExpected,
+    /// Optional group unit conversions exercised with this normalize call.
+    #[serde(default)]
+    pub group_format_requests: Vec<MeasurementGroupFormatRequest>,
 }
 /// The JSON requests a domain fixture drives through `Runtime::handle_json`,
 /// in order. Both the native fixture runner and the browser harness send
@@ -781,7 +807,8 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
                     "kind": "normalizeInput",
                     "input": { "kind": "project", "project": fixture.input.clone() },
                     "priorInputDigest": null,
-                    "formatRequests": []
+                    "formatRequests": [],
+                    "groupFormatRequests": fixture.group_format_requests
                 }),
             ),
         ],
@@ -1009,6 +1036,73 @@ fn project_context_id(input: &Value, catalog: &Value) -> Option<String> {
             .to_owned(),
     )
 }
+fn check_offset_intervals(
+    fixture: &DomainFixture,
+    event: &Value,
+    expected: &[ExpectedOffsetInterval],
+) -> Result<(), String> {
+    if expected.is_empty() {
+        return Ok(());
+    }
+    let input = event
+        .get("normalizedInput")
+        .and_then(|value| value.get("input"))
+        .ok_or_else(|| {
+            format!(
+                "{}: offset interval without normalized input",
+                fixture.case_id
+            )
+        })?;
+    for interval in expected {
+        let (Ok(minus), Ok(plus)) = (
+            i64::try_from(interval.minus_mm),
+            i64::try_from(interval.plus_mm),
+        ) else {
+            return Err(format!("{}: offset bounds do not fit i64", fixture.case_id));
+        };
+        let (Some(low), Some(high)) = (
+            interval.nominal.checked_sub(minus),
+            interval.nominal.checked_add(plus),
+        ) else {
+            return Err(format!(
+                "{}: hand-checked interval overflow",
+                fixture.case_id
+            ));
+        };
+        if interval.low != low || interval.high != high {
+            return Err(format!(
+                "{}: hand-checked interval arithmetic does not match {} nominal/bounds",
+                fixture.case_id, interval.field_path
+            ));
+        }
+        let mut cursor = input;
+        for segment in interval.field_path.split('.') {
+            cursor = cursor.get(segment).ok_or_else(|| {
+                format!(
+                    "{}: missing normalized field {}",
+                    fixture.case_id, interval.field_path
+                )
+            })?;
+        }
+        let nominal = cursor["value"]["nominal"].as_i64();
+        let minus = cursor["value"]["uncertainty"]["minusMm"].as_u64();
+        let plus = cursor["value"]["uncertainty"]["plusMm"].as_u64();
+        let state = cursor["value"]["uncertainty"]["state"].as_str();
+        if cursor["state"] != "known"
+            || state != Some("bounded")
+            || nominal != Some(interval.nominal)
+            || minus != Some(interval.minus_mm)
+            || plus != Some(interval.plus_mm)
+            || cursor["provenance"]["verification"] != "unverified"
+        {
+            return Err(format!(
+                "{}: offset {} is not the hand-checked interval: {cursor}",
+                fixture.case_id, interval.field_path
+            ));
+        }
+    }
+    Ok(())
+}
 fn sorted_diagnostics(event: &Value) -> Vec<ExpectedDiagnostic> {
     let mut diagnostics: Vec<ExpectedDiagnostic> = event
         .get("diagnostics")
@@ -1118,6 +1212,8 @@ pub fn execute_domain_fixture_with(
         DomainFixtureExpected::NormalizeProjectInput {
             diagnostics,
             input_digest,
+            offset_intervals,
+            formatted_groups,
             ..
         } => {
             if event["kind"] != "normalized" {
@@ -1147,6 +1243,17 @@ pub fn execute_domain_fixture_with(
                     fixture.case_id
                 ));
             }
+            let actual_groups: Vec<FormattedMeasurementGroup> =
+                serde_json::from_value(event["formattedGroups"].clone()).map_err(|error| {
+                    format!("{}: formattedGroups decode: {error}", fixture.case_id)
+                })?;
+            if &actual_groups != formatted_groups {
+                return Err(format!(
+                    "{}: formattedGroups mismatch: {actual_groups:?}",
+                    fixture.case_id
+                ));
+            }
+            check_offset_intervals(fixture, &event, offset_intervals)?;
         }
         DomainFixtureExpected::VerifyRecord {
             verified,
@@ -2013,6 +2120,7 @@ impl Runtime {
                 input,
                 prior_input_digest,
                 format_requests,
+                group_format_requests,
             } => {
                 if prior_input_digest
                     .as_ref()
@@ -2022,7 +2130,8 @@ impl Runtime {
                 }
                 match input {
                     NormalizeInputDto::Bootstrap { probe } => {
-                        if format_requests.len() > 2
+                        if !group_format_requests.is_empty()
+                            || format_requests.len() > 2
                             || format_requests.iter().any(|f| {
                                 !matches!(f.field_path.as_str(), "compartmentWidth" | "unitWidth")
                             })
@@ -2063,6 +2172,7 @@ impl Runtime {
                                 .is_empty()
                                 .then_some(NormalizedInput::Bootstrap { input: normalized }),
                             formatted_fields,
+                            formatted_groups: vec![],
                             diagnostics,
                         }
                     }
@@ -2071,6 +2181,14 @@ impl Runtime {
                             return failure("invalid_input");
                         }
                         let (input, diagnostics) = normalize_project_input(project);
+                        let formatted_groups = match format_measurement_groups(
+                            &input,
+                            group_format_requests,
+                            &diagnostics,
+                        ) {
+                            Ok(groups) => groups,
+                            Err(code) => return failure(code),
+                        };
                         let mut formatted_fields = vec![];
                         for format in format_requests {
                             let Some(fact) = project_measurement(&input, &format.field_path) else {
@@ -2103,6 +2221,7 @@ impl Runtime {
                                 .is_empty()
                                 .then_some(NormalizedInput::Project { input }),
                             formatted_fields,
+                            formatted_groups,
                             diagnostics,
                         }
                     }

@@ -433,13 +433,86 @@ pub fn validate_project_input(input: &ProjectInput) -> Vec<Diagnostic> {
                 "invalid_support_kind",
             );
         }
+        check_variant_offsets(
+            &mut diagnostics,
+            &format!("{path}.physical.dimensions"),
+            &owned.physical.dimensions,
+        );
     }
+    check_project_offset_intervals(&mut diagnostics, input);
     check_evidence_entries(&mut diagnostics, "evidence", &input.evidence);
     check_evidence_refs(&mut diagnostics, "input", input, &input.evidence);
     check_provenance_wellformed(&mut diagnostics, "input", input);
     let serialized = serde_json::to_value(input).expect("typed DTO serializes");
     reject_not_applicable(&mut diagnostics, &serialized, "input", &[]);
     diagnostics
+}
+
+fn check_offset_fact(diagnostics: &mut Vec<Diagnostic>, path: &str, fact: &Fact<MeasuredOffset>) {
+    if let Some(code) = offset_interval_diagnostic(fact) {
+        err(diagnostics, path, code);
+    }
+}
+
+fn check_support_offsets(diagnostics: &mut Vec<Diagnostic>, path: &str, support: &SupportSurface) {
+    check_offset_fact(
+        diagnostics,
+        &format!("{path}.footprint.x"),
+        &support.footprint.x,
+    );
+    check_offset_fact(
+        diagnostics,
+        &format!("{path}.footprint.y"),
+        &support.footprint.y,
+    );
+    check_offset_fact(
+        diagnostics,
+        &format!("{path}.elevation"),
+        &support.elevation,
+    );
+}
+
+fn check_variant_offsets(
+    diagnostics: &mut Vec<Diagnostic>,
+    path: &str,
+    dimensions: &VariantDimensions,
+) {
+    if let Fact::Known { value, .. } = &dimensions.inner_offset {
+        check_offset_fact(diagnostics, &format!("{path}.innerOffset.x"), &value.x);
+        check_offset_fact(diagnostics, &format!("{path}.innerOffset.y"), &value.y);
+        check_offset_fact(diagnostics, &format!("{path}.innerOffset.z"), &value.z);
+    }
+    if let Fact::Known { value, .. } = &dimensions.inner_support {
+        check_support_offsets(diagnostics, &format!("{path}.innerSupport"), value);
+    }
+}
+
+fn check_project_offset_intervals(diagnostics: &mut Vec<Diagnostic>, input: &ProjectInput) {
+    let space = &input.space;
+    check_offset_fact(diagnostics, "space.opening.left", &space.opening.left);
+    check_offset_fact(diagnostics, "space.opening.bottom", &space.opening.bottom);
+    check_offset_fact(
+        diagnostics,
+        "space.staging.freeVolume.minX",
+        &space.staging.free_volume.min_x,
+    );
+    check_offset_fact(
+        diagnostics,
+        "space.staging.freeVolume.minY",
+        &space.staging.free_volume.min_y,
+    );
+    check_offset_fact(
+        diagnostics,
+        "space.staging.freeVolume.minZ",
+        &space.staging.free_volume.min_z,
+    );
+    check_support_offsets(diagnostics, "space.support", &space.support);
+    for obstacle in &space.obstacles {
+        let path = format!("space.obstacles.{}.bounds", obstacle.id.as_str());
+        check_offset_fact(diagnostics, &format!("{path}.minX"), &obstacle.bounds.min_x);
+        check_offset_fact(diagnostics, &format!("{path}.minY"), &obstacle.bounds.min_y);
+        check_offset_fact(diagnostics, &format!("{path}.minZ"), &obstacle.bounds.min_z);
+    }
 }
 
 fn check_catalog_body(
@@ -506,6 +579,11 @@ fn check_catalog_body(
                 "invalid_support_kind",
             );
         }
+        check_variant_offsets(
+            diagnostics,
+            &format!("{path}.dimensions"),
+            &variant.dimensions,
+        );
         if let Fact::Known { value, .. } = &variant.compatibility {
             for id in value {
                 if !variant_ids.contains(id.as_str()) {

@@ -394,3 +394,232 @@ fn provenance_observation_requires_a_real_utc_rfc3339_timestamp() {
         );
     }
 }
+
+fn minimal_project() -> Value {
+    serde_json::from_str::<Value>(include_str!(
+        "../../../fixtures/domain/project-minimal-pass.json"
+    ))
+    .unwrap()["input"]
+        .clone()
+}
+
+fn normalize_project(
+    runtime: &mut Runtime,
+    request_id: &str,
+    project: Value,
+    groups: Value,
+) -> Value {
+    send(
+        runtime,
+        meta(request_id),
+        json!({
+            "kind": "normalizeInput",
+            "input": { "kind": "project", "project": project },
+            "priorInputDigest": null,
+            "formatRequests": [],
+            "groupFormatRequests": groups
+        }),
+    )
+}
+
+#[test]
+fn previous_build_id_and_unimplemented_query_do_not_handshake() {
+    let mut runtime = Runtime::new();
+    assert_eq!(
+        send(
+            &mut runtime,
+            meta("old-build"),
+            json!({"kind":"initialize","buildId":"zari-domain-4","expectedProtocolVersion":1,"expectedSchemaVersion":1})
+        )["event"]["code"],
+        "version_mismatch"
+    );
+    let mut runtime = Runtime::new();
+    runtime.set_search_engine(Box::new(zari_solver::SolverEngine));
+    let ready = send(
+        &mut runtime,
+        meta("init-search"),
+        json!({"kind":"initialize","buildId":BUILD_ID,"expectedProtocolVersion":1,"expectedSchemaVersion":1}),
+    );
+    assert_eq!(ready["event"]["buildId"], BUILD_ID);
+    assert_eq!(
+        ready["event"]["capabilities"],
+        json!([
+            "initialize",
+            "activateProject",
+            "normalizeInput(bootstrap)",
+            "normalizeInput(project)",
+            "evaluateProbe",
+            "verifyRecord",
+            "normalizeCatalogFields",
+            "validateCatalog",
+            "validateCandidate",
+            "evaluateLayoutEdit",
+            "projectSpatialView",
+            "disposeProject",
+            "proposeStrategies",
+            "startSearch",
+            "stepSearch",
+            "cancelSearch"
+        ])
+    );
+    assert!(
+        ready["event"]["capabilities"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|capability| capability != COMPLETION_QUERY_CAPABILITY)
+    );
+    assert_eq!(
+        send(
+            &mut runtime,
+            meta("future-query"),
+            json!({"kind":"queryNextFacts"})
+        )["event"]["code"],
+        "operation_not_supported"
+    );
+}
+
+#[test]
+fn group_format_rejects_unknown_readonly_and_over_cap_fields() {
+    let mut runtime = active();
+    let project = minimal_project();
+    assert_eq!(
+        normalize_project(
+            &mut runtime,
+            "unknown-path",
+            project.clone(),
+            json!([{"fieldPath":"space.opening.nope","unit":"mm"}])
+        )["event"]["code"],
+        "invalid_format_field"
+    );
+    assert_eq!(
+        normalize_project(
+            &mut runtime,
+            "catalog-path",
+            project.clone(),
+            json!([{"fieldPath":"variants.box-1.dimensions.innerOffset.x","unit":"mm"}])
+        )["event"]["code"],
+        "catalog_field_read_only"
+    );
+    let groups = vec![json!({"fieldPath":"space.opening.left","unit":"mm"}); 17];
+    assert_eq!(
+        normalize_project(
+            &mut runtime,
+            "over-cap",
+            project.clone(),
+            Value::Array(groups)
+        )["event"]["code"],
+        "invalid_input"
+    );
+    let event = normalize_project(
+        &mut runtime,
+        "item-quantity",
+        project,
+        json!([{"fieldPath":"items.item-a.quantity","unit":"mm"}]),
+    );
+    assert_eq!(event["event"]["kind"], "normalized");
+    assert_eq!(event["event"]["formattedGroups"][0]["converted"], false);
+    assert_eq!(
+        event["event"]["formattedGroups"][0]["uncertainty"]["code"],
+        "unit_not_supported"
+    );
+    assert!(event["event"]["formattedGroups"][0]["nominalText"].is_null());
+    let mut runtime = active();
+    assert_eq!(
+        send(
+            &mut runtime,
+            meta("bootstrap-group"),
+            json!({
+                "kind": "normalizeInput",
+                "input": { "kind": "bootstrap", "probe": probe() },
+                "priorInputDigest": null,
+                "formatRequests": [],
+                "groupFormatRequests": [{"fieldPath":"space.opening.left","unit":"mm"}]
+            })
+        )["event"]["code"],
+        "invalid_format_field"
+    );
+}
+
+#[test]
+fn evidence_note_is_not_numeric_or_conflict_authority() {
+    let mut project = minimal_project();
+    project["space"]["opening"]["left"]["evidenceIds"] = json!(["ev-note"]);
+    project["evidence"] = json!([{
+        "id": "ev-note",
+        "sourceKind": "userMeasured",
+        "locator": null,
+        "sourceField": "opening.left",
+        "note": "confirmed 5mm conflict",
+        "observedAt": "2024-01-01T00:00:00Z",
+        "confirmedBy": null
+    }]);
+    let mut runtime = active();
+    let event =
+        normalize_project(&mut runtime, "evidence-note", project, json!([]))["event"].clone();
+    assert!(event["inputDigest"].is_string(), "{event}");
+    assert_eq!(
+        event["normalizedInput"]["input"]["evidence"][0]["note"],
+        "confirmed 5mm conflict"
+    );
+    assert_eq!(
+        event["normalizedInput"]["input"]["space"]["opening"]["left"]["provenance"]["verification"],
+        "unverified"
+    );
+    let codes: Vec<_> = event["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["code"].as_str().unwrap_or_default())
+        .collect();
+    assert!(
+        !codes
+            .iter()
+            .any(|code| { *code == "conflicting_sources" || *code == "confirmed" })
+    );
+}
+
+#[test]
+fn typed_offset_records_keep_zero_and_reject_an_endpoint_past_the_domain() {
+    let raw: RawProjectInputDto = serde_json::from_value(minimal_project()).unwrap();
+    let (mut input, diagnostics) = normalize_project_input(&raw);
+    assert!(diagnostics.is_empty(), "{diagnostics:?}");
+    let Fact::Known { provenance, .. } = input.space.opening.left.clone() else {
+        panic!("opening.left should normalize");
+    };
+    input.space.opening.left = Fact::Known {
+        value: MeasuredOffset {
+            nominal: scalars::PositionMm::new(20_000).unwrap(),
+            uncertainty: Uncertainty::Bounded {
+                minus_mm: scalars::ClearanceMm::new(0).unwrap(),
+                plus_mm: scalars::ClearanceMm::new(1).unwrap(),
+            },
+        },
+        provenance: provenance.clone(),
+    };
+    let rejected = validate::validate_project_input(&input);
+    assert!(
+        rejected
+            .iter()
+            .any(|item| item.field_path == "space.opening.left"
+                && item.code == "uncertainty_out_of_range"),
+        "{rejected:?}"
+    );
+    input.space.opening.left = Fact::Known {
+        value: MeasuredOffset {
+            nominal: scalars::PositionMm::new(0).unwrap(),
+            uncertainty: Uncertainty::Bounded {
+                minus_mm: scalars::ClearanceMm::new(0).unwrap(),
+                plus_mm: scalars::ClearanceMm::new(0).unwrap(),
+            },
+        },
+        provenance,
+    };
+    let accepted = validate::validate_project_input(&input);
+    assert!(
+        accepted
+            .iter()
+            .all(|item| item.field_path != "space.opening.left"),
+        "{accepted:?}"
+    );
+}

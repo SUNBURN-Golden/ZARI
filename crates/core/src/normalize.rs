@@ -521,6 +521,8 @@ fn normalize_preferences(raw: &Preferences, diagnostics: &mut Vec<Diagnostic>) -
             .collect(),
     }
 }
+/// Copy evidence records. `note` stays bounded human text. It is not parsed
+/// into a number, a geometry, a conflict, or a confirmation.
 fn normalize_evidence_list(raw: &[Evidence], diagnostics: &mut Vec<Diagnostic>) -> Vec<Evidence> {
     raw.iter()
         .map(|e| {

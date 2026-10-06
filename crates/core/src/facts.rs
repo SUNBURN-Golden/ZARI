@@ -573,7 +573,110 @@ pub fn normalize_clearance(
     }
 }
 
+/// Inclusive PositionMm domain used by signed-offset intervals.
+pub const POSITION_MM_MIN: i64 = -20_000;
+pub const POSITION_MM_MAX: i64 = 20_000;
+/// Nonnegative bound domain. Same numeric range as `ClearanceMm`.
+pub const OFFSET_BOUND_MAX: i64 = 10_000;
+
+/// Checked i64 subtraction and addition, before domain limits.
+/// `i64::MIN - 1` and `i64::MAX + 1` are `numeric_overflow`.
+pub fn checked_i64_interval(
+    nominal: i64,
+    minus: i64,
+    plus: i64,
+) -> Result<(i64, i64), &'static str> {
+    let low = nominal.checked_sub(minus).ok_or("numeric_overflow")?;
+    let high = nominal.checked_add(plus).ok_or("numeric_overflow")?;
+    Ok((low, high))
+}
+
+/// Signed-offset interval `[nominal − minus, nominal + plus]`.
+/// Nominal and both endpoints must lie in `PositionMm` (−20000..=20000).
+/// Bounds must lie in `ClearanceMm` (0..=10000). Zero and zero-crossing
+/// intervals are legal. This does not apply the positive-length rule.
+pub fn signed_offset_interval(
+    nominal: i64,
+    minus: i64,
+    plus: i64,
+) -> Result<(i64, i64), &'static str> {
+    if !(POSITION_MM_MIN..=POSITION_MM_MAX).contains(&nominal) {
+        return Err("scalar_out_of_range");
+    }
+    if !(0..=OFFSET_BOUND_MAX).contains(&minus) || !(0..=OFFSET_BOUND_MAX).contains(&plus) {
+        return Err("scalar_out_of_range");
+    }
+    let (low, high) = checked_i64_interval(nominal, minus, plus)?;
+    if !(POSITION_MM_MIN..=POSITION_MM_MAX).contains(&low)
+        || !(POSITION_MM_MIN..=POSITION_MM_MAX).contains(&high)
+    {
+        return Err("uncertainty_out_of_range");
+    }
+    Ok((low, high))
+}
+
+fn bounded_offset_uncertainty(
+    raw: &RawUncertaintyDto,
+    nominal: i64,
+    path: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<Uncertainty> {
+    match raw {
+        RawUncertaintyDto::Unknown {} => Some(Uncertainty::Unknown {}),
+        RawUncertaintyDto::Bounded {
+            minus_text,
+            plus_text,
+            unit,
+        } => {
+            let minus = parse_clearance(minus_text, *unit);
+            let plus = parse_clearance(plus_text, *unit);
+            match (minus, plus) {
+                (Err(code), _) | (_, Err(code)) => {
+                    error(diagnostics, path, code);
+                    None
+                }
+                (Ok(None), _) | (_, Ok(None)) => {
+                    error(diagnostics, path, "uncertainty_missing");
+                    None
+                }
+                (Ok(Some(minus_mm)), Ok(Some(plus_mm))) => {
+                    match signed_offset_interval(
+                        nominal,
+                        i64::from(minus_mm.get()),
+                        i64::from(plus_mm.get()),
+                    ) {
+                        Ok(_) => Some(Uncertainty::Bounded { minus_mm, plus_mm }),
+                        Err(code) => {
+                            error(diagnostics, path, code);
+                            None
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Diagnostic when a typed offset's bounded interval leaves `PositionMm`.
+/// Unknown uncertainty and non-offset facts are not rewritten.
+pub fn offset_interval_diagnostic(fact: &Fact<MeasuredOffset>) -> Option<&'static str> {
+    let Fact::Known { value, .. } = fact else {
+        return None;
+    };
+    let Uncertainty::Bounded { minus_mm, plus_mm } = value.uncertainty else {
+        return None;
+    };
+    signed_offset_interval(
+        i64::from(value.nominal.get()),
+        i64::from(minus_mm.get()),
+        i64::from(plus_mm.get()),
+    )
+    .err()
+}
+
 /// Normalize a signed millimetre offset into `Fact<MeasuredOffset>`.
+/// The interval is `[nominal − minus, nominal + plus]` in checked i64.
+/// Positive-length validation is not applied to `abs(nominal)`.
 pub fn normalize_offset(
     raw: &RawOffsetDto,
     path: &str,
@@ -584,21 +687,20 @@ pub fn normalize_offset(
         return Fact::unknown();
     };
     let nominal = match parse_position(&raw.text) {
-        Ok(Some(v)) => v,
+        Ok(Some(value)) => value,
         Ok(None) => {
             return Fact::Unknown {
                 reason: UnknownReason::NotMeasured,
             };
         }
-        Err(e) => {
-            error(diagnostics, path, e);
+        Err(code) => {
+            error(diagnostics, path, code);
             return Fact::unknown();
         }
     };
-    let Some(uncertainty) = bounded_uncertainty(
+    let Some(uncertainty) = bounded_offset_uncertainty(
         &raw.uncertainty,
-        nominal.get().unsigned_abs().into(),
-        20_000,
+        i64::from(nominal.get()),
         path,
         diagnostics,
     ) else {

@@ -50,7 +50,7 @@ const clients: ProbeClient[] = [];
 const counters: SearchCounters = { nodes: 1, validatedCandidates: 0, workUnits: '1' };
 const readyEvent = {
   kind: 'ready',
-  buildId: 'zari-domain-4',
+  buildId: 'zari-domain-5',
   protocolVersion: 1,
   schemaVersion: 1,
   canonicalVersion: 1,

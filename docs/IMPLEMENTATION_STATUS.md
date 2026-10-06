@@ -1,3 +1,33 @@
+# 2026-10-07 — ZARI-SPATIAL-008 측정 완성 ADR와 typed 입력·Worker 계약
+
+정본은 GitHub issue #57, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-008`이다. 관찰한 base SHA는 `d71b09f221c6adf4b81c1e263cac5a061028a715`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (저장소 소유자), 2026-10-07 00:31 KST. 원문: "008 ADR 채택한다. Fable 게이트는 앞 노드처럼 독립 리뷰 2회로 대체하고, 머지도 네가 해라." SP-008만 채택이다. SP-009부터 SP-016은 후보다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-008-measurement-completion.md`와 `design/DECISIONS.md` D008. 측정 완성 후보 문서에는 SP-008 채택 노트만 추가했다.
+- 부호 있는 오프셋 구간은 checked i64 `[nominal−minus, nominal+plus]`이다. 명목값과 양 끝점은 PositionMm −20000..=20000, 경계는 ClearanceMm 0..=10000이다. 양의 길이 규칙은 그대로이고 `abs(nominal)`에 적용하지 않는다. 빈 경계는 0이 아니다. `UserMeasured`는 Unverified다.
+- `normalizeInput`에 선택 필드 `groupFormatRequests`와 항상 있는 `formattedGroups`를 추가했다. 카탈로그와 보유 용기 물리는 `catalog_field_read_only`다. `queryNextFacts`는 ADR과 JsonSchema가 아닌 Rust 타입에만 있다. 명령, capability, 생성 스키마에는 없다.
+- `BUILD_ID`는 `zari-domain-5`다. capability 목록과 순서는 이전과 같다. 페이지는 순서까지 같아야 수락한다. persisted schemaVersion은 1이다.
+- 기존 fixture 107개는 `engineContext.buildId` 한 줄만 바뀌었다. `project-minimal-pass` 다이제스트 `bdc80a6cc50fa632760be5c7f5c997abf5fd7ba59659e2d0c9537fe4570edacd`는 그대로다. 손 계산 오프셋 fixture 10개를 추가했다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, `CARGO_BUILD_JOBS=4`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 97개 (core lib 29, bootstrap 9, domain 11, edit 6, protocol 17, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 117건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:generate`, `npm run contracts:check`: exit 0, fixture 117. 생성 파일은 생성기가 썼다
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 15 files / 111), `npm run build`, `node scripts/check-design-tokens.mjs --self-test` (자체 10, 대비 39/39): exit 0
+- `npm run test:browser -- --project=chromium`: 첫 실행 59 passed (57.3s). create-project `worker-state` flake는 이 실행에 없었다. 재시도하지 않았고 타임아웃을 올리지 않았다
+- `npm run test:parity`: native↔Chromium 117 fixture, parity 2 passed (23.8s)
+- `docs/evidence/ZARI-SPATIAL-001-*.png` 두 파일의 sha256은 실행 전과 같다
+
+하지 않은 것: SP-009 화면, SP-010 query 실행, Confirmed 단정, 스키마 마이그레이션, Firefox/WebKit 브라우저 스위트, 전화, 전용 GPU. SP-007의 3D 라벨 겹침은 그대로다. 상세는 `docs/evidence/ZARI-SPATIAL-008.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. SP-009는 그 노드의 채택 전이다.
+
 # 2026-10-06 — ZARI-SPATIAL-007 실제 화면 draft evidence와 승인 인계
 
 정본은 GitHub issue #55, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-007`이다. 관찰한 base SHA는 `29370e23a082c49aa4d8d7943b0e6e71c7884b4c`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다. 캡처는 draft이며 화면 승인이 아니다.

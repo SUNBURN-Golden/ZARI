@@ -630,8 +630,16 @@ export type DomainFixtureExpected =
   | {
       decodeError: boolean;
       diagnostics: ExpectedDiagnostic[];
+      /**
+       * Group format results. Empty when the fixture requests none.
+       */
+      formattedGroups?: FormattedMeasurementGroup[];
       inputDigest: Digest | null;
       kind: 'normalizeProjectInput';
+      /**
+       * Hand-checked signed-offset intervals. Empty for older fixtures.
+       */
+      offsetIntervals?: ExpectedOffsetInterval[];
     }
   | {
       computedDigest: Digest | null;
@@ -716,6 +724,72 @@ export type DomainFixtureExpected =
        * within the declared steps (last event is `searchProgress`).
        */
       termination: SearchTermination | null;
+    };
+/**
+ * Which record the path addresses. Space has no id in the path; the caller
+ * binds `ProjectInput.space.id`.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "RoutedEntity".
+ */
+export type RoutedEntity =
+  | {
+      kind: 'space';
+    }
+  | {
+      id: Id;
+      kind: 'obstacle';
+    }
+  | {
+      id: Id;
+      kind: 'item';
+    }
+  | {
+      id: Id;
+      kind: 'ownedContainer';
+    }
+  | {
+      id: Id;
+      kind: 'catalogVariant';
+    }
+  | {
+      id: Id;
+      kind: 'catalogOffer';
+    };
+/**
+ * Finite measurement kinds. Catalogue and owned-container physical facts
+ * use the same kinds but are not project-mutable.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "MeasurementFieldKind".
+ */
+export type MeasurementFieldKind =
+  | 'positiveLength'
+  | 'signedOffset'
+  | 'clearance'
+  | 'quantity'
+  | 'massGrams'
+  | 'moneyKrw'
+  | 'packQuantity';
+/**
+ * Uncertainty texts after a successful group conversion.
+ * `notConverted` means the caller keeps its original strings.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FormattedUncertainty".
+ */
+export type FormattedUncertainty =
+  | {
+      state: 'unknown';
+    }
+  | {
+      minusText: string;
+      plusText: string;
+      state: 'bounded';
+    }
+  | {
+      code: string;
+      state: 'notConverted';
     };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -1218,6 +1292,11 @@ export type Command =
     }
   | {
       formatRequests: FieldFormatRequest[];
+      /**
+       * Nominal and active bounds, converted together. Omitted requests
+       * are an empty group. A read-only or unknown path fails the command.
+       */
+      groupFormatRequests?: MeasurementGroupFormatRequest[];
       input: NormalizeInputDto;
       kind: 'normalizeInput';
       priorInputDigest: string | null;
@@ -1636,6 +1715,7 @@ export type Event =
       diagnostics: Diagnostic[];
       equivalentToPrior: boolean;
       formattedFields: FormattedField[];
+      formattedGroups: FormattedMeasurementGroup[];
       inputDigest: string | null;
       kind: 'normalized';
       normalizedInput: NormalizedInput | null;
@@ -2242,6 +2322,10 @@ export interface DomainFixture {
   engineContext: EngineContext;
   expected: DomainFixtureExpected;
   fixtureSchemaVersion: number;
+  /**
+   * Optional group unit conversions exercised with this normalize call.
+   */
+  groupFormatRequests?: MeasurementGroupFormatRequest[];
   input: unknown;
   operation: DomainOperation;
   schemaVersion: number;
@@ -2255,6 +2339,34 @@ export interface DomainFixture {
 export interface ExpectedDiagnostic {
   code: string;
   fieldPath: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FormattedMeasurementGroup".
+ */
+export interface FormattedMeasurementGroup {
+  converted: boolean;
+  entity: RoutedEntity;
+  fieldPath: string;
+  kind: MeasurementFieldKind;
+  mutable: boolean;
+  nominalText: string | null;
+  uncertainty: FormattedUncertainty;
+  unit: Unit;
+}
+/**
+ * Hand-checked signed-offset interval on one normalized field.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedOffsetInterval".
+ */
+export interface ExpectedOffsetInterval {
+  fieldPath: string;
+  high: number;
+  low: number;
+  minusMm: number;
+  nominal: number;
+  plusMm: number;
 }
 /**
  * The expected result of one catalog field conversion: either the exact
@@ -2341,6 +2453,14 @@ export interface SearchCounters {
   nodes: number;
   validatedCandidates: number;
   workUnits: WorkCount;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "MeasurementGroupFormatRequest".
+ */
+export interface MeasurementGroupFormatRequest {
+  fieldPath: string;
+  unit: Unit;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

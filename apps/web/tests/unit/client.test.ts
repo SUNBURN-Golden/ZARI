@@ -1,5 +1,11 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { ProbeClient, StaleRequest, type WorkerPort } from '../../src/worker/client';
+import {
+  ProbeClient,
+  StaleRequest,
+  WORKER_BUILD_ID,
+  WORKER_CAPABILITIES,
+  type WorkerPort,
+} from '../../src/worker/client';
 import type { ProtocolRequest, ProtocolResponse } from '../../src/contracts/generated/dto';
 class Port implements WorkerPort {
   onmessage: WorkerPort['onmessage'] = null;
@@ -23,30 +29,13 @@ class Port implements WorkerPort {
 const clients: ProbeClient[] = [];
 const readyEvent = {
   kind: 'ready',
-  buildId: 'zari-domain-4',
+  buildId: WORKER_BUILD_ID,
   protocolVersion: 1,
   schemaVersion: 1,
   canonicalVersion: 1,
   ruleVersion: 'zari-domain-v1',
   solverVersion: 'zari-solver-v1',
-  capabilities: [
-    'initialize',
-    'activateProject',
-    'normalizeInput(bootstrap)',
-    'normalizeInput(project)',
-    'evaluateProbe',
-    'verifyRecord',
-    'normalizeCatalogFields',
-    'validateCatalog',
-    'validateCandidate',
-    'evaluateLayoutEdit',
-    'projectSpatialView',
-    'disposeProject',
-    'proposeStrategies',
-    'startSearch',
-    'stepSearch',
-    'cancelSearch',
-  ],
+  capabilities: WORKER_CAPABILITIES,
 } as const;
 afterEach(() => clients.splice(0).forEach((client) => client.dispose()));
 async function setup() {
@@ -128,4 +117,42 @@ it('malformed and oversized response retires the Worker', async () => {
   port.onmessage?.({ data: 'x'.repeat(5 * 1024 * 1024 + 1) } as MessageEvent);
   expect(failure).toHaveBeenCalledOnce();
   expect(port.terminate).toHaveBeenCalled();
+});
+
+async function startWith(
+  event: ProtocolResponse['event'],
+): Promise<{ error: unknown }> {
+  const ports: Port[] = [];
+  const client = new ProbeClient(() => {
+    const port = new Port();
+    ports.push(port);
+    return port;
+  });
+  clients.push(client);
+  const start = client.start();
+  ports[0]!.respond(event);
+  return { error: await start.then(() => null, (error: unknown) => error) };
+}
+
+it('rejects an old build id and a capability list that is not an exact match', async () => {
+  const oldBuild = await startWith({
+    ...readyEvent,
+    buildId: 'zari-domain-4',
+    capabilities: [...readyEvent.capabilities],
+  });
+  expect(oldBuild.error).toEqual(new Error('protocol_version_mismatch'));
+  const swapped = [...readyEvent.capabilities];
+  [swapped[0], swapped[1]] = [swapped[1]!, swapped[0]!];
+  const swappedReply = await startWith({ ...readyEvent, capabilities: swapped });
+  expect(swappedReply.error).toEqual(new Error('protocol_version_mismatch'));
+  const extra = await startWith({
+    ...readyEvent,
+    capabilities: [...readyEvent.capabilities, 'queryNextFacts'],
+  });
+  expect(extra.error).toEqual(new Error('protocol_version_mismatch'));
+  const missing = await startWith({
+    ...readyEvent,
+    capabilities: readyEvent.capabilities.slice(0, -1),
+  });
+  expect(missing.error).toEqual(new Error('protocol_version_mismatch'));
 });

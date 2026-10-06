@@ -1391,6 +1391,136 @@
         "browserWasm"
       ],
       "introducedBy": "ZARI-SPATIAL-001"
+    },
+    {
+      "id": "offset-zero-bounded",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-zero-bounded.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-zero-bounded.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-zero-span",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-zero-span.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-zero-span.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-negative-span",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-negative-span.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-negative-span.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-endpoints",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-endpoints.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-endpoints.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-endpoint-high-out-of-range",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-endpoint-high-out-of-range.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-endpoint-high-out-of-range.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-endpoint-low-out-of-range",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-endpoint-low-out-of-range.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-endpoint-low-out-of-range.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-nominal-out-of-range",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-nominal-out-of-range.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-nominal-out-of-range.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-i64-overflow",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-i64-overflow.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-i64-overflow.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-missing-bound",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-missing-bound.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-missing-bound.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "offset-group-cap",
+      "caseKind": "projectNormalize",
+      "inputPath": "fixtures/domain/offset-group-cap.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/offset-group-cap.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-008"
     }
   ]
 }
