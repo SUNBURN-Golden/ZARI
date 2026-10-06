@@ -946,6 +946,14 @@
               },
               "type": "array"
             },
+            "groupFormatRequests": {
+              "default": [],
+              "description": "Nominal and active bounds, converted together. Omitted requests\nare an empty group. A read-only or unknown path fails the command.",
+              "items": {
+                "$ref": "#/definitions/MeasurementGroupFormatRequest"
+              },
+              "type": "array"
+            },
             "input": {
               "$ref": "#/definitions/NormalizeInputDto"
             },
@@ -1573,6 +1581,14 @@
           "minimum": 0,
           "type": "integer"
         },
+        "groupFormatRequests": {
+          "default": [],
+          "description": "Optional group unit conversions exercised with this normalize call.",
+          "items": {
+            "$ref": "#/definitions/MeasurementGroupFormatRequest"
+          },
+          "type": "array"
+        },
         "input": true,
         "operation": {
           "$ref": "#/definitions/DomainOperation"
@@ -1610,6 +1626,14 @@
               },
               "type": "array"
             },
+            "formattedGroups": {
+              "default": [],
+              "description": "Group format results. Empty when the fixture requests none.",
+              "items": {
+                "$ref": "#/definitions/FormattedMeasurementGroup"
+              },
+              "type": "array"
+            },
             "inputDigest": {
               "anyOf": [
                 {
@@ -1623,6 +1647,14 @@
             "kind": {
               "const": "normalizeProjectInput",
               "type": "string"
+            },
+            "offsetIntervals": {
+              "default": [],
+              "description": "Hand-checked signed-offset intervals. Empty for older fixtures.",
+              "items": {
+                "$ref": "#/definitions/ExpectedOffsetInterval"
+              },
+              "type": "array"
             }
           },
           "required": [
@@ -2166,6 +2198,12 @@
               },
               "type": "array"
             },
+            "formattedGroups": {
+              "items": {
+                "$ref": "#/definitions/FormattedMeasurementGroup"
+              },
+              "type": "array"
+            },
             "inputDigest": {
               "type": [
                 "string",
@@ -2193,6 +2231,7 @@
             "inputDigest",
             "equivalentToPrior",
             "formattedFields",
+            "formattedGroups",
             "diagnostics"
           ],
           "type": "object"
@@ -2790,6 +2829,47 @@
         "segment"
       ],
       "title": "ExpectedDimensionGuide",
+      "type": "object"
+    },
+    "ExpectedOffsetInterval": {
+      "additionalProperties": false,
+      "description": "Hand-checked signed-offset interval on one normalized field.",
+      "properties": {
+        "fieldPath": {
+          "type": "string"
+        },
+        "high": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "low": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "minusMm": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "nominal": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "plusMm": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "nominal",
+        "minusMm",
+        "plusMm",
+        "low",
+        "high"
+      ],
+      "title": "ExpectedOffsetInterval",
       "type": "object"
     },
     "ExpectedRectGeometry": {
@@ -4691,6 +4771,107 @@
       "title": "FormattedField",
       "type": "object"
     },
+    "FormattedMeasurementGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "converted": {
+          "type": "boolean"
+        },
+        "entity": {
+          "$ref": "#/definitions/RoutedEntity"
+        },
+        "fieldPath": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/MeasurementFieldKind"
+        },
+        "mutable": {
+          "type": "boolean"
+        },
+        "nominalText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uncertainty": {
+          "$ref": "#/definitions/FormattedUncertainty"
+        },
+        "unit": {
+          "$ref": "#/definitions/Unit"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "entity",
+        "kind",
+        "mutable",
+        "converted",
+        "unit",
+        "nominalText",
+        "uncertainty"
+      ],
+      "title": "FormattedMeasurementGroup",
+      "type": "object"
+    },
+    "FormattedUncertainty": {
+      "description": "Uncertainty texts after a successful group conversion.\n`notConverted` means the caller keeps its original strings.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "minusText": {
+              "type": "string"
+            },
+            "plusText": {
+              "type": "string"
+            },
+            "state": {
+              "const": "bounded",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "minusText",
+            "plusText"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notConverted",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "code"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FormattedUncertainty"
+    },
     "Frequency": {
       "enum": [
         "daily",
@@ -5281,6 +5462,37 @@
         "depth"
       ],
       "title": "MeasuredRectangle",
+      "type": "object"
+    },
+    "MeasurementFieldKind": {
+      "description": "Finite measurement kinds. Catalogue and owned-container physical facts\nuse the same kinds but are not project-mutable.",
+      "enum": [
+        "positiveLength",
+        "signedOffset",
+        "clearance",
+        "quantity",
+        "massGrams",
+        "moneyKrw",
+        "packQuantity"
+      ],
+      "title": "MeasurementFieldKind",
+      "type": "string"
+    },
+    "MeasurementGroupFormatRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "fieldPath": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/Unit"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "unit"
+      ],
+      "title": "MeasurementGroupFormatRequest",
       "type": "object"
     },
     "MeasurementOrigin": {
@@ -8328,6 +8540,110 @@
       "pattern": "^(?:0|[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4][0-9]{0}|18446744073709551615)(?![\\s\\S])",
       "title": "Revision",
       "type": "string"
+    },
+    "RoutedEntity": {
+      "description": "Which record the path addresses. Space has no id in the path; the caller\nbinds `ProjectInput.space.id`.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "space",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "obstacle",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "item",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "ownedContainer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "catalogVariant",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "catalogOffer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "RoutedEntity"
     },
     "RowObject": {
       "additionalProperties": false,

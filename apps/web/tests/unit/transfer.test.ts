@@ -100,7 +100,7 @@ function normalizeSample(): { input: ProjectInput; digest: string } {
     };
   send({
     meta: meta('i', { projectActivationId: 'system', projectId: 'system' }),
-    command: { kind: 'initialize', buildId: 'zari-domain-4', expectedProtocolVersion: 1, expectedSchemaVersion: 1 },
+    command: { kind: 'initialize', buildId: 'zari-domain-5', expectedProtocolVersion: 1, expectedSchemaVersion: 1 },
   });
   send({ meta: meta('a'), command: { kind: 'activateProject', context: { kind: 'bootstrap' } } });
   const reply = send({

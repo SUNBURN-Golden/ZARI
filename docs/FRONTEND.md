@@ -132,6 +132,8 @@ The normative sequence is:
 
 No JavaScript float normalization occurs during unit switching. For valid input, request exact Rust reformatting into the chosen unit and update raw text only for the matching epoch. For invalid/incomplete text, preserve the raw value and current unit, explain `단위를 바꾸기 전에 값을 확인해 주세요`, and leave conversion pending until correction or explicit unknown. The unit label never silently reinterprets an invalid raw number.
 
+A nominal+bounds group is one editor epoch. React does not parse the group with `parseFloat`, fill a missing bound with zero, or treat `Evidence.note` as a number, a geometry, a conflict, or a confirmation. `UserMeasured` stays unverified until a separate confirmation exists. Catalogue and owned-container physical paths are read-only in the project draft. The field kind comes from the Rust route grammar, not from a sample id such as `item-a`. The future next-fact query is not a client call in this contract.
+
 Switching display units can alter raw state and durable project revision without altering physical semantics. During asynchronous conversion, use an explicit converting state and the same epoch guard. Do not mark a conversion complete because a CSS transition ended.
 
 On explicit form submission, collect current matching diagnostics, show an error summary, and focus the first invalid field. During typing, avoid repeating alerts. Unknown measurement is a data state with guidance, not necessarily a malformed form value; whether compilation can proceed is a Rust/product-scope decision.

@@ -47,6 +47,18 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: 2026-09-30 AIOPS 세션에서 사용자가 Fable G0 결정 질문에 "A"로 답했다.
 - 되돌리기: SP-005 병합 전에는 이 결정만 바꾸면 된다. 병합 뒤에는 새 결정으로 dependency와 3D 보기를 제거하며, 2D·Rust 계약은 3D와 독립이라 영향이 없다.
 
+## D008 — 측정 완성 ADR와 signed-offset 정규화 / 채택
+
+- ID: D008
+- 상태: 채택. 사용자 결정 2026-10-07 00:31 KST. SP-008만 해당한다. SP-009부터 SP-016은 후보로 남는다.
+- 문제: 이후 UI가 정규화, 근거 신뢰, 다음 사실의 우선순위를 스스로 만들 수 있다. 부호 있는 오프셋은 양의 길이 규칙으로 검사되어 `0±0`, 0을 가로지르는 구간, 합법적인 음수 구간이 거절되었다.
+- 변경 대상: [docs/adr/SP-008-measurement-completion.md](../docs/adr/SP-008-measurement-completion.md), Rust raw/normalize/protocol과 생성 계약, `BUILD_ID` `zari-domain-4`에서 `zari-domain-5`로. capability 목록과 persisted `schemaVersion` 1은 그대로다. `queryNextFacts`는 ADR과 비공개 스키마 Rust 타입에만 고정하고 명령·capability·생성 스키마로 내보내지 않는다.
+- 검토한 대안: (A) 오프셋 구간을 PositionMm 끝점과 ClearanceMm 경계로 따로 검사하고, 그룹 형식은 기존 `normalizeInput`의 추가 필드로 둔다. (B) 양의 길이 검사를 `abs(nominal)`에 유지한다. (C) 다음 사실 query를 이 노드에서 실행 가능한 명령으로 등록한다.
+- 선택: A. 지원되는 raw DTO와 schemaVersion 1이 사실을 표현하므로 마이그레이션, 새 geometry, provider, 권한은 없다. B는 합법적인 0과 음수 구간을 거절한다. C는 SP-010의 범위다.
+- 조건: unknown을 통과나 기본값으로 바꾸지 않는다. `UserMeasured`는 Unverified다. `Evidence.note`는 사람 텍스트이며 숫자·기하·충돌·Confirmed의 근거가 아니다. 카탈로그와 보유 용기 물리는 프로젝트에서 읽기 전용이다. 이전 유효 fixture의 기대 출력은 `engineContext.buildId` 재고정 외에는 바이트가 같다. Fable ARCHITECTURE와 비작성자 A3는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 사용자 승인 근거: JunTae Park (저장소 소유자), 2026-10-07 00:31 KST, 원문: "008 ADR 채택한다. Fable 게이트는 앞 노드처럼 독립 리뷰 2회로 대체하고, 머지도 네가 해라."
+- 되돌리기: SP-009 전에 이 결정과 `zari-domain-5` 계약을 되돌리려면 새 결정으로 BUILD_ID와 오프셋 규칙을 함께 되돌린다. 이미 저장된 schemaVersion 1 레코드의 의미는 바꾸지 않는다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

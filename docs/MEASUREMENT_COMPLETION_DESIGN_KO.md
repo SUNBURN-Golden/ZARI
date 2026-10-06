@@ -3,6 +3,8 @@
 공통 후속 규약: [중앙 #47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47), 후보 HEAD `09e161caa652d75e9617caf632b3b9899be35740`. [고정 설계](https://github.com/BeautifulMind-JT/ai-ops-control-plane/blob/09e161caa652d75e9617caf632b3b9899be35740/engineering/docs/PROGRAM_EXECUTION_EVOLUTION_DESIGN_KO.md)는 아직 운영·승인 evidence가 아니다.
 
 상태: **후속 설계 후보 / 미채택 / 구현·실측·감사·화면 승인 없음**. 작성일 2026-09-30 KST.
+
+**SP-008만 채택 (2026-10-07).** 저장소 소유자 JunTae Park가 SP-008 측정 완성 ADR을 채택했다. 기록은 [D008](../design/DECISIONS.md)과 [docs/adr/SP-008-measurement-completion.md](adr/SP-008-measurement-completion.md)이다. SP-009부터 SP-016까지는 아래 후보 상태를 유지하며, 이 노트는 그 본문을 다시 쓰지 않는다.
 기준은 [ZARI #36](https://github.com/BeautifulMind-JT/ZARI/pull/36)의
 `bdeaaf0881b48f819c56a539799165a9d545677f`이다. 기존 공간 설계 #35와 SP-001–007,
 현재 11개 기본 치수의 범위를 보존하고, SP-008–011을 별도 후속 후보로 추가한다.
