@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "project": "ZARI",
   "status": "draft-screens-captured",
-  "note": "Actual Task001 browser captures; no screen has user approval. Full-page captures use the stated viewport.",
+  "note": "Task001 full-page drafts and ZARI-SPATIAL-007 viewport drafts. No screen has user approval. spatialDraft007 is a proposed set, not an approval.",
   "captureEnvironment": {
     "browserDistribution": "@sparticuz/chromium@153.0.0 (external test environment only)",
     "launchOptions": {
@@ -190,6 +190,2499 @@
       "reducedMotion": "reduce",
       "captureCommand": "ZARI_CAPTURE_DIR=/workspace/scratch/62a9fa3ca945/zari001-final-baselines node /tmp/zari-run.mjs npm run capture:baselines",
       "capturedAt": "2026-09-23T00:42:26.022Z"
+    },
+    {
+      "id": "zari007-measurement-known-1440",
+      "status": "draft",
+      "file": "draft/zari007/measurement-known-1440.png",
+      "sha256": "481dd5cff72309edfb023513afb15ef286a438a9d88c797717adbac7cbec08e5",
+      "bytes": 59172,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id",
+      "state": "measurement-known",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "600"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Measurement page. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:05.563Z",
+      "consoleErrors": [],
+      "detail": "Sample interior width focused. Diagram scale is mm."
+    },
+    {
+      "id": "zari007-measurement-known-390",
+      "status": "draft",
+      "file": "draft/zari007/measurement-known-390.png",
+      "sha256": "85aee9e8096af7201a0bf3ae8a92d94d96ee242d6aac6a61bf2a82e4c66ec2bd",
+      "bytes": 33479,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id",
+      "state": "measurement-known",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "600"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Measurement page. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:05.631Z",
+      "consoleErrors": [],
+      "detail": "Sample interior width focused. Diagram scale is mm."
+    },
+    {
+      "id": "zari007-unknown-1440",
+      "status": "draft",
+      "file": "draft/zari007/unknown-1440.png",
+      "sha256": "620f2386ae6eb99d4891395b269ba110386ec20e9f61e58f1cf101a6e637fc51",
+      "bytes": 63734,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id",
+      "state": "unknown",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.opening.height",
+        "text": ""
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Measurement page. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:05.871Z",
+      "consoleErrors": [],
+      "detail": "Opening height cleared. Normalized value 미측정. No scaled segment."
+    },
+    {
+      "id": "zari007-unknown-390",
+      "status": "draft",
+      "file": "draft/zari007/unknown-390.png",
+      "sha256": "37ce0e2fd0cfc2ea69155a8a1e21c686cfda9907bb4c28b0aa495c281c0d3214",
+      "bytes": 36305,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id",
+      "state": "unknown",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.opening.height",
+        "text": ""
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Measurement page. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:05.969Z",
+      "consoleErrors": [],
+      "detail": "Opening height cleared. Normalized value 미측정. No scaled segment."
+    },
+    {
+      "id": "zari007-historical-1440",
+      "status": "draft",
+      "file": "draft/zari007/historical-1440.png",
+      "sha256": "b1278682d9e05b2097b33fc91eec85429dd70dd67f27936d17231294aa9edea2",
+      "bytes": 63244,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id",
+      "state": "historical",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "abc"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Measurement page. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:06.282Z",
+      "consoleErrors": [],
+      "detail": "Non-numeric width. Previous 600 mm stays historical. Scale is none."
+    },
+    {
+      "id": "zari007-historical-390",
+      "status": "draft",
+      "file": "draft/zari007/historical-390.png",
+      "sha256": "699201a70ba5aee24fa007eeea9a6c028f98a61c125f0ed55ed6c1622660549e",
+      "bytes": 35286,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id",
+      "state": "historical",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "abc"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Measurement page. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:06.368Z",
+      "consoleErrors": [],
+      "detail": "Non-numeric width. Previous 600 mm stays historical. Scale is none."
+    },
+    {
+      "id": "zari007-success-1440",
+      "status": "draft",
+      "file": "draft/zari007/success-1440.png",
+      "sha256": "dbe18a972e27cae80c01d0be2a11e7c4480f72f7831152c54b970e70c28497b1",
+      "bytes": 68337,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "success",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "sample": "restored"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D plan. WebGL chunk not requested.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:08.545Z",
+      "consoleErrors": [],
+      "detail": "Worker search finished. Projection ready on the sample plan."
+    },
+    {
+      "id": "zari007-success-390",
+      "status": "draft",
+      "file": "draft/zari007/success-390.png",
+      "sha256": "730995ff99568a27fb66a396a399619025ef0630b69f46d1d4b0fd11358afee5",
+      "bytes": 34337,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "success",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "sample": "restored"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D plan. WebGL chunk not requested.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:08.705Z",
+      "consoleErrors": [],
+      "detail": "Worker search finished. Projection ready on the sample plan."
+    },
+    {
+      "id": "zari007-checks-unknown-1440",
+      "status": "draft",
+      "file": "draft/zari007/checks-unknown-1440.png",
+      "sha256": "169f9d6e377d8392e58a916b5cb0efac9ffd605842caf05c9cd9fb77f23ef40a",
+      "bytes": 74211,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "checks-unknown",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D plan. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:08.880Z",
+      "consoleErrors": [],
+      "detail": "미확인 검사 13건: 외형 치수, 지지면, 내부 수용, 반입 경로, 사용 접근"
+    },
+    {
+      "id": "zari007-checks-unknown-390",
+      "status": "draft",
+      "file": "draft/zari007/checks-unknown-390.png",
+      "sha256": "30d743cef9cd7f2e79689bae1d9abfc4ac340a530dd6a21999aeee4462703bbb",
+      "bytes": 51300,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "checks-unknown",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D plan. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:09.006Z",
+      "consoleErrors": [],
+      "detail": "미확인 검사 13건: 외형 치수, 지지면, 내부 수용, 반입 경로, 사용 접근"
+    },
+    {
+      "id": "zari007-selection-dimensions-1440",
+      "status": "draft",
+      "file": "draft/zari007/selection-dimensions-1440.png",
+      "sha256": "0e7596660cc765bb7d52d53e826dcedf62209ecc375402e7859fa8cf35b0b350",
+      "bytes": 95561,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "selection-dimensions",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D inspector. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:09.284Z",
+      "consoleErrors": [],
+      "detail": "외경 폭 520 mm · 측정 오차 미확인 깊이 255 mm · 측정 오차 미확인 높이 220 mm · 측정 오차 미확인 내경 폭 510 mm · 측정 오차 미확인 깊이 245 mm · 측정 오차 미확인 높이 210 mm · 측정 오차 미확인"
+    },
+    {
+      "id": "zari007-selection-dimensions-390",
+      "status": "draft",
+      "file": "draft/zari007/selection-dimensions-390.png",
+      "sha256": "e52f3ac82b5cf586f1493cf38ffba82047b30c326b58e5ed50522701c6fe4834",
+      "bytes": 35033,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "selection-dimensions",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Compact inspector sheet. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:09.405Z",
+      "consoleErrors": [],
+      "detail": "외경 폭 520 mm · 측정 오차 미확인 깊이 255 mm · 측정 오차 미확인 높이 220 mm · 측정 오차 미확인 내경 폭 510 mm · 측정 오차 미확인 깊이 245 mm · 측정 오차 미확인 높이 210 mm · 측정 오차 미확인"
+    },
+    {
+      "id": "zari007-drag-preview-1440",
+      "status": "draft",
+      "file": "draft/zari007/drag-preview-1440.png",
+      "sha256": "75220fd8ca187a5818252db64e6b2b59a6037fac249515b1fd48600bdc7dd545",
+      "bytes": 91485,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-preview",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Pointer is down. Rust has not been asked to evaluate the move.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:09.815Z",
+      "consoleErrors": [],
+      "detail": "검사 전 ghost on the top diagram."
+    },
+    {
+      "id": "zari007-drag-preview-390",
+      "status": "draft",
+      "file": "draft/zari007/drag-preview-390.png",
+      "sha256": "ed41511567e36037a7a4f5896b12208355bf1a5f3323771f3f1ff5c128fa3d3d",
+      "bytes": 34417,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-preview",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Explicit move mode at 390. Pointer is down. No evaluate yet.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:10.266Z",
+      "consoleErrors": [],
+      "detail": "검사 전 ghost. Compact band uses 평면에서 이동."
+    },
+    {
+      "id": "zari007-drag-committed-1440",
+      "status": "draft",
+      "file": "draft/zari007/drag-committed-1440.png",
+      "sha256": "a16dbdbaf7de9f0c29715fe06dae6b1dd4828ada979fa6e1d2da4fbffd26d18d",
+      "bytes": 72040,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-committed",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. One pointerup evaluateLayoutEdit. Save succeeded.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:10.800Z",
+      "consoleErrors": [],
+      "detail": "검증된 작업 계획 after a -15 mm depth drag."
+    },
+    {
+      "id": "zari007-drag-committed-390",
+      "status": "draft",
+      "file": "draft/zari007/drag-committed-390.png",
+      "sha256": "5ddf996ff1333bcbc0d28f9ca2e1f155747a91b5bbe76133fe2c5b4747f175c2",
+      "bytes": 42511,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-committed",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. One pointerup evaluateLayoutEdit. Save succeeded.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:10.963Z",
+      "consoleErrors": [],
+      "detail": "검증된 작업 계획 after a -15 mm depth drag."
+    },
+    {
+      "id": "zari007-drag-save-failed-1440",
+      "status": "draft",
+      "file": "draft/zari007/drag-save-failed-1440.png",
+      "sha256": "3b1932d971aba92ede0a278e0fd4cddaf50865bd4f4a969ae3a1b9682fe46642",
+      "bytes": 70124,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-save-failed",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. Rust accepted the move. IndexedDB snapshot and draft writes were injected to fail.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:11.614Z",
+      "consoleErrors": [],
+      "detail": "검증된 작업안이 화면에 남고 IndexedDB snapshot/draft write was injected to fail."
+    },
+    {
+      "id": "zari007-drag-save-failed-390",
+      "status": "draft",
+      "file": "draft/zari007/drag-save-failed-390.png",
+      "sha256": "89479ec5185987994006ff2e43af8b6bda2b86e3ce0d299bd0ccf2098799ba52",
+      "bytes": 39053,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-save-failed",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. Rust accepted the move. IndexedDB snapshot and draft writes were injected to fail.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:11.753Z",
+      "consoleErrors": [],
+      "detail": "검증된 작업안이 화면에 남고 IndexedDB snapshot/draft write was injected to fail."
+    },
+    {
+      "id": "zari007-drag-rejected-1440",
+      "status": "draft",
+      "file": "draft/zari007/drag-rejected-1440.png",
+      "sha256": "ce73d5db3a1827ec5bb22b99ddf7ea1e2c2635656f951224fdd52cb49f28222c",
+      "bytes": 97180,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-rejected",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "moveX": "19999"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. Same move command as a drag, sent as coordinates. Rust rejected it.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:12.579Z",
+      "consoleErrors": [],
+      "detail": "위치 이동이(가) 거부되었습니다 — 기존 계획은 바뀌지 않았습니다. 외형 치수: 공간 밖으로 나갑니다 지지면: 지지면에서 벗어납니다 반입 경로: 문 입구로 들어갈 수 없습니다 사용 접근: 작업 공간이 부족합니다"
+    },
+    {
+      "id": "zari007-drag-rejected-390",
+      "status": "draft",
+      "file": "draft/zari007/drag-rejected-390.png",
+      "sha256": "2104b352eff26b835741c1ce1cd7434dcfb684ced338bd4461fb57e3c02995cd",
+      "bytes": 40649,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "drag-rejected",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "moveX": "19999"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. Same move command as a drag, sent as coordinates. Rust rejected it.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:12.788Z",
+      "consoleErrors": [],
+      "detail": "위치 이동이(가) 거부되었습니다 — 기존 계획은 바뀌지 않았습니다. 외형 치수: 공간 밖으로 나갑니다 지지면: 지지면에서 벗어납니다 반입 경로: 문 입구로 들어갈 수 없습니다 사용 접근: 작업 공간이 부족합니다"
+    },
+    {
+      "id": "zari007-spatial-ready-1440",
+      "status": "draft",
+      "file": "draft/zari007/spatial-ready-1440.png",
+      "sha256": "c8aa211066397c1edb62dd44d0fe4e2d1cde443cdf6ffa562e8a85965d0992a5",
+      "bytes": 56311,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "spatial-ready",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Ready oblique software GL. hide-front false, hide-top false. Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:14.210Z",
+      "consoleErrors": [],
+      "detail": "3D status ready. Front and top boundaries shown."
+    },
+    {
+      "id": "zari007-spatial-ready-390",
+      "status": "draft",
+      "file": "draft/zari007/spatial-ready-390.png",
+      "sha256": "f18e4202fec11e76f394ab1c3eca47741cee145b8c16623e64a3f1ec6fc8ed95",
+      "bytes": 29586,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "spatial-ready",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Ready oblique software GL. hide-front false, hide-top false. Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:14.337Z",
+      "consoleErrors": [],
+      "detail": "3D status ready. Front and top boundaries shown."
+    },
+    {
+      "id": "zari007-spatial-cutaway-1440",
+      "status": "draft",
+      "file": "draft/zari007/spatial-cutaway-1440.png",
+      "sha256": "ed6917f9b01048ace5c2ae92a14246fcc65db872dd96540b943af50418c911c8",
+      "bytes": 57102,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "spatial-cutaway",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Cutaway. hide-front true, hide-top true. Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:14.730Z",
+      "consoleErrors": [],
+      "detail": "Front and top boundaries hidden. Read-only."
+    },
+    {
+      "id": "zari007-spatial-cutaway-390",
+      "status": "draft",
+      "file": "draft/zari007/spatial-cutaway-390.png",
+      "sha256": "8e30392d7f37973f4d587077140818543b23a7af666ac7c6b631809c55fc09a6",
+      "bytes": 30280,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "spatial-cutaway",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Cutaway. hide-front true, hide-top true. Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:14.845Z",
+      "consoleErrors": [],
+      "detail": "Front and top boundaries hidden. Read-only."
+    },
+    {
+      "id": "zari007-spatial-child-1440",
+      "status": "draft",
+      "file": "draft/zari007/spatial-child-1440.png",
+      "sha256": "da9444e65b4a89c28da7d47b54428d8c6aaf2ce1b4443ea9e46247f9edb2b7fd",
+      "bytes": 84677,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "spatial-child",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:15.223Z",
+      "consoleErrors": [],
+      "detail": "Picked instance:item-a:0 inside placement:p:c:0:0."
+    },
+    {
+      "id": "zari007-guide-focus-1440",
+      "status": "draft",
+      "file": "draft/zari007/guide-focus-1440.png",
+      "sha256": "a3d3002805ada29cc261d55f4101131b035a6be41a5fb8225842da70a61a8b7d",
+      "bytes": 66269,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "guide-focus",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D guide. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:15.658Z",
+      "consoleErrors": [],
+      "detail": "현재 단계: 구매합니다"
+    },
+    {
+      "id": "zari007-guide-focus-390",
+      "status": "draft",
+      "file": "draft/zari007/guide-focus-390.png",
+      "sha256": "029b5939dc7c6e380124ea6c4134d35e5f568772ea40161268a47d1edef51b54",
+      "bytes": 50328,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "guide-focus",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D guide. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:15.890Z",
+      "consoleErrors": [],
+      "detail": "현재 단계: 구매합니다"
+    },
+    {
+      "id": "zari007-guide-diagram-1440",
+      "status": "draft",
+      "file": "draft/zari007/guide-diagram-1440.png",
+      "sha256": "87e31b090ce55ecf4dbc1a9bb0eff6bc4dc56bc59b1168f3124c0b060de078fd",
+      "bytes": 77815,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "guide-diagram",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D focus outline for the current step.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:16.040Z",
+      "consoleErrors": [],
+      "detail": "Diagram target of the focused step."
+    },
+    {
+      "id": "zari007-guide-diagram-390",
+      "status": "draft",
+      "file": "draft/zari007/guide-diagram-390.png",
+      "sha256": "7a570c0d68ca6234c99e345b07ccae92fb14a30c685426575d0c6422fffd7922",
+      "bytes": 37807,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "guide-diagram",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D focus outline for the current step.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:16.236Z",
+      "consoleErrors": [],
+      "detail": "Diagram target of the focused step."
+    },
+    {
+      "id": "zari007-a11y-focus-1440",
+      "status": "draft",
+      "file": "draft/zari007/a11y-focus-1440.png",
+      "sha256": "8145bcae29fd938e5fafdc183bb94140238d16473c2edb68725962b6ccf6d98f",
+      "bytes": 95353,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "a11y-focus",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Keyboard Tab. prefers-reduced-motion reduce.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:16.412Z",
+      "consoleErrors": [],
+      "detail": "Focused view-front. --zari-duration-fast 0s."
+    },
+    {
+      "id": "zari007-a11y-forced-colors-1440",
+      "status": "draft",
+      "file": "draft/zari007/a11y-forced-colors-1440.png",
+      "sha256": "b75b12f6084cdbcb241269c9878e569fe11b516626c6c64473e6a73ca7eb5a72",
+      "bytes": 90174,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "a11y-forced-colors",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "forced-colors active. 3D color is not the evidence; the 2D workspace is.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:16.613Z",
+      "consoleErrors": [],
+      "detail": "Forced colors on the plan workspace."
+    },
+    {
+      "id": "zari007-a11y-forced-colors-390",
+      "status": "draft",
+      "file": "draft/zari007/a11y-forced-colors-390.png",
+      "sha256": "7f4ce9baafecc45eeb90b1d40ab3ba552d20ce9983d16e47883a8114f79837ca",
+      "bytes": 33336,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "a11y-forced-colors",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "forced-colors active. 3D color is not the evidence; the 2D workspace is.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:16.819Z",
+      "consoleErrors": [],
+      "detail": "Forced colors on the plan workspace."
+    },
+    {
+      "id": "zari007-a11y-zoom-200-1440",
+      "status": "draft",
+      "file": "draft/zari007/a11y-zoom-200-1440.png",
+      "sha256": "992cfe5b4bb25b0dea2a832e5fd0f5777f067a9847b8da46b6b67b23c3a19326",
+      "bytes": 76791,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "a11y-zoom-200",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "CSS zoom 200% on the document element.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:17.041Z",
+      "consoleErrors": [],
+      "detail": "Viewport is still 1440×1000 CSS pixels. Content is zoomed."
+    },
+    {
+      "id": "zari007-progress-unavailable-1440",
+      "status": "draft",
+      "file": "draft/zari007/progress-unavailable-1440.png",
+      "sha256": "1f1191570ea5368437243948de9a11a442bffba6a4ba6142d70c18e3994fbb3a",
+      "bytes": 55123,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "progress-unavailable",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. Progress read threw. Completion was not invented.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:17.646Z",
+      "consoleErrors": [],
+      "detail": "진행 기록을 읽지 못함"
+    },
+    {
+      "id": "zari007-progress-unavailable-390",
+      "status": "draft",
+      "file": "draft/zari007/progress-unavailable-390.png",
+      "sha256": "18b37c73bb10f85f95a8e7751e7546460f2894165c1c1add63d37d39475ead53",
+      "bytes": 44405,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "progress-unavailable",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D. Progress read threw. Completion was not invented.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:17.814Z",
+      "consoleErrors": [],
+      "detail": "진행 기록을 읽지 못함"
+    },
+    {
+      "id": "zari007-conflict-1440",
+      "status": "draft",
+      "file": "draft/zari007/conflict-1440.png",
+      "sha256": "98bfc2abf73efd9cb0a2385cc5173d24d1cc0e87a4e146d96b8c8f620df2ee8a",
+      "bytes": 65918,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "conflict",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Second tab. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:19.394Z",
+      "consoleErrors": [],
+      "detail": "다른 탭에서 먼저 저장되었습니다. 이 편집은 그 기록을 덮어쓰지 않습니다. 다시 불러오기 내보내기"
+    },
+    {
+      "id": "zari007-conflict-390",
+      "status": "draft",
+      "file": "draft/zari007/conflict-390.png",
+      "sha256": "8128a6e328640821d278eca3adcc2eba27037298fc99fe643ed02ee7ae29bb27",
+      "bytes": 46802,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "conflict",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Second tab. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:19.517Z",
+      "consoleErrors": [],
+      "detail": "다른 탭에서 먼저 저장되었습니다. 이 편집은 그 기록을 덮어쓰지 않습니다. 다시 불러오기 내보내기"
+    },
+    {
+      "id": "zari007-conflict-progress-1440",
+      "status": "draft",
+      "file": "draft/zari007/conflict-progress-1440.png",
+      "sha256": "fb5e6edf9e8bcd16c49289016050e6bde6d490ef8fbd0acf714d70f749241c9f",
+      "bytes": 63269,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "conflict-progress",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Second tab guide. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:19.664Z",
+      "consoleErrors": [],
+      "detail": "다른 탭의 저장 때문에 완료를 기록하지 않습니다."
+    },
+    {
+      "id": "zari007-conflict-progress-390",
+      "status": "draft",
+      "file": "draft/zari007/conflict-progress-390.png",
+      "sha256": "dd8c585295d4ba92435d6d6276f42edd616249945903c8083b36346989956d0c",
+      "bytes": 46133,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "conflict-progress",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Second tab guide. No WebGL.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:19.821Z",
+      "consoleErrors": [],
+      "detail": "다른 탭의 저장 때문에 완료를 기록하지 않습니다."
+    },
+    {
+      "id": "zari007-stale-1440",
+      "status": "draft",
+      "file": "draft/zari007/stale-1440.png",
+      "sha256": "fae1345a67b90c6ba1d8b65c0fb753eed2f0081f59c50c68951c01de40850732",
+      "bytes": 79923,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "stale",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "610"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D historical plan after the input width changed to 610. No recompute.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:20.264Z",
+      "consoleErrors": [],
+      "detail": "입력이 바뀐 뒤의 기록입니다 — 지금 입력 기준이 아닙니다."
+    },
+    {
+      "id": "zari007-stale-390",
+      "status": "draft",
+      "file": "draft/zari007/stale-390.png",
+      "sha256": "776742a0a84354f7fcafa38e52bc1a04b8484fa78e321ddb5c56b1562b73d0df",
+      "bytes": 39154,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "stale",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "610"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "2D historical plan after the input width changed to 610. No recompute.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:20.403Z",
+      "consoleErrors": [],
+      "detail": "입력이 바뀐 뒤의 기록입니다 — 지금 입력 기준이 아닙니다."
+    },
+    {
+      "id": "zari007-stale-progress-1440",
+      "status": "draft",
+      "file": "draft/zari007/stale-progress-1440.png",
+      "sha256": "b7362090eda8a41acf2dddf49a9d6462473e7a1ae011a998403b6b2ece4d76d3",
+      "bytes": 61517,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "stale-progress",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "610"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Accepted guide refuses completion on the stale input.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:20.519Z",
+      "consoleErrors": [],
+      "detail": "입력이 바뀐 기록입니다. 완료를 바꾸지 않습니다."
+    },
+    {
+      "id": "zari007-stale-progress-390",
+      "status": "draft",
+      "file": "draft/zari007/stale-progress-390.png",
+      "sha256": "85a44270ce12ba89ca2a5e5d3c0125d2a8d2a5b14c48727995506084bf0919be",
+      "bytes": 47666,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "stale-progress",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {
+        "field": "space.interior.width",
+        "text": "610"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "Accepted guide refuses completion on the stale input.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:20.632Z",
+      "consoleErrors": [],
+      "detail": "입력이 바뀐 기록입니다. 완료를 바꾸지 않습니다."
+    },
+    {
+      "id": "zari007-fallback-webgl-1440",
+      "status": "draft",
+      "file": "draft/zari007/fallback-webgl-1440.png",
+      "sha256": "96c9dcc5f9ff0d4a732e79ad53d0991c106867841d295eaec2854c44ff4328b3",
+      "bytes": 71915,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "fallback-webgl",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "getContext(webgl) returns null. 2D diagram stays. Software-GL absence, not a discrete-GPU result.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:22.697Z",
+      "consoleErrors": [],
+      "detail": "이 브라우저에서는 WebGL을 쓸 수 없어 입체 보기를 열지 못했습니다. 평면·정면·목록·구매·숫자 편집·단계 완료는 그대로 사용할 수 있습니다. 평면으로 보기 입체 보기 다시 시도"
+    },
+    {
+      "id": "zari007-fallback-webgl-390",
+      "status": "draft",
+      "file": "draft/zari007/fallback-webgl-390.png",
+      "sha256": "d94c4dd80f4e42f4130331c0754db5559880eea2a4c03385af420989330b179c",
+      "bytes": 38424,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "fallback-webgl",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "getContext(webgl) returns null. 2D diagram stays. Software-GL absence, not a discrete-GPU result.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:22.833Z",
+      "consoleErrors": [],
+      "detail": "이 브라우저에서는 WebGL을 쓸 수 없어 입체 보기를 열지 못했습니다. 평면·정면·목록·구매·숫자 편집·단계 완료는 그대로 사용할 수 있습니다. 평면으로 보기 입체 보기 다시 시도"
+    },
+    {
+      "id": "zari007-fallback-chunk-1440",
+      "status": "draft",
+      "file": "draft/zari007/fallback-chunk-1440.png",
+      "sha256": "0454b5b0d38c250e3cbcc7e7f9b9133fe1460ee5db17aa8c8a25727eff530b06",
+      "bytes": 69278,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "fallback-chunk",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "SpatialView chunk request aborted. Service worker blocked. 2D diagram stays.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:25.055Z",
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:4173/assets/SpatialView-L8DuDDF5.js"
+      ],
+      "detail": "입체 보기 파일을 불러오지 못했습니다. 평면·정면·목록·구매·숫자 편집·단계 완료는 그대로 사용할 수 있습니다. 평면으로 보기 입체 보기 다시 시도"
+    },
+    {
+      "id": "zari007-fallback-chunk-390",
+      "status": "draft",
+      "file": "draft/zari007/fallback-chunk-390.png",
+      "sha256": "704d992dda796b4f6ef4bb52acd1f5054ca0bb52da6d7f52ac788072d61f25f9",
+      "bytes": 35634,
+      "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+      "sourceDirty": true,
+      "productTree": "apps/web/src matches sourceCommit",
+      "scenarioFiles": [
+        {
+          "path": "apps/web/tests/browser/capture-spatial.ts",
+          "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+        },
+        {
+          "path": "apps/web/tests/browser/capture.spec.ts",
+          "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+        }
+      ],
+      "screenOrStory": "#/project/:id/plan",
+      "state": "fallback-chunk",
+      "fixtureId": "sample-project-form",
+      "rawOverrides": {},
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "fullPage": false,
+      "browserAndVersion": "Chromium 153.0.8010.12",
+      "os": "linux 6.12.94+",
+      "fontEnvironment": {
+        "cssStack": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+        "koreanFallback": "WenQuanYi Zen Hei,文泉驛正黑,文泉驿正黑"
+      },
+      "locale": "ko-KR",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "durationFast": "0s",
+      "gpu": {
+        "vendor": "Google Inc. (Google)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+      },
+      "webglNote": "SpatialView chunk request aborted. Service worker blocked. 2D diagram stays.",
+      "captureCommand": "ZARI_CAPTURE_DIR=<fresh-directory> npm run capture:baselines",
+      "capturedAt": "2026-10-06T14:04:25.179Z",
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:4173/assets/SpatialView-L8DuDDF5.js"
+      ],
+      "detail": "입체 보기 파일을 불러오지 못했습니다. 평면·정면·목록·구매·숫자 편집·단계 완료는 그대로 사용할 수 있습니다. 평면으로 보기 입체 보기 다시 시도"
     }
-  ]
+  ],
+  "spatialDraft007": {
+    "task": "ZARI-SPATIAL-007",
+    "status": "draft",
+    "approved": false,
+    "approval": "USER ONLY. This capture set is not approved.",
+    "notPhysicalValidation": true,
+    "sourceCommit": "29370e23a082c49aa4d8d7943b0e6e71c7884b4c",
+    "sourceDirty": true,
+    "productTree": "apps/web/src matches sourceCommit",
+    "fixtureId": "sample-project-form",
+    "catalogDigest": "249cfb4185353ecb69c140ba6e7830b8670dd07708efa1d8cf0d5cee6e96be81",
+    "scenarioFiles": [
+      {
+        "path": "apps/web/tests/browser/capture-spatial.ts",
+        "sha256": "79fd22ae32b70d2d3084310b7186e43558014219078fb43a6984382ad0d55eb2"
+      },
+      {
+        "path": "apps/web/tests/browser/capture.spec.ts",
+        "sha256": "1845181617a91a8395000319b25a94d224a1da23a3f56172785dcfe394805c5f"
+      }
+    ],
+    "gpu": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "available": true,
+      "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+    },
+    "reducedMotion": "reduce",
+    "durationFast": "0s",
+    "proposedApprovalSet": [
+      "zari007-measurement-known-1440",
+      "zari007-measurement-known-390",
+      "zari007-unknown-1440",
+      "zari007-unknown-390",
+      "zari007-historical-1440",
+      "zari007-historical-390",
+      "zari007-success-1440",
+      "zari007-success-390",
+      "zari007-checks-unknown-1440",
+      "zari007-checks-unknown-390",
+      "zari007-selection-dimensions-1440",
+      "zari007-selection-dimensions-390",
+      "zari007-drag-preview-1440",
+      "zari007-drag-preview-390",
+      "zari007-drag-committed-1440",
+      "zari007-drag-committed-390",
+      "zari007-drag-save-failed-1440",
+      "zari007-drag-save-failed-390",
+      "zari007-drag-rejected-1440",
+      "zari007-drag-rejected-390",
+      "zari007-spatial-ready-1440",
+      "zari007-spatial-ready-390",
+      "zari007-spatial-cutaway-1440",
+      "zari007-spatial-cutaway-390",
+      "zari007-spatial-child-1440",
+      "zari007-guide-focus-1440",
+      "zari007-guide-focus-390",
+      "zari007-guide-diagram-1440",
+      "zari007-guide-diagram-390",
+      "zari007-a11y-focus-1440",
+      "zari007-a11y-forced-colors-1440",
+      "zari007-a11y-forced-colors-390",
+      "zari007-a11y-zoom-200-1440",
+      "zari007-progress-unavailable-1440",
+      "zari007-progress-unavailable-390",
+      "zari007-conflict-1440",
+      "zari007-conflict-390",
+      "zari007-conflict-progress-1440",
+      "zari007-conflict-progress-390",
+      "zari007-stale-1440",
+      "zari007-stale-390",
+      "zari007-stale-progress-1440",
+      "zari007-stale-progress-390",
+      "zari007-fallback-webgl-1440",
+      "zari007-fallback-webgl-390",
+      "zari007-fallback-chunk-1440",
+      "zari007-fallback-chunk-390"
+    ],
+    "missingOrUnverified": [
+      "Physical phone: UNVERIFIED. 390×844 is Playwright viewport emulation.",
+      "Discrete GPU: UNVERIFIED. Headless WebGL is software GL. GPU timestamps were not taken.",
+      "WebKit offline was not captured. Node 006 recorded that WPE crashes on setOffline plus reload.",
+      "Sample plan has no multi-placement BOM row (same limit recorded in 006).",
+      "Selected placement did not open a cavity-local pane (offset unknown figure)."
+    ],
+    "observations": [
+      "gpu Google Inc. (Google) / ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "axe violations 0; passes 32; incomplete 1",
+      "unknown checks 13: 미확인 검사 13건: 외형 치수, 지지면, 내부 수용, 반입 경로, 사용 접근",
+      "spatial child pick instance:item-a:0",
+      "Open finding, not fixed here: 3D labels collide on spatial-ready-1440, spatial-ready-390, spatial-cutaway-1440, spatial-cutaway-390, and spatial-child-1440. Winter coats #2 is drawn over the Wide bin size, leaving only 0×255×220 readable. Label collision avoidance is 005 product behavior and is outside this capture task.",
+      "prerequisite-disabled steps 5",
+      "keyboard focus view-front"
+    ],
+    "a11ySnapshot": {
+      "file": "draft/zari007/a11y-snapshot.json",
+      "sha256": "3bce431fb39a959c83067ca60c884ffeb7cb04480473eeb01fe3e4487c2a484c"
+    }
+  }
 }

@@ -1,6 +1,6 @@
 # 시각적 기준 관리
 
-실제 앱 화면 **5개를 draft로 캡처했으며 승인된 화면은 0개**다. `manifest.json`에 PNG 경로, SHA-256, 정확한 소스 commit과 캡처 환경을 기록했다. React → Worker → Rust/WASM 계산이 실제 동작하는 화면이며 생성 이미지나 Figma 목업이 아니다. 파일 등록은 화면 승인을 뜻하지 않는다.
+실제 앱 화면 **52개를 draft로 캡처했으며 승인된 화면은 0개**다. Task001 5개와 ZARI-SPATIAL-007 47개다. `manifest.json`에 PNG 경로, SHA-256, 정확한 소스 commit과 캡처 환경을 기록했다. React → Worker → Rust/WASM 계산이 실제 동작하는 화면이며 생성 이미지나 Figma 목업이 아니다. 파일 등록은 화면 승인을 뜻하지 않는다.
 
 ## Task001 실제 화면
 
@@ -25,6 +25,16 @@ ZARI_CAPTURE_DIR=/tmp/zari-new-captures npm run capture:baselines
 ```
 
 기존 출력 경로가 있으면 캡처가 실패한다. 새 draft를 비교·검토한 뒤에만 manifest에 등록하며, 자동 승인·baseline 교체는 하지 않는다.
+
+## ZARI-SPATIAL-007 실제 화면
+
+47개 viewport 캡처는 `draft/zari007/`에 있고 상태는 모두 `draft`다. 승인 수는 0이다. `spatialDraft007.proposedApprovalSet`은 사용자 검토용 제안이며 승인이 아니다. 픽셀은 물리 검증 증거가 아니다.
+
+캡처 소스 제품 트리는 `29370e23a082c49aa4d8d7943b0e6e71c7884b4c`의 `apps/web/src`와 같다. 시나리오 파일 해시는 `spatialDraft007.scenarioFiles`에 있다. 작업 트리는 캡처 시점의 테스트·문서 변경 때문에 `sourceDirty`다. Fixture는 `sample-project-form`(카탈로그 `249cfb4185353ecb69c140ba6e7830b8670dd07708efa1d8cf0d5cee6e96be81`)이다. 개인 데이터와 외부 업로드는 없다.
+
+Viewport는 1440×1000과 390×844, `deviceScaleFactor` 1, full-page가 아니다. Chromium headless, locale `ko-KR`, theme light, `prefers-reduced-motion: reduce`(`--zari-duration-fast` 0s). GPU는 SwiftShader software GL이다. 실제 전화, 외장 GPU, WebKit 오프라인은 찍지 않았다.
+
+`npm run capture:baselines`는 Chromium만 실행한다. 출력 디렉터리가 이미 있으면 실패한다.
 
 ## 이후 등록 절차
 
