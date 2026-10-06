@@ -47,6 +47,7 @@ import {
   type ProjectionEntry,
   type ProjectionLease,
 } from '../plan/projection';
+import { leasesEqual, type WorkspaceLease } from '../workspace/lease';
 
 export type SaveState =
   | 'idle'
@@ -74,9 +75,16 @@ export type AcceptState = 'idle' | 'saving' | 'saved' | 'error';
  * Rust diagnostics and — when the layout reached the validator — the failing
  * report checks. `undo`/`redo` hold committed transitions only.
  */
+export type EditPersist = { kind: 'saving' } | { kind: 'unsaved' } | { kind: 'conflict' };
+
 export interface EditState {
   selectedPlacementId: string | null;
-  pending: { command: LayoutEditCommand; baseSnapshotId: string } | null;
+  pending: { command: LayoutEditCommand; baseSnapshotId: string; lease: WorkspaceLease } | null;
+  /**
+   * Rust accepted the working head, but the device write did not.
+   * Distinct from a rejected command and from the accepted-plan badge.
+   */
+  persist: EditPersist | null;
   rejection: {
     command: LayoutEditCommand;
     baseSnapshotId: string;
@@ -146,6 +154,8 @@ export interface SessionSnapshot {
   degradedReason: string | null;
   corrupt: CorruptRecord[];
   conflict: { remoteRevision: string } | null;
+  /** Bumped when the worker activation or committed input identity changes. */
+  workspaceGeneration: string;
   worker: WorkerLifecycle;
   workerError: string | null;
   /** Integrity results from `verifyRecord` on open; `null` = not run. */
@@ -210,6 +220,7 @@ export class ProjectSession {
       degradedReason: null,
       corrupt: [],
       conflict: null,
+      workspaceGeneration: '0',
       worker: 'uninitialized',
       workerError: null,
       integrity: null,
@@ -235,6 +246,7 @@ export class ProjectSession {
         edit: {
           selectedPlacementId: null,
           pending: null,
+          persist: null,
           rejection: null,
           chainBaseId: null,
           head: null,
@@ -490,6 +502,7 @@ export class ProjectSession {
     input: ProjectInput | null,
     catalog: ProjectBundle['catalog'],
   ): Promise<void> {
+    this.bumpWorkspaceGeneration();
     this.patch({ context: 'installing' });
     if (input && catalog) {
       try {
@@ -943,6 +956,7 @@ export class ProjectSession {
    * Starting a new search disposes the old one (Rust does the same).
    */
   startSearch(options?: { stepAllowance?: number }): void {
+    if (this.editLocked()) return;
     const client = this.controller.current;
     if (
       !client ||
@@ -1021,6 +1035,7 @@ export class ProjectSession {
     this.pump.cancel();
   }
   selectAlternative(planSnapshotId: string): void {
+    if (this.editLocked()) return;
     if (
       this.state.plan.alternatives.some(
         (a) => a.planSnapshotId === planSnapshotId,
@@ -1035,6 +1050,7 @@ export class ProjectSession {
    * evaluation is refused, never silently re-pinned.
    */
   async acceptPlan(planSnapshotId: string): Promise<void> {
+    if (this.editLocked() || this.state.conflict) return;
     const snapshot =
       this.state.plan.alternatives.find(
         (a) => a.planSnapshotId === planSnapshotId,
@@ -1092,6 +1108,52 @@ export class ProjectSession {
       });
     }
   }
+  /**
+   * Immutable edit fence. `null` when the worker identity does not match the
+   * session epoch, so a gesture cannot start against a retired transport.
+   */
+  readWorkspaceLease(displayedPlanSnapshotId: string): WorkspaceLease | null {
+    const client = this.controller.current;
+    if (!client || this.state.status !== 'ready' || !this.state.inputDigest) return null;
+    const transport = client.transportIdentity;
+    if (
+      transport.editorEpoch !== String(this.epoch) ||
+      transport.inputRevision !== this.state.inputRevision ||
+      transport.projectId !== this.projectId
+    ) {
+      return null;
+    }
+    return {
+      projectId: this.projectId,
+      displayedPlanSnapshotId,
+      editorEpoch: String(this.epoch),
+      inputRevision: this.state.inputRevision,
+      inputDigest: this.state.inputDigest,
+      catalogDigest: this.state.normalizedInput?.catalogPin.catalogDigest ?? '',
+      projectRevision: this.state.projectRevision,
+      projectActivationId: transport.projectActivationId,
+      workerSessionId: transport.workerSessionId,
+      workspaceGeneration: this.state.workspaceGeneration,
+    };
+  }
+  private editLocked(): boolean {
+    const edit = this.state.plan.edit;
+    return edit.pending !== null || edit.persist?.kind === 'saving';
+  }
+  private editLeaseHolds(lease: WorkspaceLease): boolean {
+    if (this.state.conflict) return false;
+    return leasesEqual(lease, this.readWorkspaceLease(lease.displayedPlanSnapshotId));
+  }
+  private markEditPersist(persist: EditPersist | null): void {
+    const edit = this.state.plan.edit;
+    if (edit.persist?.kind === persist?.kind) return;
+    this.patchPlan({ edit: { ...edit, persist } });
+  }
+  private bumpWorkspaceGeneration(): void {
+    this.patch({
+      workspaceGeneration: String(BigInt(this.state.workspaceGeneration) + 1n),
+    });
+  }
   /** Whether a snapshot was evaluated against the currently committed input. */
   isCurrentSnapshot(snapshot: PlanSnapshot): boolean {
     return (
@@ -1112,17 +1174,20 @@ export class ProjectSession {
       this.patchPlan({ edit: { ...edit, selectedPlacementId: placementId } });
   }
   /**
-   * Send one layout edit command to Rust. The command stays provisional —
-   * only a reply that (a) is the newest edit request, (b) arrives under the
-   * still-active context and (c) carries a verified snapshot can commit. Any
-   * newer request supersedes the reply, so a late answer can never overwrite
-   * a newer command.
+   * Send one layout edit command to Rust. A command stays provisional until
+   * its reply still matches this request, the captured lease, and the active
+   * context. A second command while one is pending or saving is ignored, so
+   * a later gesture cannot replace the in-flight one.
    */
   requestLayoutEdit(command: LayoutEditCommand, baseSnapshotId: string): void {
+    const editNow = this.state.plan.edit;
+    if (editNow.pending || editNow.persist?.kind === 'saving' || this.state.conflict) return;
+    if (this.state.plan.search === 'running' || this.state.plan.search === 'cancelling') return;
     const client = this.controller.current;
     const base = this.snapshotIndex.get(baseSnapshotId) ?? null;
     const refuse = (diagnostics: Diagnostic[]) => {
       const edit = this.state.plan.edit;
+      if (edit.pending) return;
       this.patchPlan({
         edit: {
           ...edit,
@@ -1154,6 +1219,17 @@ export class ProjectSession {
       ]);
       return;
     }
+    const lease = this.readWorkspaceLease(baseSnapshotId);
+    if (!lease) {
+      refuse([
+        {
+          fieldPath: 'context',
+          code: 'context_not_installed',
+          reasonCode: 'context_not_installed',
+        },
+      ]);
+      return;
+    }
     const seq = ++this.editSeq;
     const source =
       command.kind === 'restoreLayout'
@@ -1163,11 +1239,11 @@ export class ProjectSession {
     this.patchPlan({
       edit: {
         ...edit,
-        pending: { command, baseSnapshotId },
+        pending: { command, baseSnapshotId, lease },
         rejection: null,
       },
     });
-    void this.evaluateEdit(client, seq, base, command, source, 'push', null);
+    void this.evaluateEdit(client, seq, base, command, source, 'push', null, lease);
   }
   /**
    * Undo the newest committed edit by asking Rust to revalidate the prior
@@ -1181,6 +1257,7 @@ export class ProjectSession {
       !transition ||
       !edit.head ||
       edit.pending ||
+      edit.persist?.kind === 'saving' ||
       this.state.status !== 'ready' ||
       this.state.context !== 'installed'
     )
@@ -1192,15 +1269,17 @@ export class ProjectSession {
       kind: 'restoreLayout',
       sourceSnapshotId: transition.baseSnapshotId,
     };
+    const lease = this.readWorkspaceLease(edit.head.planSnapshotId);
+    if (!lease || this.state.conflict) return;
     const seq = ++this.editSeq;
     this.patchPlan({
       edit: {
         ...edit,
-        pending: { command, baseSnapshotId: edit.head.planSnapshotId },
+        pending: { command, baseSnapshotId: edit.head.planSnapshotId, lease },
         rejection: null,
       },
     });
-    void this.evaluateEdit(client, seq, edit.head, command, source, 'undo', transition);
+    void this.evaluateEdit(client, seq, edit.head, command, source, 'undo', transition, lease);
   }
   /** Redo replays the undone command against the current head. */
   redoEdit(): void {
@@ -1210,6 +1289,7 @@ export class ProjectSession {
       !transition ||
       !edit.head ||
       edit.pending ||
+      edit.persist?.kind === 'saving' ||
       this.state.status !== 'ready' ||
       this.state.context !== 'installed'
     )
@@ -1221,15 +1301,17 @@ export class ProjectSession {
       command.kind === 'restoreLayout'
         ? (this.snapshotIndex.get(command.sourceSnapshotId) ?? null)
         : null;
+    const lease = this.readWorkspaceLease(edit.head.planSnapshotId);
+    if (!lease || this.state.conflict) return;
     const seq = ++this.editSeq;
     this.patchPlan({
       edit: {
         ...edit,
-        pending: { command, baseSnapshotId: edit.head.planSnapshotId },
+        pending: { command, baseSnapshotId: edit.head.planSnapshotId, lease },
         rejection: null,
       },
     });
-    void this.evaluateEdit(client, seq, edit.head, command, source, 'redo', transition);
+    void this.evaluateEdit(client, seq, edit.head, command, source, 'redo', transition, lease);
   }
   private async evaluateEdit(
     client: ProbeClient,
@@ -1239,6 +1321,7 @@ export class ProjectSession {
     source: PlanSnapshot | null,
     mode: 'push' | 'undo' | 'redo',
     carried: EditTransition | null,
+    lease: WorkspaceLease,
   ): Promise<void> {
     const reply = await client
       .request({
@@ -1250,6 +1333,11 @@ export class ProjectSession {
       .catch((error: unknown) => error as Error);
     // Superseded or session closed: drop the reply without touching state.
     if (this.closed || seq !== this.editSeq) return;
+    if (!this.editLeaseHolds(lease)) {
+      const edit = this.state.plan.edit;
+      if (edit.pending) this.patchPlan({ edit: { ...edit, pending: null } });
+      return;
+    }
     if (reply instanceof Error) {
       const edit = this.state.plan.edit;
       if (reply instanceof StaleRequest) {
@@ -1325,18 +1413,26 @@ export class ProjectSession {
         }
       }
     }
+    // Publish the projection entry in the same turn as the new head so the
+    // new BOM is never drawn beside the previous snapshot's diagram.
+    this.ensurePlanProjection(next);
     this.patchPlan({
       edit: {
         ...edit,
         pending: null,
         rejection: null,
+        persist: { kind: 'saving' },
         chainBaseId,
         head: next,
         undo,
         redo,
       },
     });
-    // Persist result + base + bounded chain in one CAS transaction.
+    if (seq !== this.editSeq) return;
+    await this.persistEditHead(next, base, seq);
+  }
+  /** Write the verified head. A failed write keeps the head and does not reject it. */
+  private async persistEditHead(next: PlanSnapshot, base: PlanSnapshot, seq: number): Promise<void> {
     const chain = this.serializeEditChain();
     const result = await this.repo
       .commitEditSnapshot({
@@ -1348,31 +1444,41 @@ export class ProjectSession {
       })
       .catch((error: unknown): CommitResult | { status: 'stale_input' } | Error =>
         error instanceof Error ? error : new Error(String(error)));
+    if (this.closed || seq !== this.editSeq) return;
+    if (this.state.plan.edit.head?.planSnapshotId !== next.planSnapshotId) return;
     if (result instanceof Error) {
       this.applyStoreError(result);
+      this.markEditPersist({ kind: 'unsaved' });
       return;
     }
     if (result.status === 'committed') {
       this.broadcast(result.projectRevision);
       this.patch({ projectRevision: result.projectRevision });
-    } else if (result.status === 'conflict') {
-      this.patch({ conflict: { remoteRevision: 'unknown' }, saveState: 'conflict' });
-    } else {
-      const editNow = this.state.plan.edit;
-      this.patchPlan({
-        edit: {
-          ...editNow,
-          rejection: {
-            command,
-            baseSnapshotId: base.planSnapshotId,
-            diagnostics: [
-              { fieldPath: 'edit', code: result.status, reasonCode: result.status },
-            ],
-            report: null,
-          },
-        },
-      });
+      this.markEditPersist(null);
+      return;
     }
+    if (result.status === 'conflict') {
+      this.patch({ conflict: { remoteRevision: 'unknown' }, saveState: 'conflict' });
+      this.markEditPersist({ kind: 'conflict' });
+      return;
+    }
+    if (this.state.inputDigest !== next.content.versions.inputDigest) {
+      this.clearEditChain();
+      return;
+    }
+    this.markEditPersist({ kind: 'unsaved' });
+  }
+  /** Retry the device write for a verified head that did not persist. */
+  retryEditPersist(): void {
+    const edit = this.state.plan.edit;
+    if (!edit.head || edit.persist?.kind === 'saving' || edit.pending) return;
+    if (edit.persist?.kind !== 'unsaved') return;
+    const baseId = edit.undo.at(-1)?.baseSnapshotId ?? edit.chainBaseId;
+    const base = baseId ? this.snapshotIndex.get(baseId) : undefined;
+    if (!base) return;
+    const seq = this.editSeq;
+    this.markEditPersist({ kind: 'saving' });
+    void this.persistEditHead(edit.head, base, seq);
   }
   /** Persisted chain bounded to 100 transitions and 1 MiB of serialized history. */
   private serializeEditChain(): EditChain | null {
@@ -1416,6 +1522,9 @@ export class ProjectSession {
     this.patchPlan({
       edit: {
         ...edit,
+        pending: null,
+        persist: null,
+        rejection: null,
         chainBaseId: chain.baseSnapshotId,
         head,
         undo: chain.undo,
@@ -1426,12 +1535,14 @@ export class ProjectSession {
   /** Drop the working chain; called when the committed input moves. */
   private clearEditChain(): void {
     const edit = this.state.plan.edit;
-    if (!edit.chainBaseId && !edit.head && !edit.pending && !edit.rejection) return;
+    if (!edit.chainBaseId && !edit.head && !edit.pending && !edit.rejection && !edit.persist) return;
     this.editSeq += 1;
+    this.bumpWorkspaceGeneration();
     this.patchPlan({
       edit: {
         selectedPlacementId: null,
         pending: null,
+        persist: null,
         rejection: null,
         chainBaseId: null,
         head: null,
@@ -1445,6 +1556,7 @@ export class ProjectSession {
 
   /** Discard local dirty state and reload the committed bundle. */
   async reloadLatest(): Promise<void> {
+    this.editSeq += 1;
     this.repo.refreshRevision(this.projectId);
     const bundle = await this.repo.loadBundle(this.projectId).catch(() => null);
     if (!bundle) return;

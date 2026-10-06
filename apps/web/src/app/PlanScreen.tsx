@@ -8,7 +8,6 @@ import {
 } from 'react';
 import { Button } from 'react-aria-components';
 import type {
-  LayoutEditCommand,
   Orientation,
   PlanSnapshot,
   Placement,
@@ -18,6 +17,14 @@ import type {
 } from '../contracts/generated/dto';
 import { planSourceKey, readProjection } from '../features/plan/projection';
 import { PlanThumb } from '../features/workspace/PlanDiagram';
+import {
+  isArrowKey,
+  isTypingTarget,
+  keyboardStepMm,
+  movePlacementCommand,
+  nudgePosition,
+  type MmPoint,
+} from '../features/workspace/drag';
 import { selectedPlacementId } from '../features/workspace/selection';
 import { PlanWorkspace, useWorkspace } from '../features/workspace/Workspace';
 import {
@@ -56,6 +63,18 @@ const TERMINATION_TEXT: Record<string, string> = {
   cancelled: '취소되었습니다',
   interrupted: '중단되었습니다',
 };
+
+async function downloadPlanExport(session: ProjectSession, projectId: string) {
+  const data = await session.exportJson('standard');
+  if (!data) return;
+  const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `zari-${projectId}-standard.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 
 /**
  * Placement inspector: numeric/keyboard editing parity. Every control issues
@@ -124,12 +143,7 @@ function Inspector({
       return;
     }
     setMoveErrors(null);
-    const command: LayoutEditCommand = {
-      kind: 'movePlacement',
-      placementId: placement.id,
-      position: read.position,
-    };
-    session.requestLayoutEdit(command, snapshot.planSnapshotId);
+    session.requestLayoutEdit(movePlacementCommand(placement.id, read.position), snapshot.planSnapshotId);
   };
   const axisErrors =
     moveErrors && moveErrors.placementId === placement.id ? moveErrors.errors : {};
@@ -176,7 +190,7 @@ function Inspector({
         <Button
           className="button button-secondary"
           type="submit"
-          isDisabled={pending}
+          isDisabled={pending || edit.persist?.kind === 'saving'}
           data-testid="move-apply"
         >
           이동 적용
@@ -202,7 +216,7 @@ function Inspector({
                 type="radio"
                 name="orientation"
                 checked={placement.orientation === o}
-                disabled={!allowed.includes(o) || pending}
+                disabled={!allowed.includes(o) || pending || edit.persist?.kind === 'saving'}
                 data-testid={`rotate-${o}`}
                 onChange={() =>
                   session.requestLayoutEdit(
@@ -227,7 +241,7 @@ function Inspector({
             <span>수납함 옵션</span>
             <select
               value={subject.variantId}
-              disabled={pending}
+              disabled={pending || edit.persist?.kind === 'saving'}
               data-testid="variant-select"
               onChange={(e) =>
                 session.requestLayoutEdit(
@@ -255,7 +269,7 @@ function Inspector({
                 value={
                   offerFor?.offer.kind === 'selected' ? offerFor.offer.offerId : ''
                 }
-                disabled={pending}
+                disabled={pending || edit.persist?.kind === 'saving'}
                 data-testid="offer-select"
                 onChange={(e) => {
                   if (!e.target.value) return;
@@ -285,7 +299,7 @@ function Inspector({
         </div>
       )}
       <p className="session-note">
-        단축키 — 화살표: 10mm 이동, Shift+화살표: 1mm, R: 회전, Ctrl+Z / Ctrl+Shift+Z:
+        단축키 — 화살표: 1mm 이동, Shift+화살표: 10mm, R: 회전, Ctrl+Z / Ctrl+Shift+Z:
         되돌리기/다시 실행
       </p>
     </div>
@@ -354,20 +368,60 @@ function PlanDetail({
     (p) => p.id === edit.selectedPlacementId,
   );
   const choose = (target: SpatialTarget) => workspace.select(target);
+  const cancelRef = useRef<(() => void) | null>(null);
+  const [stepMm, setStepMm] = useState(1);
+  useEffect(() => {
+    const onUp = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Shift') setStepMm(1);
+    };
+    window.addEventListener('keyup', onUp);
+    return () => window.removeEventListener('keyup', onUp);
+  }, []);
+  const nudgeRef = useRef<{
+    placementId: string;
+    origin: MmPoint;
+    position: MmPoint;
+    arrows: Set<string>;
+  } | null>(null);
+  const [nudge, setNudge] = useState<MmPoint | null>(null);
+  const editLocked = edit.pending !== null || edit.persist?.kind === 'saving';
+  const nominal = Boolean(
+    selected &&
+      projectionEntry?.projection?.elements.some(
+        (element) =>
+          element.target.kind === 'placement' &&
+          element.target.placementId === selected.id &&
+          (element.role === 'directItem' ||
+            element.role === 'ownedContainer' ||
+            element.role === 'newContainer') &&
+          element.topRect.kind === 'available',
+      ),
+  );
+  const commitNudge = () => {
+    const group = nudgeRef.current;
+    nudgeRef.current = null;
+    setNudge(null);
+    if (!group) return;
+    if (
+      group.position.x === group.origin.x &&
+      group.position.y === group.origin.y &&
+      group.position.z === group.origin.z
+    ) {
+      return;
+    }
+    session.requestLayoutEdit(
+      movePlacementCommand(group.placementId, group.position),
+      snapshot.planSnapshotId,
+    );
+  };
   /**
-   * Keyboard editing parity: arrows nudge the selected placement (10mm,
-   * Shift=1mm), R rotates to the next allowed orientation, Ctrl+Z /
-   * Ctrl+Shift+Z undo/redo. Keys apply only on the diagram surface — inputs
-   * and selects keep their native behavior.
+   * Arrow keys share the movePlacement command with the pointer and the
+   * numeric form. Default step is 1 mm; Shift is the explicit 10 mm modifier.
+   * Repeats accumulate locally and send one command when the keys are released.
    */
   const onSurfaceKey = (e: KeyboardEvent) => {
-    const target = e.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'SELECT' ||
-      target.tagName === 'TEXTAREA'
-    )
-      return;
+    if (isTypingTarget(e.target)) return;
+    if (e.key === 'Shift') setStepMm(keyboardStepMm(true));
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       if (e.shiftKey) session.redoEdit();
@@ -379,46 +433,54 @@ function PlanDetail({
       session.redoEdit();
       return;
     }
-    if (!editable || !selected) return;
-    const step = e.shiftKey ? 1 : 10;
-    const delta = { x: 0, y: 0, z: 0 };
-    if (e.key === 'ArrowLeft') delta.x = -step;
-    else if (e.key === 'ArrowRight') delta.x = step;
-    else if (e.key === 'ArrowUp') delta.y = -step;
-    else if (e.key === 'ArrowDown') delta.y = step;
-    else if (e.key.toLowerCase() === 'r') {
-      const allowed = allowedOrientations(content, selected);
-      if (allowed && allowed.length > 1) {
-        const next = allowed.find((o) => o !== selected.orientation);
-        if (next) {
-          e.preventDefault();
-          session.requestLayoutEdit(
-            {
-              kind: 'rotatePlacement',
-              placementId: selected.id,
-              orientation: next,
-            },
-            snapshot.planSnapshotId,
-          );
-        }
+    if (!editable || !selected || editLocked) return;
+    if (isArrowKey(e.key)) {
+      e.preventDefault();
+      cancelRef.current?.();
+      const step = keyboardStepMm(e.shiftKey);
+      const base =
+        nudgeRef.current?.placementId === selected.id
+          ? nudgeRef.current.position
+          : { x: selected.position.x, y: selected.position.y, z: selected.position.z };
+      const next = nudgePosition(base, e.key, step);
+      if (!next) return;
+      if (!nudgeRef.current || nudgeRef.current.placementId !== selected.id) {
+        nudgeRef.current = {
+          placementId: selected.id,
+          origin: { x: selected.position.x, y: selected.position.y, z: selected.position.z },
+          position: next,
+          arrows: new Set([e.key]),
+        };
+      } else {
+        nudgeRef.current.arrows.add(e.key);
+        nudgeRef.current.position = next;
       }
-      return;
-    } else {
+      setNudge({ ...next });
       return;
     }
+    if (e.key.toLowerCase() !== 'r') return;
+    const allowed = allowedOrientations(content, selected);
+    if (!allowed || allowed.length < 2) return;
+    const next = allowed.find((o) => o !== selected.orientation);
+    if (!next) return;
     e.preventDefault();
+    cancelRef.current?.();
+    nudgeRef.current = null;
+    setNudge(null);
     session.requestLayoutEdit(
       {
-        kind: 'movePlacement',
+        kind: 'rotatePlacement',
         placementId: selected.id,
-        position: {
-          x: selected.position.x + delta.x,
-          y: selected.position.y + delta.y,
-          z: selected.position.z + delta.z,
-        },
+        orientation: next,
       },
       snapshot.planSnapshotId,
     );
+  };
+  const onSurfaceKeyUp = (e: KeyboardEvent) => {
+    if (e.key === 'Shift') setStepMm(1);
+    if (isTypingTarget(e.target) || !isArrowKey(e.key) || !nudgeRef.current) return;
+    nudgeRef.current.arrows.delete(e.key);
+    if (nudgeRef.current.arrows.size === 0) commitNudge();
   };
   return (
     <div
@@ -426,6 +488,12 @@ function PlanDetail({
       data-testid="plan-detail"
       tabIndex={editable ? 0 : undefined}
       onKeyDown={onSurfaceKey}
+      onKeyUp={onSurfaceKeyUp}
+      onBlur={(e) => {
+        const next = e.relatedTarget;
+        if (next instanceof Node && e.currentTarget.contains(next)) return;
+        if (nudgeRef.current) commitNudge();
+      }}
       data-editable={editable || undefined}
     >
       {!current && (
@@ -484,6 +552,36 @@ function PlanDetail({
             ? edit.pending.command
             : null
         }
+        nudgeCommand={
+          nudge && selected ? movePlacementCommand(selected.id, nudge) : null
+        }
+        editLocked={editLocked}
+        gestureBlocked={
+          !editable ||
+          state.worker !== 'ready' ||
+          state.status !== 'ready' ||
+          state.conflict !== null ||
+          state.plan.search === 'running' ||
+          state.plan.search === 'cancelling'
+        }
+        fence={`${state.workspaceGeneration}|${state.inputDigest ?? ''}|${state.projectRevision}|${state.context}|${state.worker}|${state.conflict?.remoteRevision ?? ''}|${snapshot.planSnapshotId}`}
+        stepMm={stepMm}
+        placement={
+          selected
+            ? {
+                id: selected.id,
+                position: {
+                  x: selected.position.x,
+                  y: selected.position.y,
+                  z: selected.position.z,
+                },
+              }
+            : null
+        }
+        nominal={nominal}
+        readLease={() => session.readWorkspaceLease(snapshot.planSnapshotId)}
+        onCommit={(command) => session.requestLayoutEdit(command, snapshot.planSnapshotId)}
+        cancelRef={cancelRef}
         onSelect={choose}
         edit={editable ? <Inspector session={session} state={state} snapshot={snapshot} /> : null}
       />
@@ -773,7 +871,7 @@ function PlanDetail({
           <Button
             className="button button-primary"
             onPress={() => void session.acceptPlan(snapshot.planSnapshotId)}
-            isDisabled={state.plan.acceptState === 'saving'}
+            isDisabled={state.plan.acceptState === 'saving' || edit.pending !== null || state.conflict !== null}
             data-testid="accept-plan"
           >
             {state.plan.acceptState === 'saving' ? '저장 중…' : '이 계획 사용하기'}
@@ -846,6 +944,19 @@ export function PlanScreen({ projectId }: { projectId: string }) {
 
   return (
     <Shell name={state.name || '프로젝트'}>
+      {state.conflict && (
+        <div className="notice notice-stale" role="alert" data-testid="edit-conflict">
+          <p>다른 탭에서 먼저 저장되었습니다. 이 편집은 그 기록을 덮어쓰지 않습니다.</p>
+          <div className="form-actions">
+            <Button className="button button-secondary" onPress={() => void session.reloadLatest()} data-testid="edit-conflict-reload">
+              다시 불러오기
+            </Button>
+            <Button className="button button-quiet" onPress={() => void downloadPlanExport(session, projectId)} data-testid="edit-conflict-export">
+              내보내기
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="plan-screen">
       <div className="session-status" data-testid="plan-context" data-context={state.context}>
         작업 컨텍스트: {state.context === 'installed' ? '준비됨' : state.context}
@@ -996,11 +1107,29 @@ export function PlanScreen({ projectId }: { projectId: string }) {
             편집은 적용될 때마다 Rust가 전체 배치를 다시 검증합니다. 되돌리기는
             이전 배치를 새 스냅샷으로 복원합니다.
           </p>
+          {plan.edit.persist?.kind === 'unsaved' && (
+            <div className="notice notice-stale" role="alert" data-testid="edit-save-failed">
+              <p>이 기기에 저장하지 못함. 검증된 작업안은 화면에 남아 있고, 채택되지는 않았습니다.</p>
+              <div className="form-actions">
+                <Button className="button button-secondary" onPress={() => session.retryEditPersist()} data-testid="edit-retry">
+                  다시 저장
+                </Button>
+                <Button className="button button-quiet" onPress={() => void downloadPlanExport(session, projectId)} data-testid="edit-export">
+                  내보내기
+                </Button>
+              </div>
+            </div>
+          )}
+          {plan.edit.persist?.kind === 'conflict' && !state.conflict && (
+            <p className="notice notice-stale" role="alert" data-testid="edit-conflict">
+              저장이 다른 기록과 충돌했습니다. 이 편집안은 채택되지 않았습니다.
+            </p>
+          )}
           <div className="form-actions">
             <Button
               className="button button-secondary"
               onPress={() => session.undoEdit()}
-              isDisabled={plan.edit.undo.length === 0 || plan.edit.pending !== null}
+              isDisabled={plan.edit.undo.length === 0 || plan.edit.pending !== null || plan.edit.persist?.kind === 'saving'}
               data-testid="undo-edit"
             >
               되돌리기 ({plan.edit.undo.length})
@@ -1008,7 +1137,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
             <Button
               className="button button-secondary"
               onPress={() => session.redoEdit()}
-              isDisabled={plan.edit.redo.length === 0 || plan.edit.pending !== null}
+              isDisabled={plan.edit.redo.length === 0 || plan.edit.pending !== null || plan.edit.persist?.kind === 'saving'}
               data-testid="redo-edit"
             >
               다시 실행 ({plan.edit.redo.length})
@@ -1022,7 +1151,10 @@ export function PlanScreen({ projectId }: { projectId: string }) {
               className="button button-primary"
               onPress={() => session.acceptPlan(plan.edit.head!.planSnapshotId)}
               isDisabled={
-                plan.acceptState === 'saving' || plan.edit.pending !== null
+                plan.acceptState === 'saving' ||
+                plan.edit.pending !== null ||
+                plan.edit.persist?.kind === 'saving' ||
+                state.conflict !== null
               }
               data-testid="accept-edit-head"
             >

@@ -484,7 +484,10 @@ it('a layout edit is re-verified by Rust into a new snapshot; undo/redo ride res
   );
   const moved = await until(
     session,
-    (s) => s.plan.edit.pending === null && s.plan.edit.head !== null,
+    (s) =>
+      s.plan.edit.pending === null &&
+      s.plan.edit.head !== null &&
+      s.plan.edit.persist?.kind !== 'saving',
   );
   expect(moved.plan.edit.rejection).toBeNull();
   const head = moved.plan.edit.head!;
@@ -501,7 +504,10 @@ it('a layout edit is re-verified by Rust into a new snapshot; undo/redo ride res
   session.undoEdit();
   const undone = await until(
     session,
-    (s) => s.plan.edit.pending === null && s.plan.edit.head !== null,
+    (s) =>
+      s.plan.edit.pending === null &&
+      s.plan.edit.head !== null &&
+      s.plan.edit.persist?.kind !== 'saving',
   );
   expect(undone.plan.edit.undo.length).toBe(0);
   expect(undone.plan.edit.redo.length).toBe(1);
@@ -511,7 +517,10 @@ it('a layout edit is re-verified by Rust into a new snapshot; undo/redo ride res
   session.redoEdit();
   const redone = await until(
     session,
-    (s) => s.plan.edit.pending === null && s.plan.edit.head !== null,
+    (s) =>
+      s.plan.edit.pending === null &&
+      s.plan.edit.head !== null &&
+      s.plan.edit.persist?.kind !== 'saving',
   );
   expect(redone.plan.edit.head!.planSnapshotId).toBe(head.planSnapshotId);
   expect(redone.plan.edit.undo.length).toBe(1);
@@ -550,16 +559,40 @@ it('a rejected edit is explained and never becomes a plan; a superseded reply ca
   expect(rejected.plan.edit.head).toBeNull();
   expect(rejected.plan.edit.undo.length).toBe(0);
   expect(rejected.plan.search).toBe('done');
-  // Two rapid requests: the first reply is fenced by the edit sequence and
-  // only the newest command can land — late replies never win.
+  // While one edit is pending, a second command cannot replace it.
+  // After that rejection settles, the permitted move is a single transition.
   session.requestLayoutEdit(
     {
       kind: 'movePlacement',
       placementId: placement.id,
-      position: { x: 9_999_999, y: 0, z: 0 },
+      position: { x: 9_999, y: 0, z: 0 },
     },
     base.planSnapshotId,
   );
+  const locked = session.snapshot.plan.edit.pending?.command;
+  expect(locked?.kind).toBe('movePlacement');
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: { ...placement.position },
+    },
+    base.planSnapshotId,
+  );
+  expect(session.snapshot.plan.edit.pending?.command).toEqual(locked);
+  const otherId = done.plan.alternatives[1]?.planSnapshotId ?? null;
+  if (otherId) {
+    session.selectAlternative(otherId);
+    expect(session.snapshot.plan.selectedId).not.toBe(otherId);
+  }
+  const acceptedBefore = session.snapshot.plan.accepted;
+  void session.acceptPlan(base.planSnapshotId);
+  expect(session.snapshot.plan.acceptState).not.toBe('saving');
+  expect(session.snapshot.plan.accepted).toEqual(acceptedBefore);
+  const held = await until(session, (s) => s.plan.edit.pending === null);
+  expect(held.plan.edit.head).toBeNull();
+  expect(held.plan.edit.undo.length).toBe(0);
+  expect(held.plan.edit.rejection).not.toBeNull();
   session.requestLayoutEdit(
     {
       kind: 'movePlacement',
@@ -570,9 +603,12 @@ it('a rejected edit is explained and never becomes a plan; a superseded reply ca
   );
   const settled = await until(
     session,
-    (s) => s.plan.edit.pending === null,
+    (s) =>
+      s.plan.edit.pending === null &&
+      s.plan.edit.head !== null &&
+      s.plan.edit.persist?.kind !== 'saving',
   );
-  // The second (permitted) command won; the stale rejection was dropped.
+  // The permitted command, sent after the pending lock lifted, is the one undo step.
   expect(settled.plan.edit.head).not.toBeNull();
   expect(settled.plan.edit.rejection).toBeNull();
   expect(settled.plan.edit.undo.length).toBe(1);
@@ -583,6 +619,87 @@ it('a rejected edit is explained and never becomes a plan; a superseded reply ca
   await until(session, (s) => s.plan.edit.head === null);
   expect(session.snapshot.plan.edit.undo.length).toBe(0);
   expect(session.snapshot.plan.edit.selectedPlacementId).toBeNull();
+}, 90000);
+
+it('a failed device write keeps the verified head, and an epoch change drops an in-flight move', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  const base = done.plan.alternatives[0]!;
+  const placement = base.content.placements[0]!;
+  const original = repo.commitEditSnapshot.bind(repo);
+  repo.commitEditSnapshot = async () => {
+    throw new Error('disk');
+  };
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: { ...placement.position },
+    },
+    base.planSnapshotId,
+  );
+  const unsaved = await until(
+    session,
+    (s) => s.plan.edit.head !== null && s.plan.edit.persist?.kind === 'unsaved',
+  );
+  expect(unsaved.plan.edit.rejection).toBeNull();
+  expect(unsaved.plan.accepted).toBeNull();
+  expect(unsaved.saveState).toBe('error');
+  const headId = unsaved.plan.edit.head!.planSnapshotId;
+  repo.commitEditSnapshot = original;
+  session.retryEditPersist();
+  const saved = await until(
+    session,
+    (s) => s.plan.edit.persist === null && s.plan.edit.head?.planSnapshotId === headId,
+  );
+  expect(saved.plan.edit.rejection).toBeNull();
+  expect(saved.plan.accepted).toBeNull();
+  const bundle = await repo.loadBundle(projectId);
+  expect(bundle.draft?.edit?.headSnapshotId).toBe(headId);
+  const headPlacement = saved.plan.edit.head!.content.placements.find((item) => item.id === placement.id)!;
+  repo.commitEditSnapshot = async () => ({ status: 'conflict' });
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: { ...headPlacement.position },
+    },
+    saved.plan.edit.head!.planSnapshotId,
+  );
+  const conflicted = await until(session, (s) => s.plan.edit.persist?.kind === 'conflict');
+  expect(conflicted.saveState).toBe('conflict');
+  expect(conflicted.conflict).not.toBeNull();
+  expect(conflicted.plan.edit.rejection).toBeNull();
+  expect(conflicted.plan.accepted).toBeNull();
+  repo.commitEditSnapshot = original;
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: { x: placement.position.x + 2, y: placement.position.y, z: placement.position.z },
+    },
+    conflicted.plan.edit.head!.planSnapshotId,
+  );
+  expect(session.snapshot.plan.edit.pending).toBeNull();
+  await session.reloadLatest();
+  await until(session, (s) => s.conflict === null && s.plan.edit.head?.planSnapshotId === headId);
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement.id,
+      position: { x: placement.position.x + 3, y: placement.position.y, z: placement.position.z },
+    },
+    headId,
+  );
+  expect(session.snapshot.plan.edit.pending).not.toBeNull();
+  session.edit('space.interior.width', '612');
+  const dropped = await until(session, (s) => s.plan.edit.pending === null);
+  expect(dropped.plan.edit.head?.planSnapshotId).toBe(headId);
 }, 90000);
 
 it('one normalized input asks Rust for projectSpatialView once and repeats hit the cache', async () => {

@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import type { SnapshotContent, SpatialProjection, SpatialTarget } from '../../contracts/generated/dto';
+import { useEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
+import type { LayoutEditCommand, SnapshotContent, SpatialProjection, SpatialTarget } from '../../contracts/generated/dto';
 import type { RectVm } from '../plan/projection';
 import { spaceFrame } from '../plan/projection';
+import { isTypingTarget, movePlacementCommand, type MmPoint } from './drag';
 import { DiagramTextList, InspectorLayers } from './InspectorLayers';
-import { PlanDiagram } from './PlanDiagram';
+import type { WorkspaceLease } from './lease';
+import { PlanDiagram, type DiagramInteraction } from './PlanDiagram';
 import {
   bindWorkspace,
   focusWorkspace,
@@ -55,7 +57,17 @@ type PlanWorkspaceProps = {
   historical: boolean;
   spatialRequests: number;
   projectRevision: string;
-  ghostCommand?: import('../../contracts/generated/dto').LayoutEditCommand | null;
+  ghostCommand?: LayoutEditCommand | null;
+  nudgeCommand?: LayoutEditCommand | null;
+  editLocked: boolean;
+  gestureBlocked: boolean;
+  fence: string;
+  stepMm: number;
+  placement: { id: string; position: MmPoint } | null;
+  nominal: boolean;
+  readLease: () => WorkspaceLease | null;
+  onCommit: (command: LayoutEditCommand) => void;
+  cancelRef: MutableRefObject<(() => void) | null>;
   onSelect: (target: SpatialTarget) => void;
   edit?: ReactNode;
 };
@@ -70,6 +82,16 @@ export function PlanWorkspace({
   spatialRequests,
   projectRevision,
   ghostCommand,
+  nudgeCommand,
+  editLocked,
+  gestureBlocked,
+  fence,
+  stepMm,
+  placement,
+  nominal,
+  readLease,
+  onCommit,
+  cancelRef,
   onSelect,
   edit,
 }: PlanWorkspaceProps) {
@@ -83,9 +105,19 @@ export function PlanWorkspace({
     setPorts({ sourceKey: binding.sourceKey, top: fitViewport(), front: fitViewport() });
   }
   const band = useLayoutBand();
+  const coarse = useCoarsePointer();
+  const explicit = band === 'compact' || coarse;
+  const [mode, setMode] = useState<'select' | 'move' | 'pan'>('select');
+  const [spacePan, setSpacePan] = useState(false);
+  const [preview, setPreview] = useState<MmPoint | null>(null);
+  const [phase, setPhase] = useState<'idle' | 'armed' | 'preview'>('idle');
+  const [precheck, setPrecheck] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const active: PlaneView = state.view === 'front' ? 'front' : 'top';
+  const directMove = !explicit && mode !== 'pan';
+  const moveOn = Boolean(placement && nominal && !gestureBlocked && !editLocked && (mode === 'move' || directMove));
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -93,8 +125,8 @@ export function PlanWorkspace({
       if (dialog.open) dialog.close();
       return;
     }
-    if (state.selection && !dialog.open) dialog.showModal();
-  }, [band, state.selection]);
+    if (state.selection && mode !== 'move' && !dialog.open) dialog.showModal();
+  }, [band, mode, state.selection]);
 
   function setPort(view: PlaneView, next: Viewport) {
     setPorts((current) => ({ ...current, [view]: next }));
@@ -102,7 +134,14 @@ export function PlanWorkspace({
 
   function onZoomKey(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') return;
+    if (isTypingTarget(target)) return;
+    if (event.key === ' ' || event.code === 'Space') {
+      if (event.target instanceof Element && event.target.closest('.plan-diagram')) {
+        event.preventDefault();
+        setSpacePan(true);
+      }
+      return;
+    }
     const frame = projection ? spaceFrame(projection, active) : null;
     if (!frame) return;
     if (event.key === '+' || event.key === '=') {
@@ -115,6 +154,19 @@ export function PlanWorkspace({
       event.preventDefault();
       setPort(active, fitViewport());
     }
+  }
+
+  function onZoomKeyUp(event: KeyboardEvent) {
+    if (event.key === ' ' || event.code === 'Space') setSpacePan(false);
+  }
+
+  function enterMode(next: 'move' | 'pan') {
+    cancelRef.current?.();
+    setPreview(null);
+    setPhase('idle');
+    const leaving = mode === next;
+    setMode(leaving ? 'select' : next);
+    if (!leaving && next === 'move') dialogRef.current?.close();
   }
 
   const inspector = (
@@ -135,15 +187,48 @@ export function PlanWorkspace({
     </InspectorLayers>
   );
 
+  const pointerPreview =
+    preview && placement ? movePlacementCommand(placement.id, preview) : null;
+  const shownPreview = ghostCommand ? null : (pointerPreview ?? nudgeCommand ?? null);
+
+  function interactionFor(view: PlaneView): DiagramInteraction {
+    const isActive = active === view;
+    return {
+      enabledMove: view === 'top' && isActive && moveOn,
+      enabledPan: isActive && mode === 'pan',
+      placementId: placement?.id ?? null,
+      origin: placement?.position ?? null,
+      pending: editLocked,
+      blocked: gestureBlocked,
+      spacePan: isActive && spacePan,
+    touchNone: isActive && (mode === 'move' || mode === 'pan' || spacePan),
+      readLease,
+      fence,
+      onCommit,
+      onPreview: setPreview,
+      onPrecheck: setPrecheck,
+      onPhase: setPhase,
+      bindCancel: (cancel) => {
+        if (isActive) cancelRef.current = cancel;
+      },
+    };
+  }
+
   return (
     <div
+      ref={rootRef}
       className="plan-workspace"
       data-testid="plan-workspace"
       data-historical={historical ? 'true' : 'false'}
       data-spatial-requests={spatialRequests}
       data-project-revision={projectRevision}
       data-band={band}
+      data-canvas-mode={mode}
+      data-pointer={explicit ? 'explicit' : 'direct'}
+      data-move={moveOn ? 'on' : 'off'}
+      data-gesture-phase={phase}
       onKeyDown={onZoomKey}
+      onKeyUp={onZoomKeyUp}
     >
       <div className="workspace-toolbar" role="toolbar" aria-label="도면">
         <button type="button" className="button button-quiet" aria-pressed={active === 'top'} data-testid="view-top" onClick={() => workspace.setView('top')}>
@@ -161,6 +246,43 @@ export function PlanWorkspace({
         <button type="button" className="button button-quiet" data-testid="zoom-fit" onClick={() => setPort(active, fitViewport())}>
           맞춤
         </button>
+        <button
+          type="button"
+          className="button button-quiet"
+          aria-pressed={mode === 'move'}
+          data-testid="mode-move"
+          disabled={!placement || editLocked || gestureBlocked || active !== 'top'}
+          onClick={() => enterMode('move')}
+        >
+          평면에서 이동
+        </button>
+        <button
+          type="button"
+          className="button button-quiet"
+          aria-pressed={mode === 'pan'}
+          data-testid="mode-pan"
+          onClick={() => enterMode('pan')}
+        >
+          화면 이동
+        </button>
+        {mode === 'move' && (
+          <>
+            <button type="button" className="button button-quiet" data-testid="mode-cancel" onClick={() => enterMode('move')}>
+              취소
+            </button>
+            <button
+              type="button"
+              className="button button-quiet"
+              data-testid="mode-coords"
+              onClick={() => {
+                if (band === 'compact') dialogRef.current?.showModal();
+                rootRef.current?.querySelector<HTMLInputElement>('[data-testid="move-x"]')?.focus();
+              }}
+            >
+              좌표 입력
+            </button>
+          </>
+        )}
         <button type="button" className="button button-quiet" aria-pressed={state.layers.dimensions} data-testid="layer-dimensions" onClick={() => workspace.setLayer('dimensions', !state.layers.dimensions)}>
           치수
         </button>
@@ -178,6 +300,25 @@ export function PlanWorkspace({
         <span className="legend-selection">선택됨</span>
         <span className="legend-focus">목록 강조</span>
       </p>
+      <p className="session-note" data-testid="drag-quantum">
+        드래그는 1mm 단위 · 정확한 값은 좌표 입력
+      </p>
+      <p className="session-note" data-testid="move-step">
+        이동 단위 {stepMm} mm
+      </p>
+      <p
+        className="notice notice-preview drag-phase-slot"
+        data-testid="drag-phase"
+        data-shown={phase === 'preview' && !ghostCommand ? 'true' : 'false'}
+        aria-hidden={phase === 'preview' && !ghostCommand ? undefined : true}
+      >
+        검사 전
+      </p>
+      {precheck && (
+        <p className="notice notice-error" role="alert" data-testid="drag-precheck">
+          {precheck}
+        </p>
+      )}
       <div className="plan-workspace-body">
         <div className="plan-stage">
           <div className="plan-diagrams">
@@ -194,6 +335,8 @@ export function PlanWorkspace({
               viewport={ports.top}
               onViewport={(next) => setPort('top', next)}
               ghostCommand={ghostCommand}
+              previewCommand={shownPreview}
+              interaction={interactionFor('top')}
               onSelect={onSelect}
               onHover={workspace.hover}
             />
@@ -209,6 +352,7 @@ export function PlanWorkspace({
               focus={state.focus}
               viewport={ports.front}
               onViewport={(next) => setPort('front', next)}
+              interaction={interactionFor('front')}
               onSelect={onSelect}
               onHover={workspace.hover}
             />
@@ -238,14 +382,26 @@ export function PlanWorkspace({
               onClose={() => triggerRef.current?.focus()}
             >
               {inspector}
-              <button
-                type="button"
-                className="button button-quiet"
-                data-testid="close-inspector"
-                onClick={() => dialogRef.current?.close()}
-              >
-                닫기
-              </button>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  aria-pressed={mode === 'move'}
+                  data-testid="mode-move"
+                  disabled={!placement || editLocked || gestureBlocked || active !== 'top'}
+                  onClick={() => enterMode('move')}
+                >
+                  평면에서 이동
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  data-testid="close-inspector"
+                  onClick={() => dialogRef.current?.close()}
+                >
+                  닫기
+                </button>
+              </div>
             </dialog>
           </div>
         ) : (
@@ -266,6 +422,19 @@ function zoomActive(
   const frame = projection ? spaceFrame(projection, view) : null;
   if (!frame) return;
   setPort(view, zoomBy(viewport, frame, viewPad(view), factor));
+}
+
+function useCoarsePointer(): boolean {
+  const read = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+  const [coarse, setCoarse] = useState(read);
+  useEffect(() => {
+    const media = window.matchMedia('(pointer: coarse)');
+    const update = () => setCoarse(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  return coarse;
 }
 
 function useLayoutBand(): 'compact' | 'medium' | 'wide' {
