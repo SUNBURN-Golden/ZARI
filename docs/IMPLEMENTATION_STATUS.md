@@ -1,3 +1,31 @@
+# 2026-10-06 — ZARI-SPATIAL-001 공통 Rust 공간 투영 (미커밋 작업 트리)
+
+정본은 GitHub issue #43, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 작업 브랜치 `astra/zari-spatial-001`이다. 이 기록의 기준 HEAD는 `84036631c945a59fee4de325409f835246536b96`이며 구현은 그 위의 **커밋되지 않은** 작업 트리이다. 커밋·푸시·PR은 하지 않았다. 이 문서는 검토 PASS가 아니다.
+
+구현:
+
+- `crates/core/src/spatial_view.rs`: projectionVersion 1. 정규화 입력과 PlanSnapshot을 같은 경계 검증으로 읽고, nominal/conservative, 두 축 직사각형, cavity-local, parent yaw0/yaw90 자식 상자를 만든다. 상태 재계산 없이 overlay·BOM/check/action 링크를 붙인다. 링크가 비면 `Unavailable`과 reason이다. `SupportFootprint`와 `LiftContents`는 DTO에만 있고 방출하지 않는다(두께·궤적을 만들지 않음).
+- `geometry.rs`의 `child_global_box_at` / `moving_envelope`, `finalize.rs`의 `bounded_step_id`는 기존 validator·action id와 같은 함수이다. 기존 fixture의 expected·digest·id·BOM·action 바이트는 `engineContext.buildId`만 `zari-domain-4`로 바꿨다.
+- `BUILD_ID`는 `zari-domain-4`. capability에 `projectSpatialView`를 `disposeProject` 앞에 넣었다. 명령은 시스템 신원에서 stateless이며 context/search를 바꾸지 않는다.
+- 웹: `features/plan/projection.ts`가 도메인 평면 사각형만 읽고, `PlanScreen` SVG `scale(1,-1)`에서만 축을 뒤집는다. 세션은 `plan:<planSnapshotId>` 캐시(최대 4개, 8MiB), in-flight 합류, mount/worker lease를 가진다. 실패해도 목록과 BOM은 남는다. unknown offset 수납물은 도면에서 빠지고 “외형 안의 실제 위치 미확인 · 별도 좌표계”를 보인다.
+- `fixtures/spatial/` 5건과 manifest·contracts·parity 디렉터리를 등록했다. 손계산 기준은 parent `(100,200,0)`, outer depth 400, offset `(10,20,5)`, child local `(30,40,0)`, extent 50×60×70, yaw90 → world min `(380,240,5)` max `(440,290,75)`.
+
+이 머신에서 실행한 검증(통과):
+
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- `cargo test --workspace --locked`: 83개 (core lib 19, bootstrap 9, domain 11, edit 6, protocol 13, validator 11, search 14). doc-test 0.
+- `cargo run -p zari-core --locked --example fixture_runner -- fixtures/bootstrap`, `fixtures/spatial`, 그리고 `fixtures` 전체 107건.
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`. `Cargo.lock` 변경 없음.
+- `npm run wasm:build`, `npm run contracts:check` (107), `npm run typecheck`, `npm run lint`, `npm test` (vitest 68), `npm run build`, `node scripts/check-design-tokens.mjs --self-test` (33/33).
+- `npm run test:browser -- --project=chromium`: 40 passed. 그 뒤 unknown-offset 캡션이 스크린샷에 들어가도록 `spatial-view.spec.ts`만 고치고 그 파일 1건을 다시 통과시켰다. 나머지 39건은 그 테스트 전용 수정 이후 재실행하지 않았다.
+- `npm run test:parity`: native↔Chromium 107 fixture 일치, parity Playwright 2 passed.
+- 화면: plan 검색·SVG·checks·BOM·guide·accept, edit ghost/undo, probe, catalog, project. 증거 그림은 `docs/evidence/ZARI-SPATIAL-001-yaw-offset.png`, `docs/evidence/ZARI-SPATIAL-001-unknown-offset.png`. 승인된 visual baseline이 아니다.
+
+하지 않은 것: 노드 002–007, 드래그·3D·새 툴바, persisted schema migration, 물리 검사 규칙 변경, 키보드 기본 1mm(현재 화살표 10mm / Shift 1mm는 SP-003). 벤치 IndexedDB 스탬프 `engineBuildId`는 `zari-domain-3`으로 두었다. 이것은 WASM handshake가 아니다.
+
+다음: 감독자가 이 작업 트리를 검토·커밋·PR. 좌표 수학은 녹색 테스트와 별도로 독립 검토가 필요하다.
+
 # 2026-10-02 — 상세 프로그램 확장 후보
 
 계획·문서만 작성했다. 로컬 후보 36 + pending 9 = 45개 정의를 담는다. 실제 앱 기능·기기 자격·시작/병합·release는 이 변경의 산출물이 아니다. 검증은 JSON/DAG/전체 정의 해시·기존 정의 보존·중앙 reader의 PENDING 거절이며 제품 테스트를 실행한 것으로 보고하지 않는다. 상세 범위는 `docs/aiops/PROGRAM_EXPANSION_20261002_KO.md`를 참조한다. 기존 구현 상태 기록은 아래에 보존한다.

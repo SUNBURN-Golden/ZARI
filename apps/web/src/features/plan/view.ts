@@ -1,6 +1,5 @@
 import type {
   CatalogSnapshot,
-  FactFor_MeasuredLength,
   FactFor_MoneyKrw,
   FactFor_PackQuantity,
   FactFor_Quantity,
@@ -14,78 +13,10 @@ import type {
 } from '../../contracts/generated/dto';
 
 /**
- * Read-only display projections over one immutable PlanSnapshot. Nothing here
- * computes fit, quantity or cost — every number shown is copied verbatim from
- * the snapshot's own facts (Rust output), never recomputed in the UI.
+ * Read-only labels and edit gates over one immutable PlanSnapshot. Drawn
+ * rectangles come from the Rust spatial projection (`projection.ts`); this
+ * module does not turn yaw, offsets, or extents into geometry.
  */
-
-export interface RectVm {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label: string;
-  /** Placement id for cross-highlighting with lists/checks. */
-  refId: string;
-  kind: 'container' | 'item' | 'contained' | 'ghost';
-}
-
-const nominal = (fact: FactFor_MeasuredLength): number | null =>
-  fact.state === 'known' ? fact.value.nominal : null;
-
-const yawSwaps = (orientation: Orientation): boolean => orientation === 'upright90';
-
-function itemExtent(
-  content: SnapshotContent,
-  itemId: string,
-  orientation: Orientation,
-): { width: number; depth: number; height: number } | null {
-  const item = content.inputFacts.items.find((i) => i.id === itemId);
-  if (!item) return null;
-  const w = nominal(item.dimensions.envelope.width);
-  const d = nominal(item.dimensions.envelope.depth);
-  const h = nominal(item.dimensions.envelope.height);
-  if (w === null || d === null || h === null) return null;
-  return yawSwaps(orientation)
-    ? { width: d, depth: w, height: h }
-    : { width: w, depth: d, height: h };
-}
-
-function containerExtent(
-  content: SnapshotContent,
-  subject: PlacementSubject,
-  orientation: Orientation,
-): { width: number; depth: number; height: number } | null {
-  let dims = null;
-  if (subject.kind === 'newContainer') {
-    dims =
-      content.referencedCatalog.variants.find((v) => v.id === subject.variantId)
-        ?.dimensions.outer ?? null;
-  } else if (subject.kind === 'ownedContainer') {
-    dims =
-      content.inputFacts.ownedContainers.find((o) => o.id === subject.ownedId)
-        ?.physical.dimensions.outer ?? null;
-  }
-  if (!dims) return null;
-  const w = nominal(dims.width);
-  const d = nominal(dims.depth);
-  const h = nominal(dims.height);
-  if (w === null || d === null || h === null) return null;
-  return yawSwaps(orientation)
-    ? { width: d, depth: w, height: h }
-    : { width: w, depth: d, height: h };
-}
-
-export function placementExtent(
-  content: SnapshotContent,
-  placement: Placement,
-): { width: number; depth: number; height: number } | null {
-  const s = placement.subject;
-  if (s.kind === 'directItem') {
-    return itemExtent(content, s.itemId, placement.orientation);
-  }
-  return containerExtent(content, s, placement.orientation);
-}
 
 export function subjectLabel(content: SnapshotContent, subject: PlacementSubject): string {
   if (subject.kind === 'directItem') {
@@ -102,77 +33,6 @@ export function subjectLabel(content: SnapshotContent, subject: PlacementSubject
   }
   const owned = content.inputFacts.ownedContainers.find((o) => o.id === subject.ownedId);
   return owned ? `${owned.id} #${subject.unitOrdinal + 1}` : subject.ownedId;
-}
-
-/** Space interior box; `null` when any dimension is unknown. */
-export function interiorBox(content: SnapshotContent): {
-  width: number;
-  depth: number;
-  height: number;
-} | null {
-  const interior = content.inputFacts.space.interior;
-  const w = nominal(interior.width);
-  const d = nominal(interior.depth);
-  const h = nominal(interior.height);
-  return w === null || d === null || h === null ? null : { width: w, depth: d, height: h };
-}
-
-/** Top-view rectangles: space outline + every placement; contained items inside their container. */
-export function topViewRects(content: SnapshotContent): RectVm[] {
-  const rects: RectVm[] = [];
-  for (const p of content.placements) {
-    const extent = placementExtent(content, p);
-    if (!extent) continue;
-    const isContainer = p.subject.kind !== 'directItem';
-    rects.push({
-      x: p.position.x,
-      y: p.position.y,
-      width: extent.width,
-      height: extent.depth,
-      label: subjectLabel(content, p.subject),
-      refId: p.id,
-      kind: isContainer ? 'container' : 'item',
-    });
-    if (isContainer) {
-      for (const a of content.assignments) {
-        if (a.location.kind !== 'contained' || a.location.containerPlacementId !== p.id)
-          continue;
-        const local = itemExtent(content, a.itemId, a.location.localPlacement.orientation);
-        if (!local) continue;
-        const item = content.inputFacts.items.find((i) => i.id === a.itemId);
-        rects.push({
-          x: p.position.x + a.location.localPlacement.position.x,
-          y: p.position.y + a.location.localPlacement.position.y,
-          width: local.width,
-          height: local.depth,
-          label: `${item?.label ?? a.itemId} #${a.unitOrdinal + 1}`,
-          refId: p.id,
-          kind: 'contained',
-        });
-      }
-    }
-  }
-  return rects;
-}
-
-/** Front-view rectangles (x against z): the same placements seen from the opening. */
-export function frontViewRects(content: SnapshotContent): RectVm[] {
-  const rects: RectVm[] = [];
-  for (const p of content.placements) {
-    const extent = placementExtent(content, p);
-    if (!extent) continue;
-    const isContainer = p.subject.kind !== 'directItem';
-    rects.push({
-      x: p.position.x,
-      y: p.position.z,
-      width: extent.width,
-      height: extent.height,
-      label: subjectLabel(content, p.subject),
-      refId: p.id,
-      kind: isContainer ? 'container' : 'item',
-    });
-  }
-  return rects;
 }
 
 export function moneyText(fact: FactFor_MoneyKrw): string {
@@ -359,43 +219,6 @@ export function allowedOrientations(
             ?.physical.allowedOrientations;
   if (!fact || fact.state !== 'known') return null;
   return fact.value;
-}
-
-/**
- * Ghost rectangle for an in-flight edit command: where the placement *would*
- * sit. It is a provisional preview — dashed styling, never a verified plan.
- */
-export function ghostRect(content: SnapshotContent, command: LayoutEditCommand): RectVm | null {
-  let placement: Placement | undefined;
-  let x: number;
-  let y: number;
-  let orientation: Orientation;
-  if (command.kind === 'movePlacement') {
-    placement = content.placements.find((p) => p.id === command.placementId);
-    if (!placement) return null;
-    x = command.position.x;
-    y = command.position.y;
-    orientation = placement.orientation;
-  } else if (command.kind === 'rotatePlacement') {
-    placement = content.placements.find((p) => p.id === command.placementId);
-    if (!placement) return null;
-    x = placement.position.x;
-    y = placement.position.y;
-    orientation = command.orientation;
-  } else {
-    return null;
-  }
-  const extent = placementExtent(content, { ...placement, orientation });
-  if (!extent) return null;
-  return {
-    x,
-    y,
-    width: extent.width,
-    height: extent.depth,
-    label: `${subjectLabel(content, placement.subject)} (검증 중)`,
-    refId: placement.id,
-    kind: 'ghost',
-  };
 }
 
 export const EDIT_COMMAND_TEXT: Record<string, string> = {

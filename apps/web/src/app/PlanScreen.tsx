@@ -13,8 +13,17 @@ import type {
   PlanSnapshot,
   Placement,
   SnapshotContent,
+  SpatialProjection,
   Strategy,
 } from '../contracts/generated/dto';
+import {
+  containedOffsetUnknown,
+  diagramRects,
+  ghostFromProjection,
+  readProjection,
+  spaceFrame,
+  type RectVm,
+} from '../features/plan/projection';
 import {
   ACTION_TEXT,
   CHECK_KIND_TEXT,
@@ -30,19 +39,14 @@ import {
   UNASSIGNED_TEXT,
   allowedOrientations,
   catalogSourceText,
-  frontViewRects,
-  ghostRect,
-  interiorBox,
   isNoPurchase,
   moneyText,
   qtyText,
   readMovePosition,
   subjectLabel,
-  topViewRects,
   unassignedCount,
   type MoveAxis,
   type MoveInputError,
-  type RectVm,
 } from '../features/plan/view';
 import { bomCsvRows, toCsv } from '../features/plan/csv';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
@@ -57,84 +61,122 @@ const TERMINATION_TEXT: Record<string, string> = {
   interrupted: '중단되었습니다',
 };
 
-/** One measured view of the plan; every rect is copied from the snapshot. */
+/** View padding is display-only. It does not change a placement's millimetres. */
+const TOP_PAD = 20;
+const FRONT_PAD = 16;
+
+/**
+ * One measured view. Rectangles are the projection's domain-plane values.
+ * `scale(1,-1)` is the only axis inversion, applied at paint time, so top
+ * uses `(x,-y)` and front uses `(x,-z)`. Text stays upright.
+ */
 function PlanDiagram({
   content,
+  projection,
+  status,
   view,
   testId,
   selectedId,
   ghost,
+  offsetUnknown,
   onSelect,
 }: {
   content: SnapshotContent;
+  projection: SpatialProjection | null;
+  status: 'loading' | 'ready' | 'failed' | 'absent';
   view: 'top' | 'front';
   testId: string;
   selectedId?: string | null;
   ghost?: RectVm | null;
+  offsetUnknown?: boolean;
   onSelect?: (placementId: string) => void;
 }) {
-  const box = interiorBox(content);
-  const rects = view === 'top' ? topViewRects(content) : frontViewRects(content);
-  if (!box) {
+  if (status === 'loading' || status === 'absent') {
+    return (
+      <p className="notice" data-testid={`${testId}-pending`}>
+        배치 그림을 준비하고 있습니다.
+      </p>
+    );
+  }
+  if (status === 'failed' || !projection) {
+    return (
+      <p className="notice" role="alert" data-testid={`${testId}-failed`}>
+        배치 그림을 그리지 못했습니다. 목록과 BOM은 그대로 볼 수 있습니다.
+      </p>
+    );
+  }
+  const frame = spaceFrame(projection, view);
+  const rects = diagramRects(projection, content, view);
+  if (!frame) {
     return (
       <p className="notice" data-testid={testId}>
         공간 치수를 알 수 없어 그림을 그릴 수 없습니다.
       </p>
     );
   }
-  const w = view === 'top' ? box.width : box.width;
-  const h = view === 'top' ? box.depth : box.height;
+  const pad = view === 'top' ? TOP_PAD : FRONT_PAD;
   return (
-    <svg
-      className="plan-diagram"
-      data-testid={testId}
-      viewBox={`-4 -4 ${w + 8} ${h + 8}`}
-      role="img"
-      aria-label={view === 'top' ? '위에서 본 배치' : '앞에서 본 배치'}
-    >
-      <rect className="diagram-space" x={0} y={0} width={w} height={h} />
-      {rects.map((r: RectVm) => (
-        <g key={`${r.refId}:${r.label}:${r.x}:${r.y}`}>
-          <rect
-            className={`diagram-${r.kind}`}
-            data-selected={selectedId === r.refId ? 'true' : undefined}
-            x={r.x}
-            y={r.y}
-            width={r.width}
-            height={r.height}
-            onClick={onSelect ? () => onSelect(r.refId) : undefined}
-          >
-            <title>{r.label}</title>
-          </rect>
-          {r.width > 90 && (
+    <div>
+      <svg
+        className="plan-diagram"
+        data-testid={testId}
+        viewBox={`${-pad} ${-(frame.height + pad)} ${frame.width + pad * 2} ${frame.height + pad * 2}`}
+        role="img"
+        aria-label={view === 'top' ? '위에서 본 배치' : '앞에서 본 배치'}
+      >
+        <g transform="scale(1 -1)">
+          <rect className="diagram-space" x={0} y={0} width={frame.width} height={frame.height} />
+          {rects.map((r: RectVm) => (
+            <rect
+              key={`${r.kind}:${r.refId}:${r.label}:${r.x}:${r.y}`}
+              className={`diagram-${r.kind}`}
+              data-selected={selectedId === r.refId ? 'true' : undefined}
+              x={r.x}
+              y={r.y}
+              width={r.width}
+              height={r.height}
+              onClick={onSelect ? () => onSelect(r.refId) : undefined}
+            >
+              <title>{r.label}</title>
+            </rect>
+          ))}
+          {ghost && view === 'top' && (
+            <rect
+              className="diagram-ghost"
+              data-testid="edit-ghost"
+              x={ghost.x}
+              y={ghost.y}
+              width={ghost.width}
+              height={ghost.height}
+            >
+              <title>{ghost.label}</title>
+            </rect>
+          )}
+        </g>
+        {rects.map((r: RectVm) =>
+          r.width > 90 ? (
             <text
+              key={`label:${r.kind}:${r.refId}:${r.label}`}
               className="diagram-label"
               x={r.x + 4}
-              y={r.y + (r.kind === 'container' ? 14 : 22)}
+              y={-r.y - (r.kind === 'container' ? 14 : 22)}
             >
               {r.label}
             </text>
-          )}
-        </g>
-      ))}
-      {ghost && view === 'top' && (
-        <rect
-          className="diagram-ghost"
-          data-testid="edit-ghost"
-          x={ghost.x}
-          y={ghost.y}
-          width={ghost.width}
-          height={ghost.height}
-        >
-          <title>{ghost.label}</title>
-        </rect>
+          ) : null,
+        )}
+        {view === 'top' && (
+          <text className="diagram-label" x={0} y={12} fontSize={14}>
+            문/앞면
+          </text>
+        )}
+      </svg>
+      {offsetUnknown && view === 'top' && (
+        <p className="notice" data-testid="offset-unknown-note">
+          외형 안의 실제 위치 미확인 · 별도 좌표계
+        </p>
       )}
-      {view === 'top' && (
-        <text className="diagram-label" x={0} y={h + 10} fontSize={14}>
-          ↑ 문/앞면
-        </text>
-      )}
-    </svg>
+    </div>
   );
 }
 
@@ -142,28 +184,40 @@ function PlanDiagram({
  * Equal-scale thumbnail: every card renders the same space interior box in
  * the same viewBox, so alternatives are comparable at one scale.
  */
-function PlanThumb({ content, testId }: { content: SnapshotContent; testId: string }) {
-  const box = interiorBox(content);
-  if (!box) return null;
+function PlanThumb({
+  content,
+  projection,
+  testId,
+}: {
+  content: SnapshotContent;
+  projection: SpatialProjection | null;
+  testId: string;
+}) {
+  if (!projection) return null;
+  const frame = spaceFrame(projection, 'top');
+  if (!frame) return null;
+  const rects = diagramRects(projection, content, 'top');
   return (
     <svg
       className="plan-thumb"
       data-testid={testId}
-      viewBox={`-4 -4 ${box.width + 8} ${box.depth + 8}`}
+      viewBox={`${-TOP_PAD} ${-(frame.height + TOP_PAD)} ${frame.width + TOP_PAD * 2} ${frame.height + TOP_PAD * 2}`}
       role="img"
       aria-label="위에서 본 축소 배치"
     >
-      <rect className="diagram-space" x={0} y={0} width={box.width} height={box.depth} />
-      {topViewRects(content).map((r) => (
-        <rect
-          key={`${r.refId}:${r.x}:${r.y}`}
-          className={`diagram-${r.kind}`}
-          x={r.x}
-          y={r.y}
-          width={r.width}
-          height={r.height}
-        />
-      ))}
+      <g transform="scale(1 -1)">
+        <rect className="diagram-space" x={0} y={0} width={frame.width} height={frame.height} />
+        {rects.map((r) => (
+          <rect
+            key={`${r.kind}:${r.refId}:${r.x}:${r.y}`}
+            className={`diagram-${r.kind}`}
+            x={r.x}
+            y={r.y}
+            width={r.width}
+            height={r.height}
+          />
+        ))}
+      </g>
     </svg>
   );
 }
@@ -446,9 +500,12 @@ function PlanDetail({
     (c) => c.status === 'unknown',
   );
   const itemById = new Map(content.inputFacts.items.map((i) => [i.id, i]));
+  const projectionEntry = readProjection(state.plan.projections, snapshot);
   const ghost =
-    edit.pending && edit.pending.baseSnapshotId === snapshot.planSnapshotId
-      ? ghostRect(content, edit.pending.command)
+    edit.pending &&
+    edit.pending.baseSnapshotId === snapshot.planSnapshotId &&
+    projectionEntry?.projection
+      ? ghostFromProjection(projectionEntry.projection, content, edit.pending.command)
       : null;
   const selected = content.placements.find(
     (p) => p.id === edit.selectedPlacementId,
@@ -567,14 +624,23 @@ function PlanDetail({
       <div className="plan-diagrams">
         <PlanDiagram
           content={content}
+          projection={projectionEntry?.projection ?? null}
+          status={projectionEntry?.status ?? 'absent'}
           view="top"
           testId="plan-diagram-top"
           selectedId={edit.selectedPlacementId}
           ghost={ghost}
+          offsetUnknown={
+            projectionEntry?.projection
+              ? containedOffsetUnknown(projectionEntry.projection)
+              : false
+          }
           onSelect={editable ? (id) => session.selectPlacement(id) : undefined}
         />
         <PlanDiagram
           content={content}
+          projection={projectionEntry?.projection ?? null}
+          status={projectionEntry?.status ?? 'absent'}
           view="front"
           testId="plan-diagram-front"
           selectedId={edit.selectedPlacementId}
@@ -877,6 +943,27 @@ export function PlanScreen({ projectId }: { projectId: string }) {
     () => session.snapshot,
   );
   useEffect(() => () => releaseSession(projectId), [projectId]);
+  const projectionQueue = [
+    state.plan.selectedId ?? '',
+    state.plan.edit.head?.planSnapshotId ?? '',
+    state.plan.acceptedSnapshot?.planSnapshotId ?? '',
+    ...state.plan.alternatives.map((item) => item.planSnapshotId),
+  ].join('|');
+  useEffect(() => {
+    if (state.status !== 'ready' || state.worker !== 'ready') return;
+    const plan = session.snapshot.plan;
+    const ordered: PlanSnapshot[] = [];
+    const push = (snapshot: PlanSnapshot | null | undefined) => {
+      if (!snapshot) return;
+      if (ordered.some((item) => item.planSnapshotId === snapshot.planSnapshotId)) return;
+      ordered.push(snapshot);
+    };
+    push(plan.alternatives.find((item) => item.planSnapshotId === plan.selectedId));
+    push(plan.edit.head);
+    push(plan.acceptedSnapshot);
+    for (const alternative of plan.alternatives) push(alternative);
+    for (const snapshot of ordered.slice(0, 4)) session.ensurePlanProjection(snapshot);
+  }, [session, state.status, state.worker, projectionQueue]);
 
   if (state.status === 'loading') {
     return <Shell name="불러오는 중"><p data-testid="project-loading">프로젝트를 불러오고 있습니다…</p></Shell>;
@@ -998,7 +1085,13 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     data-selected={plan.selectedId === id}
                     onClick={() => session.selectAlternative(id)}
                   >
-                    <PlanThumb content={alt.content} testId={`plan-thumb-${i}`} />
+                    <PlanThumb
+                      content={alt.content}
+                      projection={
+                        readProjection(plan.projections, alt)?.projection ?? null
+                      }
+                      testId={`plan-thumb-${i}`}
+                    />
                     <span className="plan-card-title">
                       #{i + 1} {isNoPurchase(alt) ? '구매 없음' : '구매 포함'}
                     </span>

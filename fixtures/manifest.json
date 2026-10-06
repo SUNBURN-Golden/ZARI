@@ -1326,6 +1326,71 @@
         "browserWasm"
       ],
       "introducedBy": "ZARI-010"
+    },
+    {
+      "id": "spatial-yaw-offset",
+      "caseKind": "projectSpatialView",
+      "inputPath": "fixtures/spatial/spatial-yaw-offset.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/spatial/spatial-yaw-offset.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-001"
+    },
+    {
+      "id": "spatial-unknown-offset",
+      "caseKind": "projectSpatialView",
+      "inputPath": "fixtures/spatial/spatial-unknown-offset.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/spatial/spatial-unknown-offset.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-001"
+    },
+    {
+      "id": "spatial-input-compartment",
+      "caseKind": "projectSpatialView",
+      "inputPath": "fixtures/spatial/spatial-input-compartment.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/spatial/spatial-input-compartment.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-001"
+    },
+    {
+      "id": "spatial-digest-mismatch",
+      "caseKind": "projectSpatialView",
+      "inputPath": "fixtures/spatial/spatial-digest-mismatch.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/spatial/spatial-digest-mismatch.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-001"
+    },
+    {
+      "id": "spatial-source-decode-error",
+      "caseKind": "projectSpatialView",
+      "inputPath": "fixtures/spatial/spatial-source-decode-error.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/spatial/spatial-source-decode-error.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-001"
     }
   ]
 }

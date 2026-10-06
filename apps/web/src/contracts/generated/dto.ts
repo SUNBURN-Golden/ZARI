@@ -682,6 +682,16 @@ export type DomainFixtureExpected =
       strategies: Strategy[];
     }
   | {
+      decodeError: boolean;
+      dimensions: ExpectedDimensionGuide[];
+      elements: ExpectedSpatialElement[];
+      failureCode: string | null;
+      kind: 'projectSpatialView';
+      links: ExpectedSpatialLink[];
+      overlays: ExpectedSpatialOverlay[];
+      projectionDigest: Digest;
+    }
+  | {
       /**
        * Ordered snapshot digests of the emitted ranked alternatives.
        */
@@ -729,6 +739,186 @@ export type Strategy =
   | 'oneActionAccess';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionView".
+ */
+export type DimensionView = 'top' | 'front' | 'cavityLocal';
+/**
+ * Expected segment geometry of one dimension guide.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedSegmentGeometry".
+ */
+export type ExpectedSegmentGeometry =
+  | {
+      /**
+       * @minItems 3
+       * @maxItems 3
+       */
+      from: [number, number, number, ...number[]];
+      kind: 'available';
+      /**
+       * @minItems 3
+       * @maxItems 3
+       */
+      to: [number, number, number, ...number[]];
+    }
+  | {
+      kind: 'unavailable';
+      reasonCode: string;
+    };
+/**
+ * Expected box geometry of one element/overlay: an exact hand-checked box
+ * with its basis, or the explicit reason it must not be drawable.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedBoxGeometry".
+ */
+export type ExpectedBoxGeometry =
+  | {
+      basis: CheckBasis;
+      kind: 'available';
+      /**
+       * @minItems 3
+       * @maxItems 3
+       */
+      max: [number, number, number, ...number[]];
+      /**
+       * @minItems 3
+       * @maxItems 3
+       */
+      min: [number, number, number, ...number[]];
+    }
+  | {
+      kind: 'unavailable';
+      reasonCode: string;
+    }
+  | {
+      kind: 'notApplicable';
+      reasonCode: string;
+    };
+/**
+ * Expected rectangle geometry of one element.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedRectGeometry".
+ */
+export type ExpectedRectGeometry =
+  | {
+      kind: 'available';
+      /**
+       * @minItems 2
+       * @maxItems 2
+       */
+      max: [number, number, ...number[]];
+      /**
+       * @minItems 2
+       * @maxItems 2
+       */
+      min: [number, number, ...number[]];
+    }
+  | {
+      kind: 'unavailable';
+      reasonCode: string;
+    }
+  | {
+      kind: 'notApplicable';
+      reasonCode: string;
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialRole".
+ */
+export type SpatialRole =
+  | 'compartmentBoundary'
+  | 'aperture'
+  | 'physicalObstacle'
+  | 'accessExclusion'
+  | 'supportSurface'
+  | 'itemEnvelope'
+  | 'directItem'
+  | 'ownedContainer'
+  | 'newContainer'
+  | 'containedItem'
+  | 'innerCavity';
+/**
+ * Typed selection target. Same raw id in different namespaces can never
+ * collide; `unitOrdinal` is zero-based.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialTarget".
+ */
+export type SpatialTarget =
+  | {
+      kind: 'space';
+      spaceId: Id;
+    }
+  | {
+      kind: 'opening';
+      spaceId: Id;
+    }
+  | {
+      kind: 'obstacle';
+      obstacleId: Id;
+    }
+  | {
+      kind: 'support';
+      supportId: Id;
+    }
+  | {
+      kind: 'placement';
+      placementId: Id;
+    }
+  | {
+      itemId: Id;
+      kind: 'item';
+    }
+  | {
+      itemId: Id;
+      kind: 'itemInstance';
+      unitOrdinal: number;
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LinkResolution".
+ */
+export type LinkResolution = 'resolved' | 'partial' | 'unavailable';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialLinkSource".
+ */
+export type SpatialLinkSource =
+  | {
+      checkId: Id;
+      kind: 'check';
+    }
+  | {
+      bomLineId: Id;
+      kind: 'bom';
+    }
+  | {
+      kind: 'action';
+      stepId: Id;
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialMotionPhase".
+ */
+export type SpatialMotionPhase = 'insert' | 'extractDirect' | 'extractContainer' | 'liftContents';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialOverlayRole".
+ */
+export type SpatialOverlayRole =
+  | 'nominalOuter'
+  | 'conservativeOuter'
+  | 'nominalInner'
+  | 'conservativeInner'
+  | 'installationSweep'
+  | 'operationalSweep'
+  | 'staging'
+  | 'supportFootprint';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "WorkCount".
  */
 export type WorkCount = string;
@@ -749,7 +939,8 @@ export type DomainOperation =
   | 'validateCatalog'
   | 'evaluateLayoutEdit'
   | 'proposeStrategies'
-  | 'runSearch';
+  | 'runSearch'
+  | 'projectSpatialView';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "LayoutEditCommand".
@@ -1056,6 +1247,10 @@ export type Command =
       command: LayoutEditCommand;
       kind: 'evaluateLayoutEdit';
       sourceSnapshot: PlanSnapshot | null;
+    }
+  | {
+      kind: 'projectSpatialView';
+      source: SpatialViewSource;
     }
   | {
       kind: 'proposeStrategies';
@@ -1393,6 +1588,23 @@ export type RawCatalogFieldValueDto =
       text: string;
     };
 /**
+ * The two legal projection sources. Both cross the same boundary validation
+ * as external JSON; label/size-only payloads are never trusted for drawing.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialViewSource".
+ */
+export type SpatialViewSource =
+  | {
+      input: ProjectInput;
+      inputDigest: Digest;
+      kind: 'normalizedInput';
+    }
+  | {
+      kind: 'plan';
+      snapshot: PlanSnapshot;
+    };
+/**
  * Search drive mode recorded at `startSearch`. The single-threaded runtime
  * only ever advances on explicit `stepSearch` requests, so `continuous` is a
  * scheduling hint for the host — never an autonomous loop inside WASM.
@@ -1465,6 +1677,10 @@ export type Event =
       kind: 'strategiesProposed';
     }
   | {
+      kind: 'spatialViewProjected';
+      projection: SpatialProjection;
+    }
+  | {
       kind: 'searchStarted';
       mode: SearchMode;
       searchId: string;
@@ -1511,6 +1727,112 @@ export type NormalizedInput =
   | {
       input: ProjectInput;
       kind: 'project';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionFrame".
+ */
+export type DimensionFrame =
+  | {
+      kind: 'world';
+      spaceId: Id;
+    }
+  | {
+      itemId: Id;
+      kind: 'itemMeasurement';
+    }
+  | {
+      kind: 'containerCavity';
+      placementId: Id;
+    };
+/**
+ * One drawable geometric fact, or its explicit absence. `Available` never
+ * implies physical validity; `basis` can only be nominal/conservative for
+ * real geometry (no fake nonGeometric volume).
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProjectionGeometryFor_ViewSegmentMm".
+ */
+export type ProjectionGeometryFor_ViewSegmentMm =
+  | {
+      basis: CheckBasis;
+      fieldRefs: FieldRef[];
+      kind: 'available';
+      value: ViewSegmentMm;
+    }
+  | {
+      fieldRefs: FieldRef[];
+      kind: 'unavailable';
+      reasonCode: string;
+    }
+  | {
+      kind: 'notApplicable';
+      reasonCode: string;
+    };
+/**
+ * One drawable geometric fact, or its explicit absence. `Available` never
+ * implies physical validity; `basis` can only be nominal/conservative for
+ * real geometry (no fake nonGeometric volume).
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProjectionGeometryFor_ViewBoxMm".
+ */
+export type ProjectionGeometryFor_ViewBoxMm =
+  | {
+      basis: CheckBasis;
+      fieldRefs: FieldRef[];
+      kind: 'available';
+      value: ViewBoxMm;
+    }
+  | {
+      fieldRefs: FieldRef[];
+      kind: 'unavailable';
+      reasonCode: string;
+    }
+  | {
+      kind: 'notApplicable';
+      reasonCode: string;
+    };
+/**
+ * One drawable geometric fact, or its explicit absence. `Available` never
+ * implies physical validity; `basis` can only be nominal/conservative for
+ * real geometry (no fake nonGeometric volume).
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProjectionGeometryFor_ViewRectMm".
+ */
+export type ProjectionGeometryFor_ViewRectMm =
+  | {
+      basis: CheckBasis;
+      fieldRefs: FieldRef[];
+      kind: 'available';
+      value: ViewRectMm;
+    }
+  | {
+      fieldRefs: FieldRef[];
+      kind: 'unavailable';
+      reasonCode: string;
+    }
+  | {
+      kind: 'notApplicable';
+      reasonCode: string;
+    };
+/**
+ * Immutable identity of the projected source, stamped into the projection.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialSourceStamp".
+ */
+export type SpatialSourceStamp =
+  | {
+      inputDigest: Digest;
+      kind: 'input';
+    }
+  | {
+      catalogDigest: Digest;
+      inputDigest: Digest;
+      kind: 'plan';
+      planSnapshotId: Digest;
     };
 
 export interface ZariContractBundle {
@@ -1957,6 +2279,59 @@ export interface ExpectedCheck {
   id: string;
   reasonCode: string | null;
   status: CheckStatus;
+}
+/**
+ * One hand-checked dimension-guide assertion, compared in emitted order.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedDimensionGuide".
+ */
+export interface ExpectedDimensionGuide {
+  fieldPath: string;
+  guideId: Id;
+  preferredView: DimensionView;
+  segment: ExpectedSegmentGeometry;
+}
+/**
+ * One hand-checked element assertion, compared in emitted order.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedSpatialElement".
+ */
+export interface ExpectedSpatialElement {
+  cavityLocal: ExpectedBoxGeometry;
+  front: ExpectedRectGeometry;
+  measurement: ExpectedBoxGeometry;
+  parentPlacementId: Id | null;
+  role: SpatialRole;
+  target: SpatialTarget;
+  top: ExpectedRectGeometry;
+  world: ExpectedBoxGeometry;
+}
+/**
+ * One hand-checked link assertion, compared in emitted order.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedSpatialLink".
+ */
+export interface ExpectedSpatialLink {
+  reasonCode: string | null;
+  resolution: LinkResolution;
+  source: SpatialLinkSource;
+  targets: SpatialTarget[];
+  unresolvedSubjectIds: Id[];
+}
+/**
+ * One hand-checked overlay assertion, compared in emitted order.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ExpectedSpatialOverlay".
+ */
+export interface ExpectedSpatialOverlay {
+  geometry: ExpectedBoxGeometry;
+  motionPhase: SpatialMotionPhase | null;
+  role: SpatialOverlayRole;
+  target: SpatialTarget;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -2894,6 +3269,140 @@ export interface NormalizedBootstrapInput {
   rightGapMm: FactFor_ClearanceMm;
   unitCount: FactFor_Quantity;
   unitWidth: FactFor_MeasuredLength;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialProjection".
+ */
+export interface SpatialProjection {
+  diagnostics: Diagnostic[];
+  dimensions: DimensionGuide[];
+  elements: SpatialElement[];
+  interior: Dimensions;
+  links: SpatialLink[];
+  overlays: SpatialOverlay[];
+  /**
+   * Exactly `SPATIAL_PROJECTION_VERSION`.
+   */
+  projectionVersion: number;
+  source: SpatialSourceStamp;
+}
+/**
+ * One dimension line. The measurement keeps its original fact, uncertainty
+ * and provenance verbatim — the projector never re-derives a value.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionGuide".
+ */
+export interface DimensionGuide {
+  fieldPath: string;
+  frame: DimensionFrame;
+  guideId: Id;
+  labelKey: string;
+  measurement: FactFor_MeasuredLength;
+  preferredView: DimensionView;
+  segment: ProjectionGeometryFor_ViewSegmentMm;
+  target: SpatialTarget;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ViewSegmentMm".
+ */
+export interface ViewSegmentMm {
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  from: [number, number, number, ...number[]];
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  to: [number, number, number, ...number[]];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialElement".
+ */
+export interface SpatialElement {
+  /**
+   * A container's explicitly separate unrotated cavity frame.
+   */
+  cavityLocalBox: ProjectionGeometryFor_ViewBoxMm;
+  checkIds: Id[];
+  fieldRefs: FieldRef[];
+  /**
+   * Domain-plane `[x,z]` rectangle (no screen inversion).
+   */
+  frontRect: ProjectionGeometryFor_ViewRectMm;
+  /**
+   * An unplaced item type's own measuring frame.
+   */
+  measurementBox: ProjectionGeometryFor_ViewBoxMm;
+  parentPlacementId: Id | null;
+  role: SpatialRole;
+  target: SpatialTarget;
+  /**
+   * Domain-plane `[x,y]` rectangle (no screen inversion).
+   */
+  topRect: ProjectionGeometryFor_ViewRectMm;
+  worldBox: ProjectionGeometryFor_ViewBoxMm;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ViewBoxMm".
+ */
+export interface ViewBoxMm {
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  max: [number, number, number, ...number[]];
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  min: [number, number, number, ...number[]];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ViewRectMm".
+ */
+export interface ViewRectMm {
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  max: [number, number, ...number[]];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  min: [number, number, ...number[]];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialLink".
+ */
+export interface SpatialLink {
+  reasonCode: string | null;
+  resolution: LinkResolution;
+  source: SpatialLinkSource;
+  targets: SpatialTarget[];
+  unresolvedSubjectIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpatialOverlay".
+ */
+export interface SpatialOverlay {
+  checkIds: Id[];
+  fieldRefs: FieldRef[];
+  geometry: ProjectionGeometryFor_ViewBoxMm;
+  motionPhase: SpatialMotionPhase | null;
+  overlayId: Id;
+  role: SpatialOverlayRole;
+  target: SpatialTarget;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

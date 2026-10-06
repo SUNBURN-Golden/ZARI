@@ -9,6 +9,7 @@ use crate::{
     probe::*,
     raw::*,
     scalars::*,
+    spatial_view::*,
     strategy::*,
     validate,
 };
@@ -23,8 +24,8 @@ use std::{
     fmt,
 };
 
-pub const BUILD_ID: &str = "zari-domain-3";
-const CAPABILITIES: [&str; 11] = [
+pub const BUILD_ID: &str = "zari-domain-4";
+const CAPABILITIES: [&str; 12] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -35,6 +36,7 @@ const CAPABILITIES: [&str; 11] = [
     "validateCatalog",
     "validateCandidate",
     "evaluateLayoutEdit",
+    "projectSpatialView",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -44,7 +46,7 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 14] = [
+const COMMAND_KINDS: [&str; 15] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -54,6 +56,7 @@ const COMMAND_KINDS: [&str; 14] = [
     "validateCatalog",
     "validateCandidate",
     "evaluateLayoutEdit",
+    "projectSpatialView",
     "disposeProject",
     "proposeStrategies",
     "startSearch",
@@ -229,6 +232,12 @@ pub enum Command {
         #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
         source_snapshot: Option<PlanSnapshot>,
     },
+    /// One authoritative spatial projection over an integrity-validated
+    /// source (SPATIAL_VIEW_CONTRACT §6). Stateless like `verifyRecord`: it
+    /// never mutates the active context, search, budget or any source bytes.
+    ProjectSpatialView {
+        source: SpatialViewSource,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -348,6 +357,12 @@ pub enum Event {
     StrategiesProposed {
         decisions: Vec<StrategyDecision>,
     },
+    /// Result of `projectSpatialView`: the additive ephemeral read model over
+    /// the validated source. ProjectionVersion=1 versions this DTO
+    /// independently of the persisted schema/canonical versions.
+    SpatialViewProjected {
+        projection: SpatialProjection,
+    },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
     SearchStarted {
@@ -440,6 +455,8 @@ pub enum DomainOperation {
     ProposeStrategies,
     /// Resumable bounded search driven by explicit fixture-declared steps.
     RunSearch,
+    /// One spatial projection over an embedded integrity-validated source.
+    ProjectSpatialView,
 }
 /// Step recipe for a `runSearch` fixture: `count` requests of `allowance`
 /// work units each. Declared steps are expanded in order; `cancelAfterSteps`
@@ -494,6 +511,100 @@ pub struct ExpectedCheck {
     #[serde(deserialize_with = "crate::required_option")]
     #[schemars(with = "crate::RequiredNullable<String>")]
     pub reason_code: Option<String>,
+}
+/// Expected box geometry of one element/overlay: an exact hand-checked box
+/// with its basis, or the explicit reason it must not be drawable.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum ExpectedBoxGeometry {
+    Available {
+        min: [i64; 3],
+        max: [i64; 3],
+        basis: CheckBasis,
+    },
+    Unavailable {
+        reason_code: String,
+    },
+    NotApplicable {
+        reason_code: String,
+    },
+}
+/// Expected rectangle geometry of one element.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum ExpectedRectGeometry {
+    Available { min: [i64; 2], max: [i64; 2] },
+    Unavailable { reason_code: String },
+    NotApplicable { reason_code: String },
+}
+/// Expected segment geometry of one dimension guide.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum ExpectedSegmentGeometry {
+    Available { from: [i64; 3], to: [i64; 3] },
+    Unavailable { reason_code: String },
+}
+/// One hand-checked element assertion, compared in emitted order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExpectedSpatialElement {
+    pub target: SpatialTarget,
+    pub role: SpatialRole,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<Id>")]
+    pub parent_placement_id: Option<Id>,
+    pub world: ExpectedBoxGeometry,
+    pub top: ExpectedRectGeometry,
+    pub front: ExpectedRectGeometry,
+    pub cavity_local: ExpectedBoxGeometry,
+    pub measurement: ExpectedBoxGeometry,
+}
+/// One hand-checked overlay assertion, compared in emitted order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExpectedSpatialOverlay {
+    pub target: SpatialTarget,
+    pub role: SpatialOverlayRole,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<SpatialMotionPhase>")]
+    pub motion_phase: Option<SpatialMotionPhase>,
+    pub geometry: ExpectedBoxGeometry,
+}
+/// One hand-checked link assertion, compared in emitted order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExpectedSpatialLink {
+    pub source: SpatialLinkSource,
+    pub targets: Vec<SpatialTarget>,
+    pub resolution: LinkResolution,
+    pub unresolved_subject_ids: Vec<Id>,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<String>")]
+    pub reason_code: Option<String>,
+}
+/// One hand-checked dimension-guide assertion, compared in emitted order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExpectedDimensionGuide {
+    pub guide_id: Id,
+    pub field_path: String,
+    pub preferred_view: DimensionView,
+    pub segment: ExpectedSegmentGeometry,
 }
 /// Per-operation oracle. `decodeError` asserts that the payload cannot even
 /// decode into the operation's input type — the worker answers
@@ -578,6 +689,22 @@ pub enum DomainFixtureExpected {
         strategies: Vec<Strategy>,
         /// Sorted union of assumption codes across all decisions.
         condition_codes: Vec<String>,
+    },
+    /// `projectSpatialView` oracle: hand-checked element/overlay/link/guide
+    /// assertions compared in emitted order, plus the canonical digest over
+    /// the whole projection as the cross-runtime regression pin.
+    /// `failureCode` expects a specific structured rejection (other than
+    /// `invalid_input`, which `decodeError` covers).
+    ProjectSpatialView {
+        decode_error: bool,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<String>")]
+        failure_code: Option<String>,
+        elements: Vec<ExpectedSpatialElement>,
+        overlays: Vec<ExpectedSpatialOverlay>,
+        links: Vec<ExpectedSpatialLink>,
+        dimensions: Vec<ExpectedDimensionGuide>,
+        projection_digest: Digest,
     },
     RunSearch {
         decode_error: bool,
@@ -787,6 +914,15 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
                 ),
             ]
         }
+        DomainOperation::ProjectSpatialView => vec![
+            // A projection over an embedded validated source runs under the
+            // initialized system identity — no project is fabricated.
+            initialize,
+            request(
+                meta("fixture-operation", true, None),
+                json!({ "kind": "projectSpatialView", "source": fixture.input.clone() }),
+            ),
+        ],
         DomainOperation::RunSearch => {
             // input: {"input": <ProjectInput>, "catalog": <CatalogSnapshot>,
             //         "mode"?, "steps"?, "cancelAfterSteps"?}. Step requests
@@ -953,7 +1089,8 @@ pub fn execute_domain_fixture_with(
         | DomainFixtureExpected::ValidateCandidate { decode_error, .. }
         | DomainFixtureExpected::EvaluateLayoutEdit { decode_error, .. }
         | DomainFixtureExpected::ProposeStrategies { decode_error, .. }
-        | DomainFixtureExpected::RunSearch { decode_error, .. } => *decode_error,
+        | DomainFixtureExpected::RunSearch { decode_error, .. }
+        | DomainFixtureExpected::ProjectSpatialView { decode_error, .. } => *decode_error,
     };
     if declared_decode != decode_error {
         return Err(format!(
@@ -962,6 +1099,19 @@ pub fn execute_domain_fixture_with(
         ));
     }
     if decode_error {
+        return Ok(event);
+    }
+    // A structured projection rejection (integrity/limit/range) is asserted
+    // by its exact failure code; geometry assertions do not apply then.
+    if let DomainFixtureExpected::ProjectSpatialView { failure_code, .. } = expected
+        && let Some(code) = failure_code
+    {
+        if event["kind"] != "operationFailed" || event["code"].as_str() != Some(code.as_str()) {
+            return Err(format!(
+                "{}: expected operationFailed/{code}, got {event}",
+                fixture.case_id
+            ));
+        }
         return Ok(event);
     }
     match expected {
@@ -1366,8 +1516,227 @@ pub fn execute_domain_fixture_with(
                 ));
             }
         }
+        DomainFixtureExpected::ProjectSpatialView {
+            elements,
+            overlays,
+            links,
+            dimensions,
+            projection_digest,
+            ..
+        } => {
+            if event["kind"] != "spatialViewProjected" {
+                return Err(format!(
+                    "{}: expected spatialViewProjected event, got {event}",
+                    fixture.case_id
+                ));
+            }
+            let projection = &event["projection"];
+            if projection["projectionVersion"].as_u64() != Some(1) {
+                return Err(format!(
+                    "{}: projectionVersion must be 1: {event}",
+                    fixture.case_id
+                ));
+            }
+            let compare_elements = |expected: &[ExpectedSpatialElement]| -> Result<(), String> {
+                let actual = projection["elements"]
+                    .as_array()
+                    .cloned()
+                    .unwrap_or_default();
+                if actual.len() != expected.len() {
+                    return Err(format!(
+                        "{}: element count {} != {}: {event}",
+                        fixture.case_id,
+                        actual.len(),
+                        expected.len()
+                    ));
+                }
+                for (expected, actual) in expected.iter().zip(actual.iter()) {
+                    if actual["target"] != json!(expected.target)
+                        || actual["role"] != json!(expected.role)
+                        || actual["parentPlacementId"] != json!(expected.parent_placement_id)
+                    {
+                        return Err(format!(
+                            "{}: element identity mismatch: {event}",
+                            fixture.case_id
+                        ));
+                    }
+                    if box_geometry(&actual["worldBox"])? != expected.world
+                        || rect_geometry(&actual["topRect"])? != expected.top
+                        || rect_geometry(&actual["frontRect"])? != expected.front
+                        || box_geometry(&actual["cavityLocalBox"])? != expected.cavity_local
+                        || box_geometry(&actual["measurementBox"])? != expected.measurement
+                    {
+                        return Err(format!(
+                            "{}: element geometry mismatch: {event}",
+                            fixture.case_id
+                        ));
+                    }
+                }
+                Ok(())
+            };
+            compare_elements(elements)?;
+            let actual_overlays = projection["overlays"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default();
+            if actual_overlays.len() != overlays.len() {
+                return Err(format!(
+                    "{}: overlay count {} != {}: {event}",
+                    fixture.case_id,
+                    actual_overlays.len(),
+                    overlays.len()
+                ));
+            }
+            for (expected, actual) in overlays.iter().zip(actual_overlays.iter()) {
+                if actual["target"] != json!(expected.target)
+                    || actual["role"] != json!(expected.role)
+                    || actual["motionPhase"] != json!(expected.motion_phase)
+                {
+                    return Err(format!(
+                        "{}: overlay identity mismatch: {event}",
+                        fixture.case_id
+                    ));
+                }
+                if box_geometry(&actual["geometry"])? != expected.geometry {
+                    return Err(format!(
+                        "{}: overlay geometry mismatch: {event}",
+                        fixture.case_id
+                    ));
+                }
+            }
+            let actual_links = projection["links"].as_array().cloned().unwrap_or_default();
+            if actual_links.len() != links.len() {
+                return Err(format!(
+                    "{}: link count {} != {}: {event}",
+                    fixture.case_id,
+                    actual_links.len(),
+                    links.len()
+                ));
+            }
+            for (expected, actual) in links.iter().zip(actual_links.iter()) {
+                if actual["source"] != json!(expected.source)
+                    || actual["targets"] != json!(expected.targets)
+                    || actual["resolution"] != json!(expected.resolution)
+                    || actual["unresolvedSubjectIds"] != json!(expected.unresolved_subject_ids)
+                    || actual["reasonCode"] != json!(expected.reason_code)
+                {
+                    return Err(format!("{}: link mismatch: {event}", fixture.case_id));
+                }
+            }
+            let actual_guides = projection["dimensions"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default();
+            if actual_guides.len() != dimensions.len() {
+                return Err(format!(
+                    "{}: dimension guide count {} != {}: {event}",
+                    fixture.case_id,
+                    actual_guides.len(),
+                    dimensions.len()
+                ));
+            }
+            for (expected, actual) in dimensions.iter().zip(actual_guides.iter()) {
+                if actual["guideId"] != json!(expected.guide_id)
+                    || actual["fieldPath"] != json!(expected.field_path)
+                    || actual["preferredView"] != json!(expected.preferred_view)
+                {
+                    return Err(format!(
+                        "{}: dimension guide mismatch: {event}",
+                        fixture.case_id
+                    ));
+                }
+                match &expected.segment {
+                    ExpectedSegmentGeometry::Available { from, to } => {
+                        if actual["segment"]["kind"] != json!("available")
+                            || actual["segment"]["value"]["from"] != json!(from)
+                            || actual["segment"]["value"]["to"] != json!(to)
+                        {
+                            return Err(format!(
+                                "{}: dimension segment mismatch: {event}",
+                                fixture.case_id
+                            ));
+                        }
+                    }
+                    ExpectedSegmentGeometry::Unavailable { reason_code } => {
+                        if actual["segment"]["kind"] != json!("unavailable")
+                            || actual["segment"]["reasonCode"] != json!(reason_code)
+                        {
+                            return Err(format!(
+                                "{}: dimension segment mismatch: {event}",
+                                fixture.case_id
+                            ));
+                        }
+                    }
+                }
+            }
+            let typed: SpatialProjection = serde_json::from_value(projection.clone())
+                .map_err(|e| format!("{}: projection decode: {e}", fixture.case_id))?;
+            if canonical::content_digest(&typed) != *projection_digest {
+                return Err(format!(
+                    "{}: projection digest mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+        }
     }
     Ok(event)
+}
+
+/// Convert one emitted box geometry into its comparable expected form.
+fn box_geometry(value: &Value) -> Result<ExpectedBoxGeometry, String> {
+    let axis3 = |v: &Value| -> Result<[i64; 3], String> {
+        let array = v.as_array().cloned().unwrap_or_default();
+        if array.len() != 3 {
+            return Err("box axis must have three entries".into());
+        }
+        Ok([
+            array[0].as_i64().unwrap_or_default(),
+            array[1].as_i64().unwrap_or_default(),
+            array[2].as_i64().unwrap_or_default(),
+        ])
+    };
+    match value["kind"].as_str().unwrap_or_default() {
+        "available" => Ok(ExpectedBoxGeometry::Available {
+            min: axis3(&value["value"]["min"])?,
+            max: axis3(&value["value"]["max"])?,
+            basis: serde_json::from_value(value["basis"].clone())
+                .map_err(|e| format!("basis decode: {e}"))?,
+        }),
+        "unavailable" => Ok(ExpectedBoxGeometry::Unavailable {
+            reason_code: value["reasonCode"].as_str().unwrap_or_default().to_owned(),
+        }),
+        "notApplicable" => Ok(ExpectedBoxGeometry::NotApplicable {
+            reason_code: value["reasonCode"].as_str().unwrap_or_default().to_owned(),
+        }),
+        other => Err(format!("unknown box geometry kind: {other}")),
+    }
+}
+
+/// Convert one emitted rectangle geometry into its comparable expected form.
+fn rect_geometry(value: &Value) -> Result<ExpectedRectGeometry, String> {
+    let axis2 = |v: &Value| -> Result<[i64; 2], String> {
+        let array = v.as_array().cloned().unwrap_or_default();
+        if array.len() != 2 {
+            return Err("rect axis must have two entries".into());
+        }
+        Ok([
+            array[0].as_i64().unwrap_or_default(),
+            array[1].as_i64().unwrap_or_default(),
+        ])
+    };
+    match value["kind"].as_str().unwrap_or_default() {
+        "available" => Ok(ExpectedRectGeometry::Available {
+            min: axis2(&value["value"]["min"])?,
+            max: axis2(&value["value"]["max"])?,
+        }),
+        "unavailable" => Ok(ExpectedRectGeometry::Unavailable {
+            reason_code: value["reasonCode"].as_str().unwrap_or_default().to_owned(),
+        }),
+        "notApplicable" => Ok(ExpectedRectGeometry::NotApplicable {
+            reason_code: value["reasonCode"].as_str().unwrap_or_default().to_owned(),
+        }),
+        other => Err(format!("unknown rect geometry kind: {other}")),
+    }
 }
 
 /// One live resumable search owned by the runtime; the engine owns the
@@ -1572,6 +1941,7 @@ impl Runtime {
                 Command::VerifyRecord { .. }
                     | Command::NormalizeCatalogFields { .. }
                     | Command::ValidateCatalog { .. }
+                    | Command::ProjectSpatialView { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -1743,7 +2113,8 @@ impl Runtime {
             },
             Command::VerifyRecord { .. }
             | Command::NormalizeCatalogFields { .. }
-            | Command::ValidateCatalog { .. } => self.execute_stateless(&request.command),
+            | Command::ValidateCatalog { .. }
+            | Command::ProjectSpatialView { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2003,6 +2374,18 @@ impl Runtime {
                 }
                 Event::CatalogFieldsNormalized {
                     fields: normalize_catalog_fields(fields),
+                }
+            }
+            Command::ProjectSpatialView { source } => {
+                match crate::spatial_view::project_spatial_view(source) {
+                    Ok(projection) => Event::SpatialViewProjected { projection },
+                    Err(failure) => Event::OperationFailed {
+                        code: failure.code.into(),
+                        affected_fields: failure.affected_fields,
+                        affected_ids: vec![],
+                        retryable: false,
+                        reason_parameters: BTreeMap::new(),
+                    },
                 }
             }
             Command::ValidateCatalog { catalog } => {

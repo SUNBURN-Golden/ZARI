@@ -35,7 +35,7 @@ pub enum CheckKind {
     Shipping,
     Budget,
 }
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum CheckBasis {
     Nominal,

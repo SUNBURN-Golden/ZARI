@@ -108,6 +108,7 @@ async function generate(dir) {
     { dir: 'fixtures/bootstrap', validator: exports.validateBootstrapFixture },
     { dir: 'fixtures/domain', validator: exports.validateDomainFixture },
     { dir: 'fixtures/bench', validator: exports.validateDomainFixture },
+    { dir: 'fixtures/spatial', validator: exports.validateDomainFixture },
   ];
   const manifest = JSON.parse(await readFile(join(root, 'fixtures/manifest.json'), 'utf8'));
   assert.equal(manifest.fixtureContractVersion, 1, 'Unexpected fixture contract version.');

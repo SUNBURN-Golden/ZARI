@@ -250,6 +250,37 @@ pub fn handle_extra(handles: &Fact<HandleEnvelope>) -> Option<[i64; 3]> {
     }
 }
 
+/// The parent yaw transform of a cavity-frame box whose inner offset is
+/// already resolved to plain integers. `child_global_box` delegates here
+/// after reading its offset facts; sharing this core keeps the projector and
+/// the validator on the exact same math (DOMAIN_MODEL §3).
+pub fn child_global_box_at(
+    parent_position: &Vec3Mm,
+    parent_orientation: Orientation,
+    parent_outer_depth: i64,
+    inner_offset: [i64; 3],
+    local_min: [i64; 3],
+    local_extent: [i64; 3],
+) -> Box3 {
+    let (u, v, w) = (
+        inner_offset[0] + local_min[0],
+        inner_offset[1] + local_min[1],
+        inner_offset[2] + local_min[2],
+    );
+    let (a, b, c) = (local_extent[0], local_extent[1], local_extent[2]);
+    let (px, py, pz) = (
+        parent_position.x.get() as i64,
+        parent_position.y.get() as i64,
+        parent_position.z.get() as i64,
+    );
+    match parent_orientation {
+        Orientation::Upright0 => Box3::from_min_extent([px + u, py + v, pz + w], [a, b, c]),
+        Orientation::Upright90 => {
+            Box3::from_min_extent([px + parent_outer_depth - v - b, py + u, pz + w], [b, a, c])
+        }
+    }
+}
+
 /// Global min/extent of a contained child under the parent's placement.
 /// `local_min`/`local_extent` are in the cavity frame with the item's local
 /// orientation already applied; the inner offset is added in the original
@@ -267,19 +298,28 @@ pub fn child_global_box(
         inner_offset.y.value()?.nominal.get() as i64,
         inner_offset.z.value()?.nominal.get() as i64,
     );
-    let (u, v, w) = (ox + local_min[0], oy + local_min[1], oz + local_min[2]);
-    let (a, b, c) = (local_extent[0], local_extent[1], local_extent[2]);
-    let (px, py, pz) = (
-        parent_position.x.get() as i64,
-        parent_position.y.get() as i64,
-        parent_position.z.get() as i64,
-    );
-    Some(match parent_orientation {
-        Orientation::Upright0 => Box3::from_min_extent([px + u, py + v, pz + w], [a, b, c]),
-        Orientation::Upright90 => {
-            Box3::from_min_extent([px + parent_outer_depth - v - b, py + u, pz + w], [b, a, c])
-        }
-    })
+    Some(child_global_box_at(
+        parent_position,
+        parent_orientation,
+        parent_outer_depth,
+        [ox, oy, oz],
+        local_min,
+        local_extent,
+    ))
+}
+
+/// The moving envelope swept from fully outside to the final position: final
+/// x/z plus handling margins on the sides and top.
+pub fn moving_envelope(pos: [i64; 3], extent: [i64; 3], margins: (i64, i64, i64, i64)) -> Box3 {
+    let (left, right, top, pull) = margins;
+    Box3 {
+        min: [pos[0] - left, -(extent[1] + pull), pos[2]],
+        max: [
+            pos[0] + extent[0] + right,
+            pos[1] + extent[1],
+            pos[2] + extent[2] + top,
+        ],
+    }
 }
 
 /// Effective handling requirement: the conservative per-field maximum of the
