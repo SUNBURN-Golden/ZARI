@@ -64,6 +64,7 @@ fn capability_subset_is_honest() {
             "validateCatalog",
             "validateCandidate",
             "evaluateLayoutEdit",
+            "projectSpatialView",
             "disposeProject"
         ])
     );

@@ -29,7 +29,7 @@ const rawTemplate = JSON.parse(
 const catalogTemplate = JSON.parse(
   await readFile(join(root, 'fixtures/domain/catalog-import-valid.json'), 'utf8'),
 ).input;
-const ENGINE_CONTEXT = { buildId: 'zari-domain-3' };
+const ENGINE_CONTEXT = { buildId: 'zari-domain-4' };
 const ITEM_CATEGORIES = ['clothing', 'paper', 'kitchenware', 'tools', 'linens'];
 
 function clone(value) {

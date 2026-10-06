@@ -1,0 +1,22 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "spatial-source-decode-error",
+  "operation": "projectSpatialView",
+  "schemaVersion": 1,
+  "input": {
+    "kind": "plan"
+  },
+  "engineContext": {
+    "buildId": "zari-domain-4"
+  },
+  "expected": {
+    "kind": "projectSpatialView",
+    "decodeError": true,
+    "failureCode": null,
+    "elements": [],
+    "overlays": [],
+    "links": [],
+    "dimensions": [],
+    "projectionDigest": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}

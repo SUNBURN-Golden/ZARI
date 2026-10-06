@@ -74,6 +74,8 @@ Fixture examples use obviously synthetic IDs (`syn:...`), no genuine brands or p
 
 For coordinate fixtures, spell out all x/y/z values, inner frames, allowed orientations, actual support surfaces, obstacle boxes, openings, clearances, and uncertainty intervals. A width-only test must not implicitly claim full 3D validity. Task 001's row-width result is explicitly a boundary calculation, not a PlanSnapshot or full physical validation.
 
+`fixtures/spatial/` holds `projectSpatialView` domain fixtures (`fixtures/manifest.json`, case kind `projectSpatialView`). `spatial-yaw-offset` is the hand-checked parent-yaw90 case: parent `(100,200,0)`, outer depth 400, offset `(10,20,5)`, child local `(30,40,0)`, extent 50×60×70, world min `(380,240,5)`, max `(440,290,75)`. `spatial-unknown-offset` keeps the cavity-local box and marks the world and top rectangles `offset_unknown`. `spatial-input-compartment` checks a normalized-input compartment and an item measuring frame. `spatial-digest-mismatch` and `spatial-source-decode-error` check integrity and bounded decode. The projection digest is the cross-runtime pin of the whole read model; the numeric cases above are asserted independently of that digest. Existing fixture expected outputs, snapshot digests, ids, BOM lines, and actions stay byte-identical. The only permitted edit on those files is re-pinning `engineContext.buildId` to the current `BUILD_ID`.
+
 ## 4. Rust unit and property architecture
 
 ### Scalar, normalization, and DTO cases

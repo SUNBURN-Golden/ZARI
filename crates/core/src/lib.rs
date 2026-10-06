@@ -11,6 +11,7 @@ pub mod probe;
 pub mod protocol;
 pub mod raw;
 pub mod scalars;
+pub mod spatial_view;
 pub mod strategy;
 pub mod validate;
 pub mod validator;
@@ -25,6 +26,7 @@ pub use plan::*;
 pub use probe::*;
 pub use protocol::*;
 pub use raw::*;
+pub use spatial_view::*;
 pub use strategy::*;
 pub use validator::{CandidateValidation, has_blocking_failure, validate_candidate};
 

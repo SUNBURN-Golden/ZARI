@@ -31,7 +31,7 @@ test('@parity native and real Chromium Worker WASM agree on every fixture', asyn
   );
   const domain = (
     await Promise.all(
-      ['fixtures/domain', 'fixtures/bench'].map(async (dir) =>
+      ['fixtures/domain', 'fixtures/bench', 'fixtures/spatial'].map(async (dir) =>
         Promise.all(
           (await readdir(dir))
             .filter((file) => file.endsWith('.json'))

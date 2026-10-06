@@ -20,5 +20,14 @@ if (actualCli !== `wasm-bindgen ${versions[0]}`) {
   throw new Error(`wasm-bindgen CLI must exactly match locked crate ${versions[0]}; received ${actualCli}. Install cargo install wasm-bindgen-cli --version ${versions[0]} --locked`);
 }
 run('cargo', ['build', '-p', 'zari-wasm', '--locked', '--target', 'wasm32-unknown-unknown', '--release']);
-run('wasm-bindgen', ['--target', 'web', '--out-dir', 'crates/wasm/pkg', '--out-name', 'zari_wasm', 'target/wasm32-unknown-unknown/release/zari_wasm.wasm']);
+const targetDir = process.env.CARGO_TARGET_DIR || 'target';
+run('wasm-bindgen', [
+  '--target',
+  'web',
+  '--out-dir',
+  'crates/wasm/pkg',
+  '--out-name',
+  'zari_wasm',
+  `${targetDir}/wasm32-unknown-unknown/release/zari_wasm.wasm`,
+]);
 console.log(`Built actual Rust WASM with ${actualCli}.`);

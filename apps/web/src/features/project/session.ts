@@ -5,6 +5,7 @@ import type {
   LayoutEditCommand,
   PlanSnapshot,
   ProjectInput,
+  SpatialProjection,
   RawOwnedContainerDto,
   RawProjectInputDto,
   RejectedCandidate,
@@ -38,6 +39,13 @@ import {
   setMeasurementUnit,
   type MeasurementField,
 } from './draft';
+import {
+  ProjectionCache,
+  planSourceKey,
+  projectionLeaseMatches,
+  type ProjectionEntry,
+  type ProjectionLease,
+} from '../plan/projection';
 
 export type SaveState =
   | 'idle'
@@ -112,6 +120,11 @@ export interface PlanState {
   actionProgress: Record<string, 'done' | 'todo'> | null;
   actionError: string | null;
   edit: EditState;
+  /**
+   * Ephemeral spatial projections keyed by `plan:<planSnapshotId>`.
+   * Not written to IndexedDB, export, or the snapshot hash.
+   */
+  projections: Record<string, ProjectionEntry>;
 }
 
 export interface SessionSnapshot {
@@ -167,6 +180,10 @@ export class ProjectSession {
   private snapshotIndex = new Map<string, PlanSnapshot>();
   /** Monotonic edit token: a late reply older than the newest request dies. */
   private editSeq = 0;
+  /** Drops a projection reply after close or a replaced session mount. */
+  private projectionMounted = 0;
+  private projectionCache = new ProjectionCache();
+  private projectionFlight = new Set<string>();
   constructor(
     private readonly repo: ProjectRepository,
     private readonly controller: WorkerController,
@@ -221,6 +238,7 @@ export class ProjectSession {
           undo: [],
           redo: [],
         },
+        projections: {},
       },
     };
     controller.onLifecycle((worker, error) => {
@@ -1458,6 +1476,86 @@ export class ProjectSession {
     }
   }
 
+  // ---------- spatial projection ----------
+
+  /**
+   * Ask Rust for the drawable read model of one immutable snapshot.
+   * Identical sources share one in-flight request. A late reply is applied
+   * only when its lease still matches this mount and worker.
+   */
+  ensurePlanProjection(snapshot: PlanSnapshot): void {
+    if (this.closed) return;
+    const sourceKey = planSourceKey(snapshot.planSnapshotId);
+    const cached = this.projectionCache.get(sourceKey);
+    if (cached) {
+      this.publishProjection(sourceKey, 'ready', cached, null);
+      return;
+    }
+    if (this.projectionFlight.has(sourceKey)) return;
+    const client = this.controller.current;
+    if (!client) return;
+    const lease: ProjectionLease = {
+      projectId: this.projectId,
+      sourceKey,
+      worker: client,
+      mountedGeneration: this.projectionMounted,
+    };
+    this.projectionFlight.add(sourceKey);
+    this.publishProjection(sourceKey, 'loading', null, null);
+    void client
+      .systemRequest({ kind: 'projectSpatialView', source: { kind: 'plan', snapshot } })
+      .then((event) => {
+        const current = this.currentLease(sourceKey);
+        if (!current || !projectionLeaseMatches(lease, current)) return;
+        if (event.kind !== 'spatialViewProjected') return;
+        const stamp = event.projection.source;
+        if (stamp.kind !== 'plan' || stamp.planSnapshotId !== snapshot.planSnapshotId) return;
+        this.projectionCache.set(sourceKey, event.projection);
+        this.publishProjection(sourceKey, 'ready', event.projection, null);
+      })
+      .catch((error: unknown) => {
+        const current = this.currentLease(sourceKey);
+        if (!current || !projectionLeaseMatches(lease, current)) return;
+        const code = error instanceof Error ? error.message : 'projection_failed';
+        this.publishProjection(sourceKey, 'failed', null, code);
+      })
+      .finally(() => {
+        this.projectionFlight.delete(sourceKey);
+      });
+  }
+  private currentLease(sourceKey: string): ProjectionLease | null {
+    const client = this.controller.current;
+    if (this.closed || !client) return null;
+    return {
+      projectId: this.projectId,
+      sourceKey,
+      worker: client,
+      mountedGeneration: this.projectionMounted,
+    };
+  }
+  private publishProjection(
+    sourceKey: string,
+    status: ProjectionEntry['status'],
+    projection: SpatialProjection | null,
+    failureCode: string | null,
+  ): void {
+    const current = this.state.plan.projections[sourceKey];
+    if (
+      current &&
+      current.status === status &&
+      current.projection === projection &&
+      current.failureCode === failureCode
+    ) {
+      return;
+    }
+    this.patchPlan({
+      projections: {
+        ...this.state.plan.projections,
+        [sourceKey]: { status, projection, failureCode },
+      },
+    });
+  }
+
   // ---------- close ----------
 
   /**
@@ -1482,6 +1580,9 @@ export class ProjectSession {
       return false;
     }
     this.closed = true;
+    this.projectionMounted += 1;
+    this.projectionFlight.clear();
+    this.projectionCache.clear();
     this.pump?.dispose();
     this.channel?.close();
     const client = this.controller.current;

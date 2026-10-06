@@ -1,7 +1,7 @@
 {
  "caseId": "catalog-import-decode-error",
  "engineContext": {
-  "buildId": "zari-domain-3"
+  "buildId": "zari-domain-4"
  },
  "expected": {
   "decodeError": true,

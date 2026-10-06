@@ -1095,6 +1095,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "One authoritative spatial projection over an integrity-validated\nsource (SPATIAL_VIEW_CONTRACT §6). Stateless like `verifyRecord`: it\nnever mutates the active context, search, budget or any source bytes.",
+          "properties": {
+            "kind": {
+              "const": "projectSpatialView",
+              "type": "string"
+            },
+            "source": {
+              "$ref": "#/definitions/SpatialViewSource"
+            }
+          },
+          "required": [
+            "kind",
+            "source"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -1409,6 +1427,104 @@
       "title": "Digest",
       "type": "string"
     },
+    "DimensionFrame": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "world",
+              "type": "string"
+            },
+            "spaceId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "spaceId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "itemId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "itemMeasurement",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "itemId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "containerCavity",
+              "type": "string"
+            },
+            "placementId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "placementId"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "DimensionFrame"
+    },
+    "DimensionGuide": {
+      "additionalProperties": false,
+      "description": "One dimension line. The measurement keeps its original fact, uncertainty\nand provenance verbatim — the projector never re-derives a value.",
+      "properties": {
+        "fieldPath": {
+          "type": "string"
+        },
+        "frame": {
+          "$ref": "#/definitions/DimensionFrame"
+        },
+        "guideId": {
+          "$ref": "#/definitions/Id"
+        },
+        "labelKey": {
+          "type": "string"
+        },
+        "measurement": {
+          "$ref": "#/definitions/FactFor_MeasuredLength"
+        },
+        "preferredView": {
+          "$ref": "#/definitions/DimensionView"
+        },
+        "segment": {
+          "$ref": "#/definitions/ProjectionGeometryFor_ViewSegmentMm"
+        },
+        "target": {
+          "$ref": "#/definitions/SpatialTarget"
+        }
+      },
+      "required": [
+        "guideId",
+        "target",
+        "fieldPath",
+        "labelKey",
+        "measurement",
+        "segment",
+        "frame",
+        "preferredView"
+      ],
+      "title": "DimensionGuide",
+      "type": "object"
+    },
     "Dimensions": {
       "additionalProperties": false,
       "properties": {
@@ -1429,6 +1545,15 @@
       ],
       "title": "Dimensions",
       "type": "object"
+    },
+    "DimensionView": {
+      "enum": [
+        "top",
+        "front",
+        "cavityLocal"
+      ],
+      "title": "DimensionView",
+      "type": "string"
     },
     "DomainFixture": {
       "additionalProperties": false,
@@ -1775,6 +1900,63 @@
         },
         {
           "additionalProperties": false,
+          "description": "`projectSpatialView` oracle: hand-checked element/overlay/link/guide\nassertions compared in emitted order, plus the canonical digest over\nthe whole projection as the cross-runtime regression pin.\n`failureCode` expects a specific structured rejection (other than\n`invalid_input`, which `decodeError` covers).",
+          "properties": {
+            "decodeError": {
+              "type": "boolean"
+            },
+            "dimensions": {
+              "items": {
+                "$ref": "#/definitions/ExpectedDimensionGuide"
+              },
+              "type": "array"
+            },
+            "elements": {
+              "items": {
+                "$ref": "#/definitions/ExpectedSpatialElement"
+              },
+              "type": "array"
+            },
+            "failureCode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "projectSpatialView",
+              "type": "string"
+            },
+            "links": {
+              "items": {
+                "$ref": "#/definitions/ExpectedSpatialLink"
+              },
+              "type": "array"
+            },
+            "overlays": {
+              "items": {
+                "$ref": "#/definitions/ExpectedSpatialOverlay"
+              },
+              "type": "array"
+            },
+            "projectionDigest": {
+              "$ref": "#/definitions/Digest"
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "failureCode",
+            "elements",
+            "overlays",
+            "links",
+            "dimensions",
+            "projectionDigest"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "alternativeDigests": {
               "description": "Ordered snapshot digests of the emitted ranked alternatives.",
@@ -1871,6 +2053,11 @@
         {
           "const": "runSearch",
           "description": "Resumable bounded search driven by explicit fixture-declared steps.",
+          "type": "string"
+        },
+        {
+          "const": "projectSpatialView",
+          "description": "One spatial projection over an embedded integrity-validated source.",
           "type": "string"
         }
       ],
@@ -2228,6 +2415,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Result of `projectSpatialView`: the additive ephemeral read model over\nthe validated source. ProjectionVersion=1 versions this DTO\nindependently of the persisted schema/canonical versions.",
+          "properties": {
+            "kind": {
+              "const": "spatialViewProjected",
+              "type": "string"
+            },
+            "projection": {
+              "$ref": "#/definitions/SpatialProjection"
+            }
+          },
+          "required": [
+            "kind",
+            "projection"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "`startSearch` acknowledged; the handle must be echoed verbatim by\n`stepSearch`/`cancelSearch`.",
           "properties": {
             "kind": {
@@ -2418,6 +2623,83 @@
       "title": "Evidence",
       "type": "object"
     },
+    "ExpectedBoxGeometry": {
+      "description": "Expected box geometry of one element/overlay: an exact hand-checked box\nwith its basis, or the explicit reason it must not be drawable.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "basis": {
+              "$ref": "#/definitions/CheckBasis"
+            },
+            "kind": {
+              "const": "available",
+              "type": "string"
+            },
+            "max": {
+              "items": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            "min": {
+              "items": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind",
+            "min",
+            "max",
+            "basis"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "unavailable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "notApplicable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ExpectedBoxGeometry"
+    },
     "ExpectedCatalogField": {
       "additionalProperties": false,
       "description": "The expected result of one catalog field conversion: either the exact\ntyped fact JSON or the diagnostic codes the field must carry.",
@@ -2482,6 +2764,282 @@
         "code"
       ],
       "title": "ExpectedDiagnostic",
+      "type": "object"
+    },
+    "ExpectedDimensionGuide": {
+      "additionalProperties": false,
+      "description": "One hand-checked dimension-guide assertion, compared in emitted order.",
+      "properties": {
+        "fieldPath": {
+          "type": "string"
+        },
+        "guideId": {
+          "$ref": "#/definitions/Id"
+        },
+        "preferredView": {
+          "$ref": "#/definitions/DimensionView"
+        },
+        "segment": {
+          "$ref": "#/definitions/ExpectedSegmentGeometry"
+        }
+      },
+      "required": [
+        "guideId",
+        "fieldPath",
+        "preferredView",
+        "segment"
+      ],
+      "title": "ExpectedDimensionGuide",
+      "type": "object"
+    },
+    "ExpectedRectGeometry": {
+      "description": "Expected rectangle geometry of one element.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "available",
+              "type": "string"
+            },
+            "max": {
+              "items": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "min": {
+              "items": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind",
+            "min",
+            "max"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "unavailable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "notApplicable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ExpectedRectGeometry"
+    },
+    "ExpectedSegmentGeometry": {
+      "description": "Expected segment geometry of one dimension guide.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "items": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            "kind": {
+              "const": "available",
+              "type": "string"
+            },
+            "to": {
+              "items": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind",
+            "from",
+            "to"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "unavailable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ExpectedSegmentGeometry"
+    },
+    "ExpectedSpatialElement": {
+      "additionalProperties": false,
+      "description": "One hand-checked element assertion, compared in emitted order.",
+      "properties": {
+        "cavityLocal": {
+          "$ref": "#/definitions/ExpectedBoxGeometry"
+        },
+        "front": {
+          "$ref": "#/definitions/ExpectedRectGeometry"
+        },
+        "measurement": {
+          "$ref": "#/definitions/ExpectedBoxGeometry"
+        },
+        "parentPlacementId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "role": {
+          "$ref": "#/definitions/SpatialRole"
+        },
+        "target": {
+          "$ref": "#/definitions/SpatialTarget"
+        },
+        "top": {
+          "$ref": "#/definitions/ExpectedRectGeometry"
+        },
+        "world": {
+          "$ref": "#/definitions/ExpectedBoxGeometry"
+        }
+      },
+      "required": [
+        "target",
+        "role",
+        "parentPlacementId",
+        "world",
+        "top",
+        "front",
+        "cavityLocal",
+        "measurement"
+      ],
+      "title": "ExpectedSpatialElement",
+      "type": "object"
+    },
+    "ExpectedSpatialLink": {
+      "additionalProperties": false,
+      "description": "One hand-checked link assertion, compared in emitted order.",
+      "properties": {
+        "reasonCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolution": {
+          "$ref": "#/definitions/LinkResolution"
+        },
+        "source": {
+          "$ref": "#/definitions/SpatialLinkSource"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/definitions/SpatialTarget"
+          },
+          "type": "array"
+        },
+        "unresolvedSubjectIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "source",
+        "targets",
+        "resolution",
+        "unresolvedSubjectIds",
+        "reasonCode"
+      ],
+      "title": "ExpectedSpatialLink",
+      "type": "object"
+    },
+    "ExpectedSpatialOverlay": {
+      "additionalProperties": false,
+      "description": "One hand-checked overlay assertion, compared in emitted order.",
+      "properties": {
+        "geometry": {
+          "$ref": "#/definitions/ExpectedBoxGeometry"
+        },
+        "motionPhase": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SpatialMotionPhase"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "role": {
+          "$ref": "#/definitions/SpatialOverlayRole"
+        },
+        "target": {
+          "$ref": "#/definitions/SpatialTarget"
+        }
+      },
+      "required": [
+        "target",
+        "role",
+        "motionPhase",
+        "geometry"
+      ],
+      "title": "ExpectedSpatialOverlay",
       "type": "object"
     },
     "Extent3Mm": {
@@ -4607,6 +5165,15 @@
       "title": "LidState",
       "type": "string"
     },
+    "LinkResolution": {
+      "enum": [
+        "resolved",
+        "partial",
+        "unavailable"
+      ],
+      "title": "LinkResolution",
+      "type": "string"
+    },
     "LockedGroupZone": {
       "additionalProperties": false,
       "description": "A user-locked assignment of one group to one explicit zone.",
@@ -5533,6 +6100,231 @@
       ],
       "title": "ProjectInput",
       "type": "object"
+    },
+    "ProjectionGeometryFor_ViewBoxMm": {
+      "description": "One drawable geometric fact, or its explicit absence. `Available` never\nimplies physical validity; `basis` can only be nominal/conservative for\nreal geometry (no fake nonGeometric volume).",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "basis": {
+              "$ref": "#/definitions/CheckBasis"
+            },
+            "fieldRefs": {
+              "items": {
+                "$ref": "#/definitions/FieldRef"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "available",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/ViewBoxMm"
+            }
+          },
+          "required": [
+            "kind",
+            "value",
+            "basis",
+            "fieldRefs"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "fieldRefs": {
+              "items": {
+                "$ref": "#/definitions/FieldRef"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "unavailable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode",
+            "fieldRefs"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "notApplicable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ProjectionGeometryFor_ViewBoxMm"
+    },
+    "ProjectionGeometryFor_ViewRectMm": {
+      "description": "One drawable geometric fact, or its explicit absence. `Available` never\nimplies physical validity; `basis` can only be nominal/conservative for\nreal geometry (no fake nonGeometric volume).",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "basis": {
+              "$ref": "#/definitions/CheckBasis"
+            },
+            "fieldRefs": {
+              "items": {
+                "$ref": "#/definitions/FieldRef"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "available",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/ViewRectMm"
+            }
+          },
+          "required": [
+            "kind",
+            "value",
+            "basis",
+            "fieldRefs"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "fieldRefs": {
+              "items": {
+                "$ref": "#/definitions/FieldRef"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "unavailable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode",
+            "fieldRefs"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "notApplicable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ProjectionGeometryFor_ViewRectMm"
+    },
+    "ProjectionGeometryFor_ViewSegmentMm": {
+      "description": "One drawable geometric fact, or its explicit absence. `Available` never\nimplies physical validity; `basis` can only be nominal/conservative for\nreal geometry (no fake nonGeometric volume).",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "basis": {
+              "$ref": "#/definitions/CheckBasis"
+            },
+            "fieldRefs": {
+              "items": {
+                "$ref": "#/definitions/FieldRef"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "available",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/ViewSegmentMm"
+            }
+          },
+          "required": [
+            "kind",
+            "value",
+            "basis",
+            "fieldRefs"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "fieldRefs": {
+              "items": {
+                "$ref": "#/definitions/FieldRef"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "unavailable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode",
+            "fieldRefs"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "notApplicable",
+              "type": "string"
+            },
+            "reasonCode": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ProjectionGeometryFor_ViewSegmentMm"
     },
     "ProtocolRequest": {
       "additionalProperties": false,
@@ -8032,6 +8824,556 @@
       "title": "SpaceOpening",
       "type": "object"
     },
+    "SpatialElement": {
+      "additionalProperties": false,
+      "properties": {
+        "cavityLocalBox": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectionGeometryFor_ViewBoxMm"
+            }
+          ],
+          "description": "A container's explicitly separate unrotated cavity frame."
+        },
+        "checkIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "fieldRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "frontRect": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectionGeometryFor_ViewRectMm"
+            }
+          ],
+          "description": "Domain-plane `[x,z]` rectangle (no screen inversion)."
+        },
+        "measurementBox": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectionGeometryFor_ViewBoxMm"
+            }
+          ],
+          "description": "An unplaced item type's own measuring frame."
+        },
+        "parentPlacementId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "role": {
+          "$ref": "#/definitions/SpatialRole"
+        },
+        "target": {
+          "$ref": "#/definitions/SpatialTarget"
+        },
+        "topRect": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectionGeometryFor_ViewRectMm"
+            }
+          ],
+          "description": "Domain-plane `[x,y]` rectangle (no screen inversion)."
+        },
+        "worldBox": {
+          "$ref": "#/definitions/ProjectionGeometryFor_ViewBoxMm"
+        }
+      },
+      "required": [
+        "target",
+        "role",
+        "parentPlacementId",
+        "worldBox",
+        "topRect",
+        "frontRect",
+        "cavityLocalBox",
+        "measurementBox",
+        "checkIds",
+        "fieldRefs"
+      ],
+      "title": "SpatialElement",
+      "type": "object"
+    },
+    "SpatialLink": {
+      "additionalProperties": false,
+      "properties": {
+        "reasonCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolution": {
+          "$ref": "#/definitions/LinkResolution"
+        },
+        "source": {
+          "$ref": "#/definitions/SpatialLinkSource"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/definitions/SpatialTarget"
+          },
+          "type": "array"
+        },
+        "unresolvedSubjectIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "source",
+        "targets",
+        "resolution",
+        "unresolvedSubjectIds",
+        "reasonCode"
+      ],
+      "title": "SpatialLink",
+      "type": "object"
+    },
+    "SpatialLinkSource": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "checkId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "check",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "checkId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bomLineId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "bom",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "bomLineId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "action",
+              "type": "string"
+            },
+            "stepId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "stepId"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "SpatialLinkSource"
+    },
+    "SpatialMotionPhase": {
+      "enum": [
+        "insert",
+        "extractDirect",
+        "extractContainer",
+        "liftContents"
+      ],
+      "title": "SpatialMotionPhase",
+      "type": "string"
+    },
+    "SpatialOverlay": {
+      "additionalProperties": false,
+      "properties": {
+        "checkIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "fieldRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "geometry": {
+          "$ref": "#/definitions/ProjectionGeometryFor_ViewBoxMm"
+        },
+        "motionPhase": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SpatialMotionPhase"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "overlayId": {
+          "$ref": "#/definitions/Id"
+        },
+        "role": {
+          "$ref": "#/definitions/SpatialOverlayRole"
+        },
+        "target": {
+          "$ref": "#/definitions/SpatialTarget"
+        }
+      },
+      "required": [
+        "overlayId",
+        "target",
+        "role",
+        "motionPhase",
+        "geometry",
+        "checkIds",
+        "fieldRefs"
+      ],
+      "title": "SpatialOverlay",
+      "type": "object"
+    },
+    "SpatialOverlayRole": {
+      "enum": [
+        "nominalOuter",
+        "conservativeOuter",
+        "nominalInner",
+        "conservativeInner",
+        "installationSweep",
+        "operationalSweep",
+        "staging",
+        "supportFootprint"
+      ],
+      "title": "SpatialOverlayRole",
+      "type": "string"
+    },
+    "SpatialProjection": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/definitions/Diagnostic"
+          },
+          "type": "array"
+        },
+        "dimensions": {
+          "items": {
+            "$ref": "#/definitions/DimensionGuide"
+          },
+          "type": "array"
+        },
+        "elements": {
+          "items": {
+            "$ref": "#/definitions/SpatialElement"
+          },
+          "type": "array"
+        },
+        "interior": {
+          "$ref": "#/definitions/Dimensions"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/definitions/SpatialLink"
+          },
+          "type": "array"
+        },
+        "overlays": {
+          "items": {
+            "$ref": "#/definitions/SpatialOverlay"
+          },
+          "type": "array"
+        },
+        "projectionVersion": {
+          "description": "Exactly `SPATIAL_PROJECTION_VERSION`.",
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/definitions/SpatialSourceStamp"
+        }
+      },
+      "required": [
+        "projectionVersion",
+        "source",
+        "interior",
+        "elements",
+        "overlays",
+        "dimensions",
+        "links",
+        "diagnostics"
+      ],
+      "title": "SpatialProjection",
+      "type": "object"
+    },
+    "SpatialRole": {
+      "enum": [
+        "compartmentBoundary",
+        "aperture",
+        "physicalObstacle",
+        "accessExclusion",
+        "supportSurface",
+        "itemEnvelope",
+        "directItem",
+        "ownedContainer",
+        "newContainer",
+        "containedItem",
+        "innerCavity"
+      ],
+      "title": "SpatialRole",
+      "type": "string"
+    },
+    "SpatialSourceStamp": {
+      "description": "Immutable identity of the projected source, stamped into the projection.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "inputDigest": {
+              "$ref": "#/definitions/Digest"
+            },
+            "kind": {
+              "const": "input",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "inputDigest"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "catalogDigest": {
+              "$ref": "#/definitions/Digest"
+            },
+            "inputDigest": {
+              "$ref": "#/definitions/Digest"
+            },
+            "kind": {
+              "const": "plan",
+              "type": "string"
+            },
+            "planSnapshotId": {
+              "$ref": "#/definitions/Digest"
+            }
+          },
+          "required": [
+            "kind",
+            "planSnapshotId",
+            "inputDigest",
+            "catalogDigest"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "SpatialSourceStamp"
+    },
+    "SpatialTarget": {
+      "description": "Typed selection target. Same raw id in different namespaces can never\ncollide; `unitOrdinal` is zero-based.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "space",
+              "type": "string"
+            },
+            "spaceId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "spaceId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "opening",
+              "type": "string"
+            },
+            "spaceId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "spaceId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "obstacle",
+              "type": "string"
+            },
+            "obstacleId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "obstacleId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "support",
+              "type": "string"
+            },
+            "supportId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "supportId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "placement",
+              "type": "string"
+            },
+            "placementId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "placementId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Input-side measuring envelope for an item type; never a physical\ninstance and never a quantity claim.",
+          "properties": {
+            "itemId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "item",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "itemId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "itemId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "itemInstance",
+              "type": "string"
+            },
+            "unitOrdinal": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "itemId",
+            "unitOrdinal"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "SpatialTarget"
+    },
+    "SpatialViewSource": {
+      "description": "The two legal projection sources. Both cross the same boundary validation\nas external JSON; label/size-only payloads are never trusted for drawing.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "$ref": "#/definitions/ProjectInput"
+            },
+            "inputDigest": {
+              "$ref": "#/definitions/Digest"
+            },
+            "kind": {
+              "const": "normalizedInput",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "input",
+            "inputDigest"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "plan",
+              "type": "string"
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "SpatialViewSource"
+    },
     "Stackability": {
       "oneOf": [
         {
@@ -8600,6 +9942,93 @@
       ],
       "title": "VerificationStatus",
       "type": "string"
+    },
+    "ViewBoxMm": {
+      "additionalProperties": false,
+      "properties": {
+        "max": {
+          "items": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "min": {
+          "items": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "ViewBoxMm",
+      "type": "object"
+    },
+    "ViewRectMm": {
+      "additionalProperties": false,
+      "properties": {
+        "max": {
+          "items": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "min": {
+          "items": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "ViewRectMm",
+      "type": "object"
+    },
+    "ViewSegmentMm": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "items": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "to": {
+          "items": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "title": "ViewSegmentMm",
+      "type": "object"
     },
     "WorkCount": {
       "maxLength": 20,

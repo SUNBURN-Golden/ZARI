@@ -326,20 +326,6 @@ fn position(p: &Vec3Mm) -> [i64; 3] {
     [p.x.get() as i64, p.y.get() as i64, p.z.get() as i64]
 }
 
-/// The moving envelope swept from fully outside to the final position: final
-/// x/z plus handling margins on the sides and top.
-fn moving_envelope(pos: [i64; 3], extent: [i64; 3], margins: (i64, i64, i64, i64)) -> Box3 {
-    let (left, right, top, pull) = margins;
-    Box3 {
-        min: [pos[0] - left, -(extent[1] + pull), pos[2]],
-        max: [
-            pos[0] + extent[0] + right,
-            pos[1] + extent[1],
-            pos[2] + extent[2] + top,
-        ],
-    }
-}
-
 /// Evaluate a candidate layout against the immutable context. Structural
 /// validity is a precondition enforced by the caller (`validate_layout`);
 /// lookups still fail closed instead of panicking.

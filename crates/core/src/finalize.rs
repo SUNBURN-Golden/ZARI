@@ -32,12 +32,38 @@ pub struct CandidateEvaluation {
 }
 
 fn bounded_id(raw: &str) -> Id {
+    bounded_step_id(raw)
+}
+
+/// Bounded deterministic id for one derived step string. Shared by the
+/// action producer and the spatial projector so both derive byte-identical
+/// opaque ids from the same inputs (SPATIAL_VIEW_CONTRACT §5); the projector
+/// never parses a produced id back into parts.
+pub fn bounded_step_id(raw: &str) -> Id {
     if raw.len() <= 96 {
         return Id::new(raw).expect("bounded id");
     }
     // Deterministic truncation with a content hash tail keeps ids unique.
     let digest = canonical::content_digest(&raw);
     Id::new(&format!("{}:{}", &raw[..79], &digest.as_str()[..16])).expect("bounded id")
+}
+
+/// The producer's exact transfer-step id for one contained assignment.
+pub fn transfer_step_id(item_id: &Id, unit_ordinal: u32) -> Id {
+    bounded_step_id(&format!(
+        "act:transfer:{}:{}",
+        item_id.as_str(),
+        unit_ordinal
+    ))
+}
+
+/// The producer's exact resolve-step id for one provisional assignment.
+pub fn resolve_step_id(item_id: &Id, unit_ordinal: u32) -> Id {
+    bounded_step_id(&format!(
+        "act:resolve:{}:{}",
+        item_id.as_str(),
+        unit_ordinal
+    ))
 }
 
 fn derived_fact<T>(rule: &str, value: T) -> Fact<T> {
@@ -458,16 +484,14 @@ fn build_actions(
             ..
         } = &assignment.location
         {
-            actions.push(step(
-                format!(
-                    "act:resolve:{}:{}",
-                    assignment.item_id.as_str(),
-                    assignment.unit_ordinal
-                ),
-                ActionKind::ResolveCondition,
-                vec![assignment.item_id.clone(), container_placement_id.clone()],
-                vec![],
-            ));
+            actions.push(ActionStep {
+                id: resolve_step_id(&assignment.item_id, assignment.unit_ordinal),
+                kind: ActionKind::ResolveCondition,
+                subject_ids: vec![assignment.item_id.clone(), container_placement_id.clone()],
+                prerequisite_step_ids: vec![],
+                required_confirmations: vec![],
+                reason_ids: vec![],
+            });
         }
     }
     let mut offer_steps: BTreeMap<String, Id> = BTreeMap::new();
@@ -565,23 +589,22 @@ fn build_actions(
     }
 
     // Contents transfer: each confirmed contained item is placed into its
-    // installed container.
+    // installed container. The id is the shared exact-instance derivation
+    // (`transfer_step_id`) so the spatial projector resolves the same unit.
     for assignment in &layout.assignments {
         if let ItemLocation::Contained {
             container_placement_id,
             ..
         } = &assignment.location
         {
-            actions.push(step(
-                format!(
-                    "act:transfer:{}:{}",
-                    assignment.item_id.as_str(),
-                    assignment.unit_ordinal
-                ),
-                ActionKind::TransferContents,
-                vec![assignment.item_id.clone(), container_placement_id.clone()],
-                vec![install_id(container_placement_id.as_str())],
-            ));
+            actions.push(ActionStep {
+                id: transfer_step_id(&assignment.item_id, assignment.unit_ordinal),
+                kind: ActionKind::TransferContents,
+                subject_ids: vec![assignment.item_id.clone(), container_placement_id.clone()],
+                prerequisite_step_ids: vec![install_id(container_placement_id.as_str())],
+                required_confirmations: vec![],
+                reason_ids: vec![],
+            });
         }
     }
 
