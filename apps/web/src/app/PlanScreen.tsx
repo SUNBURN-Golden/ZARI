@@ -27,8 +27,9 @@ import {
 } from '../features/workspace/drag';
 import { selectedPlacementId } from '../features/workspace/selection';
 import { PlanWorkspace, useWorkspace } from '../features/workspace/Workspace';
+import { StepFocus } from '../features/workspace/StepFocus';
+import type { GuideSurface } from '../features/workspace/stepFocus';
 import {
-  ACTION_TEXT,
   CHECK_KIND_TEXT,
   CHECK_STATUS_TEXT,
   EDIT_COMMAND_TEXT,
@@ -332,14 +333,27 @@ function offerFactsText(content: SnapshotContent, offerId: string | null) {
 }
 
 /** One alternative's detail pane: diagram, placements, checks, BOM, guide. */
+function guideSurface(
+  where: 'selected' | 'edit' | 'accepted',
+  snapshot: PlanSnapshot,
+  state: SessionSnapshot,
+): GuideSurface {
+  if (where === 'edit') return 'working';
+  if (where === 'accepted') return 'accepted';
+  if (state.plan.accepted?.planSnapshotId === snapshot.planSnapshotId) return 'accepted';
+  return 'alternative';
+}
+
 function PlanDetail({
   session,
   state,
   snapshot,
+  where,
 }: {
   session: ProjectSession;
   state: SessionSnapshot;
   snapshot: PlanSnapshot;
+  where: 'selected' | 'edit' | 'accepted';
 }) {
   const content = snapshot.content;
   const current = session.isCurrentSnapshot(snapshot);
@@ -482,6 +496,7 @@ function PlanDetail({
     nudgeRef.current.arrows.delete(e.key);
     if (nudgeRef.current.arrows.size === 0) commitNudge();
   };
+  const surface = guideSurface(where, snapshot, state);
   return (
     <div
       className="plan-detail"
@@ -783,83 +798,31 @@ function PlanDetail({
       <section aria-labelledby="guide-title">
         <div className="section-kicker">실행 순서</div>
         <h3 id="guide-title">정리 단계</h3>
-        {/**
-         * Progress binds to the accepted snapshot only. A prerequisite that
-         * is not yet done keeps its dependents locked — checking a locked step
-         * is refused by the repository, never silently written.
-         */}
-        {(() => {
-          const isAccepted =
-            state.plan.accepted?.planSnapshotId === snapshot.planSnapshotId &&
-            state.plan.accepted.inputRevision === state.inputRevision;
-          const progress = isAccepted ? (state.plan.actionProgress ?? {}) : {};
-          const stepDone = (id: string) => progress[id] === 'done';
-          const blocked = (a: (typeof content.actions)[number]) =>
-            a.prerequisiteStepIds.filter((p) => !stepDone(p));
-          return (
-            <>
-              {!isAccepted && content.actions.length > 0 && (
-                <p className="session-note" data-testid="progress-inactive">
-                  이 계획을 채택하면 단계별 완료를 기록할 수 있습니다.
-                </p>
-              )}
-              {isAccepted && state.plan.actionProgress === null && (
-                <p className="notice notice-error" data-testid="progress-unavailable">
-                  진행 기록을 읽지 못했습니다.
-                </p>
-              )}
-              {state.plan.actionError && (
-                <p className="field-error" role="alert" data-testid="action-error">
-                  {state.plan.actionError === 'blocked_prerequisites'
-                    ? '먼저 해야 할 단계가 남아 있습니다.'
-                    : state.plan.actionError === 'blocked_dependents'
-                      ? '이 단계에 의존하는 단계가 완료되어 있습니다.'
-                      : state.plan.actionError === 'not_accepted'
-                        ? '현재 채택된 계획이 아닙니다.'
-                        : `진행 저장 실패: ${state.plan.actionError}`}
-                </p>
-              )}
-              <ol className="plan-list" data-testid="guide-list">
-                {content.actions.map((a) => {
-                  const missing = blocked(a);
-                  return (
-                    <li key={a.id} data-status={stepDone(a.id) ? 'done' : undefined}>
-                      {isAccepted ? (
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={stepDone(a.id)}
-                            disabled={!stepDone(a.id) && missing.length > 0}
-                            data-testid={`action-${a.id}`}
-                            onChange={(e) =>
-                              void session.toggleActionStep(a.id, e.target.checked)
-                            }
-                          />{' '}
-                          {ACTION_TEXT[a.kind] ?? a.kind}
-                        </label>
-                      ) : (
-                        <>{ACTION_TEXT[a.kind] ?? a.kind}</>
-                      )}
-                      <span className="session-note">
-                        {' '}
-                        ({a.subjectIds
-                          .map((s) => {
-                            const placement = content.placements.find((p) => p.id === s);
-                            if (placement)
-                              return subjectLabel(content, placement.subject);
-                            return itemById.get(s)?.label ?? s;
-                          })
-                          .join(', ')})
-                        {isAccepted && missing.length > 0 && ' · 선행 단계 필요'}
-                      </span>
-                    </li>
-                  );
-                })}
-                {content.actions.length === 0 && <li>실행할 단계가 없습니다.</li>}
-              </ol>
-            </>
-          );
-        })()}
+        <StepFocus
+          surface={surface}
+          actions={content.actions}
+          content={content}
+          projection={projectionEntry?.projection ?? null}
+          focus={workspace.state.focus}
+          progress={surface === 'accepted' ? state.plan.actionProgress : null}
+          progressLoad={surface === 'accepted' ? state.plan.progressLoad : 'ready'}
+          displayedPlanId={snapshot.planSnapshotId}
+          displayedDigest={content.versions.inputDigest}
+          accepted={state.plan.accepted}
+          currentInputRevision={state.inputRevision}
+          currentInputDigest={state.inputDigest}
+          staleInput={state.staleInput}
+          conflict={state.conflict !== null}
+          actionError={surface === 'accepted' ? state.plan.actionError : null}
+          actionRetry={surface === 'accepted' ? state.plan.actionRetry : null}
+          onFocusStep={(stepId) => workspace.setFocus({ kind: 'action', stepId })}
+          onToggle={(stepId, done) => void session.toggleActionStep(stepId, done)}
+          onShowAccepted={
+            state.plan.accepted
+              ? () => document.getElementById('accepted-guide')?.scrollIntoView({ block: 'nearest' })
+              : null
+          }
+        />
       </section>
 
       <div className="form-actions">
@@ -1095,7 +1058,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
             </details>
           )}
           {selected && (
-            <PlanDetail session={session} state={state} snapshot={selected} />
+            <PlanDetail session={session} state={state} snapshot={selected} where="selected" />
           )}
         </section>
       )}
@@ -1161,7 +1124,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
               이 편집안을 채택
             </Button>
           </div>
-          <PlanDetail session={session} state={state} snapshot={plan.edit.head} />
+          <PlanDetail session={session} state={state} snapshot={plan.edit.head} where="edit" />
         </section>
       )}
 
@@ -1179,6 +1142,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
               session={session}
               state={state}
               snapshot={plan.acceptedSnapshot}
+              where="accepted"
             />
           )}
         </section>

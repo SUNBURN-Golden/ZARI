@@ -98,7 +98,7 @@ export function InspectorLayers({
             ? `구매 행 ${focus.bomLineId}`
             : focus.kind === 'check'
               ? `검사 ${focus.checkId}`
-              : `단계 ${focus.stepId}`}
+              : `현재 단계 대상 ${focus.stepId}`}
         </p>
       )}
     </aside>

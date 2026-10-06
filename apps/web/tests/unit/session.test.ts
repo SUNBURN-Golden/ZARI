@@ -801,3 +801,126 @@ it('one normalized input asks Rust for projectSpatialView once and repeats hit t
   expect(session.spatialRequestCount).toBe(1);
   expect(spatial()).toHaveLength(1);
 });
+
+it('accepted progress stays on its binding across edit, accept switch, and a late reply', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  const chosen = done.plan.alternatives[0]!;
+  const before = JSON.stringify(chosen);
+  void session.acceptPlan(chosen.planSnapshotId);
+  await until(session, (s) => s.plan.acceptState === 'saved' && s.plan.progressLoad === 'ready');
+  const actions = session.snapshot.plan.acceptedSnapshot?.content.actions ?? [];
+  const first = actions.find(
+    (action) => action.prerequisiteStepIds.length === 0 && action.requiredConfirmations.length === 0,
+  );
+  expect(first).toBeDefined();
+  await session.toggleActionStep(first!.id, true);
+  await until(session, (s) => s.plan.actionProgress?.[first!.id] === 'done');
+  const bound = await repo.loadBundle(projectId);
+  const stored = bound.snapshots.find((row) => row.planSnapshotId === chosen.planSnapshotId);
+  expect(JSON.stringify(stored?.snapshot)).toBe(before);
+  expect(session.snapshot.plan.actionProgress).not.toBeNull();
+
+  const placement = chosen.content.placements[0];
+  expect(placement).toBeDefined();
+  session.requestLayoutEdit(
+    {
+      kind: 'movePlacement',
+      placementId: placement!.id,
+      position: { ...placement!.position },
+    },
+    chosen.planSnapshotId,
+  );
+  const edited = await until(
+    session,
+    (s) => s.plan.edit.pending === null && s.plan.edit.head !== null && s.plan.edit.persist?.kind !== 'saving',
+    30000,
+  );
+  expect(edited.plan.edit.rejection).toBeNull();
+  const head = edited.plan.edit.head!;
+  expect(head.planSnapshotId).not.toBe(chosen.planSnapshotId);
+  expect(
+    await repo.actionProgressFor(projectId, session.snapshot.inputRevision, head.planSnapshotId),
+  ).toEqual([]);
+  expect(session.snapshot.plan.actionProgress?.[first!.id]).toBe('done');
+
+  const second =
+    actions.find(
+      (action) =>
+        action.id !== first!.id &&
+        action.requiredConfirmations.length === 0 &&
+        action.prerequisiteStepIds.every((id) => id === first!.id || session.snapshot.plan.actionProgress?.[id] === 'done'),
+    ) ?? first!;
+  let release: () => void = () => {};
+  let held = false;
+  (globalThis as { __zariProgressGate?: () => Promise<void> }).__zariProgressGate = () =>
+    new Promise((resolve) => {
+      held = true;
+      release = resolve;
+    });
+  try {
+    const pending = session.toggleActionStep(second.id, true);
+    const deadline = Date.now() + 8000;
+    while (!held && Date.now() < deadline) await new Promise((r) => setTimeout(r, 20));
+    expect(held).toBe(true);
+    void session.acceptPlan(head.planSnapshotId);
+    await until(
+      session,
+      (s) =>
+        s.plan.acceptState === 'saved' &&
+        s.plan.accepted?.planSnapshotId === head.planSnapshotId &&
+        s.plan.progressLoad === 'ready',
+    );
+    release();
+    await pending;
+    expect(session.snapshot.plan.accepted?.planSnapshotId).toBe(head.planSnapshotId);
+    expect(session.snapshot.plan.actionProgress?.[second.id]).not.toBe('done');
+    const inputRevision = session.snapshot.inputRevision;
+    expect(await repo.actionProgressFor(projectId, inputRevision, head.planSnapshotId)).toEqual([]);
+    const originalRows = await repo.actionProgressFor(projectId, inputRevision, chosen.planSnapshotId);
+    expect(originalRows.some((row) => row.stepId === first!.id && row.status === 'done')).toBe(true);
+  } finally {
+    delete (globalThis as { __zariProgressGate?: unknown }).__zariProgressGate;
+  }
+
+  const originalRead = repo.actionProgressFor.bind(repo);
+  repo.actionProgressFor = async () => {
+    throw new Error('read_failed');
+  };
+  try {
+    await session.reloadLatest();
+    await until(session, (s) => s.plan.progressLoad === 'error' && s.plan.actionProgress === null);
+    await session.toggleActionStep(first!.id, true);
+    expect(session.snapshot.plan.actionError).toBe('progress_unavailable');
+    expect(session.snapshot.plan.actionProgress).toBeNull();
+  } finally {
+    repo.actionProgressFor = originalRead;
+  }
+  await session.reloadLatest();
+  await until(session, (s) => s.plan.progressLoad === 'ready' && s.plan.actionProgress !== null);
+  const progressBefore = { ...session.snapshot.plan.actionProgress! };
+  const originalWrite = repo.setActionStep.bind(repo);
+  repo.setActionStep = async () => {
+    throw new Error('disk_unavailable');
+  };
+  try {
+    await session.toggleActionStep(first!.id, false);
+    expect(session.snapshot.plan.actionProgress).toEqual(progressBefore);
+    expect(session.snapshot.plan.actionError).toBe('disk_unavailable');
+    expect(session.snapshot.plan.actionRetry).toEqual({ stepId: first!.id, done: false });
+  } finally {
+    repo.setActionStep = originalWrite;
+  }
+
+  session.edit('space.interior.width', '610');
+  session.commit();
+  await until(session, (s) => s.saveState === 'saved');
+  await until(session, () => !session.isCurrentSnapshot(head));
+  await session.toggleActionStep(head.content.actions[0]?.id ?? first!.id, true);
+  expect(session.snapshot.plan.actionError).toBe('stale_input');
+}, 120000);

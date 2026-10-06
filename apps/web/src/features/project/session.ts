@@ -48,6 +48,8 @@ import {
   type ProjectionLease,
 } from '../plan/projection';
 import { leasesEqual, type WorkspaceLease } from '../workspace/lease';
+import { holdProgressReply } from './progressGate';
+import { shouldApplyProgressReply } from '../workspace/stepFocus';
 
 export type SaveState =
   | 'idle'
@@ -127,7 +129,11 @@ export interface PlanState {
    * construction.
    */
   actionProgress: Record<string, 'done' | 'todo'> | null;
+  /** `error` is a failed read. `loading` is not a failed read and is not all-todo. */
+  progressLoad: 'idle' | 'loading' | 'ready' | 'error';
   actionError: string | null;
+  /** Last progress write that threw. Blocked reasons are not retries. */
+  actionRetry: { stepId: string; done: boolean } | null;
   edit: EditState;
   /**
    * Ephemeral spatial projections keyed by `plan:<planSnapshotId>`.
@@ -199,6 +205,11 @@ export class ProjectSession {
   private projectionFlight = new Set<string>();
   /** Worker `projectSpatialView` sends. Cache hits and focus changes do not increment. */
   private spatialRequestsSent = 0;
+  /**
+   * Bumped when the accepted binding is replaced or the session reloads.
+   * An in-flight progress reply captured against an older epoch is dropped.
+   */
+  private progressEpoch = 0;
   constructor(
     private readonly repo: ProjectRepository,
     private readonly controller: WorkerController,
@@ -244,7 +255,9 @@ export class ProjectSession {
         acceptError: null,
         catalog: null,
         actionProgress: null,
+        progressLoad: 'idle',
         actionError: null,
+        actionRetry: null,
         edit: {
           selectedPlacementId: null,
           pending: null,
@@ -901,21 +914,42 @@ export class ProjectSession {
    * carried across snapshots.
    */
   private async loadActionProgress(): Promise<void> {
+    const epoch = this.progressEpoch;
     const accepted = this.state.plan.accepted;
     if (!accepted) {
-      this.patchPlan({ actionProgress: {}, actionError: null });
+      if (this.progressEpoch !== epoch) return;
+      this.patchPlan({ actionProgress: {}, actionError: null, progressLoad: 'ready', actionRetry: null });
       return;
     }
+    const binding = {
+      inputRevision: accepted.inputRevision,
+      planSnapshotId: accepted.planSnapshotId,
+    };
+    this.patchPlan({ progressLoad: 'loading' });
     const rows = await this.repo
-      .actionProgressFor(this.projectId, accepted.inputRevision, accepted.planSnapshotId)
+      .actionProgressFor(this.projectId, binding.inputRevision, binding.planSnapshotId)
       .catch(() => null);
+    if (this.progressEpoch !== epoch) return;
+    const now = this.state.plan.accepted;
+    if (
+      !now ||
+      now.inputRevision !== binding.inputRevision ||
+      now.planSnapshotId !== binding.planSnapshotId
+    ) {
+      return;
+    }
     if (rows === null) {
-      this.patchPlan({ actionProgress: null, actionError: 'progress_unavailable' });
+      this.patchPlan({
+        actionProgress: null,
+        actionError: 'progress_unavailable',
+        progressLoad: 'error',
+      });
       return;
     }
     this.patchPlan({
       actionProgress: Object.fromEntries(rows.map((r) => [r.stepId, r.status])),
       actionError: null,
+      progressLoad: 'ready',
     });
   }
   /**
@@ -926,31 +960,71 @@ export class ProjectSession {
   async toggleActionStep(stepId: string, done: boolean): Promise<void> {
     const accepted = this.state.plan.accepted;
     if (!accepted) {
-      this.patchPlan({ actionError: 'not_accepted' });
+      this.patchPlan({ actionError: 'not_accepted', actionRetry: null });
       return;
     }
+    if (this.state.conflict) {
+      this.patchPlan({ actionError: 'conflict', actionRetry: null });
+      return;
+    }
+    if (this.state.staleInput || accepted.inputRevision !== this.state.inputRevision) {
+      this.patchPlan({ actionError: 'stale_input', actionRetry: null });
+      return;
+    }
+    if (this.state.plan.progressLoad !== 'ready' || this.state.plan.actionProgress === null) {
+      this.patchPlan({ actionError: 'progress_unavailable', actionRetry: null });
+      return;
+    }
+    const step = this.state.plan.acceptedSnapshot?.content.actions.find((item) => item.id === stepId);
+    if (done && step && step.requiredConfirmations.length > 0) {
+      this.patchPlan({ actionError: 'confirmation_required', actionRetry: null });
+      return;
+    }
+    const captured = {
+      inputRevision: accepted.inputRevision,
+      planSnapshotId: accepted.planSnapshotId,
+      epoch: this.progressEpoch,
+    };
     const result = await this.repo
       .setActionStep({
         projectId: this.projectId,
-        inputRevision: accepted.inputRevision,
-        planSnapshotId: accepted.planSnapshotId,
+        inputRevision: captured.inputRevision,
+        planSnapshotId: captured.planSnapshotId,
         stepId,
         done,
       })
       .catch((error: unknown) => error as Error);
+    // Vite replaces MODE, so the production bundle drops this call and progressGate.ts.
+    if (import.meta.env.MODE === 'test') await holdProgressReply();
+    const apply = shouldApplyProgressReply({
+      capturedEpoch: captured.epoch,
+      epoch: this.progressEpoch,
+      captured,
+      accepted: this.state.plan.accepted,
+      progress: this.state.plan.actionProgress,
+    });
+    if (!apply) return;
     if (result instanceof Error) {
-      this.patchPlan({ actionError: result.message });
+      this.patchPlan({ actionError: result.message, actionRetry: { stepId, done } });
       return;
     }
     if (result.status === 'saved') {
       this.broadcast(result.projectRevision);
       this.patch({ projectRevision: result.projectRevision });
-      const progress = { ...(this.state.plan.actionProgress ?? {}) };
+      const progress = { ...this.state.plan.actionProgress! };
       progress[stepId] = done ? 'done' : 'todo';
-      this.patchPlan({ actionProgress: progress, actionError: null });
+      this.patchPlan({
+        actionProgress: progress,
+        actionError: null,
+        actionRetry: null,
+        progressLoad: 'ready',
+      });
       return;
     }
-    this.patchPlan({ actionError: result.status });
+    if (result.status === 'conflict') {
+      this.patch({ conflict: { remoteRevision: 'unknown' }, saveState: 'conflict' });
+    }
+    this.patchPlan({ actionError: result.status, actionRetry: null });
   }
   /**
    * One continuous search on the activated context. Steps are bounded WASM
@@ -1086,6 +1160,7 @@ export class ProjectSession {
       });
       if (result.status === 'committed') {
         this.broadcast(result.projectRevision);
+        this.progressEpoch += 1;
         this.patch({ projectRevision: result.projectRevision });
         this.patchPlan({
           accepted: {
@@ -1094,6 +1169,10 @@ export class ProjectSession {
           },
           acceptedSnapshot: snapshot,
           acceptState: 'saved',
+          actionProgress: null,
+          actionError: null,
+          actionRetry: null,
+          progressLoad: 'loading',
         });
         // A new binding starts with its own rows — reload rather than carry.
         void this.loadActionProgress();
@@ -1583,6 +1662,7 @@ export class ProjectSession {
   async reloadLatest(): Promise<void> {
     this.historyIntent = null;
     this.editSeq += 1;
+    this.progressEpoch += 1;
     this.repo.refreshRevision(this.projectId);
     const bundle = await this.repo.loadBundle(this.projectId).catch(() => null);
     if (!bundle) return;
