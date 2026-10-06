@@ -19,6 +19,9 @@ import {
   sceneRects,
 } from './projection';
 import { focusTargets, targetIn, targetKey, targetsEqual } from './selection';
+import { useCanvasGesture } from './useCanvasGesture';
+import type { WorkspaceLease } from './lease';
+import type { MmPoint } from './drag';
 import {
   TOP_PAD,
   viewBoxAttr,
@@ -29,6 +32,25 @@ import {
   type Viewport,
   ZOOM_STEP,
 } from './viewport';
+
+export type DiagramInteraction = {
+  enabledMove: boolean;
+  enabledPan: boolean;
+  placementId: string | null;
+  origin: MmPoint | null;
+  pending: boolean;
+  blocked: boolean;
+  spacePan: boolean;
+  /** Canvas-only touch-action:none while an explicit move or pan mode is on. */
+  touchNone: boolean;
+  readLease: () => WorkspaceLease | null;
+  fence: string;
+  onCommit: (command: LayoutEditCommand) => void;
+  onPreview: (position: MmPoint | null) => void;
+  onPrecheck: (message: string | null) => void;
+  onPhase: (phase: 'idle' | 'armed' | 'preview') => void;
+  bindCancel: (cancel: () => void) => void;
+};
 
 type PlanDiagramProps = {
   content: SnapshotContent;
@@ -43,6 +65,8 @@ type PlanDiagramProps = {
   viewport: Viewport;
   onViewport: (next: Viewport) => void;
   ghostCommand?: LayoutEditCommand | null;
+  previewCommand?: LayoutEditCommand | null;
+  interaction?: DiagramInteraction | null;
   onSelect?: (target: SpatialTarget) => void;
   onHover?: (target: SpatialTarget | null) => void;
 };
@@ -64,6 +88,8 @@ export function PlanDiagram({
   viewport,
   onViewport,
   ghostCommand,
+  previewCommand,
+  interaction,
   onSelect,
   onHover,
 }: PlanDiagramProps) {
@@ -71,6 +97,24 @@ export function PlanDiagram({
   const planeRef = useRef<SVGGElement>(null);
   const frame = projection && status === 'ready' ? spaceFrame(projection, view) : null;
   const pad = viewPad(view);
+  const pointer = useCanvasGesture(planeRef, {
+    enabledMove: interaction?.enabledMove ?? false,
+    enabledPan: interaction?.enabledPan ?? false,
+    placementId: interaction?.placementId ?? null,
+    origin: interaction?.origin ?? null,
+    pending: interaction?.pending ?? false,
+    blocked: interaction?.blocked ?? false,
+    spacePan: interaction?.spacePan ?? false,
+    readLease: interaction?.readLease ?? (() => null),
+    fence: interaction?.fence ?? '',
+    viewport,
+    onCommit: interaction?.onCommit ?? (() => undefined),
+    onPreview: interaction?.onPreview ?? (() => undefined),
+    onPan: onViewport,
+    onPrecheck: interaction?.onPrecheck ?? (() => undefined),
+    onPhase: interaction?.onPhase ?? (() => undefined),
+  });
+  if (interaction) interaction.bindCancel(pointer.cancel);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -124,7 +168,8 @@ export function PlanDiagram({
   const overlays = checkOverlayRects(projection, view, selection, focus, layers);
   const lines = dimensionLines(projection, view, layers, selection, focus);
   const linked = focusTargets(projection, focus);
-  const ghost = ghostCommand ? ghostFromProjection(projection, content, ghostCommand) : null;
+  const ghostSource = ghostCommand ?? previewCommand ?? null;
+  const ghost = ghostSource ? ghostFromProjection(projection, content, ghostSource, ghostCommand ? '검증 중' : '검사 전') : null;
   const offsetUnknown = containedOffsetUnknown(projection);
   const cavity = cavityPane(projection, selection, view);
   const box = zoomedViewBox(frame, pad, viewport);
@@ -132,14 +177,21 @@ export function PlanDiagram({
   return (
     <div ref={hostRef} data-active={active ? 'true' : undefined}>
       <svg
+        ref={pointer.bindSvg}
         className="plan-diagram"
         data-testid={testId}
         data-view={view}
         data-zoom={viewport.zoom}
+        data-gesture={interaction?.touchNone ? 'active' : 'idle'}
         viewBox={viewBoxAttr(box)}
         role="img"
         aria-label={view === 'top' ? '위에서 본 배치' : '앞에서 본 배치'}
         tabIndex={active ? 0 : undefined}
+        onPointerDown={pointer.onPointerDown}
+        onPointerMove={pointer.onPointerMove}
+        onPointerUp={pointer.onPointerUp}
+        onPointerCancel={pointer.onPointerCancel}
+        onLostPointerCapture={pointer.onLostPointerCapture}
       >
         <g ref={planeRef} data-testid={`${testId}-plane`} transform="scale(1 -1)">
           <rect className="diagram-space" x={0} y={0} width={frame.width} height={frame.height} />
@@ -177,7 +229,8 @@ export function PlanDiagram({
           {ghost && view === 'top' && (
             <rect
               className="diagram-ghost"
-              data-testid="edit-ghost"
+              data-testid={ghostCommand ? 'edit-ghost' : 'drag-preview'}
+              data-valid="false"
               x={ghost.x}
               y={ghost.y}
               width={ghost.width}

@@ -69,6 +69,22 @@ export class ProbeClient {
   get failure(): Error | null {
     return this.failureError;
   }
+  /** Immutable transport identity. Callers must not persist these ids. */
+  get transportIdentity(): {
+    workerSessionId: string;
+    projectActivationId: string;
+    editorEpoch: string;
+    inputRevision: string;
+    projectId: string;
+  } {
+    return {
+      workerSessionId: this.session,
+      projectActivationId: this.activation,
+      editorEpoch: this.epoch,
+      inputRevision: this.revision,
+      projectId: this.project,
+    };
+  }
   constructor(
     private readonly factory: () => WorkerPort,
     private readonly onFailure: (error: Error) => void = () => {},

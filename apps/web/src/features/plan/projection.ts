@@ -170,6 +170,7 @@ export function ghostFromProjection(
   projection: SpatialProjection,
   content: SnapshotContent,
   command: LayoutEditCommand,
+  caption: '검증 중' | '검사 전' = '검증 중',
 ): RectVm | null {
   if (command.kind !== 'movePlacement' && command.kind !== 'rotatePlacement') return null;
   const placement = content.placements.find((item) => item.id === command.placementId);
@@ -199,7 +200,7 @@ export function ghostFromProjection(
     y,
     width,
     height,
-    label: `${subjectLabel(content, placement.subject)} (검증 중)`,
+    label: `${subjectLabel(content, placement.subject)} (${caption})`,
     refId: placement.id,
     kind: 'ghost',
   };

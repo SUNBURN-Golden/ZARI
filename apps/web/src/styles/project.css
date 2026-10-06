@@ -291,11 +291,35 @@
   stroke-width: 3;
 }
 
+.diagram-ghost,
+.diagram-selection,
+.diagram-focus,
+.diagram-overlay,
+.dimension-line {
+  pointer-events: none;
+}
+
 .diagram-ghost {
   fill: none;
   stroke: var(--zari-preview);
   stroke-width: 1.5;
   stroke-dasharray: 5 4;
+  transition: none;
+}
+
+.notice-preview {
+  color: var(--zari-preview);
+  background: var(--zari-info-soft);
+  border-left: 2px solid var(--zari-preview);
+}
+
+.drag-phase-slot[data-shown='false'] {
+  visibility: hidden;
+}
+
+.plan-diagram[data-gesture='active'] {
+  touch-action: none;
+  user-select: none;
 }
 
 .plan-thumb {
@@ -549,6 +573,11 @@
   .dimension-line {
     fill: none;
     stroke: CanvasText;
+  }
+  .diagram-container,
+  .diagram-item,
+  .diagram-contained {
+    pointer-events: visible;
   }
   .diagram-selection,
   .diagram-container[data-selected='true'],

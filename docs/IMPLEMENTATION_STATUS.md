@@ -1,3 +1,31 @@
+# 2026-10-06 — ZARI-SPATIAL-003 평면 드래그와 동등한 숫자·키보드 편집
+
+정본은 GitHub issue #47, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-003`이다. 관찰한 base SHA는 `e6858355811ce1a9234fd86c280daf5c10ac3a68`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+구현:
+
+- 평면 드래그·숫자 입력·키보드가 같은 `movePlacement` 한 번으로 끝난다. `pointermove`에는 Worker/IndexedDB 호출이 없고, 명령은 pointerup(또는 키를 모두 놓은 때)에 하나다. z는 그대로다. 1 mm 양자화, 4 CSS px 임계값.
+- 키보드 기본 단계는 1 mm, Shift는 명시적 10 mm이며 화면에 단위를 보인다. 축은 ArrowLeft −x, ArrowRight +x, ArrowUp −y, ArrowDown +y 그대로다.
+- 진행 중인 편집이 있으면 숫자·키보드·드래그·대안 선택·수락·다시 계산이 그 명령을 덮지 않는다. 저장 실패는 검증된 head를 유지하고 거부로 바꾸지 않는다. CAS 충돌은 별도 상태다. 수락본은 작업 head와 분리된다.
+- 검토 수정: 검증 중이거나 저장 중(`saving`)에 누른 Ctrl/Meta+Z·Shift+Z·Y는 버리지 않고, 버튼이 다시 켜지는 순간에 `restoreLayout` 한 번으로 실행한다. 그 창에서 이동 명령은 여전히 무시된다. SVG가 로딩 뒤에 붙으면 resize observer도 그때 붙는다. 저장 충돌 문구 중 도달하지 않던 분기는 제거했다.
+- 좁은 화면·coarse pointer는 “평면에서 이동”을 눌러야 이동한다. “화면 이동”과 Space/중간 버튼은 화면만 움직인다. `touch-action: none`은 그 모드의 캔버스에만 둔다. 정면 뷰와 내용물 드래그는 이동이 아니다.
+- 002의 `WorkspaceState`는 바꾸지 않았다. 제스처 단계는 컴포넌트 안에만 있다. Rust·fixture·생성 계약·`Cargo.lock`은 바꾸지 않았다.
+
+이 머신에서 실행한 검증(통과):
+
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- `cargo test --workspace --locked`: 83개 (core lib 19, bootstrap 9, domain 11, edit 6, protocol 13, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 107건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`
+- `npm run wasm:build`, `npm run contracts:check` (107), `npm run typecheck`, `npm run lint`, `npm test` (vitest 10 files / 86), `npm run build`, `node scripts/check-design-tokens.mjs --self-test` (39/39)
+- `npm run test:browser -- --project=chromium`: 검토 수정 뒤 연속 3회 46 passed (24.8s, 22.6s, 24.6s). 그 앞 1회는 `project.spec.ts` 프로젝트 전환이 목록에 머물러 45 passed / 1 failed였고, 이어진 3회에서는 재현되지 않았다. 드래그 3건은 마우스·키보드·390px 터치를 포함한다.
+- `npm run test:parity`: native↔Chromium 107 fixture, parity 2 passed
+
+하지 않은 것: 노드 004–007, 스냅, 리사이즈, yaw/z 드래그, 3D, 자동 수락. 저장 실패와 CAS 충돌은 세션 단위 테스트로 확인했고 브라우저에서 디스크 실패를 주입하지는 않았다. 390px는 에뮬레이션이지 실기기가 아니다. 증거 그림은 추가하지 않았다. 상세는 `docs/evidence/ZARI-SPATIAL-003.md`.
+
+다음: 감독자가 이 검토 수정을 커밋한다. 004는 이 편집 경로 위에서 진행 표시를 다룬다.
+
 # 2026-10-06 — ZARI-SPATIAL-002 측정·선택·검사 작업대
 
 정본은 GitHub issue #45, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-002`이다. 관찰한 base SHA는 `52ffba6157cd583315fd38da400f045b31568f51`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
