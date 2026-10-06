@@ -1,3 +1,4 @@
+import type { FocusEvent } from 'react';
 import { FieldError, Input, Label, Text, TextField } from 'react-aria-components';
 
 type Unit = 'mm' | 'cm';
@@ -26,6 +27,11 @@ export function DimensionField({
   onFocus,
   onBlur,
 }: DimensionFieldProps) {
+  const keepFocus = (event: FocusEvent<HTMLDivElement>) => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && event.currentTarget.contains(next)) return;
+    onBlur();
+  };
   return (
     <TextField
       id={id}
@@ -36,13 +42,11 @@ export function DimensionField({
       validationBehavior="aria"
     >
       <Label className="field-label">{label}</Label>
-      <div className="dimension-input">
+      <div className="dimension-input" onFocus={onFocus} onBlur={keepFocus}>
         <Input
           inputMode="decimal"
           autoComplete="off"
           placeholder="미측정"
-          onFocus={onFocus}
-          onBlur={onBlur}
         />
         <select
           aria-label={`${label} 단위`}

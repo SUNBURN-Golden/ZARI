@@ -45,6 +45,11 @@ export function planSourceKey(planSnapshotId: string): string {
   return `plan:${planSnapshotId}`;
 }
 
+/** Normalized-input projections are keyed by the Rust input digest. */
+export function inputSourceKey(inputDigest: string): string {
+  return `input:${inputDigest}`;
+}
+
 /**
  * A system reply may outlive an editor-epoch bump. Apply it only when the
  * captured lease still names this project, source, worker, and mount.
@@ -244,4 +249,11 @@ export function readProjection(
   snapshot: PlanSnapshot,
 ): ProjectionEntry | null {
   return projections[planSourceKey(snapshot.planSnapshotId)] ?? null;
+}
+
+export function readInputProjection(
+  projections: Record<string, ProjectionEntry>,
+  inputDigest: string,
+): ProjectionEntry | null {
+  return projections[inputSourceKey(inputDigest)] ?? null;
 }

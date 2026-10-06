@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Button } from 'react-aria-components';
 import type { Diagnostic, ProjectInput } from '../contracts/generated/dto';
+import { inputSourceKey, readInputProjection } from '../features/plan/projection';
+import { MeasurementDiagram } from '../features/workspace/MeasurementDiagram';
+import { useWorkspace } from '../features/workspace/Workspace';
+import { fieldCaption, preferredMeasureView } from '../features/workspace/projection';
 import { AttachmentManager } from '../features/attachments/model';
 import { reencodeImage } from '../features/attachments/image';
 import {
@@ -103,12 +107,14 @@ function FieldGroup({
   fields,
   focused,
   setFocused,
+  blocked,
 }: {
   session: ProjectSession;
   state: SessionSnapshot;
   fields: MeasurementField[];
   focused: MeasurementField | null;
   setFocused: (f: MeasurementField | null) => void;
+  blocked: (field: MeasurementField) => 'stale' | 'invalid' | null;
 }) {
   const fieldError = (field: MeasurementField) => {
     const d = state.diagnostics.find((entry) => fieldPathFor(entry.fieldPath) === field);
@@ -132,9 +138,12 @@ function FieldGroup({
               onBlur={() => setFocused(null)}
               error={fieldError(field)}
             />
-            <span className="normalized-value" data-testid={`normalized-${field}`}>
+            <span className="normalized-value" data-testid={`normalized-${field}`} data-historical={blocked(field) ? 'true' : undefined}>
               {normalizedText(state.normalizedInput, field)}
             </span>
+            {blocked(field) && (
+              <span className="session-note">{blocked(field) === 'invalid' ? '이전 확인 값' : '입력 변경 · 이전 측정'}</span>
+            )}
           </div>
         );
       })}
@@ -420,9 +429,41 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     (listener) => session.subscribe(listener),
     () => session.snapshot,
   );
-  const [focused, setFocused] = useState<MeasurementField | null>(null);
   const [exported, setExported] = useState<string | null>(null);
+  const workspace = useWorkspace({
+    projectId,
+    sourceKey: state.inputDigest ? inputSourceKey(state.inputDigest) : `input:pending:${projectId}`,
+    planSnapshotId: null,
+    inputDigest: state.inputDigest ?? '',
+  });
+  const focused: MeasurementField | null =
+    workspace.state.focus.kind === 'measurement' &&
+    (MEASUREMENT_FIELDS as readonly string[]).includes(workspace.state.focus.fieldPath)
+      ? (workspace.state.focus.fieldPath as MeasurementField)
+      : null;
+  const setFocused = (field: MeasurementField | null) => {
+    if (!field) {
+      workspace.setFocus({ kind: 'none' });
+      return;
+    }
+    const entry = state.inputDigest
+      ? readInputProjection(state.plan.projections, state.inputDigest)
+      : null;
+    workspace.setFocus({ kind: 'measurement', fieldPath: field });
+    workspace.setView(preferredMeasureView(field, entry?.projection ?? null));
+  };
+  const fieldBlock = (field: MeasurementField): 'stale' | 'invalid' | null => {
+    if (state.diagnostics.some((entry) => fieldPathFor(entry.fieldPath) === field)) return 'invalid';
+    if (state.staleInput) return 'stale';
+    return null;
+  };
   useEffect(() => () => releaseSession(projectId), [projectId]);
+  useEffect(() => {
+    if (state.status !== 'ready' || state.worker !== 'ready') return;
+    const snap = session.snapshot;
+    if (!snap.normalizedInput || !snap.inputDigest) return;
+    session.ensureInputProjection(snap.normalizedInput, snap.inputDigest);
+  }, [session, state.status, state.worker, state.context, state.inputDigest]);
 
   async function download(kind: 'standard' | 'recovery') {
     const data = await session.exportJson(kind);
@@ -521,15 +562,24 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           </Button>
         </div>
       )}
-      <section className="measurement-panel" aria-labelledby="measure-title">
+      <section
+        className="measurement-panel"
+        aria-labelledby="measure-title"
+        data-testid="measure-workspace"
+        data-spatial-requests={session.spatialRequestCount}
+        data-project-revision={state.projectRevision}
+      >
         <div className="section-kicker">01 · 공간 치수</div>
         <h2 id="measure-title">공간을 측정해 주세요.</h2>
+        <div className="measure-workspace">
+          <div>
         <FieldGroup
           session={session}
           state={state}
           fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('space.'))}
           focused={focused}
           setFocused={setFocused}
+          blocked={fieldBlock}
         />
         <div className="section-kicker">02 · 물건 치수</div>
         <FieldGroup
@@ -538,10 +588,34 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('items.'))}
           focused={focused}
           setFocused={setFocused}
+          blocked={fieldBlock}
         />
-        <p className="focus-context" data-testid="focus-context" aria-hidden={!focused}>
-          {focused ? `지금 ${FIELD_LABELS[focused]} 치수를 입력하고 있습니다.` : '\u00A0'}
+        <p className="focus-context" data-testid="focus-context" aria-live="polite">
+          {focused ? `${FIELD_LABELS[focused]}. ${fieldCaption(focused)}` : '\u00A0'}
         </p>
+          </div>
+          <MeasurementDiagram
+            fieldPath={focused}
+            projection={
+              state.inputDigest
+                ? (readInputProjection(state.plan.projections, state.inputDigest)?.projection ?? null)
+                : null
+            }
+            projectionStatus={
+              state.inputDigest
+                ? (readInputProjection(state.plan.projections, state.inputDigest)?.status ?? 'absent')
+                : 'absent'
+            }
+            input={state.normalizedInput}
+            block={focused ? fieldBlock(focused) : null}
+            onActivateField={(fieldPath) => {
+              if ((MEASUREMENT_FIELDS as readonly string[]).includes(fieldPath)) {
+                setFocused(fieldPath as MeasurementField);
+                document.getElementById(fieldPath)?.focus();
+              }
+            }}
+          />
+        </div>
         {otherDiagnostics.length > 0 && (
           <ul className="diagnostic-list" data-testid="diagnostic-list">
             {otherDiagnostics.map((d, i) => (

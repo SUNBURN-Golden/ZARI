@@ -199,6 +199,42 @@
       "foreground": "--zari-accent",
       "background": "--zari-surface-app",
       "minimum": 4.5
+    },
+    {
+      "id": "unknown-on-canvas",
+      "foreground": "--zari-unknown",
+      "background": "--zari-canvas-bg",
+      "minimum": 4.5
+    },
+    {
+      "id": "unknown-on-panel",
+      "foreground": "--zari-unknown",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "stale-on-warning-soft",
+      "foreground": "--zari-stale",
+      "background": "--zari-warning-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "stale-on-panel",
+      "foreground": "--zari-stale",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "preview-on-info-soft",
+      "foreground": "--zari-preview",
+      "background": "--zari-info-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "preview-on-panel",
+      "foreground": "--zari-preview",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
     }
   ]
 }

@@ -25,6 +25,10 @@
   --zari-danger-soft: #FBECEB;
   --zari-info: #295C77;
   --zari-info-soft: #EAF2F8;
+  /* SP-002 aliases. They name a meaning; they do not introduce a new palette. */
+  --zari-unknown: var(--zari-text-muted);
+  --zari-stale: var(--zari-warning);
+  --zari-preview: var(--zari-info);
   --zari-canvas-bg: var(--zari-surface-subtle);
   --zari-canvas-outline: var(--zari-text-secondary);
   --zari-canvas-grid: var(--zari-border-subtle);
