@@ -6,6 +6,7 @@ import type {
   PlanSnapshot,
   ProjectInput,
   SpatialProjection,
+  SpatialViewSource,
   RawOwnedContainerDto,
   RawProjectInputDto,
   RejectedCandidate,
@@ -26,8 +27,7 @@ import {
   type ProjectBundle,
   type ProjectRepository,
 } from '../../persistence/repository';
-import type { ProbeClient } from '../../worker/client';
-import { StaleRequest } from '../../worker/client';
+import { StaleRequest, type ProbeClient } from '../../worker/client';
 import {
   SearchPump,
   WorkerController,
@@ -41,6 +41,7 @@ import {
 } from './draft';
 import {
   ProjectionCache,
+  inputSourceKey,
   planSourceKey,
   projectionLeaseMatches,
   type ProjectionEntry,
@@ -184,6 +185,8 @@ export class ProjectSession {
   private projectionMounted = 0;
   private projectionCache = new ProjectionCache();
   private projectionFlight = new Set<string>();
+  /** Worker `projectSpatialView` sends. Cache hits and focus changes do not increment. */
+  private spatialRequestsSent = 0;
   constructor(
     private readonly repo: ProjectRepository,
     private readonly controller: WorkerController,
@@ -290,6 +293,10 @@ export class ProjectSession {
   }
   get isClosed(): boolean {
     return this.closed;
+  }
+  /** How many spatial projections were actually requested from the Worker. */
+  get spatialRequestCount(): number {
+    return this.spatialRequestsSent;
   }
   private bump(): { generation: string; epoch: string; form: RawProjectInputDto } {
     this.generation += 1;
@@ -470,6 +477,19 @@ export class ProjectSession {
       this.patch({ context: 'none' });
       return;
     }
+    try {
+      await this.activateContext(client, input, catalog);
+    } finally {
+      // activate() rejects in-flight system requests. Ask again after it
+      // settles so a projection started during commit is not left failed.
+      if (!this.closed) this.refreshInputProjection();
+    }
+  }
+  private async activateContext(
+    client: ProbeClient,
+    input: ProjectInput | null,
+    catalog: ProjectBundle['catalog'],
+  ): Promise<void> {
     this.patch({ context: 'installing' });
     if (input && catalog) {
       try {
@@ -1484,8 +1504,33 @@ export class ProjectSession {
    * only when its lease still matches this mount and worker.
    */
   ensurePlanProjection(snapshot: PlanSnapshot): void {
-    if (this.closed) return;
     const sourceKey = planSourceKey(snapshot.planSnapshotId);
+    this.requestProjection(sourceKey, { kind: 'plan', snapshot }, (projection) => {
+      const stamp = projection.source;
+      return stamp.kind === 'plan' && stamp.planSnapshotId === snapshot.planSnapshotId;
+    });
+  }
+  /**
+   * Drawable read model of one normalized input. Same lease and cache as plans.
+   * A second call for the same digest does not send another Worker request.
+   */
+  ensureInputProjection(input: ProjectInput, inputDigest: string): void {
+    const sourceKey = inputSourceKey(inputDigest);
+    this.requestProjection(
+      sourceKey,
+      { kind: 'normalizedInput', input, inputDigest },
+      (projection) => {
+        const stamp = projection.source;
+        return stamp.kind === 'input' && stamp.inputDigest === inputDigest;
+      },
+    );
+  }
+  private requestProjection(
+    sourceKey: string,
+    source: SpatialViewSource,
+    accept: (projection: SpatialProjection) => boolean,
+  ): void {
+    if (this.closed) return;
     const cached = this.projectionCache.get(sourceKey);
     if (cached) {
       this.publishProjection(sourceKey, 'ready', cached, null);
@@ -1501,27 +1546,38 @@ export class ProjectSession {
       mountedGeneration: this.projectionMounted,
     };
     this.projectionFlight.add(sourceKey);
+    this.spatialRequestsSent += 1;
     this.publishProjection(sourceKey, 'loading', null, null);
     void client
-      .systemRequest({ kind: 'projectSpatialView', source: { kind: 'plan', snapshot } })
+      .systemRequest({ kind: 'projectSpatialView', source })
       .then((event) => {
         const current = this.currentLease(sourceKey);
         if (!current || !projectionLeaseMatches(lease, current)) return;
         if (event.kind !== 'spatialViewProjected') return;
-        const stamp = event.projection.source;
-        if (stamp.kind !== 'plan' || stamp.planSnapshotId !== snapshot.planSnapshotId) return;
+        if (!accept(event.projection)) {
+          this.publishProjection(sourceKey, 'failed', null, 'projection_source_mismatch');
+          return;
+        }
         this.projectionCache.set(sourceKey, event.projection);
         this.publishProjection(sourceKey, 'ready', event.projection, null);
       })
       .catch((error: unknown) => {
         const current = this.currentLease(sourceKey);
         if (!current || !projectionLeaseMatches(lease, current)) return;
+        if (error instanceof StaleRequest) return;
         const code = error instanceof Error ? error.message : 'projection_failed';
         this.publishProjection(sourceKey, 'failed', null, code);
       })
       .finally(() => {
         this.projectionFlight.delete(sourceKey);
       });
+  }
+  /** Drawable read model for the committed input, after activation has settled. */
+  private refreshInputProjection(): void {
+    const input = this.state.normalizedInput;
+    const digest = this.state.inputDigest;
+    if (!input || !digest) return;
+    this.ensureInputProjection(input, digest);
   }
   private currentLease(sourceKey: string): ProjectionLease | null {
     const client = this.controller.current;

@@ -7,6 +7,7 @@ import type {
   ProjectInput,
   ProtocolRequest,
 } from '../../src/contracts/generated/dto';
+import { readInputProjection } from '../../src/features/plan/projection';
 import { ProjectSession, type SessionSnapshot } from '../../src/features/project/session';
 import {
   emptyProjectForm,
@@ -583,3 +584,33 @@ it('a rejected edit is explained and never becomes a plan; a superseded reply ca
   expect(session.snapshot.plan.edit.undo.length).toBe(0);
   expect(session.snapshot.plan.edit.selectedPlacementId).toBeNull();
 }, 90000);
+
+it('one normalized input asks Rust for projectSpatialView once and repeats hit the cache', async () => {
+  const { repo, controller, ports } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  const ready = await until(
+    session,
+    (s) => s.status === 'ready' && s.worker === 'ready' && s.normalizedInput !== null && s.inputDigest !== null,
+  );
+  const input = ready.normalizedInput!;
+  const digest = ready.inputDigest!;
+  session.ensureInputProjection(input, digest);
+  session.ensureInputProjection(input, digest);
+  await until(
+    session,
+    (s) => readInputProjection(s.plan.projections, digest)?.status === 'ready',
+  );
+  const spatial = () =>
+    ports.flatMap((port) => port.sent).filter((request) => request.command.kind === 'projectSpatialView');
+  expect(spatial()).toHaveLength(1);
+  expect(session.spatialRequestCount).toBe(1);
+  expect(spatial()[0]?.command).toMatchObject({
+    kind: 'projectSpatialView',
+    source: { kind: 'normalizedInput', inputDigest: digest },
+  });
+  session.ensureInputProjection(input, digest);
+  expect(session.spatialRequestCount).toBe(1);
+  expect(spatial()).toHaveLength(1);
+});

@@ -1,3 +1,30 @@
+# 2026-10-06 — ZARI-SPATIAL-002 측정·선택·검사 작업대
+
+정본은 GitHub issue #45, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-002`이다. 관찰한 base SHA는 `52ffba6157cd583315fd38da400f045b31568f51`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+구현:
+
+- `apps/web/src/features/workspace/`: `WorkspaceState`와 선택 어댑터, 측정 도식, 평면/정면 도면, 검사 오버레이, cavity-local, 뷰포트 +/-/맞춤, 텍스트 목록, 인스펙터. `spatial` 뷰는 타입에만 있고 버튼은 없다.
+- 프로젝트 화면은 `input:<digest>` 투영을 읽고, 편집 가능한 11개 치수에 안내 문구를 붙인다. 단위 `<select>`로 포커스가 넘어가도 측정 포커스는 유지된다. unknown/invalid/stale은 축척 영역을 그리지 않는다.
+- 계획 화면은 같은 스냅샷의 도면·내용물·외경/내경·검사·BOM·수량/비용을 한 작업대에 둔다. 배치 선택만 이동 폼을 연다. 내용물 선택은 부모와 구분된다. BOM 포커스는 링크의 전체 배치를 강조한다. 검사 레이어는 기본 꺼짐이다.
+- 세션은 입력 투영을 계획 투영과 같은 캐시·lease로 요청한다. `activate()`가 진행 중인 시스템 요청을 끊으면, 활성화 뒤에 입력 투영을 다시 요청한다. `StaleRequest`는 실패 도면으로 저장하지 않는다.
+- 토큰 `--zari-unknown` / `--zari-stale` / `--zari-preview`와 대비 사례 6건. Rust·fixture·생성 계약·`Cargo.lock`은 바꾸지 않았다.
+
+이 머신에서 실행한 검증(통과):
+
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --locked -- -D warnings`
+- `cargo test --workspace --locked`: 83개 (core lib 19, bootstrap 9, domain 11, edit 6, protocol 13, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 107건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`
+- `npm run wasm:build`, `npm run contracts:check` (107), `npm run typecheck`, `npm run lint`, `npm test` (vitest 9 files / 76), `npm run build`, `node scripts/check-design-tokens.mjs --self-test` (39/39)
+- `npm run test:browser -- --project=chromium`: 43 passed
+- `npm run test:parity`: native↔Chromium 107 fixture, parity 2 passed
+
+하지 않은 것: 노드 003–007, 드래그, 3D, 새 측정 스위트. 물건 치수는 Rust `measurementBox`가 있을 때만 축척 실루엣이고, 한 축만 알면 문구와 축척 없음 도식이다. 화살표는 10mm / Shift 1mm 그대로다. 증거 그림은 추가하지 않았다. 상세는 `docs/evidence/ZARI-SPATIAL-002.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 003은 이 `WorkspaceState`/선택 계약 위에 드래그를 올린다.
+
 # 2026-10-06 — ZARI-SPATIAL-001 공통 Rust 공간 투영 (미커밋 작업 트리)
 
 정본은 GitHub issue #43, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 작업 브랜치 `astra/zari-spatial-001`이다. 이 기록의 기준 HEAD는 `84036631c945a59fee4de325409f835246536b96`이며 구현은 그 위의 **커밋되지 않은** 작업 트리이다. 커밋·푸시·PR은 하지 않았다. 이 문서는 검토 PASS가 아니다.
