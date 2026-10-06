@@ -43,12 +43,14 @@ import {
   ProjectionCache,
   inputSourceKey,
   planSourceKey,
+  projectionAccepts,
   projectionLeaseMatches,
   type ProjectionEntry,
   type ProjectionLease,
 } from '../plan/projection';
 import { leasesEqual, type WorkspaceLease } from '../workspace/lease';
 import { holdProgressReply } from './progressGate';
+import { holdProjectionReply, maybeCorruptProjection } from './projectionGate';
 import { shouldApplyProgressReply } from '../workspace/stepFocus';
 
 export type SaveState =
@@ -1723,10 +1725,7 @@ export class ProjectSession {
    */
   ensurePlanProjection(snapshot: PlanSnapshot): void {
     const sourceKey = planSourceKey(snapshot.planSnapshotId);
-    this.requestProjection(sourceKey, { kind: 'plan', snapshot }, (projection) => {
-      const stamp = projection.source;
-      return stamp.kind === 'plan' && stamp.planSnapshotId === snapshot.planSnapshotId;
-    });
+    this.requestProjection(sourceKey, { kind: 'plan', snapshot });
   }
   /**
    * Drawable read model of one normalized input. Same lease and cache as plans.
@@ -1734,20 +1733,9 @@ export class ProjectSession {
    */
   ensureInputProjection(input: ProjectInput, inputDigest: string): void {
     const sourceKey = inputSourceKey(inputDigest);
-    this.requestProjection(
-      sourceKey,
-      { kind: 'normalizedInput', input, inputDigest },
-      (projection) => {
-        const stamp = projection.source;
-        return stamp.kind === 'input' && stamp.inputDigest === inputDigest;
-      },
-    );
+    this.requestProjection(sourceKey, { kind: 'normalizedInput', input, inputDigest });
   }
-  private requestProjection(
-    sourceKey: string,
-    source: SpatialViewSource,
-    accept: (projection: SpatialProjection) => boolean,
-  ): void {
+  private requestProjection(sourceKey: string, source: SpatialViewSource): void {
     if (this.closed) return;
     const cached = this.projectionCache.get(sourceKey);
     if (cached) {
@@ -1768,11 +1756,15 @@ export class ProjectSession {
     this.publishProjection(sourceKey, 'loading', null, null);
     void client
       .systemRequest({ kind: 'projectSpatialView', source })
-      .then((event) => {
+      .then(async (event) => {
+        if (import.meta.env.MODE === 'test') {
+          await holdProjectionReply();
+          event = maybeCorruptProjection(event);
+        }
         const current = this.currentLease(sourceKey);
         if (!current || !projectionLeaseMatches(lease, current)) return;
         if (event.kind !== 'spatialViewProjected') return;
-        if (!accept(event.projection)) {
+        if (!projectionAccepts(source, event.projection)) {
           this.publishProjection(sourceKey, 'failed', null, 'projection_source_mismatch');
           return;
         }

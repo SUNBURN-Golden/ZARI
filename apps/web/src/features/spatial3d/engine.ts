@@ -406,8 +406,10 @@ export class SpatialEngine {
     if (this.disposed) return;
     this.dirty = true;
     if (this.frame !== 0) return;
+    this.root.dataset.pendingFrame = '1';
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
+      this.root.dataset.pendingFrame = '0';
       if (this.disposed) return;
       if (document.hidden || !this.visible) return;
       if (!this.dirty) return;

@@ -128,7 +128,9 @@ export function useCanvasGesture(planeRef: RefObject<SVGGElement | null>, host: 
     }
     const plane = planeRef.current;
     const ctm = plane?.getScreenCTM();
+    const jsStarted = performance.now();
     const updated = updateMove(current, sample, ctm ? matrixOf(ctm) : null);
+    const jsMs = performance.now() - jsStarted;
     if (updated.kind === 'cancel') {
       cancel();
       return;
@@ -136,6 +138,14 @@ export function useCanvasGesture(planeRef: RefObject<SVGGElement | null>, host: 
     gesture.current = updated.gesture;
     live.onPhase(updated.kind);
     live.onPreview(updated.kind === 'preview' ? updated.gesture.position : null);
+    const svg = svgRef.current;
+    if (svg && updated.kind === 'preview' && import.meta.env.MODE === 'test') {
+      svg.dataset.previewJsMs = String(Math.round(jsMs * 10) / 10);
+      const paintStarted = performance.now();
+      requestAnimationFrame(() => {
+        svg.dataset.previewPaintMs = String(Math.round((performance.now() - paintStarted) * 10) / 10);
+      });
+    }
   }
 
   function schedule() {

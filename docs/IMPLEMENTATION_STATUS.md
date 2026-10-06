@@ -1,3 +1,35 @@
+# 2026-10-06 — ZARI-SPATIAL-006 통합 품질·오프라인·성능 측정
+
+정본은 GitHub issue #53, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-006`이다. 관찰한 base SHA는 `2865869f33a05f7c19256547eabcf1e1642617b8`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+구현:
+
+- 같은 fixture·호스트에서 001–005를 다시 재고, 투영 소스/인코드/디코드/전송, 2D 커밋, 포인터 프리뷰, 3D 첫 준비·프레임·5초 유휴·20회 dispose를 `zari-bench-3`로 나눴다. 기존 `zari-bench-2` 단계와 임계값은 그대로다. p95가 임계값을 넘으면 `exceeded`로 기록하고 벤치는 통과시킨다. 유휴 draw가 0이 아니거나, dispose가 20이 아니거나, 배치가 빠지거나, 미분류가 있거나, Worker와 페이지 투영 JSON이 다르면 실패다.
+- 기준 기하는 `fixtures/spatial/spatial-yaw-offset.json`이다. `bench-search-reference`는 대안이 0개라 스트레스 스냅샷은 `bench-search-small`의 첫 라이브 대안이다. 새 fixture 파일은 없다.
+- 스탬프가 어긋난 투영은 캐시하지 않고 `projection_source_mismatch`다. 계획 화면의 Worker 실패는 기존 재연결 패널을 쓰고 도면과 revision을 남긴다. 진행 저장/읽기 실패는 완료로 바꾸지 않는다. 가져온 문자열은 텍스트이고 HTML 파일은 JSON이 아니라고 거절한다.
+- 프로덕션 `SpatialView` 청크는 `index.html`에 없고, 테스트 전용 주입 식별자는 프로덕션 JS에 없다. 오프라인 첫 3D는 Chromium·Firefox에서 로컬 캐시로 `ready`다. WebKit은 캐시 적중만 확인한다.
+- 새 색 토큰은 없다. Rust·fixture·생성 계약·`Cargo.lock`·워크플로는 바꾸지 않았다.
+
+이 머신에서 실행한 검증:
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`: 83개 (core lib 19, bootstrap 9, domain 11, edit 6, protocol 13, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 107건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`
+- `npm run wasm:build`, `npm run contracts:check` (107), `npm run typecheck`, `npm run lint`, `npm test` (vitest 13 files / 108), `npm run build`, `node scripts/check-release-manifest.mjs` (errors 없음), `node scripts/check-design-tokens.mjs --self-test` (39/39)
+- `drag.spec.ts`는 `page.mouse` move/down/up이다. `steps`는 중간 `pointermove`가 필요한 이동에만 쓴다. Chromium·Firefox·WebKit 각 3 passed. CDP 세션은 없다.
+- `npm run test:browser -- --project=chromium`: 4-worker 1회는 57 passed / 2 failed. 둘 다 create-project 뒤 목록에 머물렀고 `worker-state`가 없었다. 바로 이은 재실행은 59 passed (49.3s).
+- Firefox·WebKit 동일 59건: 각 59 passed, 0 failed.
+- `npm run bench:browser -- --project=chromium`: 크기 행을 고친 뒤 12 passed (4.3m). cold 20, warm 50. Firefox·WebKit 벤치 12/12는 그 수정 전의 실행이다.
+- `npm run test:parity`: native↔Chromium 107 fixture, parity 2 passed (19.2s)
+
+측정(데스크톱 p95, 전화 열은 전부 unmeasured). Chromium 열은 크기 행을 고친 뒤의 벤치다. Firefox·WebKit 시간은 그 앞 실행이다. 투영 소스 Chromium 3.80 / Firefox 5.00 / WebKit 4.00 ms (목표 20, met). 인코드·디코드·전송은 세 엔진 모두 목표 이내. 2D 렌더 Chromium 1.70 ms. 첫 3D(클릭 포함) Chromium 457 ms (목표 1000, met). 유휴 draw 0. dispose 20. Chromium 잔여 전송 27.10 ms, Firefox 직렬화 39 ms, WebKit 정규화 36 ms는 `exceeded`로 남겼다. 임계값은 내리지 않았다.
+
+`spatialGzipKiB`는 3D를 열 때 비로소 받는 JS 청크의 gzip 합이다. 테스트 빌드는 `SpatialView-L8DuDDF5.js`와 `scene-TKedKJ_Z.js`(three.js)이고 raw 577,830바이트, gzip 합 140.80 KiB다. 250 KiB 이내. 프로덕션은 three.js가 `SpatialView-BI-biihS.js` 한 파일에 들어 있다. raw 576,505바이트, gzip 143,561바이트(140.20 KiB), Brotli 118,033바이트. `index.html`이 참조하지 않는다. `buildId` `316427bb1c205c86`. WASM gzip은 Vite 표시 821.30 kB로 2 MiB 이내. 초기 JS+CSS Vite gzip은 248.96 kB + 5.93 kB다.
+
+하지 않은 것: 실기기, 전용 GPU, GPU 타임스탬프. 전화·전용 GPU는 UNVERIFIED이고 하드웨어 게이트는 열려 있다. WebKit 오프라인 reload는 WPE 한계로 실행하지 않았다. create-project 뒤 목록에 남는 경우는 이번 Chromium 4-worker 1회에서 재현됐고, 같은 59건 재실행에서는 사라졌다. 원인은 모른다. 타임아웃을 올리거나 재시도를 넣지 않았고 PR #38은 건드리지 않았다. 노드 007, 승인 캡처, 베타 릴리스는 범위 밖이다. 상세는 `docs/evidence/ZARI-SPATIAL-006.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다.
+
 # 2026-10-06 — ZARI-SPATIAL-005 읽기 전용 구획 3D
 
 정본은 GitHub issue #51, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-005`이다. 관찰한 base SHA는 `dd726ef30e20f95f1d2f03c082462dc019a0b118`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

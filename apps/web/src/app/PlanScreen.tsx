@@ -56,7 +56,7 @@ import { bomCsvRows, toCsv } from '../features/plan/csv';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import { Shell } from './ProjectScreen';
 import { navigate } from './router';
-import { acquireSession, releaseSession } from './sessionRegistry';
+import { acquireSession, releaseSession, workerController } from './sessionRegistry';
 
 const TERMINATION_TEXT: Record<string, string> = {
   scopeComplete: '범위를 모두 검토했습니다',
@@ -559,6 +559,7 @@ function PlanDetail({
         content={content}
         projection={projectionEntry?.projection ?? null}
         projectionStatus={projectionEntry?.status ?? 'absent'}
+        projectionFailure={projectionEntry?.failureCode ?? null}
         historical={!current}
         spatialRequests={session.spatialRequestCount}
         projectRevision={state.projectRevision}
@@ -907,6 +908,15 @@ export function PlanScreen({ projectId }: { projectId: string }) {
 
   return (
     <Shell name={state.name || '프로젝트'}>
+      {state.worker === 'failed' && (
+        <div className="recovery-panel" role="alert" data-testid="worker-failed">
+          <strong>계산기가 중단되었습니다.</strong>
+          <p>도면에 이미 받아 둔 계획은 그대로입니다. 다시 연결하면 새 세션이 시작됩니다.</p>
+          <Button className="button button-secondary" onPress={() => void workerController.recover()} data-testid="worker-retry">
+            계산기 다시 연결
+          </Button>
+        </div>
+      )}
       {state.conflict && (
         <div className="notice notice-stale" role="alert" data-testid="edit-conflict">
           <p>다른 탭에서 먼저 저장되었습니다. 이 편집은 그 기록을 덮어쓰지 않습니다.</p>

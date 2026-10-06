@@ -585,6 +585,28 @@ export function diagramTextEntries(
       note,
     });
   }
+  for (const element of projection.elements) {
+    if (WORLD_ROLES.has(element.role)) continue;
+    const label = elementLabel(content, element);
+    const note =
+      element.worldBox.kind === 'unavailable'
+        ? element.worldBox.reasonCode === 'offset_unknown'
+          ? '외형 안의 실제 위치 미확인 · 별도 좌표계'
+          : '도면에 없음'
+        : element.role === 'compartmentBoundary'
+          ? '구획 외곽'
+          : element.role === 'innerCavity' || element.role === 'itemEnvelope'
+            ? '측정 기준 · 별도 도형이 아님'
+            : element.role === 'supportSurface'
+              ? '지지면'
+              : '목록에만 있음';
+    entries.push({
+      key: `${element.role}:${targetKey(element.target)}`,
+      label: label || element.role,
+      target: element.target,
+      note,
+    });
+  }
   for (const assignment of content.assignments) {
     if (assignment.location.kind !== 'provisionalContainer') continue;
     const item = content.inputFacts.items.find((entry) => entry.id === assignment.itemId);

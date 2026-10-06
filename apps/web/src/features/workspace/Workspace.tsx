@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
+import { Component, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
 import type { LayoutEditCommand, SnapshotContent, SpatialProjection, SpatialTarget } from '../../contracts/generated/dto';
 import type { RectVm } from '../plan/projection';
 import { spaceFrame } from '../plan/projection';
@@ -28,7 +28,15 @@ import {
 } from './viewport';
 import type { SpatialHandle } from '../spatial3d/SpatialView';
 
-const SpatialView = lazy(() => import('../spatial3d/SpatialView'));
+let spatialImportMs: number | null = null;
+
+const SpatialView = lazy(() => {
+  const started = performance.now();
+  return import('../spatial3d/SpatialView').then((mod) => {
+    spatialImportMs = performance.now() - started;
+    return mod;
+  });
+});
 
 type SpatialFailure = 'import' | 'webgl_unavailable' | 'context_lost';
 
@@ -59,6 +67,7 @@ type PlanWorkspaceProps = {
   content: SnapshotContent;
   projection: SpatialProjection | null;
   projectionStatus: 'loading' | 'ready' | 'failed' | 'absent';
+  projectionFailure?: string | null;
   historical: boolean;
   spatialRequests: number;
   projectRevision: string;
@@ -83,6 +92,7 @@ export function PlanWorkspace({
   content,
   projection,
   projectionStatus,
+  projectionFailure = null,
   historical,
   spatialRequests,
   projectRevision,
@@ -122,10 +132,23 @@ export function PlanWorkspace({
   const [phase, setPhase] = useState<'idle' | 'armed' | 'preview'>('idle');
   const [precheck, setPrecheck] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const renderStamp = useRef(0);
+  renderStamp.current = performance.now();
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || import.meta.env.MODE !== 'test') return;
+    root.dataset.renderMs = String(Math.round((performance.now() - renderStamp.current) * 10) / 10);
+    root.dataset.renderSeq = String(Number(root.dataset.renderSeq ?? '0') + 1);
+  });
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const active: PlaneView = state.view === 'front' ? 'front' : 'top';
   const spatialShowing = state.view === 'spatial' && spatialDown === null;
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || spatialImportMs === null) return;
+    root.dataset.spatialImportMs = String(Math.round(spatialImportMs * 10) / 10);
+  }, [spatialShowing, spatialRetry]);
   const moveAllowed = state.view === 'top' || (state.view === 'spatial' && spatialDown !== null);
   const directMove = !explicit && mode !== 'pan';
   const moveOn = Boolean(
@@ -268,6 +291,11 @@ export function PlanWorkspace({
       data-historical={historical ? 'true' : 'false'}
       data-spatial-requests={spatialRequests}
       data-project-revision={projectRevision}
+      data-projection-status={projectionStatus}
+      data-projection-failure={projectionFailure ?? ''}
+      data-projection-snapshot={
+        projection?.source.kind === 'plan' ? projection.source.planSnapshotId : ''
+      }
       data-band={band}
       data-canvas-mode={mode}
       data-pointer={explicit ? 'explicit' : 'direct'}

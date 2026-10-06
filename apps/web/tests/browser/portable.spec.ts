@@ -314,13 +314,19 @@ test('project deletion removes every owned row in one transaction', async ({
 /** `staged.json` is written only after the whole asset list is cached. */
 async function waitForStagedBuild(page: Page) {
   await page.waitForFunction(() => navigator.serviceWorker?.controller != null);
-  await page.waitForFunction(async () => {
-    const meta = await caches.open('zari-shell-meta');
-    return (
-      (await meta.match('staged.json')) != null ||
-      (await meta.match('active.json')) != null
-    );
-  });
+  // Poll in the page. An async function passed to waitForFunction can be
+  // treated as ready as soon as it returns a Promise, which hides a WebKit
+  // stage that is not written yet.
+  await expect
+    .poll(async () =>
+      page.evaluate(async () => {
+        const meta = await caches.open('zari-shell-meta');
+        const staged = await meta.match('staged.json');
+        const active = await meta.match('active.json');
+        return staged != null || active != null;
+      }),
+    )
+    .toBe(true);
 }
 
 test('after one load an offline revisit executes the same complete build', async ({

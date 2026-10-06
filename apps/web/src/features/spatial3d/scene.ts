@@ -92,6 +92,84 @@ export function cuboidInstanceIndex(plan: ScenePlan, target: SpatialTarget): num
   return plan.cuboids.findIndex((body) => targetsEqual(body.target, target));
 }
 
+export type ElementDisposition =
+  | 'boundary'
+  | 'unavailable'
+  | 'measurementFrame'
+  | 'mesh'
+  | 'cutawayHidden'
+  | 'layerHidden'
+  | 'unclassified';
+
+export type ElementAccount = {
+  key: string;
+  role: string;
+  disposition: ElementDisposition;
+};
+
+/**
+ * Every projected element is drawn, listed as unavailable, or kept as an
+ * explicit non-mesh frame. `unclassified` means the view dropped it.
+ */
+export function accountElements(
+  projection: SpatialProjection,
+  layers: WorkspaceLayers,
+  cutaway: Cutaway,
+): ElementAccount[] {
+  const accounts: ElementAccount[] = [];
+  for (const element of projection.elements) {
+    const key = `${element.role}:${targetKey(element.target)}`;
+    if (element.role === 'compartmentBoundary') {
+      accounts.push({
+        key,
+        role: element.role,
+        disposition: element.worldBox.kind === 'available' ? 'boundary' : 'unavailable',
+      });
+      continue;
+    }
+    if (element.role === 'innerCavity' || element.role === 'itemEnvelope') {
+      accounts.push({
+        key,
+        role: element.role,
+        disposition: element.worldBox.kind === 'available' ? 'measurementFrame' : 'unavailable',
+      });
+      continue;
+    }
+    if (!CUBOID_ROLES.has(element.role)) {
+      accounts.push({ key, role: element.role, disposition: 'unclassified' });
+      continue;
+    }
+    if (element.worldBox.kind !== 'available') {
+      accounts.push({ key, role: element.role, disposition: 'unavailable' });
+      continue;
+    }
+    const mesh = meshFromWorldBox(element.worldBox.value);
+    if (!mesh) {
+      accounts.push({ key, role: element.role, disposition: 'unavailable' });
+      continue;
+    }
+    const interior = cutaway.interiorPlacementId;
+    const selectedContainer =
+      interior !== null &&
+      (element.role === 'ownedContainer' || element.role === 'newContainer') &&
+      element.target.kind === 'placement' &&
+      element.target.placementId === interior;
+    if (selectedContainer) {
+      accounts.push({ key, role: element.role, disposition: 'cutawayHidden' });
+      continue;
+    }
+    if (element.role === 'containedItem') {
+      const inOpen = interior !== null && element.parentPlacementId === interior;
+      if (!layers.contents && !inOpen) {
+        accounts.push({ key, role: element.role, disposition: 'layerHidden' });
+        continue;
+      }
+    }
+    accounts.push({ key, role: element.role, disposition: 'mesh' });
+  }
+  return accounts;
+}
+
 /**
  * Read-only scene. World boxes come from the projection; a missing axis is not filled in.
  * Hidden cut faces are omitted, so they cannot be picked.

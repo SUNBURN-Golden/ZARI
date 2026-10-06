@@ -4,6 +4,7 @@ import type {
   SnapshotContent,
   SpatialElement,
   SpatialProjection,
+  SpatialViewSource,
 } from '../../contracts/generated/dto';
 import { subjectLabel } from './view';
 
@@ -64,6 +65,15 @@ export function projectionLeaseMatches(
     captured.worker === current.worker &&
     captured.mountedGeneration === current.mountedGeneration
   );
+}
+
+/** The stamped source must be the source that was requested. */
+export function projectionAccepts(source: SpatialViewSource, projection: SpatialProjection): boolean {
+  const stamp = projection.source;
+  if (source.kind === 'plan') {
+    return stamp.kind === 'plan' && stamp.planSnapshotId === source.snapshot.planSnapshotId;
+  }
+  return stamp.kind === 'input' && stamp.inputDigest === source.inputDigest;
 }
 
 const DRAW_ROLES = new Set<SpatialElement['role']>([
