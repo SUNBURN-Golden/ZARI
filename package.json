@@ -24,7 +24,7 @@
     "test:parity": "node scripts/parity.mjs",
     "dev": "vite",
     "preview": "vite preview",
-    "capture:baselines": "npm run test:build && playwright test --grep @capture",
+    "capture:baselines": "npm run test:build && playwright test --grep @capture --project=chromium",
     "bench:browser": "npm run test:build && playwright test --grep \"@bench\""
   },
   "devDependencies": {

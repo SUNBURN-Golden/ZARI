@@ -1,3 +1,33 @@
+# 2026-10-06 — ZARI-SPATIAL-007 실제 화면 draft evidence와 승인 인계
+
+정본은 GitHub issue #55, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-007`이다. 관찰한 base SHA는 `29370e23a082c49aa4d8d7943b0e6e71c7884b4c`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다. 캡처는 draft이며 화면 승인이 아니다.
+
+구현:
+
+- 실제 샘플 프로젝트로 1440과 390에서 측정 성공·unknown·historical, 계획 성공, 검사 전 드래그, 검증된 드래그, 저장 실패, 좌표 거부, 3D ready·절개, WebGL 없음, 청크 실패, 단계 focus, 진행 읽기 실패, 다른 탭 충돌, stale 입력을 캡처했다. 포커스, forced-colors, 200% zoom도 있다. 줄어든 모션은 모든 샷의 Playwright 설정이다.
+- 이미지는 `design/baselines/draft/zari007/` 47개 PNG, 2,688,448바이트다. manifest draft 항목과 `spatialDraft007`만 추가했다. 승인 수는 0이다. `zari001` PNG와 해시는 그대로다. `apps/web/src`는 base와 같다.
+- 없는 상태는 만들지 않았다. 다중 배치 BOM 줄과 cavity pane은 샘플에 없다. 전화, 전용 GPU, WebKit 오프라인은 UNVERIFIED다.
+- 검사 목록과 도면 목록에 `fact_unknown`, `elevation_unknown`, `cavity_unknown`, `compartmentBoundary`, `itemEnvelope`가 그대로 보인다. 라벨을 고치지 않았다.
+- Open finding, not fixed here: `spatial-ready-1440`, `spatial-ready-390`, `spatial-cutaway-1440`, `spatial-cutaway-390`, `spatial-child-1440`에서 3D 라벨 `Winter coats #2`가 Wide bin 치수 위에 겹쳐 `0×255×220`만 남는다. 005의 화면 동작이다. 라벨 충돌 회피는 이 캡처 작업 밖이며 PNG는 다시 찍지 않았다.
+- 새 색 토큰은 없다. Rust·fixture·생성 계약·`Cargo.lock`·워크플로는 바꾸지 않았다.
+
+이 머신에서 실행한 검증:
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`: 83개 (core lib 19, bootstrap 9, domain 11, edit 6, protocol 13, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 107건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`
+- `npm run wasm:build`, `npm run contracts:check` (107), `npm run typecheck`, `npm run lint`, `npm test` (vitest 14 files / 109), `npm run build`, `node scripts/check-release-manifest.mjs` (errors 없음, `buildId` `316427bb1c205c86`), `node scripts/check-design-tokens.mjs --self-test` (39/39)
+- `ZARI_CAPTURE_DIR=/tmp/zari-spatial-007-cap5 npm run capture:baselines`: 2 passed (25.9s). `node scripts/check-baseline-manifest.mjs`: approved 0, drafts 52, zari007 47
+- `npm run test:browser -- --project=chromium`: 첫 실행 58 passed / 1 failed (`progress.spec.ts`, create-project 뒤 `worker-state` 없음). 바로 이은 재실행 59 passed (51.6s)
+- Firefox 비벤치: 첫 실행 58 passed / 1 failed (`responsive.spec.ts` 768px, 같은 `worker-state`). 재실행 59 passed (1.0m)
+- WebKit 비벤치: 첫 실행 58 passed / 1 failed (`portable.spec.ts`, 같은 `worker-state`). 재실행 59 passed (1.3m). 오프라인 reload는 하지 않았다
+- `npm run test:parity`: native↔Chromium 107 fixture, parity 2 passed (19.1s)
+- 라벨 겹침 기록 뒤 `node scripts/check-baseline-manifest.mjs` (approved 0; drafts 52; zari007 47), `npm test` (14 files / 109), `npm run lint`: 모두 exit 0. PNG는 바꾸지 않았다.
+
+하지 않은 것: 화면 승인, 픽셀 임계값 갱신, 배포, 실기기, 전용 GPU, WebKit 캡처. create-project flake는 세 엔진 첫 실행에서 재현됐다. 타임아웃을 올리거나 재시도 코드를 넣지 않았고 PR #38은 건드리지 않았다. 상세는 `docs/evidence/ZARI-SPATIAL-007.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 캡처 승인은 이후 사용자 기록이다.
+
 # 2026-10-06 — ZARI-SPATIAL-006 통합 품질·오프라인·성능 측정
 
 정본은 GitHub issue #53, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-006`이다. 관찰한 base SHA는 `2865869f33a05f7c19256547eabcf1e1642617b8`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

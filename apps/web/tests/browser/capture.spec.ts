@@ -4,8 +4,17 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { platform, release } from 'node:os';
-test('@capture actual workspace draft screens', async ({ page, browser }) => {
+import { captureSpatialDrafts } from './capture-spatial';
+
+// The probe capture creates ZARI_CAPTURE_DIR. The spatial capture writes
+// zari007/ inside it and must run second. Chromium only: Firefox and WebKit
+// would race the same output paths.
+test.describe.configure({ mode: 'serial' });
+
+test('@capture actual workspace draft screens', async ({ page, browser }, testInfo) => {
   test.skip(!process.env.ZARI_CAPTURE_DIR, 'Captures require an explicit fresh output directory.');
+  test.skip(testInfo.project.name !== 'chromium', 'Draft captures are recorded on Chromium only.');
+  test.setTimeout(120_000);
   const output = resolve(process.env.ZARI_CAPTURE_DIR!);
   await mkdir(output);
   const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -61,6 +70,8 @@ test('@capture actual workspace draft screens', async ({ page, browser }) => {
   ];
   for (const state of states) {
     await page.setViewportSize({ width: state.width, height: state.height });
+    // A hash-only goto to the current route does not remount the probe.
+    await page.goto('about:blank');
     await page.goto('/#/probe');
     await expect(page.getByTestId('width-status')).toContainText('입력한 폭 안에 들어갑니다');
     await page.getByRole('textbox', { name: '물체 하나의 폭', exact: true }).fill(state.item);
@@ -109,4 +120,15 @@ test('@capture actual workspace draft screens', async ({ page, browser }) => {
     });
   }
   await writeFile(`${output}/capture-metadata.json`, JSON.stringify(entries, null, 2) + '\n');
+});
+
+test('@capture spatial workspace draft screens', async ({ page, browser }, testInfo) => {
+  test.skip(!process.env.ZARI_CAPTURE_DIR, 'Captures require an explicit fresh output directory.');
+  test.skip(testInfo.project.name !== 'chromium', 'Draft captures are recorded on Chromium only.');
+  test.setTimeout(720_000);
+  await captureSpatialDrafts({
+    page,
+    browser,
+    outputRoot: resolve(process.env.ZARI_CAPTURE_DIR!),
+  });
 });
