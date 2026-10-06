@@ -7,8 +7,10 @@ import type {
   ProjectInput,
   SpatialProjection,
   SpatialViewSource,
+  MeasurementOrigin,
   RawOwnedContainerDto,
   RawProjectInputDto,
+  RawUncertaintyDto,
   RejectedCandidate,
   SearchCounters,
   SearchTermination,
@@ -34,11 +36,17 @@ import {
   type WorkerLifecycle,
 } from '../../worker/controller';
 import {
-  getMeasurement,
-  setMeasurementText,
-  setMeasurementUnit,
-  type MeasurementField,
-} from './draft';
+  applyGroupFormatResult,
+  canRequestGroupUnit,
+  currentLengthUnit,
+  writeBaseSupport,
+  writeEvidence,
+  writeNominal,
+  writeOrigin,
+  writeUncertainty,
+  type EvidenceDraft,
+} from './detailFacts';
+import type { MeasurementField } from './draft';
 import {
   ProjectionCache,
   inputSourceKey,
@@ -169,6 +177,10 @@ export interface SessionSnapshot {
   /** Integrity results from `verifyRecord` on open; `null` = not run. */
   integrity: { record: string; verified: boolean; diagnostics: Diagnostic[] }[] | null;
   closeBlocked: string | null;
+  /** Set when a group unit change is refused. Not persisted. */
+  unitHold: { fieldPath: string; code: string } | null;
+  /** Worker normalize calls from this session, including group formatting. */
+  normalizeRequests: number;
   plan: PlanState;
 }
 
@@ -240,6 +252,8 @@ export class ProjectSession {
       workerError: null,
       integrity: null,
       closeBlocked: null,
+      unitHold: null,
+      normalizeRequests: 0,
       plan: {
         strategies: null,
         strategiesError: null,
@@ -574,32 +588,57 @@ export class ProjectSession {
   // ---------- editing ----------
 
   edit(field: MeasurementField, text: string): void {
+    this.editNominal(field, text);
+  }
+  /** Raw nominal text. Does not parse or fill a missing bound with zero. */
+  editNominal(path: string, text: string, origin: MeasurementOrigin = 'userDeclared'): void {
     if (!this.form || this.state.status !== 'ready') return;
-    this.form = setMeasurementText(this.form, field, text);
-    this.bump();
-    this.patch({
-      form: this.form,
-      staleInput: true,
-      saveState: this.state.conflict ? 'conflict' : 'dirty',
-    });
-    this.scheduleAutosave();
+    const next = writeNominal(this.form, path, text, origin);
+    if (!next) return;
+    this.writeForm(next);
+  }
+  editUncertainty(path: string, uncertainty: RawUncertaintyDto): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    const next = writeUncertainty(this.form, path, uncertainty);
+    if (!next) return;
+    this.writeForm(next);
+  }
+  editOrigin(path: string, origin: MeasurementOrigin): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    const next = writeOrigin(this.form, path, origin);
+    if (!next) return;
+    this.writeForm(next);
+  }
+  editEvidence(path: string, draft: EvidenceDraft | null): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    const next = writeEvidence(this.form, path, draft);
+    if (!next) return;
+    this.writeForm(next);
+  }
+  editBaseSupport(known: boolean): void {
+    if (!this.form || this.state.status !== 'ready') return;
+    this.writeForm(writeBaseSupport(this.form, known));
   }
   /**
-   * Display-unit change: the unit switch commits only with the matching Rust
-   * `formattedFields` result, applied atomically with the rewritten text.
-   * Until then the draft keeps the old unit — a raw text that Rust read in
-   * the new unit would silently change the stored value.
+   * Unit change for one nominal and its active bounds. Rust converts the
+   * group or refuses it. An invalid or partial group keeps its original
+   * strings and unit. A blank nominal with unknown bounds has no number to
+   * convert, so only a length field's unit label changes.
    */
   setUnit(field: MeasurementField, unit: Unit): void {
+    this.setGroupUnit(field, unit);
+  }
+  setGroupUnit(path: string, unit: Unit): void {
     if (!this.form || this.state.status !== 'ready') return;
-    if (getMeasurement(this.form, field).unit === unit) return;
+    if (currentLengthUnit(this.form, path) === unit) return;
+    if (!canRequestGroupUnit(path, unit)) return;
     const epoch = String(this.epoch);
     const generation = String(this.generation);
     const form = structuredClone(this.form);
-    void this.formatField(field, unit, epoch, generation, form);
+    void this.formatGroup(path, unit, epoch, generation, form);
   }
-  private async formatField(
-    field: MeasurementField,
+  private async formatGroup(
+    path: string,
     unit: Unit,
     epoch: string,
     generation: string,
@@ -607,12 +646,14 @@ export class ProjectSession {
   ): Promise<void> {
     const client = this.controller.current;
     if (!client) return;
+    this.patch({ normalizeRequests: this.state.normalizeRequests + 1 });
     try {
       const reply = await client.request({
         kind: 'normalizeInput',
         input: { kind: 'project', project: form },
         priorInputDigest: this.state.inputDigest,
-        formatRequests: [{ fieldPath: field, unit }],
+        formatRequests: [],
+        groupFormatRequests: [{ fieldPath: path, unit }],
       });
       if (
         this.closed ||
@@ -621,26 +662,41 @@ export class ProjectSession {
         reply.kind !== 'normalized'
       )
         return;
-      const formatted = reply.formattedFields.find((f) => f.fieldPath === field);
-      if (!formatted) return;
-      let next = setMeasurementUnit(form, field, unit);
-      // An empty formatted text means the raw entry is blank/invalid; keep the
-      // user's text verbatim and commit only the unit choice.
-      if (formatted.text !== '') next = setMeasurementText(next, field, formatted.text);
-      this.form = next;
+      const applied = applyGroupFormatResult(
+        form,
+        path,
+        unit,
+        reply.formattedGroups.find((group) => group.fieldPath === path),
+      );
+      if ('hold' in applied) {
+        this.patch({ unitHold: { fieldPath: path, code: applied.hold } });
+        return;
+      }
+      this.form = applied.form;
       this.bump();
       this.patch({
         form: this.form,
         staleInput: true,
+        unitHold: null,
         saveState: this.state.conflict ? 'conflict' : 'dirty',
       });
       this.scheduleAutosave();
     } catch (error) {
       if (!(error instanceof StaleRequest)) {
-        // Unit conversion failed; the raw text stays and the next normalize
-        // will surface diagnostics — never silently reformat locally.
+        this.patch({ unitHold: { fieldPath: path, code: 'not_converted' } });
       }
     }
+  }
+  private writeForm(next: RawProjectInputDto): void {
+    this.form = next;
+    this.bump();
+    this.patch({
+      form: this.form,
+      staleInput: true,
+      unitHold: null,
+      saveState: this.state.conflict ? 'conflict' : 'dirty',
+    });
+    this.scheduleAutosave();
   }
   private async saveDraftNow(): Promise<void> {
     if (!this.form || this.closed) return;
@@ -727,6 +783,7 @@ export class ProjectSession {
     this.patch({
       form: this.form,
       staleInput: true,
+      unitHold: null,
       saveState: this.state.conflict ? 'conflict' : 'dirty',
     });
     this.scheduleAutosave();
@@ -746,6 +803,7 @@ export class ProjectSession {
     const client = await this.controller.ensure().catch(() => null);
     if (!client || this.closed || String(this.epoch) !== epoch) return;
     client.setEpoch(epoch);
+    this.patch({ normalizeRequests: this.state.normalizeRequests + 1 });
     let normalized: ProjectInput | null = null;
     let inputDigest: string | null;
     let diagnostics: Diagnostic[];

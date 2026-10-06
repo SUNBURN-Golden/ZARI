@@ -4,7 +4,9 @@
 
 상태: **후속 설계 후보 / 미채택 / 구현·실측·감사·화면 승인 없음**. 작성일 2026-09-30 KST.
 
-**SP-008만 채택 (2026-10-07).** 저장소 소유자 JunTae Park가 SP-008 측정 완성 ADR을 채택했다. 기록은 [D008](../design/DECISIONS.md)과 [docs/adr/SP-008-measurement-completion.md](adr/SP-008-measurement-completion.md)이다. SP-009부터 SP-016까지는 아래 후보 상태를 유지하며, 이 노트는 그 본문을 다시 쓰지 않는다.
+**SP-008만 채택 (2026-10-07).** 저장소 소유자 JunTae Park가 SP-008 측정 완성 ADR을 채택했다. 기록은 [D008](../design/DECISIONS.md)과 [docs/adr/SP-008-measurement-completion.md](adr/SP-008-measurement-completion.md)이다. 당시 SP-009부터 SP-016까지는 아래 후보 상태였다. 이 노트는 그 본문을 다시 쓰지 않는다.
+
+**SP-009 채택 (2026-10-07).** 저장소 소유자 JunTae Park (준태)가 SP-009를 채택했다. 같은 발화에서 SP-010과 SP-011도 채택되었으나 이 노트는 그 구현을 기록하지 않는다. 원문: "009·010·011 전부 채택한다. Fable 게이트는 각각 독립 리뷰 2회로 대체하고, 머지도 네가 해라." 기록은 [D009](../design/DECISIONS.md)와 [docs/adr/SP-009-detail-facts.md](adr/SP-009-detail-facts.md)이다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
 기준은 [ZARI #36](https://github.com/BeautifulMind-JT/ZARI/pull/36)의
 `bdeaaf0881b48f819c56a539799165a9d545677f`이다. 기존 공간 설계 #35와 SP-001–007,
 현재 11개 기본 치수의 범위를 보존하고, SP-008–011을 별도 후속 후보로 추가한다.
