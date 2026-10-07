@@ -10,6 +10,8 @@
 
 **SP-010 채택·구현 (2026-10-07).** 같은 원문으로 SP-010을 채택했다. 이 노드가 `queryNextFacts`를 실행하고 `BUILD_ID`를 `zari-domain-6`으로 올렸다. 기록은 [D010](../design/DECISIONS.md)과 [docs/adr/SP-010-completion-query.md](adr/SP-010-completion-query.md)이다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. SP-011은 이 노트로 구현되었다고 하지 않는다.
 
+**SP-011 채택·인계 (2026-10-07).** 같은 원문으로 SP-011을 채택했다. 이 노트는 SP-011만 기록한다. 변경된 측정 화면의 새 draft capture와 회귀·성능·실패 근거를 만들고, 화면 승인·전화 자격·출시는 남긴다. 기록은 [D011](../design/DECISIONS.md)과 [docs/adr/SP-011-integration-capture.md](adr/SP-011-integration-capture.md)이다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. SP-007의 승인 수를 이 화면의 승인으로 쓰지 않는다.
+
 기준은 [ZARI #36](https://github.com/BeautifulMind-JT/ZARI/pull/36)의
 `bdeaaf0881b48f819c56a539799165a9d545677f`이다. 기존 공간 설계 #35와 SP-001–007,
 현재 11개 기본 치수의 범위를 보존하고, SP-008–011을 별도 후속 후보로 추가한다.

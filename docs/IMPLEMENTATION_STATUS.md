@@ -1,3 +1,39 @@
+# 2026-10-07 — ZARI-SPATIAL-011 후속 측정 통합 검증과 새 draft capture
+
+정본은 GitHub issue #63, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-011`이다. 관찰한 base SHA는 `6f1c5c696d964487f8b52cdec428ae6cd0aba596`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 약 07:28 KST. 원문: "009·010·011 전부 채택한다. Fable 게이트는 각각 독립 리뷰 2회로 대체하고, 머지도 네가 해라." 이 전달은 SP-011만 구현한다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-011-integration-capture.md`와 `design/DECISIONS.md` D011. 측정 완성 후보 문서에는 SP-011 노트만 추가했다.
+- 009·010 제품 코드, `BUILD_ID` `zari-domain-6`, capability, 생성 계약, 기존 fixture 기대값은 바꾸지 않았다.
+- 새 draft 26장은 `design/baselines/draft/zari011/`다. 승인 수는 0이다. SP-007 47장과 그 해시는 그대로다. 이 화면은 SP-007 승인을 빌리지 않는다.
+- 충돌처럼 보이는 메모는 사람 글이다. 의미 다이제스트만 바뀌고 `conflictingEvidence`, 통과, Confirmed를 만들지 않는다. 구조화된 충돌 행은 기존 Rust 검사와 mc-07 Worker 재생으로 남긴다.
+- 상태 축: `node_state` IN_PROGRESS, `qualification_state` PARTIAL, `acceptance_state` PENDING, `release_state` NOT_AUTHORIZED. 이 프로그램은 릴리스를 허가하지 않는다. DONE은 보호된 exact-head 머지 뒤에만 가능하다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 109 passed, 1 ignored
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 124
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 17 files / 132), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `fd65aad9808ae654`), `node scripts/check-design-tokens.mjs --self-test` (자체 10, 대비 39/39): exit 0
+- `node scripts/check-baseline-manifest.mjs`: exit 0, `approved 0; drafts 78; zari007 47; zari011 26`
+- `npm run test:browser -- --project=chromium --workers=1`: 78 passed (2.5m). 그 전 한 실행은 새 hold 테스트가 두 번째 쿼리 게이트를 풀지 않아 1 failed / 77 passed였다. 게이트를 푼 뒤 전체를 다시 실행했다. `worker-state` flake는 없었다. 타임아웃을 올리지 않았다
+- `measurement-regression.spec.ts` Firefox 5, WebKit 5: exit 0
+- `npm run bench:browser -- --project=chromium --workers=1`: 15 passed (5.7m). 측정 query source p95 40 ms exceeded (`mc-07` warm compute). cold compute p95 52.9 ms exceeded. transport p95 31.3 ms exceeded (`mc-12-limit` warm, compute p95 11.1 ms)
+- 측정 bench Firefox·WebKit: 6 passed (2.6m). Firefox met. WebKit warm query source p95 28 ms는 목표 20 ms를 exceeded로 기록했다. 테스트를 실패로 바꾸지 않았다. 기존 spatial bench는 Firefox·WebKit에서 다시 실행하지 않았다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (22.8s)
+- `measurement-capture.spec.ts`는 디렉터리가 없거나 Chromium이 아니면 실패한다. `capture:baselines`는 `--project=chromium`이다
+- `ZARI_CAPTURE_DIR=/tmp/zari-spatial-011-cap5 npm run capture:baselines`: 3 passed (32.4s). 등록 PNG와 바이트가 같다. 시나리오 파일 해시는 `37b231d4d16284c0dc3e3ffad482f21503f7ef0a8e7753538da962d9e8040604`다
+- `docs/evidence/ZARI-SPATIAL-001-*.png` sha256은 스위트 뒤에도 HEAD와 같다. checkout은 필요 없었다
+
+하지 않은 것: 전화, 전용 GPU, 화면 승인, 릴리스, 스키마 마이그레이션, SP-007 3D 라벨 겹침 수정. 상세는 `docs/evidence/ZARI-SPATIAL-011.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. 화면 승인과 릴리스는 그 뒤의 사용자 결정이다.
+
 # 2026-10-07 — ZARI-SPATIAL-010 Rust 다음 확인 사실 query와 입력 안내
 
 정본은 GitHub issue #61, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-010`이다. 관찰한 base SHA는 `f1043bebb38f68e3e38f1df082aad4e99dd6990a`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

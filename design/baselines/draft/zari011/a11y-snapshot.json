@@ -1,0 +1,30 @@
+{
+  "axe": {
+    "violations": [],
+    "incomplete": 1,
+    "passes": 31
+  },
+  "motion": {
+    "reducedMotion": "reduce",
+    "durationFast": "0s"
+  },
+  "gpu": {
+    "vendor": "Google Inc. (Google)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "available": true,
+    "note": "Headless Chromium software GL on this host. Not a discrete GPU and not a phone. Exact pixels are not physical validation."
+  },
+  "catalogDigest": "249cfb4185353ecb69c140ba6e7830b8670dd07708efa1d8cf0d5cee6e96be81",
+  "fixtureId": "fresh-ordinary-project",
+  "conflictNote": "590 mm와 610 mm가 충돌한다. 평균 600. pass Confirmed",
+  "conflictingEvidenceRows": 0,
+  "missing": [
+    "Physical phone: UNVERIFIED. 390×844 is Playwright viewport emulation.",
+    "Discrete GPU: UNVERIFIED. Headless WebGL is software GL. GPU timestamps were not taken."
+  ],
+  "observations": [
+    "gpu Google Inc. (Google) / ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "catalog 249cfb4185353ecb69c140ba6e7830b8670dd07708efa1d8cf0d5cee6e96be81",
+    "conflict note preserved; next-facts conflictingEvidence count 0"
+  ]
+}

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const MANIFEST_PATH = join(ROOT, 'design/baselines/manifest.json');
 const BASE = '29370e23a082c49aa4d8d7943b0e6e71c7884b4c';
+const ZARI011_BASE = '6f1c5c696d964487f8b52cdec428ae6cd0aba596';
 
 const ZARI001 = {
   'zari001-desktop-pass': {
@@ -63,6 +64,27 @@ const REQUIRED = [
   'zari007-a11y-forced-colors-1440',
   'zari007-a11y-forced-colors-390',
   'zari007-a11y-zoom-200-1440',
+];
+
+const MC_BOTH = [
+  'fresh',
+  'nominal-bounds',
+  'unknown',
+  'missing-bound',
+  'conflicting-evidence',
+  'staging-support',
+  'load-unknown',
+  'catalog-source',
+  'next-fact',
+  'stale',
+  'conflict',
+];
+const MC_REQUIRED = [
+  ...MC_BOTH.flatMap((state) => [`zari011-${state}-1440`, `zari011-${state}-390`]),
+  'zari011-a11y-focus-1440',
+  'zari011-a11y-forced-colors-1440',
+  'zari011-a11y-forced-colors-390',
+  'zari011-a11y-zoom-200-1440',
 ];
 
 const REQUIRED_FIELDS = [
@@ -172,8 +194,62 @@ function main() {
   if (!snapshot?.file || !snapshot.sha256) fail('missing a11y snapshot');
   const snapshotPath = join(ROOT, 'design/baselines', snapshot.file);
   if (sha256(snapshotPath) !== snapshot.sha256) fail('a11y snapshot hash');
+  const zari011 = manifest.baselines.filter((entry) => entry.id.startsWith('zari011-'));
+  const mcIds = new Set(zari011.map((entry) => entry.id));
+  for (const id of MC_REQUIRED) {
+    if (!mcIds.has(id)) fail(`missing required capture ${id}`);
+  }
+  for (const entry of zari011) {
+    for (const field of REQUIRED_FIELDS) {
+      if (entry[field] == null || entry[field] === '') fail(`${entry.id} missing ${field}`);
+    }
+    if (entry.gpu == null || typeof entry.gpu.note !== 'string' || !entry.gpu.note.includes('Not a discrete GPU')) {
+      fail(`${entry.id} missing GPU note`);
+    }
+    if (entry.sourceCommit !== ZARI011_BASE) fail(`${entry.id} sourceCommit ${entry.sourceCommit}`);
+    if (entry.fixtureId !== 'fresh-ordinary-project') fail(`${entry.id} fixture`);
+    if (entry.locale !== 'ko-KR' || entry.theme !== 'light' || entry.reducedMotion !== 'reduce') {
+      fail(`${entry.id} environment`);
+    }
+    if (entry.fullPage !== false) fail(`${entry.id} is not a viewport capture`);
+    if (entry.deviceScaleFactor !== 1) fail(`${entry.id} deviceScaleFactor`);
+    if (!String(entry.browserAndVersion).startsWith('Chromium ')) fail(`${entry.id} browser`);
+    if (!String(entry.productTree).includes('apps/web/src')) fail(`${entry.id} product tree note`);
+    if (!Array.isArray(entry.scenarioFiles) || entry.scenarioFiles.length < 2) fail(`${entry.id} scenario files`);
+    if (!/^0(ms|s)$/.test(entry.durationFast ?? '')) fail(`${entry.id} durationFast`);
+    const width = entry.id.endsWith('-390') ? 390 : entry.id.includes('1440') ? 1440 : null;
+    if (width != null && entry.viewport?.width !== width) fail(`${entry.id} viewport width`);
+    if (entry.viewport?.height == null) fail(`${entry.id} viewport height`);
+    if (entry.status !== 'draft') fail(`${entry.id} is not draft`);
+  }
+  const draft011 = manifest.spatialDraft011;
+  if (!draft011) fail('missing spatialDraft011');
+  if (draft011.approved !== false || draft011.notPhysicalValidation !== true) fail('spatialDraft011 approval flags');
+  if (draft011.sourceCommit !== ZARI011_BASE) fail('spatialDraft011 sourceCommit');
+  if (draft011.acceptanceState !== 'PENDING' || draft011.releaseState !== 'NOT_AUTHORIZED') {
+    fail('spatialDraft011 state axes');
+  }
+  if (draft011.nodeState === 'DONE') fail('spatialDraft011 cannot be DONE before merge');
+  if (!Array.isArray(draft011.missingOrUnverified) || draft011.missingOrUnverified.length === 0) {
+    fail('missing 011 limitations');
+  }
+  const limits011 = draft011.missingOrUnverified.join('\n');
+  if (!limits011.includes('phone') || !limits011.toLowerCase().includes('gpu')) fail('011 hardware limits not named');
+  const proposed011 = new Set(draft011.proposedApprovalSet ?? []);
+  for (const entry of zari011) {
+    if (!proposed011.has(entry.id)) fail(`011 proposed set missing ${entry.id}`);
+  }
+  if (proposed011.size !== zari011.length) fail('011 proposed set does not match zari011 entries');
+  for (const file of draft011.scenarioFiles ?? []) {
+    const digest = sha256(join(ROOT, file.path));
+    if (digest !== file.sha256) fail(`scenario ${file.path} hash drift`);
+  }
+  const snapshot011 = draft011.a11ySnapshot;
+  if (!snapshot011?.file || !snapshot011.sha256) fail('missing 011 a11y snapshot');
+  const snapshot011Path = join(ROOT, 'design/baselines', snapshot011.file);
+  if (sha256(snapshot011Path) !== snapshot011.sha256) fail('011 a11y snapshot hash');
   console.log(
-    `approved 0; drafts ${draftCount}; zari007 ${zari007.length}; bytes ${draftBytes}; required ${REQUIRED.length}`,
+    `approved 0; drafts ${draftCount}; zari007 ${zari007.length}; zari011 ${zari011.length}; bytes ${draftBytes}; required ${REQUIRED.length + MC_REQUIRED.length}`,
   );
 }
 
