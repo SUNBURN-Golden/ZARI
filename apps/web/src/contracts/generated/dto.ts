@@ -706,6 +706,12 @@ export type DomainFixtureExpected =
       reply: NextFactsReply | null;
     }
   | {
+      decodeError: boolean;
+      failureCode: string | null;
+      kind: 'queryActionEligibility';
+      reply: ActionEligibilityReply | null;
+    }
+  | {
       /**
        * Ordered snapshot digests of the emitted ranked alternatives.
        */
@@ -1041,6 +1047,56 @@ export type CompletionPriority =
   | 'softOrUnsupported';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "InstanceRef".
+ */
+export type InstanceRef =
+  | {
+      itemId: Id;
+      kind: 'directItem';
+      placementId: Id;
+      unitOrdinal: number;
+    }
+  | {
+      containerPlacementId: Id;
+      itemId: Id;
+      kind: 'containedItem';
+      unitOrdinal: number;
+    }
+  | {
+      kind: 'ownedContainer';
+      ownedId: Id;
+      placementId: Id;
+      unitOrdinal: number;
+    }
+  | {
+      kind: 'newContainer';
+      placementId: Id;
+      unitOrdinal: number;
+      variantId: Id;
+    }
+  | {
+      instances: UnassignedInstances;
+      itemId: Id;
+      kind: 'unassigned';
+    }
+  | {
+      kind: 'space';
+      spaceId: Id;
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "UnassignedInstances".
+ */
+export type UnassignedInstances =
+  | {
+      kind: 'known';
+      ranges: OrdinalRange[];
+    }
+  | {
+      kind: 'unknownQuantity';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "WorkCount".
  */
 export type WorkCount = string;
@@ -1057,7 +1113,13 @@ export type SearchTermination = 'scopeComplete' | 'budgetExhausted' | 'cancelled
  * via the `definition` "DomainOperation".
  */
 export type DomainOperation =
-  | ('normalizeProjectInput' | 'verifyRecord' | 'normalizeCatalogFields' | 'validateCandidate')
+  | (
+      | 'normalizeProjectInput'
+      | 'verifyRecord'
+      | 'normalizeCatalogFields'
+      | 'validateCandidate'
+      | 'queryActionEligibility'
+    )
   | 'validateCatalog'
   | 'evaluateLayoutEdit'
   | 'proposeStrategies'
@@ -1314,18 +1376,6 @@ export type OfferSelection =
     };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "UnassignedInstances".
- */
-export type UnassignedInstances =
-  | {
-      kind: 'known';
-      ranges: OrdinalRange[];
-    }
-  | {
-      kind: 'unknownQuantity';
-    };
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "Command".
  */
 export type Command =
@@ -1385,6 +1435,12 @@ export type Command =
       inputDigest: Digest;
       kind: 'queryNextFacts';
       snapshot: PlanSnapshot | null;
+    }
+  | {
+      kind: 'queryActionEligibility';
+      progress: ActionProgressInput[] | null;
+      snapshot: PlanSnapshot;
+      stamp: ActionEligibilityStamp;
     }
   | {
       kind: 'proposeStrategies';
@@ -1739,6 +1795,11 @@ export type SpatialViewSource =
       snapshot: PlanSnapshot;
     };
 /**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProgressMark".
+ */
+export type ProgressMark = 'done' | 'todo';
+/**
  * Search drive mode recorded at `startSearch`. The single-threaded runtime
  * only ever advances on explicit `stepSearch` requests, so `continuous` is a
  * scheduling hint for the host — never an autonomous loop inside WASM.
@@ -1818,6 +1879,10 @@ export type Event =
   | {
       kind: 'nextFactsQueried';
       reply: NextFactsReply;
+    }
+  | {
+      kind: 'actionEligibilityQueried';
+      reply: ActionEligibilityReply;
     }
   | {
       kind: 'searchStarted';
@@ -2542,6 +2607,64 @@ export interface NextFactsSourceStamp {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ActionEligibilityReply".
+ */
+export interface ActionEligibilityReply {
+  eligible: boolean;
+  rows: ActionEligibilityRow[];
+  staleReason: string | null;
+  stamp: ActionEligibilityStamp;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ActionEligibilityRow".
+ */
+export interface ActionEligibilityRow {
+  actionId: Id;
+  blockerCheckIds: Id[];
+  executable: boolean;
+  instanceRefs: InstanceRef[];
+  /**
+   * True when the step records a user assertion. It does not confirm a fact.
+   */
+  userAssertion: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "OrdinalRange".
+ */
+export interface OrdinalRange {
+  endExclusive: number;
+  start: number;
+}
+/**
+ * Caller-observed stamp. Rust echoes the snapshot's own versions and the
+ * progress identity it computed. A mismatch is not eligible.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ActionEligibilityStamp".
+ */
+export interface ActionEligibilityStamp {
+  acceptedInputRevision: Revision;
+  buildId: string;
+  canonicalVersion: number;
+  catalogDigest: Digest;
+  catalogVersion: string;
+  editorEpoch: Revision;
+  inputDigest: Digest;
+  planSnapshotId: Digest;
+  progressIdentity: string;
+  projectId: Id;
+  projectRevision: Revision;
+  ruleVersion: string;
+  schemaVersion: number;
+  searchProfileId: string;
+  searchProfileVersion: number;
+  solverVersion: string;
+  sourceDirty: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "SearchCounters".
  */
 export interface SearchCounters {
@@ -3050,14 +3173,6 @@ export interface Unassigned {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "OrdinalRange".
- */
-export interface OrdinalRange {
-  endExclusive: number;
-  start: number;
-}
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "ValidationReport".
  */
 export interface ValidationReport {
@@ -3437,6 +3552,14 @@ export interface CandidateLayout {
   placements: Placement[];
   purchaseSelections: PurchaseSelection[];
   unassigned: Unassigned[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ActionProgressInput".
+ */
+export interface ActionProgressInput {
+  status: ProgressMark;
+  stepId: Id;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

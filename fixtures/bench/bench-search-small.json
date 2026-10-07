@@ -1,12 +1,12 @@
 {
  "caseId": "bench-search-small",
  "engineContext": {
-  "buildId": "zari-domain-6"
+  "buildId": "zari-domain-7"
  },
  "expected": {
   "alternativeDigests": [
-   "2bc1817636420cef9d16ade7e07e921845f7ed54e9c5085e05275a6f06297037",
-   "343c402c9673fac9e6393e9cfa657ef316f714047a7dfd78607314ad0e3cace0"
+   "096310490e4ba05ee0b83a4fa3517781d8ed799a39c1d723d29b2c12e966fd29",
+   "8ca3a11b728c32f584f4b180fe5af00d7b70cffb637332200ef8f29694e1cd33"
   ],
   "consumed": {
    "nodes": 2862,

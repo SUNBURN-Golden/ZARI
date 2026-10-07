@@ -2386,7 +2386,7 @@
           "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
           "catalogVersion": "catalog-2025-01",
           "inputDigest": "312890517894aa7742bff1e03db379ffef11f0c70bbdff11183a073131c7c953",
-          "ruleVersion": "zari-domain-v1",
+          "ruleVersion": "zari-domain-v2",
           "schemaVersion": 1,
           "searchBudget": {
             "maxAlternatives": 3,
@@ -2402,11 +2402,11 @@
           "solverVersion": "none"
         }
       },
-      "planSnapshotId": "297d1d8671646e55c9f27dc3d047879a975884d688ce9d8d09308d051ab60608"
+      "planSnapshotId": "48f8240dbd8dc6bc2b73a680bd9c4291931130ae2c3c0ba2de2b39033b72ad02"
     }
   },
   "engineContext": {
-    "buildId": "zari-domain-6"
+    "buildId": "zari-domain-7"
   },
   "expected": {
     "kind": "queryNextFacts",
@@ -2416,9 +2416,9 @@
       "freshness": "current",
       "sourceStamp": {
         "inputDigest": "312890517894aa7742bff1e03db379ffef11f0c70bbdff11183a073131c7c953",
-        "planSnapshotId": "297d1d8671646e55c9f27dc3d047879a975884d688ce9d8d09308d051ab60608",
+        "planSnapshotId": "48f8240dbd8dc6bc2b73a680bd9c4291931130ae2c3c0ba2de2b39033b72ad02",
         "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
-        "ruleVersion": "zari-domain-v1",
+        "ruleVersion": "zari-domain-v2",
         "canonicalVersion": 1
       },
       "rows": [

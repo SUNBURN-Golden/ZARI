@@ -13,8 +13,8 @@ import { OwnedManager } from '../../src/features/owned/manager';
 import { EMPTY_OWNED_FIELDS, ownedToRaw } from '../../src/features/owned/model';
 import { emptyProjectForm } from '../../src/features/project/draft';
 import { ZariDb } from '../../src/persistence/db';
-import { ProjectRepository } from '../../src/persistence/repository';
-import type { WorkerPort } from '../../src/worker/client';
+import { ProjectRepository, progressIdentity, type ActionProgressStamp } from '../../src/persistence/repository';
+import { WORKER_BUILD_ID, WORKER_RULE_VERSION, type WorkerPort } from '../../src/worker/client';
 import { WorkerController } from '../../src/worker/controller';
 
 /**
@@ -226,11 +226,34 @@ it('an owned container is normalized by Rust, stored by value, CAS-guarded', asy
 });
 
 /** Seed an accepted snapshot directly: shape-valid rows, digest-shaped ids. */
-async function seedAccepted(repo: ProjectRepository) {
+function stampFor(
+  snapshot: PlanSnapshot,
+  projectRevision: string,
+  identity: string,
+): ActionProgressStamp {
+  const versions = snapshot.content.versions;
+  return {
+    catalogDigest: versions.catalogDigest,
+    catalogVersion: versions.catalogVersion,
+    ruleVersion: versions.ruleVersion,
+    solverVersion: versions.solverVersion,
+    schemaVersion: versions.schemaVersion,
+    canonicalVersion: versions.canonicalVersion,
+    buildId: WORKER_BUILD_ID,
+    searchProfileId: versions.searchProfile.id,
+    searchProfileVersion: versions.searchProfile.version,
+    editorEpoch: '1',
+    progressIdentity: identity,
+    projectRevision,
+  };
+}
+
+async function seedAccepted(repo: ProjectRepository, rule: 'current' | 'historical' = 'current') {
   const fixture = JSON.parse(
     readFileSync('fixtures/domain/record-snapshot-verified.json', 'utf8'),
   ) as { input: { snapshot: PlanSnapshot } };
   const snapshot = structuredClone(fixture.input.snapshot);
+  snapshot.content.versions.ruleVersion = rule === 'current' ? WORKER_RULE_VERSION : snapshot.content.versions.ruleVersion;
   snapshot.content.actions = [
     {
       id: 'act-1',
@@ -270,33 +293,53 @@ async function seedAccepted(repo: ProjectRepository) {
 it('action progress enforces prerequisites, dependents, and exact binding', async () => {
   const { repo } = world();
   const { project, snapshot } = await seedAccepted(repo);
+  let revision = '1';
+  let identity = progressIdentity([]);
   const args = {
     projectId: project.projectId,
     inputRevision: '1',
     planSnapshotId: snapshot.planSnapshotId,
   };
+  const step = (stepId: string, done: boolean) =>
+    repo.setActionStep({
+      ...args,
+      stepId,
+      done,
+      stamp: stampFor(snapshot, revision, identity),
+    });
   // A dependent step cannot complete before its prerequisite.
-  const blocked = await repo.setActionStep({ ...args, stepId: 'act-2', done: true });
+  const blocked = await step('act-2', true);
   expect(blocked).toEqual({ status: 'blocked_prerequisites', missing: ['act-1'] });
   // Unknown step ids are refused.
-  expect(
-    await repo.setActionStep({ ...args, stepId: 'act-x', done: true }),
-  ).toEqual({ status: 'unknown_step' });
+  expect(await step('act-x', true)).toEqual({ status: 'unknown_step' });
   // Prerequisite first, then the dependent step succeeds.
-  expect(await repo.setActionStep({ ...args, stepId: 'act-1', done: true })).toMatchObject({
-    status: 'saved',
-  });
-  expect(await repo.setActionStep({ ...args, stepId: 'act-2', done: true })).toMatchObject({
-    status: 'saved',
-  });
+  const first = await step('act-1', true);
+  expect(first).toMatchObject({ status: 'saved' });
+  if (first.status !== 'saved') throw new Error('expected saved');
+  revision = first.projectRevision;
+  identity = progressIdentity([['act-1', 'done']]);
+  const second = await step('act-2', true);
+  expect(second).toMatchObject({ status: 'saved' });
+  if (second.status !== 'saved') throw new Error('expected saved');
+  revision = second.projectRevision;
+  identity = progressIdentity([
+    ['act-1', 'done'],
+    ['act-2', 'done'],
+  ]);
   // Clearing a step that a done step depends on is refused.
-  const cleared = await repo.setActionStep({ ...args, stepId: 'act-1', done: false });
+  const cleared = await step('act-1', false);
   expect(cleared).toEqual({ status: 'blocked_dependents', dependents: ['act-2'] });
   // Progress is bound to the exact snapshot — a different id sees nothing.
   const other = 'a'.repeat(64);
   expect(await repo.actionProgressFor(project.projectId, '1', other)).toEqual([]);
   expect(
-    await repo.setActionStep({ ...args, planSnapshotId: other, stepId: 'act-1', done: true }),
+    await repo.setActionStep({
+      ...args,
+      planSnapshotId: other,
+      stepId: 'act-1',
+      done: true,
+      stamp: stampFor(snapshot, revision, identity),
+    }),
   ).toEqual({ status: 'not_accepted' });
   const rows = await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
   expect(rows.map((r) => [r.stepId, r.status])).toEqual([
@@ -309,13 +352,25 @@ it('progress writes do not change the snapshot and refuse a stale input or a con
   const { repo } = world();
   const { project, snapshot } = await seedAccepted(repo);
   const before = JSON.stringify(snapshot);
+  let revision = '1';
+  let identity = progressIdentity([]);
   const args = {
     projectId: project.projectId,
     inputRevision: '1',
     planSnapshotId: snapshot.planSnapshotId,
   };
-  const saved = await repo.setActionStep({ ...args, stepId: 'act-1', done: true });
+  const step = (stepId: string, done: boolean) =>
+    repo.setActionStep({
+      ...args,
+      stepId,
+      done,
+      stamp: stampFor(snapshot, revision, identity),
+    });
+  const saved = await step('act-1', true);
   expect(saved.status).toBe('saved');
+  if (saved.status !== 'saved') throw new Error('expected saved');
+  revision = saved.projectRevision;
+  identity = progressIdentity([['act-1', 'done']]);
   const stored = await repo.db.snapshots.get([
     project.projectId,
     '1',
@@ -329,7 +384,7 @@ it('progress writes do not change the snapshot and refuse a stale input or a con
   const digest = snapshot.content.versions.inputDigest;
   const otherDigest = digest.startsWith('d') ? 'e'.repeat(64) : 'd'.repeat(64);
   await repo.db.projects.update(project.projectId, { currentInputDigest: otherDigest });
-  const stale = await repo.setActionStep({ ...args, stepId: 'act-2', done: true });
+  const stale = await step('act-2', true);
   expect(stale).toEqual({ status: 'stale_input' });
   const afterStale = await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
   expect(afterStale.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
@@ -337,11 +392,11 @@ it('progress writes do not change the snapshot and refuse a stale input or a con
   await repo.db.projects.update(project.projectId, { currentInputDigest: digest });
   const raw = await repo.db.snapshots.get([project.projectId, '1', snapshot.planSnapshotId]);
   const next = structuredClone(raw!.snapshot);
-  const step = next.content.actions.find((item) => item.id === 'act-2');
-  if (!step) throw new Error('missing act-2');
-  step.requiredConfirmations = ['confirm-1'];
+  const labeled = next.content.actions.find((item) => item.id === 'act-2');
+  if (!labeled) throw new Error('missing act-2');
+  labeled.requiredConfirmations = ['confirm-1'];
   await repo.db.snapshots.put({ ...raw!, snapshot: next });
-  const blocked = await repo.setActionStep({ ...args, stepId: 'act-2', done: true });
+  const blocked = await step('act-2', true);
   expect(blocked).toEqual({ status: 'confirmation_required' });
   const still = await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
   expect(still.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
@@ -355,12 +410,14 @@ it('a second tab cannot overwrite action progress under a stale revision', async
   const tabA = new ProjectRepository(db);
   const tabB = new ProjectRepository(db);
   const { project, snapshot } = await seedAccepted(tabA);
+  const stamp = stampFor(snapshot, '1', progressIdentity([]));
   const args = {
     projectId: project.projectId,
     inputRevision: '1',
     planSnapshotId: snapshot.planSnapshotId,
     stepId: 'act-2',
     done: true,
+    stamp,
   };
   // Tab B caches the current revision, then loses the race.
   expect(await tabB.setActionStep(args)).toEqual({
@@ -373,4 +430,46 @@ it('a second tab cannot overwrite action progress under a stale revision', async
   });
   const rows = await tabA.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
   expect(rows.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
+});
+
+it('an older guide rule refuses completion and keeps the previous done row', async () => {
+  const { repo } = world();
+  const { project, snapshot } = await seedAccepted(repo, 'historical');
+  expect(snapshot.content.versions.ruleVersion).not.toBe(WORKER_RULE_VERSION);
+  await repo.db.actionProgress.put({
+    schemaVersion: 1,
+    projectId: project.projectId,
+    inputRevision: '1',
+    planSnapshotId: snapshot.planSnapshotId,
+    stepId: 'act-1',
+    status: 'done',
+    updatedAt: new Date().toISOString(),
+  });
+  const refused = await repo.setActionStep({
+    projectId: project.projectId,
+    inputRevision: '1',
+    planSnapshotId: snapshot.planSnapshotId,
+    stepId: 'act-2',
+    done: true,
+    stamp: stampFor(snapshot, '1', progressIdentity([['act-1', 'done']])),
+  });
+  expect(refused).toEqual({ status: 'historical_rule' });
+  const rows = await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
+  expect(rows.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
+});
+
+it('a progress stamp that does not match the stored rows writes nothing', async () => {
+  const { repo } = world();
+  const { project, snapshot } = await seedAccepted(repo);
+  const wrong = stampFor(snapshot, '1', progressIdentity([['act-1', 'done']]));
+  const refused = await repo.setActionStep({
+    projectId: project.projectId,
+    inputRevision: '1',
+    planSnapshotId: snapshot.planSnapshotId,
+    stepId: 'act-1',
+    done: true,
+    stamp: { ...wrong, catalogDigest: 'f'.repeat(64) },
+  });
+  expect(refused).toEqual({ status: 'stamp_mismatch' });
+  expect(await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId)).toEqual([]);
 });

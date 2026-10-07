@@ -1,13 +1,13 @@
 {
  "caseId": "search-budget-exhausted",
  "engineContext": {
-  "buildId": "zari-domain-6"
+  "buildId": "zari-domain-7"
  },
  "expected": {
   "alternativeDigests": [
-   "1be077188d7c940ecd4cf257bc3d65416c1fb4d228a4eb5ce6bb9055c4714617",
-   "a1857005b0fef378cd85b3ea2fc47e3823abb8790e4cd6994ccad479e0987d6d",
-   "aa547b78e57285ac59ba8e5b20ea176fdf93240b15f2af1649b1334475be814a"
+   "14b9f12e0737798ff667071acef98fce489311a575382ea296edbdfa5e781968",
+   "1ae7a42a93f66512a509c544baf26e37fc9e2735401d264bd2971e66ba88194d",
+   "449818971903f83502f5e27dceaea5d7599e84133f7a1618d85777cb07a75766"
   ],
   "consumed": {
    "nodes": 16,

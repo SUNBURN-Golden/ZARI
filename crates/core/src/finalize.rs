@@ -18,7 +18,7 @@ use crate::scalars::*;
 use crate::validate;
 use crate::validator::{self, CostAccumulator};
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// The outcome of evaluating one proposal through the trust boundary.
 pub struct CandidateEvaluation {
@@ -458,98 +458,325 @@ fn cost_summary(layout: &CandidateLayout, offers: &BTreeMap<&str, &Offer>) -> Co
     }
 }
 
-/// The deterministic action DAG: condition resolutions, purchases, the
-/// validated install order, contents transfer, then unassigned review.
+/// SP-013 guide. Display order is Kahn, picking the byte-smallest ready step
+/// id. Prerequisite lists are byte-sorted. `required_confirmations` stay
+/// empty: user assertions are their own steps, not a second fact-confirmation
+/// edge. `reason_ids` name structured checks and are never action ids.
+pub fn assemble_action_guide(
+    layout: &CandidateLayout,
+    validation: &validator::CandidateValidation,
+) -> Vec<ActionStep> {
+    build_actions(layout, validation)
+}
+
+fn sorted_ids(mut ids: Vec<Id>) -> Vec<Id> {
+    ids.sort_by(|a, b| a.as_str().cmp(b.as_str()));
+    ids.dedup();
+    ids
+}
+
+fn execution_unknown(check: &ConstraintCheck) -> bool {
+    if check.id.as_str() == "chk:bg:soft" {
+        return false;
+    }
+    match check.status {
+        CheckStatus::Unknown => true,
+        CheckStatus::Fail if check.blocking => true,
+        _ => false,
+    }
+}
+
+fn hits(check: &ConstraintCheck, id: &str) -> bool {
+    check
+        .subject_ids
+        .iter()
+        .any(|subject| subject.as_str() == id)
+}
+
+fn matching_reasons(
+    checks: &[ConstraintCheck],
+    mut keep: impl FnMut(&ConstraintCheck) -> bool,
+) -> Vec<Id> {
+    let ids: Vec<Id> = checks
+        .iter()
+        .filter(|check| execution_unknown(check) && keep(check))
+        .map(|check| check.id.clone())
+        .collect();
+    sorted_ids(ids)
+}
+
+fn space_id_of(placement: &Placement) -> Option<&str> {
+    match &placement.parent {
+        ParentRef::Space { space_id } => Some(space_id.as_str()),
+        ParentRef::Container { .. } => None,
+    }
+}
+
+fn install_reasons(
+    checks: &[ConstraintCheck],
+    placement_id: &str,
+    space_id: Option<&str>,
+) -> Vec<Id> {
+    matching_reasons(checks, |check| {
+        let physical = matches!(
+            check.kind,
+            CheckKind::OuterGeometry
+                | CheckKind::InstallationPath
+                | CheckKind::SupportGeometry
+                | CheckKind::Orientation
+                | CheckKind::OperationalAccess
+        ) && hits(check, placement_id);
+        let staging_load = check.kind == CheckKind::SupportLoad && hits(check, placement_id);
+        let floor_load = check.kind == CheckKind::SupportLoad
+            && space_id.is_some_and(|space| hits(check, space));
+        physical || staging_load || floor_load
+    })
+}
+
+fn transfer_reasons(checks: &[ConstraintCheck], container_id: &str) -> Vec<Id> {
+    matching_reasons(checks, |check| {
+        hits(check, container_id)
+            && matches!(
+                check.kind,
+                CheckKind::InnerCapacity | CheckKind::SupportLoad | CheckKind::SupportGeometry
+            )
+    })
+}
+
+fn commerce_reasons(checks: &[ConstraintCheck], variant_id: &str) -> Vec<Id> {
+    matching_reasons(checks, |check| {
+        hits(check, variant_id)
+            && matches!(
+                check.kind,
+                CheckKind::Inventory | CheckKind::Price | CheckKind::Shipping
+            )
+    })
+}
+
+fn related_unknowns(checks: &[ConstraintCheck], subjects: &[Id]) -> Vec<Id> {
+    matching_reasons(checks, |check| {
+        check
+            .subject_ids
+            .iter()
+            .any(|id| subjects.iter().any(|subject| subject == id))
+    })
+}
+
+fn step(
+    id: Id,
+    kind: ActionKind,
+    subjects: Vec<Id>,
+    prerequisites: Vec<Id>,
+    reasons: Vec<Id>,
+) -> ActionStep {
+    ActionStep {
+        id,
+        kind,
+        subject_ids: sorted_ids(subjects),
+        prerequisite_step_ids: sorted_ids(prerequisites),
+        required_confirmations: vec![],
+        reason_ids: sorted_ids(reasons),
+    }
+}
+
+/// Kahn display order. A cycle leaves the remaining steps in id order so
+/// structural validation can reject the graph instead of dropping them.
+fn display_order(actions: Vec<ActionStep>) -> Vec<ActionStep> {
+    let mut by_id: BTreeMap<String, ActionStep> = BTreeMap::new();
+    for action in actions {
+        by_id.insert(action.id.as_str().to_owned(), action);
+    }
+    let mut indegree: BTreeMap<String, usize> = by_id.keys().map(|id| (id.clone(), 0)).collect();
+    let mut dependents: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for action in by_id.values() {
+        for pre in &action.prerequisite_step_ids {
+            *indegree.entry(action.id.as_str().to_owned()).or_insert(0) += 1;
+            dependents
+                .entry(pre.as_str().to_owned())
+                .or_default()
+                .push(action.id.as_str().to_owned());
+        }
+    }
+    let mut ready: BTreeSet<String> = indegree
+        .iter()
+        .filter(|(_, degree)| **degree == 0)
+        .map(|(id, _)| id.clone())
+        .collect();
+    let mut ordered = Vec::new();
+    while let Some(id) = ready.iter().next().cloned() {
+        ready.remove(&id);
+        let Some(action) = by_id.remove(&id) else {
+            continue;
+        };
+        if let Some(next) = dependents.get(&id) {
+            for dependent in next {
+                if let Some(degree) = indegree.get_mut(dependent) {
+                    *degree = degree.saturating_sub(1);
+                    if *degree == 0 {
+                        ready.insert(dependent.clone());
+                    }
+                }
+            }
+        }
+        ordered.push(action);
+    }
+    if !by_id.is_empty() {
+        let mut rest: Vec<ActionStep> = by_id.into_values().collect();
+        rest.sort_by(|a, b| a.id.as_str().cmp(b.id.as_str()));
+        ordered.extend(rest);
+    }
+    ordered
+}
+
+/// Load outside, then install the loaded container. Direct placements have
+/// no transfer, acquire, or arrival. Owned ordinals are not purchase steps.
 fn build_actions(
     layout: &CandidateLayout,
     validation: &validator::CandidateValidation,
 ) -> Vec<ActionStep> {
-    let step =
-        |id: String, kind: ActionKind, subjects: Vec<Id>, prerequisites: Vec<Id>| -> ActionStep {
-            ActionStep {
-                id: bounded_id(&id),
-                kind,
-                subject_ids: subjects,
-                prerequisite_step_ids: prerequisites,
-                required_confirmations: vec![],
-                reason_ids: vec![],
-            }
-        };
-    let mut actions = vec![];
+    let checks = &validation.report.checks;
+    let mut actions = Vec::new();
+    let mut clear_of: BTreeMap<String, Id> = BTreeMap::new();
+    let mut spaces: Vec<String> = layout
+        .placements
+        .iter()
+        .filter_map(space_id_of)
+        .map(str::to_owned)
+        .collect();
+    spaces.sort();
+    spaces.dedup();
+    for space in &spaces {
+        let id = bounded_id(&format!("act:clear:{space}"));
+        clear_of.insert(space.clone(), id.clone());
+        actions.push(step(
+            id,
+            ActionKind::ClearSpace,
+            vec![Id::new(space).expect("space id")],
+            vec![],
+            vec![],
+        ));
+    }
 
-    // Provisional contents and unresolved offers gate later steps.
     for assignment in &layout.assignments {
         if let ItemLocation::ProvisionalContainer {
             container_placement_id,
             ..
         } = &assignment.location
         {
-            actions.push(ActionStep {
-                id: resolve_step_id(&assignment.item_id, assignment.unit_ordinal),
-                kind: ActionKind::ResolveCondition,
-                subject_ids: vec![assignment.item_id.clone(), container_placement_id.clone()],
-                prerequisite_step_ids: vec![],
-                required_confirmations: vec![],
-                reason_ids: vec![],
-            });
+            let subjects = vec![assignment.item_id.clone(), container_placement_id.clone()];
+            actions.push(step(
+                resolve_step_id(&assignment.item_id, assignment.unit_ordinal),
+                ActionKind::ResolveCondition,
+                subjects.clone(),
+                vec![],
+                related_unknowns(checks, &subjects),
+            ));
         }
     }
-    let mut offer_steps: BTreeMap<String, Id> = BTreeMap::new();
-    let mut variant_placements: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
+
+    let mut offer_gate: BTreeMap<String, Id> = BTreeMap::new();
+    let mut variant_placements: BTreeMap<&str, Vec<&Placement>> = BTreeMap::new();
     for placement in &layout.placements {
         if let PlacementSubject::NewContainer { variant_id, .. } = &placement.subject {
             variant_placements
                 .entry(variant_id.as_str())
                 .or_default()
-                .push(placement.id.clone());
+                .push(placement);
         }
     }
     for (variant_id, placements) in &variant_placements {
-        let selection = layout
-            .purchase_selections
+        let selection = layout.purchase_selections.iter().find(|selection| {
+            placements
+                .iter()
+                .any(|placement| placement.id == selection.placement_id)
+        });
+        let subjects: Vec<Id> = placements
             .iter()
-            .find(|s| s.placement_id == placements[0]);
-        match selection.map(|s| &s.offer) {
+            .map(|placement| placement.id.clone())
+            .collect();
+        match selection.map(|selection| &selection.offer) {
             Some(OfferSelection::Selected { offer_id }) => {
-                let mut subjects = placements.clone();
-                subjects.push(offer_id.clone());
-                let acquire = step(
-                    format!("act:acquire:{variant_id}"),
+                let mut with_offer = subjects.clone();
+                with_offer.push(offer_id.clone());
+                let acquire_id = bounded_id(&format!("act:acquire:{variant_id}"));
+                let arrive_id = bounded_id(&format!("act:arrive:{variant_id}"));
+                actions.push(step(
+                    acquire_id.clone(),
                     ActionKind::Acquire,
-                    subjects.clone(),
+                    with_offer.clone(),
                     vec![],
-                );
-                let arrive = step(
-                    format!("act:arrive:{variant_id}"),
+                    commerce_reasons(checks, variant_id),
+                ));
+                actions.push(step(
+                    arrive_id.clone(),
                     ActionKind::ConfirmArrival,
-                    subjects,
-                    vec![acquire.id.clone()],
-                );
-                offer_steps.insert(variant_id.to_string(), arrive.id.clone());
-                actions.push(acquire);
-                actions.push(arrive);
+                    with_offer,
+                    vec![acquire_id],
+                    vec![],
+                ));
+                offer_gate.insert((*variant_id).to_owned(), arrive_id);
             }
             _ => {
-                let resolve = step(
-                    format!("act:resolve-offer:{variant_id}"),
+                let resolve_id = bounded_id(&format!("act:resolve-offer:{variant_id}"));
+                let mut reasons = commerce_reasons(checks, variant_id);
+                reasons.extend(related_unknowns(checks, &subjects));
+                actions.push(step(
+                    resolve_id.clone(),
                     ActionKind::ResolveCondition,
-                    placements.clone(),
+                    subjects,
                     vec![],
-                );
-                offer_steps.insert(variant_id.to_string(), resolve.id.clone());
-                actions.push(resolve);
+                    reasons,
+                ));
+                offer_gate.insert((*variant_id).to_owned(), resolve_id);
             }
         }
     }
 
-    // Installs in the independently derived order; each step links the
-    // placements that must be installed before it plus its purchase gate.
     let install_id = |pid: &str| bounded_id(&format!("act:install:{pid}"));
+    let mut transfers_of: BTreeMap<String, Vec<Id>> = BTreeMap::new();
+    for assignment in &layout.assignments {
+        let ItemLocation::Contained {
+            container_placement_id,
+            ..
+        } = &assignment.location
+        else {
+            continue;
+        };
+        let container = layout
+            .placements
+            .iter()
+            .find(|placement| &placement.id == container_placement_id);
+        let mut prerequisites = Vec::new();
+        if let Some(space) = container.and_then(space_id_of)
+            && let Some(clear) = clear_of.get(space)
+        {
+            prerequisites.push(clear.clone());
+        }
+        if let Some(PlacementSubject::NewContainer { variant_id, .. }) =
+            container.map(|placement| &placement.subject)
+            && let Some(gate) = offer_gate.get(variant_id.as_str())
+        {
+            prerequisites.push(gate.clone());
+        }
+        let id = transfer_step_id(&assignment.item_id, assignment.unit_ordinal);
+        transfers_of
+            .entry(container_placement_id.as_str().to_owned())
+            .or_default()
+            .push(id.clone());
+        actions.push(step(
+            id,
+            ActionKind::TransferContents,
+            vec![assignment.item_id.clone(), container_placement_id.clone()],
+            prerequisites,
+            transfer_reasons(checks, container_placement_id.as_str()),
+        ));
+    }
+
     let order: Vec<String> = if validation.install_order.is_empty() {
         let mut ids: Vec<String> = layout
             .placements
             .iter()
-            .map(|p| p.id.as_str().to_owned())
+            .map(|placement| placement.id.as_str().to_owned())
             .collect();
         ids.sort();
         ids
@@ -564,58 +791,45 @@ fn build_actions(
         let placement = layout
             .placements
             .iter()
-            .find(|p| p.id.as_str() == pid)
+            .find(|placement| placement.id.as_str() == pid)
             .expect("order ids come from placements");
         let mut prerequisites: Vec<Id> = validation
             .predecessors
             .get(pid.as_str())
             .into_iter()
             .flatten()
-            .map(|p| install_id(p))
+            .map(|predecessor| install_id(predecessor))
             .collect();
         if let PlacementSubject::NewContainer { variant_id, .. } = &placement.subject
-            && let Some(gate) = offer_steps.get(variant_id.as_str())
+            && let Some(gate) = offer_gate.get(variant_id.as_str())
         {
             prerequisites.push(gate.clone());
         }
-        prerequisites.sort();
-        prerequisites.dedup();
+        if let Some(transfers) = transfers_of.get(pid.as_str()) {
+            prerequisites.extend(transfers.iter().cloned());
+        }
+        if let Some(space) = space_id_of(placement)
+            && let Some(clear) = clear_of.get(space)
+        {
+            prerequisites.push(clear.clone());
+        }
         actions.push(step(
-            format!("act:install:{pid}"),
+            install_id(pid),
             ActionKind::Install,
             vec![placement.id.clone()],
             prerequisites,
+            install_reasons(checks, pid, space_id_of(placement)),
         ));
     }
 
-    // Contents transfer: each confirmed contained item is placed into its
-    // installed container. The id is the shared exact-instance derivation
-    // (`transfer_step_id`) so the spatial projector resolves the same unit.
-    for assignment in &layout.assignments {
-        if let ItemLocation::Contained {
-            container_placement_id,
-            ..
-        } = &assignment.location
-        {
-            actions.push(ActionStep {
-                id: transfer_step_id(&assignment.item_id, assignment.unit_ordinal),
-                kind: ActionKind::TransferContents,
-                subject_ids: vec![assignment.item_id.clone(), container_placement_id.clone()],
-                prerequisite_step_ids: vec![install_id(container_placement_id.as_str())],
-                required_confirmations: vec![],
-                reason_ids: vec![],
-            });
-        }
-    }
-
-    // Explicit review step for every unassigned instance group.
     for entry in &layout.unassigned {
         actions.push(step(
-            format!("act:verify:{}", entry.item_id.as_str()),
+            bounded_id(&format!("act:verify:{}", entry.item_id.as_str())),
             ActionKind::VerifyUnassigned,
             vec![entry.item_id.clone()],
             vec![],
+            vec![],
         ));
     }
-    actions
+    display_order(actions)
 }

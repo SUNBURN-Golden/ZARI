@@ -27,7 +27,18 @@ async function seededPlan(page: Page) {
   await expect(page.getByTestId('search-status')).toHaveAttribute('data-search', 'done', {
     timeout: 60000,
   });
-  await page.locator('[data-testid^="plan-card-"]').first().click();
+  // Decreasing depth stays inside only for the back-flush container.
+  // Snapshot-id tie-break can rank a front-flush bin first.
+  const count = await page.locator('[data-testid^="plan-card-"]').count();
+  for (let i = 0; i < count; i++) {
+    await page.getByTestId(`plan-card-${i}`).click();
+    const items = page.getByTestId('placements-list').locator('li');
+    const note = await items.first().locator('.session-note').innerText();
+    const y = Number(note.match(/\(-?\d+, (-?\d+), -?\d+\)/)?.[1]);
+    if ((await items.count()) === 1 && y >= 15) break;
+  }
+  const chosen = await page.getByTestId('placements-list').locator('li').first().locator('.session-note').innerText();
+  expect(Number(chosen.match(/\(-?\d+, (-?\d+), -?\d+\)/)?.[1])).toBeGreaterThanOrEqual(15);
 }
 
 async function acceptSelected(page: Page) {
@@ -106,7 +117,13 @@ test('accepted steps highlight targets, block on prerequisites, and survive relo
   if ((await blocked.count()) > 0) {
     const testId = await blocked.first().getAttribute('data-testid');
     const stepId = testId!.slice('action-'.length);
-    await expect(guide.getByTestId(`step-prereq-${stepId}`)).toContainText('선행 단계');
+    const prereq = guide.getByTestId(`step-prereq-${stepId}`);
+    const condition = guide.getByTestId(`step-condition-${stepId}`);
+    const hasPrereq = (await prereq.count()) > 0;
+    const hasCondition = (await condition.count()) > 0;
+    expect(hasPrereq || hasCondition).toBe(true);
+    if (hasPrereq) await expect(prereq).toContainText('선행 단계');
+    if (hasCondition) await expect(condition).toContainText('검사 결과');
     await expect(blocked.first()).not.toBeChecked();
   }
 

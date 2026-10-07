@@ -3,6 +3,157 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
   "definitions": {
+    "ActionEligibilityReply": {
+      "additionalProperties": false,
+      "properties": {
+        "eligible": {
+          "type": "boolean"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/definitions/ActionEligibilityRow"
+          },
+          "type": "array"
+        },
+        "staleReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stamp": {
+          "$ref": "#/definitions/ActionEligibilityStamp"
+        }
+      },
+      "required": [
+        "eligible",
+        "staleReason",
+        "stamp",
+        "rows"
+      ],
+      "title": "ActionEligibilityReply",
+      "type": "object"
+    },
+    "ActionEligibilityRow": {
+      "additionalProperties": false,
+      "properties": {
+        "actionId": {
+          "$ref": "#/definitions/Id"
+        },
+        "blockerCheckIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "executable": {
+          "type": "boolean"
+        },
+        "instanceRefs": {
+          "items": {
+            "$ref": "#/definitions/InstanceRef"
+          },
+          "type": "array"
+        },
+        "userAssertion": {
+          "description": "True when the step records a user assertion. It does not confirm a fact.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "actionId",
+        "instanceRefs",
+        "blockerCheckIds",
+        "userAssertion",
+        "executable"
+      ],
+      "title": "ActionEligibilityRow",
+      "type": "object"
+    },
+    "ActionEligibilityStamp": {
+      "additionalProperties": false,
+      "description": "Caller-observed stamp. Rust echoes the snapshot's own versions and the\nprogress identity it computed. A mismatch is not eligible.",
+      "properties": {
+        "acceptedInputRevision": {
+          "$ref": "#/definitions/Revision"
+        },
+        "buildId": {
+          "type": "string"
+        },
+        "canonicalVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "catalogDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "catalogVersion": {
+          "type": "string"
+        },
+        "editorEpoch": {
+          "$ref": "#/definitions/Revision"
+        },
+        "inputDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "planSnapshotId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "progressIdentity": {
+          "type": "string"
+        },
+        "projectId": {
+          "$ref": "#/definitions/Id"
+        },
+        "projectRevision": {
+          "$ref": "#/definitions/Revision"
+        },
+        "ruleVersion": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "searchProfileId": {
+          "type": "string"
+        },
+        "searchProfileVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "solverVersion": {
+          "type": "string"
+        },
+        "sourceDirty": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "projectId",
+        "inputDigest",
+        "planSnapshotId",
+        "catalogDigest",
+        "catalogVersion",
+        "ruleVersion",
+        "solverVersion",
+        "schemaVersion",
+        "canonicalVersion",
+        "buildId",
+        "searchProfileId",
+        "searchProfileVersion",
+        "acceptedInputRevision",
+        "projectRevision",
+        "editorEpoch",
+        "progressIdentity",
+        "sourceDirty"
+      ],
+      "title": "ActionEligibilityStamp",
+      "type": "object"
+    },
     "ActionKind": {
       "enum": [
         "clearSpace",
@@ -17,6 +168,23 @@
       ],
       "title": "ActionKind",
       "type": "string"
+    },
+    "ActionProgressInput": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/ProgressMark"
+        },
+        "stepId": {
+          "$ref": "#/definitions/Id"
+        }
+      },
+      "required": [
+        "stepId",
+        "status"
+      ],
+      "title": "ActionProgressInput",
+      "type": "object"
     },
     "ActionStep": {
       "additionalProperties": false,
@@ -1154,6 +1322,38 @@
         },
         {
           "additionalProperties": false,
+          "description": "Ephemeral guide eligibility. Does not search, store, or change facts.\n`progress: null` is not eligible. More than 4096 rows fails the read.",
+          "properties": {
+            "kind": {
+              "const": "queryActionEligibility",
+              "type": "string"
+            },
+            "progress": {
+              "items": {
+                "$ref": "#/definitions/ActionProgressInput"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            },
+            "stamp": {
+              "$ref": "#/definitions/ActionEligibilityStamp"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot",
+            "progress",
+            "stamp"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -2083,6 +2283,42 @@
         },
         {
           "additionalProperties": false,
+          "description": "`queryActionEligibility` oracle. `reply` is null when `failureCode` is set.",
+          "properties": {
+            "decodeError": {
+              "type": "boolean"
+            },
+            "failureCode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "queryActionEligibility",
+              "type": "string"
+            },
+            "reply": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ActionEligibilityReply"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "failureCode",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "alternativeDigests": {
               "description": "Ordered snapshot digests of the emitted ranked alternatives.",
@@ -2157,7 +2393,8 @@
             "normalizeProjectInput",
             "verifyRecord",
             "normalizeCatalogFields",
-            "validateCandidate"
+            "validateCandidate",
+            "queryActionEligibility"
           ],
           "type": "string"
         },
@@ -2579,6 +2816,24 @@
             },
             "reply": {
               "$ref": "#/definitions/NextFactsReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `queryActionEligibility`. `eligible: false` is not a pass.",
+          "properties": {
+            "kind": {
+              "const": "actionEligibilityQueried",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/ActionEligibilityReply"
             }
           },
           "required": [
@@ -5119,6 +5374,157 @@
       "title": "InnerOffset",
       "type": "object"
     },
+    "InstanceRef": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "itemId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "directItem",
+              "type": "string"
+            },
+            "placementId": {
+              "$ref": "#/definitions/Id"
+            },
+            "unitOrdinal": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "itemId",
+            "unitOrdinal",
+            "placementId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "containerPlacementId": {
+              "$ref": "#/definitions/Id"
+            },
+            "itemId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "containedItem",
+              "type": "string"
+            },
+            "unitOrdinal": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "itemId",
+            "unitOrdinal",
+            "containerPlacementId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "ownedContainer",
+              "type": "string"
+            },
+            "ownedId": {
+              "$ref": "#/definitions/Id"
+            },
+            "placementId": {
+              "$ref": "#/definitions/Id"
+            },
+            "unitOrdinal": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "ownedId",
+            "unitOrdinal",
+            "placementId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "newContainer",
+              "type": "string"
+            },
+            "placementId": {
+              "$ref": "#/definitions/Id"
+            },
+            "unitOrdinal": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "variantId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "variantId",
+            "unitOrdinal",
+            "placementId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "instances": {
+              "$ref": "#/definitions/UnassignedInstances"
+            },
+            "itemId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "unassigned",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "itemId",
+            "instances"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "space",
+              "type": "string"
+            },
+            "spaceId": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "spaceId"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "InstanceRef"
+    },
     "InventoryState": {
       "enum": [
         "inStock",
@@ -6515,6 +6921,14 @@
       ],
       "title": "ProductVariant",
       "type": "object"
+    },
+    "ProgressMark": {
+      "enum": [
+        "done",
+        "todo"
+      ],
+      "title": "ProgressMark",
+      "type": "string"
     },
     "ProjectInput": {
       "additionalProperties": false,

@@ -5,6 +5,7 @@ import type {
   ProjectInput,
   RawProjectInputDto,
 } from '../contracts/generated/dto';
+import { WORKER_BUILD_ID, WORKER_RULE_VERSION } from '../worker/client';
 import {
   ATTACHMENT_MAX_COUNT,
   SCHEMA_VERSION,
@@ -102,7 +103,46 @@ export type ActionStepResult =
    * The step names confirmations this app does not record. Completion is
    * refused rather than stored as a pass.
    */
-  | { status: 'confirmation_required' };
+  | { status: 'confirmation_required' }
+  /**
+   * The bound snapshot was produced by an older guide rule. Rows already
+   * stored stay; this write does not migrate them.
+   */
+  | { status: 'historical_rule' }
+  /**
+   * Catalog, engine, revision, or progress identity does not match the
+   * snapshot read inside this transaction.
+   */
+  | { status: 'stamp_mismatch' };
+
+/** Sorted `stepId=done|todo` lines. Empty progress is `""`. */
+export function progressIdentity(entries: Iterable<readonly [string, string]>): string {
+  return [...entries]
+    .map(([stepId, status]) => `${stepId}=${status}`)
+    .sort()
+    .join('\n');
+}
+
+/**
+ * Durable fields rechecked inside the progress transaction. The editor epoch
+ * is session-local: the session compares it to the live worker before this
+ * call and again before applying the reply. The worker call itself stays
+ * outside the transaction.
+ */
+export interface ActionProgressStamp {
+  catalogDigest: string;
+  catalogVersion: string;
+  ruleVersion: string;
+  solverVersion: string;
+  schemaVersion: number;
+  canonicalVersion: number;
+  buildId: string;
+  searchProfileId: string;
+  searchProfileVersion: number;
+  editorEpoch: string;
+  progressIdentity: string;
+  projectRevision: string;
+}
 export type OwnedSaveResult =
   | { status: 'saved'; revision: string }
   | { status: 'conflict'; revision: string };
@@ -847,6 +887,7 @@ export class ProjectRepository {
     planSnapshotId: string;
     stepId: string;
     done: boolean;
+    stamp: ActionProgressStamp;
   }): Promise<ActionStepResult> {
     return this.enqueue(async () => {
       const expected = await this.expectedRevision(args.projectId);
@@ -899,8 +940,29 @@ export class ProjectRepository {
                     row.inputRevision === args.inputRevision &&
                     row.planSnapshotId === args.planSnapshotId,
                 )
-                .map((row) => [row.stepId, row.status]),
+                .map((row) => [row.stepId, row.status] as const),
             );
+            const versions = snapshot.content.versions;
+            if (versions.ruleVersion !== WORKER_RULE_VERSION) {
+              return { status: 'historical_rule' };
+            }
+            const identity = progressIdentity(progress);
+            if (
+              args.stamp.ruleVersion !== versions.ruleVersion ||
+              args.stamp.buildId !== WORKER_BUILD_ID ||
+              args.stamp.projectRevision !== project.projectRevision ||
+              args.stamp.progressIdentity !== identity ||
+              args.stamp.catalogDigest !== versions.catalogDigest ||
+              args.stamp.catalogVersion !== versions.catalogVersion ||
+              args.stamp.solverVersion !== versions.solverVersion ||
+              args.stamp.schemaVersion !== versions.schemaVersion ||
+              args.stamp.canonicalVersion !== versions.canonicalVersion ||
+              args.stamp.searchProfileId !== versions.searchProfile.id ||
+              args.stamp.searchProfileVersion !== versions.searchProfile.version ||
+              args.stamp.editorEpoch.length === 0
+            ) {
+              return { status: 'stamp_mismatch' };
+            }
             if (args.done) {
               const missing = step.prerequisiteStepIds.filter(
                 (id) => progress.get(id) !== 'done',

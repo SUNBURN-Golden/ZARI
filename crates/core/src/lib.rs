@@ -2,6 +2,7 @@ pub mod canonical;
 pub mod catalog;
 pub mod completion;
 pub mod edit;
+pub mod eligibility;
 pub mod facts;
 pub mod finalize;
 pub mod geometry;
@@ -22,8 +23,12 @@ pub use canonical::*;
 pub use catalog::*;
 pub use completion::*;
 pub use edit::*;
+pub use eligibility::{
+    ActionEligibilityReply, ActionEligibilityRow, ActionEligibilityStamp, ActionProgressInput,
+    EligibilityError, InstanceRef, ProgressMark, progress_identity, query_action_eligibility,
+};
 pub use facts::*;
-pub use finalize::{CandidateEvaluation, evaluate_candidate};
+pub use finalize::{CandidateEvaluation, assemble_action_guide, evaluate_candidate};
 pub use input::*;
 pub use measurement::*;
 pub use next_facts::{

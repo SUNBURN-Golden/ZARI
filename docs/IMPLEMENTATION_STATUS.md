@@ -1,3 +1,35 @@
+# 2026-10-07 — ZARI-SPATIAL-013 실행 가이드 DAG와 unknown 조건·진행 guard
+
+정본은 GitHub issue #67, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-013`이다. 관찰한 base SHA는 `b18a61238dae2aa7563d3f47b43791b262250326`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 SP-013만 구현한다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-013-execution-guide.md`와 `design/DECISIONS.md` D013. 제품 완성 후보 문서에는 SP-013 노트만 추가했다.
+- `assemble_action_guide`가 채택한 순서를 만든다. 칸 비우기·구매 의사·도착·조건 확인·미배치는 사용자 표시다. 새 단위만 acquire와 arrival을 가진다. 내용물 옮기기는 설치의 선행이 아니고, 적재된 용기의 설치가 transfer를 기다린다. `reasonIds`는 그 단계를 막는 구조화 검사만 담는다. `done`은 Fact·검사·provenance를 바꾸지 않는다.
+- `queryActionEligibility`를 읽기 명령으로 열었다. `BUILD_ID`는 `zari-domain-7`, `ruleVersion`은 `zari-domain-v2`다. `solverVersion` `zari-solver-v1`, schema 1, canonical 1, `ActionStep` 필드 모양은 그대로다. DB 마이그레이션은 없다.
+- 진행 CAS는 트랜잭션 안에서 rule·catalog·build·search profile·revision·progress identity를 다시 본다. Worker 대기는 트랜잭션 밖이다. `zari-domain-v1` 스냅샷의 완료는 `historical_rule`로 거절하고 기존 done 행은 남긴다. 진행을 자동으로 옮기지 않는다.
+- 화면은 Rust `executable`과 스냅샷 검사 문구를 보여 준다. 새 색 토큰은 없다.
+- 손 계산 오라클 `docs/oracles/product-completion/`은 생산자가 다시 쓰지 않았다. 인덱스 `currentBuildId`는 `zari-domain-6`으로 남아 있다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 123 passed, 1 ignored
+- fixture_runner `fixtures/bootstrap` 28건. `fixtures` 124건은 `npm run test:parity`가 네이티브로 먼저 실행했고 exit 0
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run contracts:check`: exit 0, Rust와 일치, fixture 구조 124. `npm run wasm:build`는 `npm run build`와 브라우저 빌드에 포함, wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 18 files / 138), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `bcc4ea73bcb58e8f`), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39): exit 0
+- `npm run test:browser -- --project=chromium --workers=1`: 최종 78 passed (2.4m). 그 전 한 실행은 5 failed / 73 passed였다. 순위 동점의 마지막 키가 스냅샷 id라 앞쪽 수납함이 1번 후보가 되었고, 깊이 −15 mm가 공간 밖으로 거부되었다. 테스트가 뒤쪽 수납함(y ≥ 15, 배치 1개)을 고른 뒤 전체를 다시 실행했다. `worker-state` flake는 Chromium에서 없었다. 타임아웃을 올리지 않았다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (24.2s)
+- 바뀐 `drag.spec.ts`·`progress.spec.ts`·`quality.spec.ts`: Firefox 12 passed. WebKit 11 passed, 1 failed. 실패는 프로젝트 목록에 머문 `worker-state` 부재이고, 계획 화면 이전이다. 재실행하지 않았다
+- 전화와 전용 GPU는 확인하지 않았다
+
+하지 않은 것: SP-014 `RunEval` 분할, SP-015의 PC-08을 넘는 저장 수명, 스키마 마이그레이션, 결제·제공자, 화면 승인, 전화, 전용 GPU. 상세는 `docs/evidence/ZARI-SPATIAL-013.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `contract_change=YES`라 자동 머지하지 않는다. SP-014는 이 작업에서 시작하지 않았다.
+
 # 2026-10-07 — ZARI-SPATIAL-012 행동·조건·버전·평가 계약
 
 정본은 GitHub issue #65, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-012`이다. 관찰한 base SHA는 `1ef692c618c88e5dc8f966f2afd7699ccf28593a`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

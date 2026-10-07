@@ -24,12 +24,15 @@ import { exportProject, type ProjectExport } from '../../persistence/export';
 import type { EditChain, EditTransition } from '../../persistence/db';
 import {
   StoreError,
+  progressIdentity,
+  type ActionProgressStamp,
+  type ActionStepResult,
   type CommitResult,
   type CorruptRecord,
   type ProjectBundle,
   type ProjectRepository,
 } from '../../persistence/repository';
-import { StaleRequest, type ProbeClient } from '../../worker/client';
+import { StaleRequest, WORKER_BUILD_ID, WORKER_RULE_VERSION, type ProbeClient } from '../../worker/client';
 import {
   SearchPump,
   WorkerController,
@@ -73,7 +76,7 @@ import {
   takeNextFactsInjection,
 } from './nextFactsGate';
 import type { NextFactsReply } from '../../contracts/generated/dto';
-import { shouldApplyProgressReply } from '../workspace/stepFocus';
+import { shouldApplyProgressReply, type GuideEligibility } from '../workspace/stepFocus';
 
 export type SaveState =
   | 'idle'
@@ -158,6 +161,11 @@ export interface PlanState {
   actionError: string | null;
   /** Last progress write that threw. Blocked reasons are not retries. */
   actionRetry: { stepId: string; done: boolean } | null;
+  /**
+   * Ephemeral Rust eligibility for the accepted snapshot. Not stored.
+   * `null` is not a pass.
+   */
+  actionEligibility: GuideEligibility | null;
   edit: EditState;
   /**
    * Ephemeral spatial projections keyed by `plan:<planSnapshotId>`.
@@ -297,6 +305,7 @@ export class ProjectSession {
         progressLoad: 'idle',
         actionError: null,
         actionRetry: null,
+        actionEligibility: null,
         edit: {
           selectedPlacementId: null,
           pending: null,
@@ -1021,7 +1030,13 @@ export class ProjectSession {
     const accepted = this.state.plan.accepted;
     if (!accepted) {
       if (this.progressEpoch !== epoch) return;
-      this.patchPlan({ actionProgress: {}, actionError: null, progressLoad: 'ready', actionRetry: null });
+      this.patchPlan({
+        actionProgress: {},
+        actionError: null,
+        progressLoad: 'ready',
+        actionRetry: null,
+        actionEligibility: null,
+      });
       return;
     }
     const binding = {
@@ -1046,6 +1061,7 @@ export class ProjectSession {
         actionProgress: null,
         actionError: 'progress_unavailable',
         progressLoad: 'error',
+        actionEligibility: null,
       });
       return;
     }
@@ -1053,6 +1069,128 @@ export class ProjectSession {
       actionProgress: Object.fromEntries(rows.map((r) => [r.stepId, r.status])),
       actionError: null,
       progressLoad: 'ready',
+      actionEligibility: null,
+    });
+    void this.refreshActionEligibility();
+  }
+  private eligibilityStamp(
+    snapshot: PlanSnapshot,
+    identity: string,
+    editorEpoch: string,
+  ): ActionProgressStamp & {
+    projectId: string;
+    inputDigest: string;
+    planSnapshotId: string;
+    acceptedInputRevision: string;
+    sourceDirty: boolean;
+  } {
+    const versions = snapshot.content.versions;
+    const accepted = this.state.plan.accepted;
+    return {
+      projectId: this.projectId,
+      inputDigest: versions.inputDigest,
+      planSnapshotId: snapshot.planSnapshotId,
+      catalogDigest: versions.catalogDigest,
+      catalogVersion: versions.catalogVersion,
+      ruleVersion: versions.ruleVersion,
+      solverVersion: versions.solverVersion,
+      schemaVersion: versions.schemaVersion,
+      canonicalVersion: versions.canonicalVersion,
+      buildId: WORKER_BUILD_ID,
+      searchProfileId: versions.searchProfile.id,
+      searchProfileVersion: versions.searchProfile.version,
+      acceptedInputRevision: accepted?.inputRevision ?? this.state.inputRevision,
+      projectRevision: this.state.projectRevision,
+      editorEpoch,
+      progressIdentity: identity,
+      sourceDirty: this.state.staleInput || this.generation > this.lastCommittedGeneration,
+    };
+  }
+  private progressRows(): { stepId: string; status: 'done' | 'todo' }[] {
+    const progress = this.state.plan.actionProgress;
+    if (!progress) return [];
+    return Object.entries(progress).map(([stepId, status]) => ({ stepId, status }));
+  }
+  private progressLeaseHolds(captured: {
+    client: ProbeClient;
+    editorEpoch: string;
+    generation: string;
+    inputRevision: string;
+    planSnapshotId: string;
+    epoch: number;
+    progressIdentity: string;
+  }): boolean {
+    const progress = this.state.plan.actionProgress;
+    return (
+      !this.closed &&
+      this.controller.current === captured.client &&
+      String(this.epoch) === captured.editorEpoch &&
+      String(this.generation) === captured.generation &&
+      this.progressEpoch === captured.epoch &&
+      !this.state.staleInput &&
+      this.generation <= this.lastCommittedGeneration &&
+      this.state.plan.accepted?.inputRevision === captured.inputRevision &&
+      this.state.plan.accepted?.planSnapshotId === captured.planSnapshotId &&
+      progress !== null &&
+      progressIdentity(Object.entries(progress).map(([stepId, status]) => [stepId, status] as const)) ===
+        captured.progressIdentity &&
+      this.state.conflict === null
+    );
+  }
+  /** Read-only eligibility. A failed or stale read leaves the previous rows unset. */
+  private async refreshActionEligibility(): Promise<void> {
+    const client = this.controller.current;
+    const snapshot = this.state.plan.acceptedSnapshot;
+    const accepted = this.state.plan.accepted;
+    if (
+      !client ||
+      !snapshot ||
+      !accepted ||
+      snapshot.planSnapshotId !== accepted.planSnapshotId ||
+      this.state.plan.actionProgress === null ||
+      this.state.plan.progressLoad !== 'ready'
+    ) {
+      return;
+    }
+    const rows = this.progressRows();
+    const identity = progressIdentity(rows.map((row) => [row.stepId, row.status] as const));
+    const captured = {
+      client,
+      editorEpoch: String(this.epoch),
+      generation: String(this.generation),
+      inputRevision: accepted.inputRevision,
+      planSnapshotId: accepted.planSnapshotId,
+      epoch: this.progressEpoch,
+      progressIdentity: identity,
+    };
+    const stamp = this.eligibilityStamp(snapshot, identity, captured.editorEpoch);
+    const event = await client
+      .systemRequest({
+        kind: 'queryActionEligibility',
+        snapshot,
+        progress: rows,
+        stamp,
+      })
+      .catch(() => null);
+    if (!this.progressLeaseHolds(captured)) return;
+    if (!event || event.kind !== 'actionEligibilityQueried') {
+      this.patchPlan({ actionEligibility: null });
+      return;
+    }
+    const reply = event.reply;
+    this.patchPlan({
+      actionEligibility: {
+        planSnapshotId: snapshot.planSnapshotId,
+        progressIdentity: identity,
+        eligible: reply.eligible,
+        staleReason: reply.staleReason,
+        rows: reply.rows.map((row) => ({
+          actionId: row.actionId,
+          executable: row.executable,
+          blockerCheckIds: row.blockerCheckIds,
+          userAssertion: row.userAssertion,
+        })),
+      },
     });
   }
   /**
@@ -1078,23 +1216,102 @@ export class ProjectSession {
       this.patchPlan({ actionError: 'progress_unavailable', actionRetry: null });
       return;
     }
-    const step = this.state.plan.acceptedSnapshot?.content.actions.find((item) => item.id === stepId);
+    const snapshot = this.state.plan.acceptedSnapshot;
+    const step = snapshot?.content.actions.find((item) => item.id === stepId);
+    if (!snapshot || snapshot.planSnapshotId !== accepted.planSnapshotId) {
+      this.patchPlan({ actionError: 'not_accepted', actionRetry: null });
+      return;
+    }
+    if (snapshot.content.versions.ruleVersion !== WORKER_RULE_VERSION) {
+      this.patchPlan({ actionError: 'historical_rule', actionRetry: null });
+      return;
+    }
     if (done && step && step.requiredConfirmations.length > 0) {
       this.patchPlan({ actionError: 'confirmation_required', actionRetry: null });
       return;
     }
+    const client = this.controller.current;
+    if (!client) {
+      this.patchPlan({ actionError: 'progress_unavailable', actionRetry: null });
+      return;
+    }
+    const rows = this.progressRows();
+    const identity = progressIdentity(rows.map((row) => [row.stepId, row.status] as const));
     const captured = {
       inputRevision: accepted.inputRevision,
       planSnapshotId: accepted.planSnapshotId,
       epoch: this.progressEpoch,
+      client,
+      editorEpoch: String(this.epoch),
+      generation: String(this.generation),
+      progressIdentity: identity,
     };
-    const result = await this.repo
+    const stamp = this.eligibilityStamp(snapshot, identity, captured.editorEpoch);
+    const event = await client
+      .systemRequest({
+        kind: 'queryActionEligibility',
+        snapshot,
+        progress: rows,
+        stamp,
+      })
+      .catch((error: unknown) => error as Error);
+    if (!this.progressLeaseHolds(captured)) return;
+    if (event instanceof Error) {
+      this.patchPlan({ actionError: event.message, actionRetry: { stepId, done } });
+      return;
+    }
+    if (event.kind !== 'actionEligibilityQueried') {
+      this.patchPlan({ actionError: 'progress_unavailable', actionRetry: null });
+      return;
+    }
+    const reply = event.reply;
+    if (
+      reply.stamp.planSnapshotId !== snapshot.planSnapshotId ||
+      reply.stamp.progressIdentity !== identity ||
+      reply.stamp.buildId !== WORKER_BUILD_ID
+    ) {
+      this.patchPlan({ actionError: 'stamp_mismatch', actionRetry: null });
+      return;
+    }
+    if (!reply.eligible) {
+      this.patchPlan({
+        actionError: reply.staleReason ?? 'stamp_mismatch',
+        actionRetry: null,
+        actionEligibility: {
+          planSnapshotId: snapshot.planSnapshotId,
+          progressIdentity: identity,
+          eligible: false,
+          staleReason: reply.staleReason,
+          rows: reply.rows.map((row) => ({
+            actionId: row.actionId,
+            executable: row.executable,
+            blockerCheckIds: row.blockerCheckIds,
+            userAssertion: row.userAssertion,
+          })),
+        },
+      });
+      return;
+    }
+    const verdict = reply.rows.find((row) => row.actionId === stepId);
+    if (done && (!verdict || !verdict.executable)) {
+      this.patchPlan({ actionError: 'blocked_condition', actionRetry: null });
+      return;
+    }
+    if (
+      this.state.projectRevision !== stamp.projectRevision ||
+      progressIdentity(this.progressRows().map((row) => [row.stepId, row.status] as const)) !== identity
+    ) {
+      this.patchPlan({ actionError: 'stamp_mismatch', actionRetry: null });
+      return;
+    }
+    const result: ActionStepResult | Error = await this.repo
       .setActionStep({
         projectId: this.projectId,
         inputRevision: captured.inputRevision,
         planSnapshotId: captured.planSnapshotId,
         stepId,
         done,
+        stamp,
       })
       .catch((error: unknown) => error as Error);
     // Vite replaces MODE, so the production bundle drops this call and progressGate.ts.
@@ -1122,6 +1339,7 @@ export class ProjectSession {
         actionRetry: null,
         progressLoad: 'ready',
       });
+      void this.refreshActionEligibility();
       return;
     }
     if (result.status === 'conflict') {
@@ -1275,6 +1493,7 @@ export class ProjectSession {
           actionProgress: null,
           actionError: null,
           actionRetry: null,
+          actionEligibility: null,
           progressLoad: 'loading',
         });
         this.holdNextFactsForRecompile();

@@ -1,6 +1,7 @@
 import type { ActionStep, SnapshotContent, SpatialProjection } from '../../contracts/generated/dto';
 import type { WorkspaceFocus } from './model';
 import {
+  conditionText,
   confirmationRequired,
   dependentText,
   doneDependents,
@@ -13,6 +14,7 @@ import {
   stepTargetView,
   stepTitle,
   targetLabel,
+  type GuideEligibility,
   type GuideSurface,
   type ProgressLoad,
   type ProgressMap,
@@ -28,6 +30,11 @@ const SAVE_FAILURE = new Set([
   'conflict',
   'progress_unavailable',
   'readonly',
+  'blocked_condition',
+  'historical_rule',
+  'stamp_mismatch',
+  'dirty_source',
+  'null_progress',
 ]);
 
 function errorText(code: string): string {
@@ -48,6 +55,15 @@ function errorText(code: string): string {
       return '진행 기록을 읽지 못함';
     case 'unknown_step':
       return '이 계획은 그 단계를 가지고 있지 않습니다.';
+    case 'blocked_condition':
+      return '확인되지 않은 조건이 남아 완료로 기록하지 않습니다.';
+    case 'historical_rule':
+      return '이전 규칙의 계획은 완료를 기록하지 않습니다.';
+    case 'stamp_mismatch':
+    case 'dirty_source':
+      return '계획 기준이 바뀌어 완료를 기록하지 않습니다.';
+    case 'null_progress':
+      return '진행 기록을 읽지 못함';
     default:
       return `진행 저장 실패: ${code}`;
   }
@@ -70,6 +86,7 @@ export function StepFocus({
   conflict,
   actionError,
   actionRetry,
+  eligibility,
   onFocusStep,
   onToggle,
   onShowAccepted,
@@ -90,6 +107,7 @@ export function StepFocus({
   conflict: boolean;
   actionError: string | null;
   actionRetry: { stepId: string; done: boolean } | null;
+  eligibility: GuideEligibility | null;
   onFocusStep: (stepId: string) => void;
   onToggle: (stepId: string, done: boolean) => void;
   onShowAccepted: (() => void) | null;
@@ -110,10 +128,16 @@ export function StepFocus({
   const current = actions.find((step) => step.id === currentId) ?? null;
   const judgeProgress =
     access.writable || access.block === 'stale' || access.block === 'conflict';
+  const executableIds =
+    eligibility?.eligible === true
+      ? new Set(
+          eligibility.rows.filter((row) => row.executable).map((row) => row.actionId),
+        )
+      : null;
   const executable = access.block === 'progress_unknown'
     ? nextExecutableStep(actions, null)
     : judgeProgress
-      ? nextExecutableStep(actions, progress)
+      ? nextExecutableStep(actions, progress, executableIds)
       : { kind: 'hidden' as const };
   const showMarks = access.block !== 'working' && access.block !== 'alternative' && access.block !== 'not_accepted';
   const retry =
@@ -156,6 +180,18 @@ export function StepFocus({
           <button type="button" className="button button-secondary" data-testid="open-accepted-plan" onClick={onShowAccepted}>
             채택된 계획에서 실행하기
           </button>
+        </p>
+      )}
+      {access.writable && eligibility === null && (
+        <p className="session-note" data-testid="progress-eligibility">
+          실행 조건을 확인하고 있습니다.
+        </p>
+      )}
+      {eligibility && !eligibility.eligible && (
+        <p className="notice notice-stale" data-testid="progress-ineligible" role="status">
+          {eligibility.staleReason === 'historical_rule'
+            ? '이전 규칙의 계획은 완료를 기록하지 않습니다.'
+            : '이 계획의 완료 조건을 확인할 수 없습니다.'}
         </p>
       )}
       {actionError && (
@@ -235,7 +271,10 @@ export function StepFocus({
           const dependents = doneDependents(step.id, actions, showMarks ? progress : null);
           const needsConfirmation = confirmationRequired(step);
           const isCurrent = step.id === currentId;
-          const lockCheck = missing.length > 0 || needsConfirmation;
+          const row = eligibility?.rows.find((item) => item.actionId === step.id);
+          const waiting = eligibility === null || eligibility.eligible !== true;
+          const conditionBlocked = !waiting && row?.executable !== true;
+          const lockCheck = missing.length > 0 || needsConfirmation || (mark !== 'done' && (waiting || conditionBlocked));
           const lockClear = dependents.length > 0;
           return (
             <li
@@ -282,6 +321,13 @@ export function StepFocus({
               {needsConfirmation && (
                 <span className="session-note" data-testid={`step-confirm-${step.id}`}>
                   확인 절차 필요
+                </span>
+              )}
+              {step.reasonIds.length > 0 && (
+                <span className="session-note" data-testid={`step-condition-${step.id}`}>
+                  {step.reasonIds.map((id) => conditionText(content, id)).join(' · ')}
+                  {' '}
+                  완료 표시는 검사 결과를 바꾸지 않습니다.
                 </span>
               )}
             </li>

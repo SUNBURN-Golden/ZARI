@@ -2027,7 +2027,7 @@
     }
   },
   "engineContext": {
-    "buildId": "zari-domain-6"
+    "buildId": "zari-domain-7"
   },
   "expected": {
     "kind": "queryNextFacts",
@@ -2039,7 +2039,7 @@
         "inputDigest": "bdc80a6cc50fa632760be5c7f5c997abf5fd7ba59659e2d0c9537fe4570edacd",
         "planSnapshotId": "297d1d8671646e55c9f27dc3d047879a975884d688ce9d8d09308d051ab60608",
         "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
-        "ruleVersion": "zari-domain-v1",
+        "ruleVersion": "zari-domain-v2",
         "canonicalVersion": 1
       },
       "rows": [],

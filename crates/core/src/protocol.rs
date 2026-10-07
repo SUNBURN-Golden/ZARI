@@ -2,6 +2,9 @@ use crate::{
     canonical::{self, CatalogContent},
     catalog::*,
     completion::COMPLETION_LIMIT_CODE,
+    eligibility::{
+        self, ActionEligibilityReply, ActionEligibilityStamp, ActionProgressInput, EligibilityError,
+    },
     facts::*,
     finalize,
     input::*,
@@ -27,8 +30,8 @@ use std::{
     fmt,
 };
 
-pub const BUILD_ID: &str = "zari-domain-6";
-const CAPABILITIES: [&str; 13] = [
+pub const BUILD_ID: &str = "zari-domain-7";
+const CAPABILITIES: [&str; 14] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -41,6 +44,7 @@ const CAPABILITIES: [&str; 13] = [
     "evaluateLayoutEdit",
     "projectSpatialView",
     "queryNextFacts",
+    "queryActionEligibility",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -50,7 +54,7 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 16] = [
+const COMMAND_KINDS: [&str; 17] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -62,6 +66,7 @@ const COMMAND_KINDS: [&str; 16] = [
     "evaluateLayoutEdit",
     "projectSpatialView",
     "queryNextFacts",
+    "queryActionEligibility",
     "disposeProject",
     "proposeStrategies",
     "startSearch",
@@ -256,6 +261,15 @@ pub enum Command {
         #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
         snapshot: Option<PlanSnapshot>,
     },
+    /// Ephemeral guide eligibility. Does not search, store, or change facts.
+    /// `progress: null` is not eligible. More than 4096 rows fails the read.
+    QueryActionEligibility {
+        snapshot: PlanSnapshot,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<Vec<ActionProgressInput>>")]
+        progress: Option<Vec<ActionProgressInput>>,
+        stamp: ActionEligibilityStamp,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -387,6 +401,10 @@ pub enum Event {
     NextFactsQueried {
         reply: NextFactsReply,
     },
+    /// Result of `queryActionEligibility`. `eligible: false` is not a pass.
+    ActionEligibilityQueried {
+        reply: ActionEligibilityReply,
+    },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
     SearchStarted {
@@ -483,6 +501,7 @@ pub enum DomainOperation {
     ProjectSpatialView,
     /// One completion query over a normalized input and optional snapshot.
     QueryNextFacts,
+    QueryActionEligibility,
 }
 /// Step recipe for a `runSearch` fixture: `count` requests of `allowance`
 /// work units each. Declared steps are expanded in order; `cancelAfterSteps`
@@ -749,6 +768,16 @@ pub enum DomainFixtureExpected {
         #[schemars(with = "crate::RequiredNullable<NextFactsReply>")]
         reply: Option<NextFactsReply>,
     },
+    /// `queryActionEligibility` oracle. `reply` is null when `failureCode` is set.
+    QueryActionEligibility {
+        decode_error: bool,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<String>")]
+        failure_code: Option<String>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<ActionEligibilityReply>")]
+        reply: Option<ActionEligibilityReply>,
+    },
     RunSearch {
         decode_error: bool,
         /// Required terminal reason; `null` asserts the run never terminated
@@ -981,6 +1010,18 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
                     "input": fixture.input["input"].clone(),
                     "inputDigest": fixture.input["inputDigest"].clone(),
                     "snapshot": fixture.input["snapshot"].clone()
+                }),
+            ),
+        ],
+        DomainOperation::QueryActionEligibility => vec![
+            initialize,
+            request(
+                meta("fixture-operation", true, None),
+                json!({
+                    "kind": "queryActionEligibility",
+                    "snapshot": fixture.input["snapshot"].clone(),
+                    "progress": fixture.input["progress"].clone(),
+                    "stamp": fixture.input["stamp"].clone()
                 }),
             ),
         ],
@@ -1228,7 +1269,8 @@ pub fn execute_domain_fixture_with(
         | DomainFixtureExpected::ProposeStrategies { decode_error, .. }
         | DomainFixtureExpected::RunSearch { decode_error, .. }
         | DomainFixtureExpected::ProjectSpatialView { decode_error, .. }
-        | DomainFixtureExpected::QueryNextFacts { decode_error, .. } => *decode_error,
+        | DomainFixtureExpected::QueryNextFacts { decode_error, .. }
+        | DomainFixtureExpected::QueryActionEligibility { decode_error, .. } => *decode_error,
     };
     if declared_decode != decode_error {
         return Err(format!(
@@ -1243,7 +1285,10 @@ pub fn execute_domain_fixture_with(
     // by its exact failure code; geometry assertions do not apply then.
     if let Some(code) = match expected {
         DomainFixtureExpected::ProjectSpatialView { failure_code, .. }
-        | DomainFixtureExpected::QueryNextFacts { failure_code, .. } => failure_code.as_ref(),
+        | DomainFixtureExpected::QueryNextFacts { failure_code, .. }
+        | DomainFixtureExpected::QueryActionEligibility { failure_code, .. } => {
+            failure_code.as_ref()
+        }
         _ => None,
     } {
         if event["kind"] != "operationFailed" || event["code"].as_str() != Some(code.as_str()) {
@@ -1583,6 +1628,27 @@ pub fn execute_domain_fixture_with(
             if Some(&actual) != reply.as_ref() {
                 return Err(format!(
                     "{}: next facts reply mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+        }
+        DomainFixtureExpected::QueryActionEligibility { reply, .. } => {
+            if event["kind"] != "actionEligibilityQueried" {
+                return Err(format!(
+                    "{}: expected actionEligibilityQueried event, got {event}",
+                    fixture.case_id
+                ));
+            }
+            let actual: ActionEligibilityReply = serde_json::from_value(event["reply"].clone())
+                .map_err(|error| {
+                    format!(
+                        "{}: action eligibility reply decode: {error}",
+                        fixture.case_id
+                    )
+                })?;
+            if Some(&actual) != reply.as_ref() {
+                return Err(format!(
+                    "{}: action eligibility reply mismatch: {event}",
                     fixture.case_id
                 ));
             }
@@ -2114,6 +2180,7 @@ impl Runtime {
                     | Command::ValidateCatalog { .. }
                     | Command::ProjectSpatialView { .. }
                     | Command::QueryNextFacts { .. }
+                    | Command::QueryActionEligibility { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -2299,7 +2366,8 @@ impl Runtime {
             | Command::NormalizeCatalogFields { .. }
             | Command::ValidateCatalog { .. }
             | Command::ProjectSpatialView { .. }
-            | Command::QueryNextFacts { .. } => self.execute_stateless(&request.command),
+            | Command::QueryNextFacts { .. }
+            | Command::QueryActionEligibility { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2570,6 +2638,17 @@ impl Runtime {
                 Err(NextFactsError::DigestMismatch) => failure("digest_mismatch"),
                 Err(NextFactsError::LimitExceeded) => failure(COMPLETION_LIMIT_CODE),
             },
+            Command::QueryActionEligibility {
+                snapshot,
+                progress,
+                stamp,
+            } => {
+                match eligibility::query_action_eligibility(snapshot, progress.as_deref(), stamp) {
+                    Ok(reply) => Event::ActionEligibilityQueried { reply },
+                    Err(EligibilityError::ProgressLimit) => failure("action_progress_limit"),
+                    Err(EligibilityError::InvalidProgress) => failure("invalid_input"),
+                }
+            }
             Command::ProjectSpatialView { source } => {
                 match crate::spatial_view::project_spatial_view(source) {
                     Ok(projection) => Event::SpatialViewProjected { projection },

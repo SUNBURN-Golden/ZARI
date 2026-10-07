@@ -5565,7 +5565,7 @@
   }
  },
  "engineContext": {
-  "buildId": "zari-domain-6"
+  "buildId": "zari-domain-7"
  },
  "expected": {
   "kind": "evaluateLayoutEdit",
@@ -5574,6 +5574,6 @@
   "checks": [],
   "physicalAssurance": "confirmedWithinScope",
   "commerceReadiness": "notApplicable",
-  "snapshotDigest": "5613412cb445b92117c42a786bd2922f12406d9bbf25d8bef99a962e6728c4b0"
+  "snapshotDigest": "7167fe3c25e40826df8e2a5c57de0cdf5a416ea5e2bc4cdef235c09a69d84462"
  }
 }

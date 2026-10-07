@@ -21,7 +21,9 @@ use unicode_normalization::UnicodeNormalization;
 
 pub const SCHEMA_VERSION: u32 = 1;
 pub const CANONICAL_VERSION: u32 = 1;
-pub const RULE_VERSION: &str = "zari-domain-v1";
+/// Guide meaning from SP-013. `zari-domain-v1` snapshots stay readable and
+/// are not completable. See `docs/adr/SP-013-execution-guide.md`.
+pub const RULE_VERSION: &str = "zari-domain-v2";
 /// `zari-solver-v1`: resumable bounded rule→strategy→recipe→placement search.
 pub const SOLVER_VERSION: &str = "zari-solver-v1";
 

@@ -134,11 +134,11 @@ fn assert_ordinals_are_numbers(value: &Value) {
 }
 
 #[test]
-fn current_engine_identity_and_reserved_read_are_unchanged() {
-    assert_eq!(BUILD_ID, "zari-domain-6");
+fn current_engine_identity_registers_the_sp013_rule() {
+    assert_eq!(BUILD_ID, "zari-domain-7");
     assert_eq!(SCHEMA_VERSION, 1);
     assert_eq!(CANONICAL_VERSION, 1);
-    assert_eq!(RULE_VERSION, "zari-domain-v1");
+    assert_eq!(RULE_VERSION, "zari-domain-v2");
     assert_eq!(SOLVER_VERSION, "zari-solver-v1");
 
     let mut runtime = Runtime::new();
@@ -156,26 +156,27 @@ fn current_engine_identity_and_reserved_read_are_unchanged() {
     assert_eq!(ready["event"]["buildId"], BUILD_ID);
     let capabilities = ready["event"]["capabilities"].as_array().unwrap();
     assert!(capabilities.iter().any(|item| item == "queryNextFacts"));
-    assert!(
-        capabilities
-            .iter()
-            .all(|item| item != "queryActionEligibility")
-    );
+    let next = capabilities
+        .iter()
+        .position(|item| item == "queryNextFacts")
+        .unwrap();
+    assert_eq!(capabilities[next + 1], "queryActionEligibility");
+    assert_eq!(capabilities[next + 2], "disposeProject");
     let denied = send(
         &mut runtime,
         "eligibility",
         serde_json::json!({"kind": "queryActionEligibility"}),
     );
     assert_eq!(denied["event"]["kind"], "operationFailed");
-    assert_eq!(denied["event"]["code"], "operation_not_supported");
+    assert_eq!(denied["event"]["code"], "invalid_input");
 }
 
 #[test]
-fn source_gap_and_baseline_fixture_stay_until_sp013() {
+fn historical_fixture_keeps_the_pre_sp013_guide_bytes() {
     let finalize = fs::read_to_string(root().join("crates/core/src/finalize.rs")).unwrap();
     assert!(finalize.contains("required_confirmations: vec![]"));
     assert!(
-        finalize
+        !finalize
             .contains("prerequisite_step_ids: vec![install_id(container_placement_id.as_str())]")
     );
     let search = fs::read_to_string(root().join("crates/solver/src/search.rs")).unwrap();
@@ -183,10 +184,13 @@ fn source_gap_and_baseline_fixture_stay_until_sp013() {
     assert!(search.contains("evaluate_candidate("));
     let repository =
         fs::read_to_string(root().join("apps/web/src/persistence/repository.ts")).unwrap();
+    let session =
+        fs::read_to_string(root().join("apps/web/src/features/project/session.ts")).unwrap();
     assert!(repository.contains("confirmation_required"));
     assert!(repository.contains("stale_input"));
-    assert!(!repository.contains("progressIdentity"));
-    assert!(!repository.contains("queryActionEligibility"));
+    assert!(repository.contains("progressIdentity"));
+    assert!(repository.contains("historical_rule"));
+    assert!(session.contains("queryActionEligibility"));
 
     let fixture = read_json(&root().join("fixtures/spatial/spatial-yaw-offset.json"));
     let actions = fixture["input"]["snapshot"]["content"]["actions"]
@@ -241,7 +245,8 @@ fn oracles_cover_every_acceptance_case() {
     let index = oracle("index.json");
     assert_eq!(index["currentBuildId"], "zari-domain-6");
     assert!(index["assertedFutureBuildId"].is_null());
-    assert_eq!(index["ruleVersion"], RULE_VERSION);
+    assert_eq!(index["ruleVersion"], "zari-domain-v1");
+    assert_ne!(index["ruleVersion"], RULE_VERSION);
     assert_eq!(index["solverVersion"], SOLVER_VERSION);
     let review = index["reviewChecks"].as_array().unwrap();
     for name in [

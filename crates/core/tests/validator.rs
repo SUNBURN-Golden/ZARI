@@ -508,7 +508,7 @@ fn bom_pack_arithmetic_uses_checked_independent_math() {
             .get(),
         12_000
     );
-    // The action DAG installs the container before transferring contents.
+    // Loaded outside, then installed. The transfer does not wait on its install.
     let actions = &snapshot.content.actions;
     let install = actions
         .iter()
@@ -518,7 +518,13 @@ fn bom_pack_arithmetic_uses_checked_independent_math() {
         .iter()
         .find(|a| a.id.as_str() == "act:transfer:item-a:0")
         .unwrap();
-    assert!(transfer.prerequisite_step_ids.contains(&install.id));
+    assert!(install.prerequisite_step_ids.contains(&transfer.id));
+    assert!(
+        !transfer
+            .prerequisite_step_ids
+            .iter()
+            .any(|id| id.as_str().starts_with("act:install:"))
+    );
     let acquire = actions
         .iter()
         .find(|a| a.id.as_str() == "act:acquire:var-1")
