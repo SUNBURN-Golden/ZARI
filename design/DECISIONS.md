@@ -71,6 +71,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 약 07:28 KST, 원문: "009·010·011 전부 채택한다. Fable 게이트는 각각 독립 리뷰 2회로 대체하고, 머지도 네가 해라."
 - 되돌리기: 화면과 `emptyProjectForm()`의 fresh 초기화만 되돌리면 된다. 이미 저장된 schemaVersion 1 레코드와 샘플 체험은 이 결정으로 다시 쓰지 않는다.
 
+## D010 — 다음 확인 사실 query / 채택
+
+- ID: D010
+- 상태: 채택. 사용자 결정 2026-10-07 약 07:28 KST. 이 기록은 SP-010만 다룬다. 같은 발화의 SP-011은 구현하지 않는다.
+- 문제: 다음으로 확인할 사실을 화면이 고르면 우선순위, 중복, stale, 한도가 Rust 판정과 갈라진다.
+- 변경 대상: [docs/adr/SP-010-completion-query.md](../docs/adr/SP-010-completion-query.md), Rust `queryNextFacts`, 생성 DTO·schema·TS, Worker·클라이언트, 프로젝트 화면의 다음 사실 목록. `BUILD_ID`는 `zari-domain-5`에서 `zari-domain-6`이다. capability는 `disposeProject` 바로 앞에 `queryNextFacts`를 더한다. persisted `schemaVersion` 1과 SP-008 우선순위 표는 그대로다.
+- 검토한 대안: (A) SP-008에 고정된 DTO 의미로 순수 쿼리를 실행하고, 사실 검사로 need를 채운다. (B) 메모나 화면 규칙으로 충돌·통과를 만든다. (C) 한도를 넘으면 앞부분만 보여 준다.
+- 선택: A. 지원되는 raw·schema·rule이 사실을 표현한다. B는 사람 문장을 판정으로 올린다. C는 잘린 목록을 성공으로 보인다.
+- 조건: unknown을 통과나 0 경계로 바꾸지 않는다. 충돌은 구조화된 현재 검사 또는 `UnknownReason::ConflictingSources`와 그 참조뿐이다. 쿼리는 검색·재가격·재확정·activation·카운터·DB를 쓰지 않는다. 행 512, check ref 2048, 응답 5 MiB를 넘으면 전체 거절이다. 스냅샷이 없거나 stale이면 현재 검사를 빌리지 않는다. 소스마다 요청은 하나이고, 초점·키 입력은 쿼리하지 않는다. 늦은 응답은 현재 목록을 그리지 않는다. Fable ARCHITECTURE와 비작성자 A3는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 목록은 키보드와 최소 터치 높이를 쓴다. 색은 기존 semantic token이다. Rust 쿼리 p95 목표는 20 ms이고, Worker 왕복·디코드·렌더는 그 목표와 따로 측정한다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 약 07:28 KST, 원문: "009·010·011 전부 채택한다. Fable 게이트는 각각 독립 리뷰 2회로 대체하고, 머지도 네가 해라."
+- 되돌리기: 이 결정과 `zari-domain-6` capability를 함께 되돌리는 새 결정이 필요하다. 이미 저장된 schemaVersion 1 레코드의 의미는 바꾸지 않는다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

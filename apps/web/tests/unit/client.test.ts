@@ -147,7 +147,7 @@ it('rejects an old build id and a capability list that is not an exact match', a
   expect(swappedReply.error).toEqual(new Error('protocol_version_mismatch'));
   const extra = await startWith({
     ...readyEvent,
-    capabilities: [...readyEvent.capabilities, 'queryNextFacts'],
+    capabilities: [...readyEvent.capabilities, 'notARealOperation'],
   });
   expect(extra.error).toEqual(new Error('protocol_version_mismatch'));
   const missing = await startWith({

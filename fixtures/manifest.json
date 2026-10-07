@@ -1521,6 +1521,97 @@
         "browserWasm"
       ],
       "introducedBy": "ZARI-SPATIAL-008"
+    },
+    {
+      "id": "mc-07-shared-fact",
+      "caseKind": "queryNextFacts",
+      "inputPath": "fixtures/domain/mc-07-shared-fact.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/mc-07-shared-fact.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-010"
+    },
+    {
+      "id": "mc-09-catalog-source",
+      "caseKind": "queryNextFacts",
+      "inputPath": "fixtures/domain/mc-09-catalog-source.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/mc-09-catalog-source.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-010"
+    },
+    {
+      "id": "mc-10-stale-binding",
+      "caseKind": "queryNextFacts",
+      "inputPath": "fixtures/domain/mc-10-stale-binding.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/mc-10-stale-binding.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-010"
+    },
+    {
+      "id": "mc-12-historical",
+      "caseKind": "queryNextFacts",
+      "inputPath": "fixtures/domain/mc-12-historical.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/mc-12-historical.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-010"
+    },
+    {
+      "id": "mc-12-input-only",
+      "caseKind": "queryNextFacts",
+      "inputPath": "fixtures/domain/mc-12-input-only.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/mc-12-input-only.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-010"
+    },
+    {
+      "id": "mc-12-limit",
+      "caseKind": "queryNextFacts",
+      "inputPath": "fixtures/domain/mc-12-limit.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/mc-12-limit.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-010"
+    },
+    {
+      "id": "mc-12-purchase-not-pass",
+      "caseKind": "queryNextFacts",
+      "inputPath": "fixtures/domain/mc-12-purchase-not-pass.json",
+      "catalogPath": null,
+      "expectedPath": "fixtures/domain/mc-12-purchase-not-pass.json#/expected",
+      "assertionType": "protocolEvent",
+      "supportedRuntimes": [
+        "native",
+        "browserWasm"
+      ],
+      "introducedBy": "ZARI-SPATIAL-010"
     }
   ]
 }

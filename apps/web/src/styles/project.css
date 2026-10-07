@@ -109,6 +109,59 @@
   margin-top: var(--zari-space-4);
 }
 
+.next-facts {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+  max-width: 100%;
+  margin-top: var(--zari-space-3);
+  padding: var(--zari-space-3);
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+}
+
+.next-facts p,
+.next-facts-stale {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.next-facts-stale {
+  padding: var(--zari-space-2);
+  color: var(--zari-stale);
+  background: var(--zari-warning-soft);
+}
+
+.next-fact-row {
+  display: grid;
+  gap: var(--zari-space-1);
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--zari-touch-min-height);
+  padding: var(--zari-space-2);
+  overflow-wrap: anywhere;
+  text-align: start;
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+  border: var(--zari-border-width) solid var(--zari-border-control);
+}
+
+.next-fact-row[data-priority='repairKnownFailure'] {
+  color: var(--zari-danger);
+}
+
+.next-fact-row[data-priority='requiredPhysicalUnknown'],
+.next-fact-row[data-priority='quantityCompleteness'] {
+  color: var(--zari-unknown);
+}
+
+.next-fact-row:focus-visible {
+  outline: 2px solid var(--zari-focus-ring);
+  outline-offset: var(--zari-focus-offset);
+}
+
 .detail-panel,
 .detail-sheet {
   display: grid;
@@ -703,7 +756,9 @@
   .detail-editor input,
   .detail-editor select,
   .detail-editor textarea,
-  .detail-entry .button {
+  .detail-entry .button,
+  .next-fact-row,
+  .next-facts .button {
     min-height: var(--zari-touch-min-height);
   }
 }
@@ -711,6 +766,9 @@
 @media (forced-colors: active) {
   .detail-panel,
   .detail-sheet,
+  .next-facts,
+  .next-fact-row,
+  .next-facts-stale,
   .detail-editor input,
   .detail-editor select,
   .detail-editor textarea,

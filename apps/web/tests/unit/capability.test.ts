@@ -28,7 +28,7 @@ function send(runtime: Runtime, requestId: string, command: unknown, system = fa
   ) as { event: { kind: string; code?: string; buildId?: string; capabilities?: string[] } };
 }
 
-it('the actual Worker handshake is atomic and does not advertise queryNextFacts', () => {
+it('the actual Worker handshake advertises queryNextFacts and rejects an unknown operation', () => {
   const mismatch = new Runtime();
   expect(
     send(
@@ -57,10 +57,14 @@ it('the actual Worker handshake is atomic and does not advertise queryNextFacts'
     true,
   );
   expect(ready.event.kind).toBe('ready');
-  expect(ready.event.buildId).toBe('zari-domain-5');
+  expect(ready.event.buildId).toBe(WORKER_BUILD_ID);
+  expect(ready.event.buildId).toBe('zari-domain-6');
   expect(ready.event.capabilities).toEqual([...WORKER_CAPABILITIES]);
-  expect(ready.event.capabilities).not.toContain('queryNextFacts');
+  expect(ready.event.capabilities).toContain('queryNextFacts');
   expect(
     send(runtime, 'query', { kind: 'queryNextFacts' }, true).event,
+  ).toMatchObject({ kind: 'operationFailed', code: 'invalid_input' });
+  expect(
+    send(runtime, 'unknown', { kind: 'notARealOperation' }, true).event,
   ).toMatchObject({ kind: 'operationFailed', code: 'operation_not_supported' });
 });

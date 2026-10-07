@@ -1121,6 +1121,39 @@
         },
         {
           "additionalProperties": false,
+          "description": "Static completion read. The supplied input and optional snapshot are\nnot activated, and the command does not touch search or counters.",
+          "properties": {
+            "input": {
+              "$ref": "#/definitions/ProjectInput"
+            },
+            "inputDigest": {
+              "$ref": "#/definitions/Digest"
+            },
+            "kind": {
+              "const": "queryNextFacts",
+              "type": "string"
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PlanSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "input",
+            "inputDigest",
+            "snapshot"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -1273,6 +1306,31 @@
       ],
       "title": "CompileVersions",
       "type": "object"
+    },
+    "CompletionNeed": {
+      "description": "Fact-shaped need. Nominal versus bound versus evidence is filled by the\nSP-010 fact inspection. This node only emits the two needs that are\nalready decided by a structured check, and leaves the rest unset.",
+      "enum": [
+        "missingNominal",
+        "missingBound",
+        "missingEvidence",
+        "conflictingEvidence",
+        "unsupportedInput",
+        "repairKnownFailure"
+      ],
+      "title": "CompletionNeed",
+      "type": "string"
+    },
+    "CompletionPriority": {
+      "description": "Stable sort rank. Lower is earlier. Not a fitness score.",
+      "enum": [
+        "repairKnownFailure",
+        "requiredPhysicalUnknown",
+        "quantityCompleteness",
+        "procurementUnknown",
+        "softOrUnsupported"
+      ],
+      "title": "CompletionPriority",
+      "type": "string"
     },
     "Condition": {
       "additionalProperties": false,
@@ -1989,6 +2047,42 @@
         },
         {
           "additionalProperties": false,
+          "description": "`queryNextFacts` oracle. `reply` is null when `failureCode` names the\nstructured rejection. Row order, check ids, and needs are exact.",
+          "properties": {
+            "decodeError": {
+              "type": "boolean"
+            },
+            "failureCode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "queryNextFacts",
+              "type": "string"
+            },
+            "reply": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NextFactsReply"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "decodeError",
+            "failureCode",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "alternativeDigests": {
               "description": "Ordered snapshot digests of the emitted ranked alternatives.",
@@ -2090,6 +2184,11 @@
         {
           "const": "projectSpatialView",
           "description": "One spatial projection over an embedded integrity-validated source.",
+          "type": "string"
+        },
+        {
+          "const": "queryNextFacts",
+          "description": "One completion query over a normalized input and optional snapshot.",
           "type": "string"
         }
       ],
@@ -2467,6 +2566,24 @@
           "required": [
             "kind",
             "projection"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `queryNextFacts`. Rows are empty when the snapshot binding\nis stale. A limit failure is `operationFailed`, not a short list.",
+          "properties": {
+            "kind": {
+              "const": "nextFactsQueried",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/NextFactsReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
           ],
           "type": "object"
         },
@@ -5523,6 +5640,153 @@
       "title": "MountingRequirement",
       "type": "string"
     },
+    "NextFactRow": {
+      "additionalProperties": false,
+      "properties": {
+        "checkIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "factKey": {
+          "type": "string"
+        },
+        "fieldRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "needKind": {
+          "$ref": "#/definitions/CompletionNeed"
+        },
+        "priorityClass": {
+          "$ref": "#/definitions/CompletionPriority"
+        },
+        "reasonCodes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "relatedCheckCount": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resolutionActions": {
+          "items": {
+            "$ref": "#/definitions/ResolutionAction"
+          },
+          "type": "array"
+        },
+        "targetRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "factKey",
+        "fieldRefs",
+        "targetRefs",
+        "needKind",
+        "checkIds",
+        "reasonCodes",
+        "priorityClass",
+        "relatedCheckCount",
+        "resolutionActions"
+      ],
+      "title": "NextFactRow",
+      "type": "object"
+    },
+    "NextFactsFreshness": {
+      "enum": [
+        "current",
+        "inputOnly",
+        "stale"
+      ],
+      "title": "NextFactsFreshness",
+      "type": "string"
+    },
+    "NextFactsReply": {
+      "additionalProperties": false,
+      "properties": {
+        "freshness": {
+          "$ref": "#/definitions/NextFactsFreshness"
+        },
+        "resolutionActions": {
+          "items": {
+            "$ref": "#/definitions/ResolutionAction"
+          },
+          "type": "array"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/definitions/NextFactRow"
+          },
+          "type": "array"
+        },
+        "sourceStamp": {
+          "$ref": "#/definitions/NextFactsSourceStamp"
+        }
+      },
+      "required": [
+        "freshness",
+        "sourceStamp",
+        "rows",
+        "resolutionActions"
+      ],
+      "title": "NextFactsReply",
+      "type": "object"
+    },
+    "NextFactsSourceStamp": {
+      "additionalProperties": false,
+      "properties": {
+        "canonicalVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "catalogDigest": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inputDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "planSnapshotId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ruleVersion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "inputDigest",
+        "planSnapshotId",
+        "catalogDigest",
+        "ruleVersion",
+        "canonicalVersion"
+      ],
+      "title": "NextFactsSourceStamp",
+      "type": "object"
+    },
     "NormalizedBootstrapInput": {
       "additionalProperties": false,
       "properties": {
@@ -8501,6 +8765,17 @@
       ],
       "title": "RequestMeta",
       "type": "object"
+    },
+    "ResolutionAction": {
+      "enum": [
+        "editSupportedField",
+        "inspectCatalogSource",
+        "recalculate",
+        "requestSupportedScope",
+        "remeasure"
+      ],
+      "title": "ResolutionAction",
+      "type": "string"
     },
     "ResolvedGroup": {
       "additionalProperties": false,

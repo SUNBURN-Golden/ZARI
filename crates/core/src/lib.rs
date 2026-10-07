@@ -7,6 +7,7 @@ pub mod finalize;
 pub mod geometry;
 pub mod input;
 pub mod measurement;
+pub mod next_facts;
 pub mod normalize;
 pub mod plan;
 pub mod probe;
@@ -25,6 +26,10 @@ pub use facts::*;
 pub use finalize::{CandidateEvaluation, evaluate_candidate};
 pub use input::*;
 pub use measurement::*;
+pub use next_facts::{
+    NextFactRow, NextFactsError, NextFactsFreshness, NextFactsReply, NextFactsSourceStamp,
+    ResolutionAction, query_next_facts,
+};
 pub use normalize::*;
 pub use plan::*;
 pub use probe::*;

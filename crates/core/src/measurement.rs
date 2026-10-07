@@ -313,7 +313,7 @@ pub fn route_measurement_field(field_path: &str) -> Option<FieldRoute> {
     }
 }
 
-enum GroupScalar {
+pub(crate) enum GroupScalar {
     Length(Measurement),
     Offset(Fact<MeasuredOffset>),
     Clearance(Fact<ClearanceMm>),
@@ -402,7 +402,10 @@ fn load_space(input: &ProjectInput, segments: &[&str]) -> Result<GroupScalar, &'
     })
 }
 
-fn load_group(input: &ProjectInput, route: &FieldRoute) -> Result<GroupScalar, &'static str> {
+pub(crate) fn load_group(
+    input: &ProjectInput,
+    route: &FieldRoute,
+) -> Result<GroupScalar, &'static str> {
     let segments: Vec<&str> = route.field_path.split('.').collect();
     match &route.entity {
         RoutedEntity::Space {} => load_space(input, &segments),

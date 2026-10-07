@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
 import { afterEach, expect, it } from 'vitest';
 import { initSync, Runtime } from '../../../../crates/wasm/pkg/zari_wasm.js';
+import { WORKER_BUILD_ID } from '../../src/worker/client';
 import type {
   CatalogSnapshot,
   ProjectInput,
@@ -71,6 +72,14 @@ const controllers: WorkerController[] = [];
 afterEach(() => {
   for (const session of sessions.splice(0)) void session.close(true);
   for (const controller of controllers.splice(0)) controller.dispose();
+  const gate = globalThis as {
+    __zariNextFactsGate?: unknown;
+    __zariNextFactsInject?: unknown;
+    __zariNextFactsForeign?: unknown;
+  };
+  delete gate.__zariNextFactsGate;
+  delete gate.__zariNextFactsInject;
+  delete gate.__zariNextFactsForeign;
 });
 
 function world(name = `test-${crypto.randomUUID()}`) {
@@ -127,7 +136,7 @@ function normalizeSample(): { input: ProjectInput; digest: string } {
     };
   send({
     meta: meta('i', { projectActivationId: 'system', projectId: 'system' }),
-    command: { kind: 'initialize', buildId: 'zari-domain-5', expectedProtocolVersion: 1, expectedSchemaVersion: 1 },
+    command: { kind: 'initialize', buildId: WORKER_BUILD_ID, expectedProtocolVersion: 1, expectedSchemaVersion: 1 },
   });
   send({ meta: meta('a'), command: { kind: 'activateProject', context: { kind: 'bootstrap' } } });
   const reply = send({
@@ -1124,4 +1133,118 @@ it('treats an explicit zero as known and keeps signed offsets exact', async () =
     minusMm: 3,
     plusMm: 4,
   });
+}, 20000);
+
+function nextFactSends(ports: WasmPort[]): number {
+  return ports.reduce(
+    (count, port) => count + port.sent.filter((request) => request.command.kind === 'queryNextFacts').length,
+    0,
+  );
+}
+
+it('asks once for the committed source and again only on explicit recompile', async () => {
+  const { repo, controller, ports } = world();
+  const project = await repo.createProject('테스트', emptyProjectForm());
+  await repo.putCatalog(catalog, 'test-seed');
+  const session = watch(new ProjectSession(repo, controller, project.projectId, 'test-build'));
+  await session.open();
+  const ready = await until(session, (s) => s.plan.nextFacts.status === 'ready');
+  expect(ready.plan.nextFacts.freshness).toBe('inputOnly');
+  expect(ready.plan.nextFacts.requests).toBe(1);
+  expect(nextFactSends(ports)).toBe(1);
+  expect(ready.plan.nextFacts.rows.some((row) => row.factKey === 'space-1:space.interior.width')).toBe(true);
+  const revision = ready.projectRevision;
+  session.edit('space.interior.width', '1200');
+  session.editUncertainty('space.interior.width', {
+    state: 'bounded',
+    minusText: '2',
+    plusText: '3',
+    unit: 'mm',
+  });
+  session.editEvidence('space.interior.width', {
+    note: 'NOTE_TOKEN_91mm conflict',
+    locator: '',
+    observedAt: '',
+    sourceKind: 'userDeclared',
+  });
+  expect(session.snapshot.plan.nextFacts.status).toBe('stale');
+  expect(session.snapshot.plan.nextFacts.rows).toEqual([]);
+  expect(session.snapshot.plan.nextFacts.requests).toBe(1);
+  expect(session.snapshot.projectRevision).toBe(revision);
+  session.commit();
+  const saved = await until(session, (s) => s.saveState === 'saved' || s.saveState === 'error');
+  expect(saved.saveState).toBe('saved');
+  expect(saved.plan.nextFacts.requests).toBe(1);
+  expect(nextFactSends(ports)).toBe(1);
+  session.recompileNextFacts();
+  const again = await until(
+    session,
+    (s) => s.plan.nextFacts.status === 'ready' && s.plan.nextFacts.requests === 2,
+  );
+  expect(nextFactSends(ports)).toBe(2);
+  expect(again.plan.nextFacts.rows.some((row) => row.factKey === 'space-1:space.interior.width')).toBe(false);
+  expect(again.plan.nextFacts.rows.length).toBeGreaterThan(0);
+  expect(JSON.stringify(again.plan.nextFacts.rows)).not.toContain('NOTE_TOKEN_91mm');
+  expect(again.plan.nextFacts.rows.some((row) => row.needKind === 'conflictingEvidence')).toBe(false);
+  session.recompileNextFacts();
+  expect(session.snapshot.plan.nextFacts.requests).toBe(2);
+  expect(nextFactSends(ports)).toBe(2);
+}, 20000);
+
+it('a held reply cannot paint the list after the draft moves', async () => {
+  let release: () => void = () => {};
+  (globalThis as { __zariNextFactsGate?: () => Promise<void> }).__zariNextFactsGate = () =>
+    new Promise((resolve) => {
+      release = resolve;
+    });
+  const { repo, controller, ports } = world();
+  const project = await repo.createProject('테스트', emptyProjectForm());
+  await repo.putCatalog(catalog, 'test-seed');
+  const session = watch(new ProjectSession(repo, controller, project.projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.plan.nextFacts.requests === 1 && s.plan.nextFacts.status === 'loading');
+  session.edit('space.interior.width', '1');
+  release();
+  await until(session, (s) => s.plan.nextFacts.status === 'stale');
+  expect(session.snapshot.plan.nextFacts.rows).toEqual([]);
+  expect(session.snapshot.plan.nextFacts.requests).toBe(1);
+  expect(nextFactSends(ports)).toBe(1);
+}, 20000);
+
+it('a limit injection publishes no rows', async () => {
+  (globalThis as { __zariNextFactsInject?: string }).__zariNextFactsInject = 'limit';
+  const { repo, controller } = world();
+  const project = await repo.createProject('테스트', emptyProjectForm());
+  await repo.putCatalog(catalog, 'test-seed');
+  const session = watch(new ProjectSession(repo, controller, project.projectId, 'test-build'));
+  await session.open();
+  const limited = await until(session, (s) => s.plan.nextFacts.status === 'limited');
+  expect(limited.plan.nextFacts.rows).toEqual([]);
+  expect(limited.plan.nextFacts.failureCode).toBe('completion_limit_exceeded');
+  expect(limited.plan.nextFacts.requests).toBe(1);
+}, 20000);
+
+it('a foreign stamp is dropped and a recovered worker asks again', async () => {
+  const { repo, controller, ports } = world();
+  const project = await repo.createProject('테스트', emptyProjectForm());
+  await repo.putCatalog(catalog, 'test-seed');
+  const session = watch(new ProjectSession(repo, controller, project.projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.plan.nextFacts.status === 'ready');
+  (globalThis as { __zariNextFactsForeign?: boolean }).__zariNextFactsForeign = true;
+  session.edit('space.interior.depth', '800');
+  session.commit();
+  await until(session, (s) => s.saveState === 'saved');
+  session.recompileNextFacts();
+  await until(session, (s) => s.plan.nextFacts.requests === 2);
+  expect(session.snapshot.plan.nextFacts.rows).toEqual([]);
+  expect(session.snapshot.plan.nextFacts.status).not.toBe('ready');
+  (globalThis as { __zariNextFactsForeign?: boolean }).__zariNextFactsForeign = false;
+  ports[0]!.crash();
+  await until(session, (s) => s.plan.nextFacts.reason === 'worker');
+  expect(session.snapshot.plan.nextFacts.rows).toEqual([]);
+  await controller.recover();
+  const restored = await until(session, (s) => s.worker === 'ready' && s.plan.nextFacts.status === 'ready');
+  expect(restored.plan.nextFacts.requests).toBeGreaterThanOrEqual(3);
+  expect(restored.plan.nextFacts.rows.length).toBeGreaterThan(0);
 }, 20000);

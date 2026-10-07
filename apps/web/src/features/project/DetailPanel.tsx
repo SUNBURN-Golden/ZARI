@@ -26,13 +26,15 @@ type DetailMeasureProps = {
   session: ProjectSession;
   state: SessionSnapshot;
   focusedField: string | null;
+  /** Opens this field once per token. Later draft edits do not move focus. */
+  detailTarget?: { path: string; token: number } | null;
 };
 
 function groupFor(path: string, form: NonNullable<SessionSnapshot['form']>): string | null {
   return detailGroups(form).find((group) => group.fields.some((field) => field.path === path))?.id ?? null;
 }
 
-export function DetailMeasure({ session, state, focusedField }: DetailMeasureProps) {
+export function DetailMeasure({ session, state, focusedField, detailTarget = null }: DetailMeasureProps) {
   const form = state.form;
   const [open, setOpen] = useState(false);
   const [groupId, setGroupId] = useState<string | null>(null);
@@ -53,6 +55,26 @@ export function DetailMeasure({ session, state, focusedField }: DetailMeasurePro
       dialog.close();
     }
   }, [open, compact]);
+
+  useEffect(() => {
+    if (!detailTarget || !form) return;
+    const group = groupFor(detailTarget.path, form);
+    if (!group) return;
+    setOpen(true);
+    setGroupId(group);
+    setPath(detailTarget.path);
+    const targetPath = detailTarget.path;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        document.getElementById(`nominal-${targetPath}`)?.focus();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, [detailTarget?.token]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

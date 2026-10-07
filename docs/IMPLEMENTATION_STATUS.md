@@ -1,3 +1,36 @@
+# 2026-10-07 — ZARI-SPATIAL-010 Rust 다음 확인 사실 query와 입력 안내
+
+정본은 GitHub issue #61, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-010`이다. 관찰한 base SHA는 `f1043bebb38f68e3e38f1df082aad4e99dd6990a`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 약 07:28 KST. 원문: "009·010·011 전부 채택한다. Fable 게이트는 각각 독립 리뷰 2회로 대체하고, 머지도 네가 해라." 이 전달은 SP-010만 구현한다. SP-011은 구현하지 않았다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-010-completion-query.md`와 `design/DECISIONS.md` D010. 측정 완성 후보 문서에는 SP-010 채택·구현 노트만 추가했다.
+- `queryNextFacts`는 순수 읽기다. 사실마다 한 행이고 관련 검사는 모두 남긴다. 순서는 우선순위, 관련 검사 수, 사실 키다. 스냅샷이 없으면 입력 완성만, stale이면 빈 행이다. 충돌은 구조화된 현재 검사 또는 `ConflictingSources`뿐이다. 행 512, check ref 2048, 응답 5 MiB를 넘으면 전체를 `completion_limit_exceeded`로 거절한다.
+- 핸들러, 생성 DTO·schema·TS, Worker, 클라이언트를 같은 트리에서 열었다. `BUILD_ID`는 `zari-domain-6`이다. capability는 `disposeProject` 바로 앞에 `queryNextFacts`다. 없는 연산은 `operation_not_supported`다.
+- 화면은 그 목록으로 기존 상세 칸 또는 `#/catalog`에 간다. 소스마다 요청은 하나다. 초점과 키 입력은 쿼리하지 않는다. 늦은 응답은 현재 목록을 그리지 않는다.
+- 기존 fixture 117개는 `engineContext.buildId` 한 줄만 바뀌었다. MC-07·09·10·12 fixture 7개를 추가했다. `Cargo.lock`과 의존성은 그대로다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 109 passed, 1 ignored (core lib 29, bootstrap 9, completion query 12 + ignored emitter 1, domain 11, edit 6, protocol 17, validator 11, search 14)
+- Rust warm query p95 `SP010_QUERY_P95_MS=4.469` (목표 20 ms 이하)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:generate`, `npm run contracts:check`: exit 0, fixture 124. 생성 파일은 생성기가 썼다
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 17 files / 130), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `a76d35300980fba4`), `node scripts/check-design-tokens.mjs --self-test` (자체 10, 대비 39/39): exit 0
+- `npm run test:browser -- --project=chromium --workers=1`: 73 passed (2.1m). `worker-state` flake는 없었다. 재시도하지 않았고 타임아웃을 올리지 않았다
+- `next-facts.spec.ts` Firefox 5, WebKit 5: exit 0
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (21.4s)
+- Worker 왕복은 Chromium 11 ms, Firefox 7 ms, WebKit 6 ms다. 이것은 Rust p95가 아니다. 목록 렌더만 따로 재지 않았다
+- `docs/evidence/ZARI-SPATIAL-001-*.png` sha256은 스위트 뒤에도 HEAD와 같다. checkout은 필요 없었다
+
+하지 않은 것: SP-011, 전화, 전용 GPU, 스키마 마이그레이션. 완전한 사실 위의 soft 검사는 우선순위 soft와 `requestSupportedScope`로 남긴다. SP-008 `classify_check`는 바꾸지 않았다. SP-007의 3D 라벨 겹침은 그대로다. 상세는 `docs/evidence/ZARI-SPATIAL-010.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. SP-011은 그 노드에서 연다.
+
 # 2026-10-07 — ZARI-SPATIAL-009 오차·근거·v1 상세 사실 입력과 저장
 
 정본은 GitHub issue #59, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-009`이다. 관찰한 base SHA는 `29d4d7cd5e53a71948b5e9be7068134632a4a24b`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
