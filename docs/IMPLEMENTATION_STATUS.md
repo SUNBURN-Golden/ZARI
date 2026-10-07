@@ -16,15 +16,16 @@
 
 - `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
 - `cargo test --workspace --locked`: exit 0, 109 passed, 1 ignored (core lib 29, bootstrap 9, completion query 12 + ignored emitter 1, domain 11, edit 6, protocol 17, validator 11, search 14)
-- Rust warm query p95 `SP010_QUERY_P95_MS=4.469` (목표 20 ms 이하)
+- Rust warm query p95 `SP010_QUERY_P95_MS=5.152` (목표 20 ms 이하)
 - fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건
 - `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
 - `npm run wasm:build`, `npm run contracts:generate`, `npm run contracts:check`: exit 0, fixture 124. 생성 파일은 생성기가 썼다
-- `npm run typecheck`, `npm run lint`, `npm test` (vitest 17 files / 130), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `a76d35300980fba4`), `node scripts/check-design-tokens.mjs --self-test` (자체 10, 대비 39/39): exit 0
-- `npm run test:browser -- --project=chromium --workers=1`: 73 passed (2.1m). `worker-state` flake는 없었다. 재시도하지 않았고 타임아웃을 올리지 않았다
-- `next-facts.spec.ts` Firefox 5, WebKit 5: exit 0
-- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (21.4s)
-- Worker 왕복은 Chromium 11 ms, Firefox 7 ms, WebKit 6 ms다. 이것은 Rust p95가 아니다. 목록 렌더만 따로 재지 않았다
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 17 files / 130), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `fd65aad9808ae654`), `node scripts/check-design-tokens.mjs --self-test` (자체 10, 대비 39/39): exit 0
+- 리뷰 `c59426bc`의 WebKit 터치 포커스 실패를 고쳤다. 컴팩트 시트는 명목 칸을 autofocus 대상으로 `showModal()`하고, 닫기 버튼으로 늦게 가는 포커스는 명목 칸으로 되돌린다
+- `npm run test:browser -- --project=chromium --workers=1`: 최종 UI에서 73 passed (2.3m). `worker-state` flake는 이 실행에 없었다. 타임아웃을 올리지 않았다
+- `next-facts.spec.ts` Firefox 5, WebKit 5 (16.2s), WebKit `hasTouch` 명목 포커스 포함: exit 0. 그 전에 같은 세션의 Firefox+WebKit 한 실행은 WebKit 터치 케이스가 `createProject`에서 `worker-state` 요소를 찾지 못해 실패했다. 그 실패는 포커스 단정에 닿지 않았고, 통과로 바꾸지 않았다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed
+- Worker 왕복은 Chromium 12 ms, Firefox 9 ms, WebKit 8 ms다. 이것은 Rust p95가 아니다. 목록 렌더만 따로 재지 않았다
 - `docs/evidence/ZARI-SPATIAL-001-*.png` sha256은 스위트 뒤에도 HEAD와 같다. checkout은 필요 없었다
 
 하지 않은 것: SP-011, 전화, 전용 GPU, 스키마 마이그레이션. 완전한 사실 위의 soft 검사는 우선순위 soft와 `requestSupportedScope`로 남긴다. SP-008 `classify_check`는 바꾸지 않았다. SP-007의 3D 라벨 겹침은 그대로다. 상세는 `docs/evidence/ZARI-SPATIAL-010.md`.

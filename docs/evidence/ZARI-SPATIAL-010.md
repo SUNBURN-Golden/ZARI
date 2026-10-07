@@ -17,6 +17,8 @@ The handler, generated DTO, schema, TypeScript, Worker entry, and client ship to
 
 The project page shows that list. One lease is the project, input digest, snapshot id, catalog digest, raw generation, Worker, and mount. Opening asks once. Focus and keystrokes do not ask again. A late or foreign reply does not paint. Explicit “다시 확인” asks for the committed source. A measurement row opens the SP-009 field. A catalog row goes to `#/catalog`. An unsupported or unrouted row does not invent an editor.
 
+On a compact touch open, the nominal is the dialog autofocus delegate before `showModal()`. A later dialog focus task that would leave the caret on 닫기 is handed back to that nominal until the nominal stays focused. This is the review fix for WebKit touch at `c59426bced971f0429925c0446d47ce0a3af14f2`, where the sheet opened on the right field and focus stayed on the close control.
+
 ## Changed paths
 
 - Adoption: `docs/adr/SP-010-completion-query.md`, `design/DECISIONS.md` (D010), a short SP-010 note in `docs/MEASUREMENT_COMPLETION_DESIGN_KO.md`.
@@ -47,14 +49,14 @@ The project page shows that list. One lease is the project, input digest, snapsh
 
 ## Commands
 
-Shell prefix for every command: `PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/bin:$HOME/.cargo/bin:$PATH` and `CARGO_BUILD_JOBS=4`. `node -v` was v24.19.0. Browser commands used `--workers=1` because other jobs were using the machine. That does not change timeouts. The final Chromium suite was one run. An earlier run on a previous tree failed four tests; those causes were fixed before this run and that run is not the result below.
+Shell prefix for every command: `PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/bin:$HOME/.cargo/bin:$PATH` and `CARGO_BUILD_JOBS=4`. `node -v` was v24.19.0. Browser commands used `--workers=1` because other jobs were using the machine. That does not change timeouts. The Chromium, Firefox, and WebKit results below are from the tree after the compact-dialog focus fix. Rust did not change in that fix.
 
 | Command | Result |
 |---|---|
 | `cargo fmt --all -- --check` | exit 0 |
 | `cargo clippy --workspace --all-targets --locked -- -D warnings` | exit 0 |
 | `cargo test --workspace --locked` | exit 0. 109 passed, 1 ignored. core lib 29, bootstrap 9, completion query 12 passed and 1 ignored emitter, domain 11, edit 6, protocol 17, validator 11, search 14. Doc-tests 0 |
-| `cargo test -p zari-core --locked --offline --test completion_query warm_query_p95 -- --nocapture` | exit 0. `SP010_QUERY_P95_MS=4.469` (target ≤ 20) |
+| `cargo test -p zari-core --locked --offline --test completion_query warm_query_p95 -- --nocapture` | exit 0. `SP010_QUERY_P95_MS=5.152` (target ≤ 20) |
 | `cargo run -p zari-core --locked --offline --example fixture_runner -- fixtures/bootstrap` | exit 0, 28 fixtures |
 | `cargo run -p zari-core --locked --offline --example fixture_runner -- fixtures` | exit 0, 124 fixtures, including the seven `mc-*` ids |
 | `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked` | exit 0. Direct crates: `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver` |
@@ -64,18 +66,20 @@ Shell prefix for every command: `PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/b
 | `npm run typecheck` | exit 0 |
 | `npm run lint` | exit 0 |
 | `npm test` | exit 0. vitest 17 files, 130 tests |
-| `npm run build` | exit 0. Production dist after the final UI tree |
-| `node scripts/check-release-manifest.mjs` | exit 0. `errors: []`, `buildId` `a76d35300980fba4`, 11 assets |
+| `npm run build` | exit 0. Production dist after the WebKit focus fix |
+| `node scripts/check-release-manifest.mjs` | exit 0. `errors: []`, `buildId` `fd65aad9808ae654`, 11 assets |
 | `node scripts/check-design-tokens.mjs --self-test` | exit 0. 10 checker self-tests; 39/39 contrast cases. No new token or contrast case |
-| `npm run test:browser -- --project=chromium --workers=1` | exit 0. 73 passed (2.1m). No `worker-state` flake |
-| `npx playwright test apps/web/tests/browser/next-facts.spec.ts --project=firefox --project=webkit --workers=1` | exit 0. 10 passed (16.5s): Firefox 5, WebKit 5 |
+| `npm run test:browser -- --project=chromium --workers=1` | exit 0. 73 passed (2.3m) on the final UI. No `worker-state` flake |
+| `npx playwright test apps/web/tests/browser/next-facts.spec.ts --project=firefox --project=webkit --workers=1` | exit 0. 10 passed (16.2s): Firefox 5, WebKit 5, including WebKit `hasTouch` nominal focus |
 | `npm run test:parity` | exit 0. 2 passed (21.4s). “124 shared fixtures.” |
 
 ## Browser
 
 Route: `#/project/<id>` after create. Desktop, then 390×844 and 1280×800 inside the new spec. Chromium full suite, plus Firefox and WebKit for `next-facts.spec.ts` only. Flows: browse the input-only list, keyboard and tap to `space.interior.width`, enter nominal, bounds, and a note that says `NOTE_TOKEN_91mm`, confirm the request count stays 1, CAS save, explicit recompile, the width row is gone, other rows remain, a second recompile does not ask again. Hold drops the late reply. Limit injection shows no rows. Worker crash and retry restores a real list. Each new spec asserts `pageerror` and console `error` are empty. No new screenshot was kept.
 
-`data-next-facts-roundtrip-ms` on the final Chromium suite was 11. The same spec logged 7 on Firefox and 6 on WebKit. That number is the Worker round trip for `queryNextFacts` (transport and decode of the reply). It is not the Rust p95. The spec also logged click-to-edit wall times of 365 ms (Chromium), 596 ms (Firefox), and 652 ms (WebKit); those include filling the nominal, both bounds, and the note, so they are not a render stage. A separate list-paint timer was not added.
+`data-next-facts-roundtrip-ms` on the final Chromium suite was 12. The same spec logged 9 on Firefox and 8 on WebKit. That number is the Worker round trip for `queryNextFacts` (transport and decode of the reply). It is not the Rust p95. The spec also logged click-to-edit wall times of 366 ms (Chromium), 563 ms (Firefox), and 724 ms (WebKit); those include filling the nominal, both bounds, and the note, so they are not a render stage. A separate list-paint timer was not added.
+
+An earlier Firefox+WebKit run in the same session, before the focusin hand-back, failed the WebKit touch test at `createProject`: `worker-state` was not in the page (`element(s) not found`), so that run never reached the nominal-focus assertion. Timeouts were not raised and that failure was not rewritten as a pass. The final Firefox+WebKit command above is a separate run on the final tree and passed 10/10.
 
 The final Chromium suite left `docs/evidence/ZARI-SPATIAL-001-unknown-offset.png` and `docs/evidence/ZARI-SPATIAL-001-yaw-offset.png` unchanged. sha256 remains `49bce0b45c0904f6909da6b5ae71729ff40292c7f1951076da1af003010f8098` and `89c2d07ed9a4c3436db69c0b02904124e89b1c20fb2e4f44917adec6b6bfea28`. No checkout was required.
 
@@ -87,8 +91,8 @@ Native `fixture_runner` and the Chromium Worker agreed on 124 fixtures, includin
 
 | Stage | Result |
 |---|---|
-| Warm Rust query p95 | 4.469 ms. Target ≤ 20 ms. 8 warmups, 40 samples |
-| Worker round trip | 11 ms Chromium, 7 ms Firefox, 6 ms WebKit. Not the Rust p95 |
+| Warm Rust query p95 | 5.152 ms. Target ≤ 20 ms. 8 warmups, 40 samples |
+| Worker round trip | 12 ms Chromium, 9 ms Firefox, 8 ms WebKit. Not the Rust p95 |
 | List render | Not instrumented separately |
 
 ## Contract advisory
