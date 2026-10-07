@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Button } from 'react-aria-components';
-import type { Diagnostic, ProjectInput } from '../contracts/generated/dto';
+import type { ProjectInput } from '../contracts/generated/dto';
 import { inputSourceKey, readInputProjection } from '../features/plan/projection';
 import { MeasurementDiagram } from '../features/workspace/MeasurementDiagram';
 import { useWorkspace } from '../features/workspace/Workspace';
 import { fieldCaption, preferredMeasureView } from '../features/workspace/projection';
 import { AttachmentManager } from '../features/attachments/model';
 import { reencodeImage } from '../features/attachments/image';
+import { DetailMeasure } from '../features/project/DetailPanel';
+import { diagnosticText, uncertaintyLabel } from '../features/project/detailFacts';
 import {
   fieldPathFor,
   getMeasurement,
@@ -78,19 +80,6 @@ function normalizedText(input: ProjectInput | null, field: MeasurementField): st
   return UNKNOWN_REASON[fact.reason ?? ''] ?? '미확인';
 }
 
-const DIAGNOSTIC_TEXT: Record<string, string> = {
-  submillimeter_precision: '1 mm보다 작은 단위는 반올림하지 않습니다. 0.1 cm 단위로 입력해 주세요.',
-  numeric_field_too_long: '입력값이 너무 깁니다. 숫자와 단위를 확인해 주세요.',
-  numeric_overflow: '입력값이 너무 큽니다. 숫자와 단위를 확인해 주세요.',
-  invalid_number: '숫자 형식을 확인해 주세요.',
-  out_of_range: '허용 범위를 벗어났습니다.',
-  required_text_missing: '필수 항목이 비어 있습니다.',
-};
-
-function diagnosticText(d: Diagnostic): string {
-  return DIAGNOSTIC_TEXT[d.code] ?? `${d.code} (${d.fieldPath})`;
-}
-
 const SAVE_TEXT: Record<SessionSnapshot['saveState'], string> = {
   idle: '저장된 상태입니다',
   dirty: '저장 대기 중',
@@ -118,7 +107,7 @@ function FieldGroup({
 }) {
   const fieldError = (field: MeasurementField) => {
     const d = state.diagnostics.find((entry) => fieldPathFor(entry.fieldPath) === field);
-    return d ? diagnosticText(d) : undefined;
+    return d ? diagnosticText(d.code, d.fieldPath) : undefined;
   };
   return (
     <>
@@ -140,6 +129,13 @@ function FieldGroup({
             />
             <span className="normalized-value" data-testid={`normalized-${field}`} data-historical={blocked(field) ? 'true' : undefined}>
               {normalizedText(state.normalizedInput, field)}
+            </span>
+            <span
+              className="uncertainty-status"
+              data-testid={`uncertainty-${field}`}
+              data-uncertainty={measurement.uncertainty.state}
+            >
+              {uncertaintyLabel(measurement.uncertainty)}
             </span>
             {blocked(field) && (
               <span className="session-note">{blocked(field) === 'invalid' ? '이전 확인 값' : '입력 변경 · 이전 측정'}</span>
@@ -567,6 +563,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         aria-labelledby="measure-title"
         data-testid="measure-workspace"
         data-spatial-requests={session.spatialRequestCount}
+        data-normalize-requests={state.normalizeRequests}
         data-project-revision={state.projectRevision}
       >
         <div className="section-kicker">01 · 공간 치수</div>
@@ -619,9 +616,15 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         {otherDiagnostics.length > 0 && (
           <ul className="diagnostic-list" data-testid="diagnostic-list">
             {otherDiagnostics.map((d, i) => (
-              <li key={i} className="field-error">{diagnosticText(d)}</li>
+              <li key={i} className="field-error">{diagnosticText(d.code, d.fieldPath)}</li>
             ))}
           </ul>
+        )}
+        <DetailMeasure session={session} state={state} focusedField={focused} />
+        {state.diagnostics.length > 0 && state.saveState === 'saved' && (
+          <p className="session-note" data-testid="normalize-held">
+            원문은 저장되었습니다. 정규화된 입력과 근거는 이전 확인 값을 유지합니다.
+          </p>
         )}
         <div className="form-actions">
           <Button className="button button-primary" onPress={() => session.commit()} data-testid="commit-input">

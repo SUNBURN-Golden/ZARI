@@ -4,6 +4,7 @@ import type {
   Unit,
 } from '../../contracts/generated/dto';
 import template from './default-form.json';
+import { clearFreshProjectAssumptions } from './detailFacts';
 
 /** The bundled synthetic catalog. Reproduction claims pin this digest. */
 export const CATALOG_PIN = {
@@ -96,6 +97,10 @@ export function emptyProjectForm(): RawProjectInputDto {
   }
   blankScalarFact(form.constraints.hardBudget);
   blankScalarFact(form.constraints.softBudget);
+  // Sample support (including 50000 g) and handling (5 mm / 0) are not facts
+  // of a project the user has not measured. Sample fill and stored drafts
+  // do not pass through this function.
+  clearFreshProjectAssumptions(form);
   return form;
 }
 

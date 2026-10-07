@@ -1,3 +1,34 @@
+# 2026-10-07 — ZARI-SPATIAL-009 오차·근거·v1 상세 사실 입력과 저장
+
+정본은 GitHub issue #59, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-009`이다. 관찰한 base SHA는 `29d4d7cd5e53a71948b5e9be7068134632a4a24b`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 약 07:28 KST. 원문: "009·010·011 전부 채택한다. Fable 게이트는 각각 독립 리뷰 2회로 대체하고, 머지도 네가 해라." 이 전달은 SP-009만 구현한다. SP-010과 SP-011은 구현하지 않았다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-009-detail-facts.md`와 `design/DECISIONS.md` D009. 측정 완성 후보 문서에는 SP-009 채택 노트만 추가했다.
+- `상세 측정`은 접힌 버튼이다. 명목값·오차·단위·출처·근거를 한 필드에서 다룬다. 빈 경계는 0이 아니다. 잘못된 그룹은 Rust `groupFormatRequests`가 거절하고 원문과 단위를 유지한다.
+- 새 `emptyProjectForm()`은 staging `baseSupport`와 각 item handling 다섯 축을 정규화 전에 unknown으로 둔다. 샘플 채우기와 저장된 프로젝트는 그대로다.
+- `Evidence.note`의 충돌 문장은 엔진 충돌·통과·실패·구간·확인을 만들지 않는다. 카탈로그 물리는 `#/catalog`로만 간다.
+- `BUILD_ID` `zari-domain-5`, capability, 생성 계약, fixture, `Cargo.lock`은 바꾸지 않았다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 97개 (core lib 29, bootstrap 9, domain 11, edit 6, protocol 17, validator 11, search 14)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 117건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 생성 계약 diff 없음, fixture 117
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 16 files / 124), `npm run build`, `node scripts/check-design-tokens.mjs --self-test` (자체 10, 대비 39/39): exit 0
+- 상세 스펙 Chromium 9, Firefox 9, WebKit 9: exit 0
+- `npm run test:browser -- --project=chromium --workers=1`: 첫 실행 68 passed (2.3m). `worker-state` flake는 없었다. 재시도하지 않았고 타임아웃을 올리지 않았다
+- `npm run test:parity`: native↔Chromium 117 fixture, parity 2 passed (23.2s)
+- `docs/evidence/ZARI-SPATIAL-001-*.png`는 스위트 중 `spatial-view.spec.ts`가 다시 썼고, 그 두 파일만 `git checkout`으로 되돌렸다. sha256은 HEAD와 같다
+
+하지 않은 것: SP-010 query, SP-011 capture, 전화, 전용 GPU, 스키마 마이그레이션. 여유·질량·수량은 raw에 단위 칸이 없어 화면은 mm/g/개만 둔다. 장애물 편집기는 v1 목록에 없어 추가하지 않았다. SP-007의 3D 라벨 겹침은 그대로다. 상세는 `docs/evidence/ZARI-SPATIAL-009.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. SP-010은 그 노드에서 query를 연다.
+
 # 2026-10-07 — ZARI-SPATIAL-008 측정 완성 ADR와 typed 입력·Worker 계약
 
 정본은 GitHub issue #57, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-008`이다. 관찰한 base SHA는 `d71b09f221c6adf4b81c1e263cac5a061028a715`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

@@ -8,6 +8,7 @@ import type {
   ProtocolRequest,
 } from '../../src/contracts/generated/dto';
 import { readInputProjection } from '../../src/features/plan/projection';
+import { normalizedView, readEvidence } from '../../src/features/project/detailFacts';
 import { ProjectSession, type SessionSnapshot } from '../../src/features/project/session';
 import {
   emptyProjectForm,
@@ -924,3 +925,203 @@ it('accepted progress stays on its binding across edit, accept switch, and a lat
   await session.toggleActionStep(head.content.actions[0]?.id ?? first!.id, true);
   expect(session.snapshot.plan.actionError).toBe('stale_input');
 }, 120000);
+
+const HANDLING = ['left', 'right', 'top', 'pullExtraDepth', 'liftAboveRim'] as const;
+
+async function readySession() {
+  const { repo, controller } = world();
+  const project = await repo.createProject('테스트', emptyProjectForm());
+  await repo.putCatalog(catalog, 'test-seed');
+  const session = watch(new ProjectSession(repo, controller, project.projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.status === 'ready');
+  return { repo, controller, session };
+}
+
+it('normalizes a new project with unknown support and every handling fact', async () => {
+  const { session } = await readySession();
+  session.commit();
+  const saved = await until(session, (s) => s.saveState === 'saved' && s.inputRevision !== '0');
+  expect(saved.diagnostics).toEqual([]);
+  expect(normalizedView(saved.normalizedInput, 'space.staging.baseSupport').state).toBe('unknown');
+  for (const item of saved.form!.items) {
+    for (const axis of HANDLING) {
+      const view = normalizedView(
+        saved.normalizedInput,
+        `items.${item.id}.requirement.handling.${axis}`,
+      );
+      expect(`${item.id}.${axis}:${view.state}`).toBe(`${item.id}.${axis}:unknown`);
+    }
+  }
+});
+
+it('keeps the sample support load and handling when the sample is chosen', async () => {
+  const { session } = await readySession();
+  session.replaceForm(sampleProjectForm());
+  session.commit();
+  const saved = await until(session, (s) => s.saveState === 'saved' && s.inputRevision !== '0');
+  expect(normalizedView(saved.normalizedInput, 'space.staging.baseSupport.loadLimit').nominal).toBe(50000);
+  expect(normalizedView(saved.normalizedInput, 'items.item-a.requirement.handling.left').nominal).toBe(5);
+  expect(normalizedView(saved.normalizedInput, 'items.item-a.requirement.handling.pullExtraDepth').nominal).toBe(0);
+  expect(normalizedView(saved.normalizedInput, 'items.item-a.requirement.handling.liftAboveRim').nominal).toBe(0);
+  expect(normalizedView(saved.normalizedInput, 'items.item-b.requirement.handling.left').nominal).toBe(2);
+  expect(normalizedView(saved.normalizedInput, 'items.item-b.requirement.handling.pullExtraDepth').state).toBe('known');
+  expect(normalizedView(saved.normalizedInput, 'items.item-b.requirement.handling.pullExtraDepth').nominal).toBe(0);
+});
+
+it('converts a bounded group through Rust and holds invalid or partial text', async () => {
+  const { session } = await readySession();
+  session.edit('space.interior.width', '600');
+  session.editUncertainty('space.interior.width', {
+    state: 'bounded',
+    minusText: '10',
+    plusText: '20',
+    unit: 'mm',
+  });
+  session.setUnit('space.interior.width', 'cm');
+  await until(session, (s) => getMeasurement(s.form!, 'space.interior.width').text === '60');
+  expect(getMeasurement(session.snapshot.form!, 'space.interior.width').uncertainty).toEqual({
+    state: 'bounded',
+    minusText: '1',
+    plusText: '2',
+    unit: 'cm',
+  });
+
+  session.edit('space.interior.width', '60ㄱ');
+  const requests = session.snapshot.normalizeRequests;
+  session.setUnit('space.interior.width', 'mm');
+  await until(session, (s) => s.normalizeRequests > requests && s.unitHold !== null);
+  expect(getMeasurement(session.snapshot.form!, 'space.interior.width').text).toBe('60ㄱ');
+  expect(getMeasurement(session.snapshot.form!, 'space.interior.width').unit).toBe('cm');
+  expect(session.snapshot.unitHold?.code).toBe('invalid_number');
+
+  session.edit('space.interior.depth', '400');
+  session.editUncertainty('space.interior.depth', {
+    state: 'bounded',
+    minusText: '',
+    plusText: '3',
+    unit: 'mm',
+  });
+  const beforeHold = session.snapshot.normalizeRequests;
+  session.setUnit('space.interior.depth', 'cm');
+  await until(session, (s) => s.normalizeRequests > beforeHold && s.unitHold?.fieldPath === 'space.interior.depth');
+  const depth = getMeasurement(session.snapshot.form!, 'space.interior.depth');
+  expect(depth.text).toBe('400');
+  expect(depth.unit).toBe('mm');
+  expect(depth.uncertainty).toEqual({ state: 'bounded', minusText: '', plusText: '3', unit: 'mm' });
+});
+
+it('rejects a partial bound commit and keeps the previous normalized input', async () => {
+  const { session } = await readySession();
+  session.edit('space.interior.width', '600');
+  session.commit();
+  const committed = await until(session, (s) => s.inputRevision === '1' && s.saveState === 'saved');
+  const digest = committed.inputDigest;
+  session.editUncertainty('space.interior.width', {
+    state: 'bounded',
+    minusText: '2',
+    plusText: '',
+    unit: 'mm',
+  });
+  session.commit();
+  const held = await until(
+    session,
+    (s) => s.saveState === 'saved' && s.diagnostics.some((d) => d.code === 'uncertainty_missing'),
+  );
+  expect(held.inputRevision).toBe('1');
+  expect(held.inputDigest).toBe(digest);
+  expect(normalizedView(held.normalizedInput, 'space.interior.width')).toMatchObject({
+    state: 'known',
+    nominal: 600,
+    minusMm: null,
+    plusMm: null,
+  });
+  expect(getMeasurement(held.form!, 'space.interior.width').uncertainty).toEqual({
+    state: 'bounded',
+    minusText: '2',
+    plusText: '',
+    unit: 'mm',
+  });
+});
+
+it('keeps a human conflict note unverified through normalize and reload', async () => {
+  const { repo, controller, session } = await readySession();
+  const projectId = session.snapshot.projectId;
+  session.edit('space.interior.width', '600');
+  session.editOrigin('space.interior.width', 'userMeasured');
+  session.editEvidence('space.interior.width', {
+    note: '다른 줄자와 충돌한다. 평균 590 mm.',
+    locator: 'local:tape',
+    observedAt: '2026-10-07T00:00:00Z',
+    sourceKind: 'userMeasured',
+  });
+  session.commit();
+  const saved = await until(session, (s) => s.inputRevision === '1' && s.saveState === 'saved');
+  expect(saved.diagnostics.some((d) => d.code === 'conflicting_sources')).toBe(false);
+  expect(normalizedView(saved.normalizedInput, 'space.interior.width')).toMatchObject({
+    nominal: 600,
+    verification: 'unverified',
+    origin: 'userMeasured',
+    minusMm: null,
+  });
+  expect(readEvidence(saved.form!, 'space.interior.width')).toMatchObject({
+    note: '다른 줄자와 충돌한다. 평균 590 mm.',
+    confirmedBy: null,
+    observedAt: '2026-10-07T00:00:00Z',
+  });
+  await session.close(true);
+  const reopened = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await reopened.open();
+  const restored = await until(reopened, (s) => s.status === 'ready' && s.inputRevision === '1');
+  expect(readEvidence(restored.form!, 'space.interior.width')?.note).toBe('다른 줄자와 충돌한다. 평균 590 mm.');
+  expect(normalizedView(restored.normalizedInput, 'space.interior.width').verification).toBe('unverified');
+});
+
+it('treats an explicit zero as known and keeps signed offsets exact', async () => {
+  const { session } = await readySession();
+  const form = emptyProjectForm();
+  form.items[0]!.id = 'shelf-9';
+  for (const group of form.groups) {
+    group.itemIds = group.itemIds.map((id) => (id === 'item-a' ? 'shelf-9' : id));
+  }
+  session.replaceForm(form);
+  session.editNominal('items.shelf-9.quantity', '0');
+  session.editNominal('items.shelf-9.requirement.handling.pullExtraDepth', '0');
+  session.editNominal('space.opening.left', '0');
+  session.editUncertainty('space.opening.left', {
+    state: 'bounded',
+    minusText: '0',
+    plusText: '0',
+    unit: 'mm',
+  });
+  session.editNominal('space.opening.bottom', '-2');
+  session.editUncertainty('space.opening.bottom', {
+    state: 'bounded',
+    minusText: '3',
+    plusText: '4',
+    unit: 'mm',
+  });
+  session.commit();
+  const saved = await until(session, (s) => s.saveState === 'saved' || s.saveState === 'error');
+  expect(saved.diagnostics.map((d) => `${d.fieldPath}:${d.code}`)).toEqual([]);
+  expect(normalizedView(saved.normalizedInput, 'items.shelf-9.quantity')).toMatchObject({
+    state: 'known',
+    nominal: 0,
+  });
+  expect(normalizedView(saved.normalizedInput, 'items.shelf-9.requirement.handling.pullExtraDepth')).toMatchObject({
+    state: 'known',
+    nominal: 0,
+  });
+  expect(normalizedView(saved.normalizedInput, 'space.opening.left')).toMatchObject({
+    state: 'known',
+    nominal: 0,
+    minusMm: 0,
+    plusMm: 0,
+    verification: 'unverified',
+  });
+  expect(normalizedView(saved.normalizedInput, 'space.opening.bottom')).toMatchObject({
+    nominal: -2,
+    minusMm: 3,
+    plusMm: 4,
+  });
+}, 20000);
