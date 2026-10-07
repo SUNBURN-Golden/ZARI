@@ -1,0 +1,35 @@
+{
+  "oracleId": "PC-07",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-014",
+  "gapIds": ["run-eval-lump"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "cancel during each evaluation stage, trap, catalog switch",
+  "phases": [
+    "structuralValidation",
+    "independentChecks",
+    "quantityAudit",
+    "bomAndCost",
+    "actionDag",
+    "canonicalHash",
+    "structuralRevalidation"
+  ],
+  "cancelDuringPhase": {
+    "partialSnapshot": 0,
+    "partialBom": 0,
+    "partialActions": 0,
+    "partialHash": 0,
+    "oldCompletePlanRetained": true,
+    "oldInputRetained": true,
+    "lateReplyApplied": 0
+  },
+  "hardTerminate": {
+    "termination": "interrupted",
+    "notTermination": ["scopeComplete", "budgetExhausted"]
+  },
+  "catalogSwitchReusesHandle": false
+}

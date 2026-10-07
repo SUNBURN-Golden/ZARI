@@ -533,3 +533,19 @@ Input edits/undo (measurements, groups, strategy, preferences) allocate a new in
 Single Rust DTO declarations export draft-07 Schema. Explicit custom schemas cover decimal-string u64, nonnegative integer ranges, tagged variants and deny additional properties. Build generates `apps/web/src/contracts/generated/` types and standalone shape validators; native and browser fixtures verify Serde/schema agreement. No hand-edited generated declarations, second domain Zod tree or remote `$ref` resolution.
 
 Task 001 implements only bootstrap DTO roots using the final envelope. Task 002 completes/fixes v1 before persisted real projects. Capability negotiation distinguishes unimplemented operations without inventing schemas. After persistence launch, incompatible changes require schema increment, deterministic tested migration, export/recovery path and an explicit related task; unrelated feature work may not change frozen contracts for convenience. See PERSISTENCE for transaction/migration mechanics.
+
+## 9. SP-012 action, instance, and version delta
+
+Adopted by [D012](../design/DECISIONS.md). Normative detail is [docs/adr/SP-012-action-evaluation.md](adr/SP-012-action-evaluation.md). This section does not change serialized schemaVersion 1.
+
+`ActionStep.subjectIds` is a list of `Id` and cannot carry `unitOrdinal`. A contained unit is the structured triple `(itemId, unitOrdinal, containerPlacementId)` already present on `ItemAssignment`. Two units of one item share `subjectIds` and differ in that ordinal. Consumers must not split `act:transfer:{item}:{ordinal}` or a `bounded_step_id` hash tail to recover it. The link is built from the assignment with the same constructor the producer uses.
+
+`requiredConfirmations` reference other action step ids in the same snapshot. They are graph edges, not fact confirmation and not `VerificationStatus::Confirmed`. `reasonIds` are empty in current output. When a later rule version writes them, they reference `ConstraintCheck.id` values in that snapshot (`chk:…`), never action ids or field-path strings. Dangling, duplicate, and cyclic action references stay structured errors.
+
+`ActionProgressRow.status` `done` records a user execution assertion. It is not `CheckStatus.pass` and not Confirmed. Unknown stays unknown.
+
+`ruleVersion` changes when guide, check, or BOM meaning changes. `solverVersion` and the search profile version change when enumeration, cost, termination, or ranking changes. `schemaVersion` changes only for JSON shape or an incompatible field meaning. `canonicalVersion` changes only for canonical byte rules. Current values remain `zari-domain-v1`, `zari-solver-v1`, schema 1, and canonical 1. No new `BUILD_ID` is named here.
+
+Old snapshot bytes and their progress rows stay historical. Equal-looking step ids do not carry progress onto another binding. A guide stamped with an older rule than the current engine is read-only: completion is refused, rows are not deleted, and recompute is explicit. `zari-domain-v1` stays current until the implementation that changes guide meaning registers the next rule version.
+
+Persistent additions to `ActionStep`, new action or check kinds, and schema migration are held. The ephemeral instance reference used by a future eligibility read is specified in the ADR and is not a generated schema in this delivery.

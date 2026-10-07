@@ -1,0 +1,91 @@
+{
+  "oracleId": "PC-01",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-013",
+  "gapIds": ["empty-reasons"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "direct-only, empty real catalog",
+  "catalog": { "empty": true, "inventedProducts": 0 },
+  "commerce": {
+    "shipping": { "status": "notApplicable", "reason": "no_purchases" },
+    "newPurchaseCost": { "status": "known", "valueKrw": 0 }
+  },
+  "conservation": {
+    "assigned": 1,
+    "provisional": 0,
+    "unassignedKnown": 1,
+    "unknownQuantityItems": 0
+  },
+  "instances": [
+    {
+      "kind": "directItem",
+      "itemId": "box",
+      "unitOrdinal": 0,
+      "placementId": "place-direct"
+    },
+    {
+      "kind": "unassigned",
+      "itemId": "spare",
+      "range": { "start": 0, "endExclusive": 1 }
+    }
+  ],
+  "absentKinds": ["acquire", "confirmArrival", "transferContents"],
+  "actions": [
+    {
+      "id": "act:clear:space-1",
+      "kind": "clearSpace",
+      "prerequisiteStepIds": [],
+      "instanceRefs": [{ "kind": "space", "spaceId": "space-1" }]
+    },
+    {
+      "id": "act:install:place-direct",
+      "kind": "install",
+      "prerequisiteStepIds": ["act:clear:space-1"],
+      "instanceRefs": [
+        {
+          "kind": "directItem",
+          "itemId": "box",
+          "unitOrdinal": 0,
+          "placementId": "place-direct"
+        }
+      ]
+    },
+    {
+      "id": "act:verify:spare",
+      "kind": "verifyUnassigned",
+      "prerequisiteStepIds": [],
+      "instanceRefs": [
+        {
+          "kind": "unassigned",
+          "itemId": "spare",
+          "range": { "start": 0, "endExclusive": 1 }
+        }
+      ]
+    }
+  ],
+  "displayOrder": [
+    "act:clear:space-1",
+    "act:install:place-direct",
+    "act:verify:spare"
+  ],
+  "blockers": [
+    {
+      "checkId": "chk:ip:place-direct:n",
+      "status": "unknown",
+      "reason": "staging_unknown",
+      "blocks": ["act:install:place-direct"],
+      "notClearedBy": ["clearSpace", "done"]
+    },
+    {
+      "checkId": "chk:ip:place-direct:c",
+      "status": "unknown",
+      "reason": "staging_unknown",
+      "blocks": ["act:install:place-direct"],
+      "notClearedBy": ["clearSpace", "done"]
+    }
+  ]
+}

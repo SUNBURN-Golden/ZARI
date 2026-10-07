@@ -220,3 +220,13 @@ Project deletion removes its project, draft, inputs, snapshot bindings, and acti
 | `catalog_missing` | historical snapshot still readable | re-import exact catalog or choose new catalog and recompute |
 
 Persistence Gate requires: real browser save/reload; malformed draft preservation; two-tab CAS race; atomic transaction rollback; quota/unavailable failure injection; same-content/new-binding action progress isolation; large-counter round-trip; schema rejection; imported digest tamper rejection; deletion-reference checks; and no Worker wait in DB transactions. Fake IndexedDB unit tests are useful for repository behavior but do not replace actual browser evidence. [TEST_STRATEGY.md](TEST_STRATEGY.md) defines commands and fixtures. Green tests alone do not prove storage is permanent, data is factually correct, or migration is safe for an untested schema.
+
+## 9. SP-012 history, CAS, and decoding
+
+Adopted by [D012](../design/DECISIONS.md). No `dbVersion` change and no migration run in this delivery. schemaVersion 1 records stay readable. Unknown fields still fail closed. A downgrade write is refused when a future schema appears; this node does not introduce schema 2.
+
+Action progress stays outside the snapshot. `done` does not rewrite checks, facts, or BOM. Current `setActionStep` commits only when `projectRevision`, the accepted binding, and the current input revision and digest match, and it refuses a step whose `requiredConfirmations` is non-empty. The adopted write also matches catalog digest, rule version, solver version, schema version, canonical version, build id, editor epoch, and the progress-row identity captured with the eligibility stamp. SP-013 and SP-015 add those comparisons. A mismatch rejects the write and leaves the previous done row. The Worker call stays outside the transaction.
+
+Offer, owned-library, and evidence edits do not mutate an old snapshot or its progress. The next accepted binding starts with its own progress. Duplicate still resets progress. Quota, conflict, and rollback do not report a fake save or a half-written project. Corruption is not rewritten into a valid plan. Missing photo bytes stay missing.
+
+A snapshot whose `ruleVersion` is older than the engine's current rule is historical: readable, not completable, not rewritten. `zari-domain-v1` is still the current rule, so this node does not mark existing plans historical. The decoding matrix is `docs/oracles/product-completion/decoding-matrix.json`.

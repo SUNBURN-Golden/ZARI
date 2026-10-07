@@ -1,0 +1,24 @@
+{
+  "oracleId": "PC-05",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-014",
+  "gapIds": ["run-eval-lump"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "nominal pass, conservative fail, corrupt candidate",
+  "callerPassFlag": "absent",
+  "nominalPassConservativeBlockingFail": {
+    "reportRetained": true,
+    "physicalAssurance": "rejected",
+    "snapshot": null
+  },
+  "corruptCandidate": {
+    "structuralDiagnostics": true,
+    "snapshot": null,
+    "confirmed": false
+  },
+  "knownHardFailurePublication": 0
+}

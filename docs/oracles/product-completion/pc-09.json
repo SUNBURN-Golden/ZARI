@@ -1,0 +1,16 @@
+{
+  "oracleId": "PC-09",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-015",
+  "gapIds": ["history-cas"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "offer, owned, or evidence change after partial progress",
+  "changes": ["offer", "ownedLibrary", "evidence"],
+  "oldSnapshotBytesUnchanged": true,
+  "oldProgressRowsUnchanged": true,
+  "newBindingProgressCarry": 0
+}

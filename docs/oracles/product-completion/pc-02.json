@@ -1,0 +1,129 @@
+{
+  "oracleId": "PC-02",
+  "handDerived": true,
+  "handArithmetic": true,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-013",
+  "gapIds": ["new-only-acquire"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "owned 2 + new 1, pack 2",
+  "owned": {
+    "ownedId": "owned-bin",
+    "ordinals": [0, 1],
+    "eachOrdinalOnce": true
+  },
+  "newUnit": {
+    "variantId": "variant-new",
+    "unitOrdinal": 0,
+    "placementId": "place-n0",
+    "physicalNeeded": 1,
+    "reused": 0,
+    "newUnitsNeeded": 1,
+    "packQuantity": 2,
+    "packsToOrder": 1,
+    "supplied": 2,
+    "surplus": 1
+  },
+  "ownedLine": {
+    "physicalNeeded": 2,
+    "reused": 2,
+    "newUnitsNeeded": 0,
+    "offerId": null,
+    "packQuantity": { "status": "notApplicable", "reason": "owned_reuse" },
+    "productSubtotal": { "status": "notApplicable", "reason": "owned_reuse" }
+  },
+  "price": { "checkId": "chk:pr:variant-new", "status": "unknown", "reason": "price_unknown" },
+  "shipping": {
+    "checkId": "chk:sh:variant-new",
+    "status": "unknown",
+    "reason": "shipping_unknown"
+  },
+  "priceIsNotShipping": true,
+  "acquireSubjects": ["variant-new"],
+  "actions": [
+    {
+      "id": "act:acquire:variant-new",
+      "kind": "acquire",
+      "prerequisiteStepIds": [],
+      "instanceRefs": [
+        {
+          "kind": "newContainer",
+          "variantId": "variant-new",
+          "unitOrdinal": 0,
+          "placementId": "place-n0"
+        }
+      ]
+    },
+    {
+      "id": "act:arrive:variant-new",
+      "kind": "confirmArrival",
+      "prerequisiteStepIds": ["act:acquire:variant-new"],
+      "instanceRefs": [
+        {
+          "kind": "newContainer",
+          "variantId": "variant-new",
+          "unitOrdinal": 0,
+          "placementId": "place-n0"
+        }
+      ]
+    },
+    {
+      "id": "act:clear:space-1",
+      "kind": "clearSpace",
+      "prerequisiteStepIds": [],
+      "instanceRefs": [{ "kind": "space", "spaceId": "space-1" }]
+    },
+    {
+      "id": "act:install:place-o0",
+      "kind": "install",
+      "prerequisiteStepIds": ["act:clear:space-1"],
+      "instanceRefs": [
+        {
+          "kind": "ownedContainer",
+          "ownedId": "owned-bin",
+          "unitOrdinal": 0,
+          "placementId": "place-o0"
+        }
+      ],
+      "blockerCheckIds": []
+    },
+    {
+      "id": "act:install:place-o1",
+      "kind": "install",
+      "prerequisiteStepIds": ["act:clear:space-1"],
+      "instanceRefs": [
+        {
+          "kind": "ownedContainer",
+          "ownedId": "owned-bin",
+          "unitOrdinal": 1,
+          "placementId": "place-o1"
+        }
+      ],
+      "blockerCheckIds": []
+    },
+    {
+      "id": "act:install:place-n0",
+      "kind": "install",
+      "prerequisiteStepIds": ["act:arrive:variant-new", "act:clear:space-1"],
+      "instanceRefs": [
+        {
+          "kind": "newContainer",
+          "variantId": "variant-new",
+          "unitOrdinal": 0,
+          "placementId": "place-n0"
+        }
+      ]
+    }
+  ],
+  "displayOrder": [
+    "act:acquire:variant-new",
+    "act:arrive:variant-new",
+    "act:clear:space-1",
+    "act:install:place-n0",
+    "act:install:place-o0",
+    "act:install:place-o1"
+  ],
+  "absentKinds": ["transferContents"]
+}

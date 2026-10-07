@@ -173,3 +173,13 @@ Expected fixtures: 60cm=600mm; 60.1cm=601mm; nonintegral-mm/zero-size/negative/o
 
 All results must clearly distinguish probe output from PlanSnapshot. No invented strategy, catalog, full physical validity, accepted-plan storage or business completion is shown by Task001. Required command/evidence contract is in DEVIN_TASK_001.md and TEST_STRATEGY.md.
 
+## 6. SP-012 eligibility handshake, not a command
+
+Adopted by [D012](../design/DECISIONS.md). `BUILD_ID` stays `zari-domain-6`. The ready capability list and its order stay as in §2. `protocolVersion` and persisted `schemaVersion` stay 1.
+
+`queryActionEligibility` is a reserved read name in the SP-012 ADR. It is not a `Command` variant, not a capability, and not a generated schema. A request with that kind is `operation_not_supported`, the same as any other unknown kind. It is not `invalid_input` and not an empty success. No fixture operation asserts a future build id.
+
+The read is specified because `ActionStep.subjectIds` cannot carry a unit ordinal and blockers must come from structured checks. When SP-013 adopts it, the command, capability, generated schema, Worker entry, client, and fixture ship in one tree, and that delivery's ADR registers the next `BUILD_ID`. This section does not choose that id. Until then the page and Worker still require the current list's exact order and length.
+
+The future read, once adopted, takes one immutable snapshot and at most 4096 progress rows. It does not search, persist, promote facts, or interpret arbitrary strings. The reply stamp is project, input digest, snapshot id, catalog digest and version, rule, solver, schema, canonical, build, search profile, accepted input revision, observed project revision, editor epoch, and progress-row identity. A missing target or a mismatched stamp is not eligible. Publication of search results is unchanged: one complete candidate or a rejection, never a validator-in-progress snapshot.
+

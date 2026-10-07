@@ -1,0 +1,27 @@
+{
+  "oracleId": "PC-10",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-015",
+  "gapIds": ["history-cas"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "old and new schema, rule, engine, offline mixed assets",
+  "schemaVersion1Decodes": true,
+  "unknownFieldFailsClosed": true,
+  "migrationAdopted": false,
+  "downgradeWriteAllowed": false,
+  "futureBuildId": null,
+  "buildMismatch": "version_mismatch",
+  "olderRuleGuide": {
+    "readable": true,
+    "completionAllowed": false,
+    "rowsDeleted": false,
+    "rowsCarried": false,
+    "recomputeExplicit": true
+  },
+  "currentRuleVersion": "zari-domain-v1",
+  "marksCurrentV1HistoricalNow": false
+}

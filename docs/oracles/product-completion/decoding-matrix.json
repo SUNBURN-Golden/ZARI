@@ -1,0 +1,40 @@
+{
+  "contract": "zari-pc-oracle-1",
+  "engineOutput": false,
+  "buildId": null,
+  "rows": [
+    {
+      "record": "PlanSnapshot",
+      "schemaVersion": 1,
+      "adoptedChange": "none",
+      "decode": "current decoder, unknown fields fail",
+      "rewrite": false
+    },
+    {
+      "record": "actionProgress",
+      "schemaVersion": 1,
+      "status": ["done", "todo"],
+      "adoptedChange": "none",
+      "doneMeansConfirmed": false
+    },
+    {
+      "record": "unknown command queryActionEligibility",
+      "decode": "operation_not_supported",
+      "emptySuccess": false
+    },
+    {
+      "record": "schema greater than 1",
+      "exists": false,
+      "downgradeWrite": "refused when a future schema exists"
+    },
+    {
+      "record": "ruleVersion zari-domain-v1",
+      "current": true,
+      "historicalCompletion": "blocked only after a newer rule is current"
+    },
+    {
+      "record": "progress across bindings",
+      "carry": 0
+    }
+  ]
+}

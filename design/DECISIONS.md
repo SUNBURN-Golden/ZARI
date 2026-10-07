@@ -96,6 +96,18 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 약 07:28 KST, 원문: "009·010·011 전부 채택한다. Fable 게이트는 각각 독립 리뷰 2회로 대체하고, 머지도 네가 해라." 이 문장은 후보 채택이다. `zari011` 이미지의 exact-set 화면 승인은 아니다.
 - 되돌리기: draft 항목과 이 결정만 걷어 내면 된다. 승인 수와 SP-007 이미지, 저장된 schemaVersion 1 레코드는 이 결정으로 다시 쓰지 않는다.
 
+## D012 — 행동·조건·버전·평가 계약 / 채택
+
+- ID: D012
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 SP-012만 다룬다. 같은 발화의 SP-013·014·015·016은 각 노드에서 구현한다.
+- 문제: 현재 `build_actions`는 내용물 옮기기의 선행을 설치로 두고, `requiredConfirmations`와 `reasonIds`를 비운다. `RunEval`은 후보 평가 전체를 한 비용으로 호출한다. 화면 체크박스가 이 빈칸을 사실 확인으로 채우면 안 된다.
+- 변경 대상: [docs/adr/SP-012-action-evaluation.md](../docs/adr/SP-012-action-evaluation.md), DOMAIN_MODEL·SOLVER·WASM_PROTOCOL·PERSISTENCE·FRONTEND·TEST_STRATEGY의 SP-012 절, `docs/oracles/product-completion/`의 PC-01–11. `BUILD_ID` `zari-domain-6`, capability, 생성 schema, persisted `schemaVersion` 1, 기존 fixture 기대값은 그대로다. `queryActionEligibility`는 ADR에만 있고 명령이 아니다.
+- 검토한 대안: (A) 가이드 순서·참조·버전·평가 단계를 계약과 손 계산 오라클로 고정하고 생산 코드는 다음 노드에 둔다. (B) 이 노드에서 `build_actions`와 `RunEval`을 바로 바꾼다. (C) 단계 id 문자열을 쪼개 ordinal을 복원하고, done을 Confirmed로 쓴다.
+- 선택: A. 지원되는 현재 DTO가 역사 스냅샷을 표현하므로 마이그레이션은 없다. B는 SP-013·014의 범위다. C는 잘린 id와 사람 체크를 판정으로 올린다.
+- 조건: unknown을 통과나 기본값으로 바꾸지 않는다. `done`은 사용자 행위 기록이고 사실·검사·Confirmed가 아니다. 인스턴스 ordinal은 구조화된 수다. 옛 스냅샷과 진행은 다시 쓰지 않고 다른 binding으로 옮기지 않는다. 다음 `BUILD_ID`와 `ruleVersion`·`solverVersion` 문자열은 구현 노드가 등록하기 전에는 없다. Fable ARCHITECTURE와 비작성자 A3는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다. 그 검토는 역사 호환, 물리 가이드 순서, 인스턴스 보존, 예산·취소 구분을 본다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해."
+- 되돌리기: 이 결정과 오라클·계약 절을 걷어 내면 된다. 저장된 schemaVersion 1 레코드와 기존 fixture는 이 결정으로 다시 쓰지 않는다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.
