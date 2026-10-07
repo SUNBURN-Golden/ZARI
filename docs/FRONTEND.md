@@ -319,4 +319,4 @@ The guide, diagram, and BOM keep one snapshot's subject refs. A step checkbox re
 
 Price and shipping unknowns stay on the purchase steps of that variant. They are not shown as blockers of an unrelated direct install. A null progress map stays unknown, not an all-todo list. A historical rule or a stale stamp disables completion and offers recompute. Old done rows stay on their binding.
 
-Until `queryActionEligibility` is adopted, the page must not send that command and must not treat `operation_not_supported` as an empty eligible list. The current capability list is unchanged.
+SP-013 sends `queryActionEligibility` before a progress write. The checkbox follows that reply's `executable` flag. It does not infer a blocker from check text. A missing or ineligible reply disables completion. Clear space is a user assertion that the compartment was cleared. Acquire is a purchase-intent assertion, not an order. Transfer loads the unit outside the compartment. Marking a step done does not change the check. The capability list includes `queryActionEligibility` immediately before `disposeProject`, and `BUILD_ID` is `zari-domain-7`.

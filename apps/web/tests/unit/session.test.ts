@@ -825,8 +825,16 @@ it('accepted progress stays on its binding across edit, accept switch, and a lat
   void session.acceptPlan(chosen.planSnapshotId);
   await until(session, (s) => s.plan.acceptState === 'saved' && s.plan.progressLoad === 'ready');
   const actions = session.snapshot.plan.acceptedSnapshot?.content.actions ?? [];
+  const userAssertion = (action: (typeof actions)[number]) =>
+    action.kind === 'clearSpace' ||
+    action.kind === 'verifyUnassigned' ||
+    action.kind === 'confirmArrival' ||
+    action.kind === 'resolveCondition';
   const first = actions.find(
-    (action) => action.prerequisiteStepIds.length === 0 && action.requiredConfirmations.length === 0,
+    (action) =>
+      userAssertion(action) &&
+      action.prerequisiteStepIds.length === 0 &&
+      action.requiredConfirmations.length === 0,
   );
   expect(first).toBeDefined();
   await session.toggleActionStep(first!.id, true);
@@ -863,6 +871,7 @@ it('accepted progress stays on its binding across edit, accept switch, and a lat
     actions.find(
       (action) =>
         action.id !== first!.id &&
+        userAssertion(action) &&
         action.requiredConfirmations.length === 0 &&
         action.prerequisiteStepIds.every((id) => id === first!.id || session.snapshot.plan.actionProgress?.[id] === 'done'),
     ) ?? first!;
@@ -933,6 +942,39 @@ it('accepted progress stays on its binding across edit, accept switch, and a lat
   await until(session, () => !session.isCurrentSnapshot(head));
   await session.toggleActionStep(head.content.actions[0]?.id ?? first!.id, true);
   expect(session.snapshot.plan.actionError).toBe('stale_input');
+}, 120000);
+
+it('a blocked step cannot be checked off and a clear assertion leaves checks unchanged', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  await until(session, (s) => s.plan.search === 'done', 30000);
+  const chosen = session.snapshot.plan.alternatives[0];
+  expect(chosen).toBeDefined();
+  void session.acceptPlan(chosen!.planSnapshotId);
+  await until(session, (s) => s.plan.actionEligibility?.eligible === true, 30000);
+  const eligibility = session.snapshot.plan.actionEligibility;
+  const blocked = eligibility?.rows.find((row) => !row.executable && row.blockerCheckIds.length > 0);
+  expect(blocked).toBeDefined();
+  const checksBefore = JSON.stringify(session.snapshot.plan.acceptedSnapshot?.content.validation.checks);
+  await session.toggleActionStep(blocked!.actionId, true);
+  expect(session.snapshot.plan.actionError).toBe('blocked_condition');
+  expect(session.snapshot.plan.actionProgress?.[blocked!.actionId]).not.toBe('done');
+  expect(JSON.stringify(session.snapshot.plan.acceptedSnapshot?.content.validation.checks)).toBe(checksBefore);
+  const clear = session.snapshot.plan.acceptedSnapshot?.content.actions.find(
+    (action) => action.kind === 'clearSpace',
+  );
+  expect(clear).toBeDefined();
+  await session.toggleActionStep(clear!.id, true);
+  await until(session, (s) => s.plan.actionProgress?.[clear!.id] === 'done');
+  expect(JSON.stringify(session.snapshot.plan.acceptedSnapshot?.content.validation.checks)).toBe(checksBefore);
+  await until(
+    session,
+    (s) => s.plan.actionEligibility?.rows.find((row) => row.actionId === blocked!.actionId)?.executable === false,
+  );
 }, 120000);
 
 const HANDLING = ['left', 'right', 'top', 'pullExtraDepth', 'liftAboveRim'] as const;

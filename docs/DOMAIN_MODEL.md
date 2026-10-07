@@ -544,8 +544,14 @@ Adopted by [D012](../design/DECISIONS.md). Normative detail is [docs/adr/SP-012-
 
 `ActionProgressRow.status` `done` records a user execution assertion. It is not `CheckStatus.pass` and not Confirmed. Unknown stays unknown.
 
-`ruleVersion` changes when guide, check, or BOM meaning changes. `solverVersion` and the search profile version change when enumeration, cost, termination, or ranking changes. `schemaVersion` changes only for JSON shape or an incompatible field meaning. `canonicalVersion` changes only for canonical byte rules. Current values remain `zari-domain-v1`, `zari-solver-v1`, schema 1, and canonical 1. No new `BUILD_ID` is named here.
+`ruleVersion` changes when guide, check, or BOM meaning changes. `solverVersion` and the search profile version change when enumeration, cost, termination, or ranking changes. `schemaVersion` changes only for JSON shape or an incompatible field meaning. `canonicalVersion` changes only for canonical byte rules.
 
-Old snapshot bytes and their progress rows stay historical. Equal-looking step ids do not carry progress onto another binding. A guide stamped with an older rule than the current engine is read-only: completion is refused, rows are not deleted, and recompute is explicit. `zari-domain-v1` stays current until the implementation that changes guide meaning registers the next rule version.
+Old snapshot bytes and their progress rows stay historical. Equal-looking step ids do not carry progress onto another binding. A guide stamped with an older rule than the current engine is read-only: completion is refused, rows are not deleted, and recompute is explicit.
+
+## 10. SP-013 guide producer
+
+Adopted by [D013](../design/DECISIONS.md). Normative detail is [docs/adr/SP-013-execution-guide.md](adr/SP-013-execution-guide.md). schemaVersion 1 and canonical version 1 stay. `solverVersion` stays `zari-solver-v1`. Current `ruleVersion` is `zari-domain-v2`. `BUILD_ID` is `zari-domain-7`.
+
+`zari-domain-v1` snapshots stay readable. Their hashes and action bytes are not rewritten. Completion is refused and stored done rows stay on that binding. `reasonIds` on a v2 guide reference `ConstraintCheck.id` values in the same snapshot. Empty `reasonIds` on a v1 snapshot remain valid. `requiredConfirmations` stay empty; prerequisite edges are `prerequisiteStepIds`. A checkbox does not change check status, fact state, or provenance.
 
 Persistent additions to `ActionStep`, new action or check kinds, and schema migration are held. The ephemeral instance reference used by a future eligibility read is specified in the ADR and is not a generated schema in this delivery.

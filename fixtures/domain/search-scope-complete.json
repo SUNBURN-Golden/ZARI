@@ -1,13 +1,13 @@
 {
  "caseId": "search-scope-complete",
  "engineContext": {
-  "buildId": "zari-domain-6"
+  "buildId": "zari-domain-7"
  },
  "expected": {
   "alternativeDigests": [
-   "0179c3b67c90f556afb2798b450ca5304b941335bdb9dbf919e5dd38dfb6681d",
-   "0b22f16a3ba0fc89b954a53653cdb554a9ce440b9e3c1fa5f5b8500e2247a2cf",
-   "1302c65f75320d64ca8fcde531a547e3e10eb12c9f095e317e12dc0f8e456099"
+   "0088c0641fb4044f90c332c33867714b75ab630bb44df25678f2ecc44145eea3",
+   "03daec9cffb80cee86a993f92445444768b4dc9965f455402eb56111445973c6",
+   "0d6006c4545ac5dde9c9043de35f7ec3db16a4448ff82ba1c37a8963aba597ed"
   ],
   "consumed": {
    "nodes": 730,

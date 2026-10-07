@@ -38,6 +38,7 @@ const expected = {
   evaluateLayoutEdit: 'editEvaluated',
   projectSpatialView: 'spatialViewProjected',
   queryNextFacts: 'nextFactsQueried',
+  queryActionEligibility: 'actionEligibilityQueried',
   proposeStrategies: 'strategiesProposed',
   startSearch: 'searchStarted',
   disposeProject: 'projectDisposed',
@@ -49,7 +50,9 @@ const multiExpected: Partial<Record<Command['kind'], readonly string[]>> = {
 };
 const sameMeta = (a: Meta, b: Meta) =>
   Object.keys(a).every((key) => a[key as keyof Meta] === b[key as keyof Meta]);
-export const WORKER_BUILD_ID = 'zari-domain-6';
+export const WORKER_BUILD_ID = 'zari-domain-7';
+/** Current guide rule. Older snapshots stay readable and are not completable. */
+export const WORKER_RULE_VERSION = 'zari-domain-v2';
 /** Exact ready-event order. A swap, extra, or omission is a version mismatch. */
 export const WORKER_CAPABILITIES = [
   'initialize',
@@ -64,6 +67,7 @@ export const WORKER_CAPABILITIES = [
   'evaluateLayoutEdit',
   'projectSpatialView',
   'queryNextFacts',
+  'queryActionEligibility',
   'disposeProject',
   'proposeStrategies',
   'startSearch',

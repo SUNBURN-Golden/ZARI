@@ -1429,15 +1429,31 @@ pub fn validate_snapshot(snapshot: &PlanSnapshot) -> Vec<Diagnostic> {
         content.actions.iter().map(|a| &a.id),
     );
     let action_ids: BTreeSet<&str> = content.actions.iter().map(|a| a.id.as_str()).collect();
+    let check_ids: BTreeSet<&str> = content
+        .validation
+        .checks
+        .iter()
+        .map(|check| check.id.as_str())
+        .collect();
     // Prerequisite references must exist and form an acyclic order.
+    // reasonIds, once written, name checks in this snapshot. An empty list
+    // remains valid for a historical guide.
     let mut edges: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for action in &content.actions {
         let path = format!("content.actions.{}", action.id.as_str());
+        let mut seen_edges: BTreeSet<&str> = BTreeSet::new();
         for dependency in action
             .prerequisite_step_ids
             .iter()
             .chain(action.required_confirmations.iter())
         {
+            if !seen_edges.insert(dependency.as_str()) {
+                err(
+                    &mut diagnostics,
+                    format!("{path}.prerequisiteStepIds"),
+                    "duplicate_action_ref",
+                );
+            }
             if !action_ids.contains(dependency.as_str()) {
                 err(
                     &mut diagnostics,
@@ -1449,6 +1465,23 @@ pub fn validate_snapshot(snapshot: &PlanSnapshot) -> Vec<Diagnostic> {
                     .entry(action.id.as_str())
                     .or_default()
                     .push(dependency.as_str());
+            }
+        }
+        let mut seen_reasons: BTreeSet<&str> = BTreeSet::new();
+        for reason in &action.reason_ids {
+            if !seen_reasons.insert(reason.as_str()) {
+                err(
+                    &mut diagnostics,
+                    format!("{path}.reasonIds"),
+                    "duplicate_reason_ref",
+                );
+            }
+            if !check_ids.contains(reason.as_str()) {
+                err(
+                    &mut diagnostics,
+                    format!("{path}.reasonIds"),
+                    "dangling_check_ref",
+                );
             }
         }
     }

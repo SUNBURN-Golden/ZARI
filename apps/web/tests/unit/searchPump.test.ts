@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
+import { WORKER_BUILD_ID, WORKER_CAPABILITIES, WORKER_RULE_VERSION } from '../../src/worker/client';
 import type {
   ProtocolRequest,
   ProtocolResponse,
@@ -50,31 +51,13 @@ const clients: ProbeClient[] = [];
 const counters: SearchCounters = { nodes: 1, validatedCandidates: 0, workUnits: '1' };
 const readyEvent = {
   kind: 'ready',
-  buildId: 'zari-domain-6',
+  buildId: WORKER_BUILD_ID,
   protocolVersion: 1,
   schemaVersion: 1,
   canonicalVersion: 1,
-  ruleVersion: 'zari-domain-v1',
+  ruleVersion: WORKER_RULE_VERSION,
   solverVersion: 'zari-solver-v1',
-  capabilities: [
-    'initialize',
-    'activateProject',
-    'normalizeInput(bootstrap)',
-    'normalizeInput(project)',
-    'evaluateProbe',
-    'verifyRecord',
-    'normalizeCatalogFields',
-    'validateCatalog',
-    'validateCandidate',
-    'evaluateLayoutEdit',
-    'projectSpatialView',
-    'queryNextFacts',
-    'disposeProject',
-    'proposeStrategies',
-    'startSearch',
-    'stepSearch',
-    'cancelSearch',
-  ],
+  capabilities: WORKER_CAPABILITIES,
 } as const;
 afterEach(() => clients.splice(0).forEach((c) => c.dispose()));
 

@@ -816,6 +816,12 @@ function PlanDetail({
           conflict={state.conflict !== null}
           actionError={surface === 'accepted' ? state.plan.actionError : null}
           actionRetry={surface === 'accepted' ? state.plan.actionRetry : null}
+          eligibility={
+            surface === 'accepted' &&
+            state.plan.actionEligibility?.planSnapshotId === snapshot.planSnapshotId
+              ? state.plan.actionEligibility
+              : null
+          }
           onFocusStep={(stepId) => workspace.setFocus({ kind: 'action', stepId })}
           onToggle={(stepId, done) => void session.toggleActionStep(stepId, done)}
           onShowAccepted={

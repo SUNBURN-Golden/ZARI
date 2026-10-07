@@ -57,8 +57,23 @@ function counts(page: Page) {
   });
 }
 
+/**
+ * The sample's back-flush container is one tied alternative. Snapshot-id
+ * ordering can put a front-flush bin first; decreasing depth is only free
+ * when the bin sits on the back edge (depth 400 − 255 = 145).
+ */
 async function openFirstPlan(page: Page) {
-  await page.getByTestId('plan-card-0').click();
+  const count = await page.locator('[data-testid^="plan-card-"]').count();
+  for (let i = 0; i < count; i++) {
+    await page.getByTestId(`plan-card-${i}`).click();
+    const items = page.getByTestId('placements-list').locator('li');
+    const note = await items.first().locator('.session-note').innerText();
+    const y = Number(note.match(/\(-?\d+, (-?\d+), -?\d+\)/)?.[1]);
+    if ((await items.count()) === 1 && y >= 15) break;
+  }
+  const chosen = await page.getByTestId('placements-list').locator('li').first().locator('.session-note').innerText();
+  const chosenY = Number(chosen.match(/\(-?\d+, (-?\d+), -?\d+\)/)?.[1]);
+  expect(chosenY).toBeGreaterThanOrEqual(15);
   await expect(page.getByTestId('plan-diagram-top').first()).toBeVisible();
   await page.locator('.placement-pick').first().click();
   await expect(page.locator('[data-testid="plan-diagram-top"] [data-selected="true"]').first()).toBeVisible();

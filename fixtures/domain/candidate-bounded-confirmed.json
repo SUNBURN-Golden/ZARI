@@ -1,7 +1,7 @@
 {
  "caseId": "candidate-bounded-confirmed",
  "engineContext": {
-  "buildId": "zari-domain-6"
+  "buildId": "zari-domain-7"
  },
  "expected": {
   "checks": [
@@ -176,7 +176,7 @@
   "diagnostics": [],
   "kind": "validateCandidate",
   "physicalAssurance": "confirmedWithinScope",
-  "snapshotDigest": "a97c3b1f0ac77a28e938e29a5da1bdeec54c6216731dd0a34246613bac66219f"
+  "snapshotDigest": "51be5d856d1711c9c9f3dba582d8d104b33bd6afd98aad0273f2f042ed187396"
  },
  "fixtureSchemaVersion": 1,
  "input": {

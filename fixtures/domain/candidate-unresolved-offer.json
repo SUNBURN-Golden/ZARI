@@ -1,7 +1,7 @@
 {
  "caseId": "candidate-unresolved-offer",
  "engineContext": {
-  "buildId": "zari-domain-6"
+  "buildId": "zari-domain-7"
  },
  "expected": {
   "checks": [
@@ -141,7 +141,7 @@
   "diagnostics": [],
   "kind": "validateCandidate",
   "physicalAssurance": "conditional",
-  "snapshotDigest": "75bb8458d70918b443164ee15ae84ed501ba7977638c5d32c2b20d8a90feb1a5"
+  "snapshotDigest": "88f03743c72a063059eb834c5dbfcfd36f58a4acf2386c509b27c0c3789440f6"
  },
  "fixtureSchemaVersion": 1,
  "input": {

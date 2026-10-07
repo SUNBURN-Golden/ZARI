@@ -1,10 +1,11 @@
 import type {
   ActionStep,
+  ConstraintCheck,
   SnapshotContent,
   SpatialProjection,
   SpatialTarget,
 } from '../../contracts/generated/dto';
-import { ACTION_TEXT, UNASSIGNED_TEXT, subjectLabel } from '../plan/view';
+import { ACTION_TEXT, CHECK_KIND_TEXT, UNASSIGNED_TEXT, subjectLabel } from '../plan/view';
 import { targetKey } from './selection';
 
 /**
@@ -106,20 +107,55 @@ export function confirmationRequired(step: ActionStep): boolean {
 }
 
 /**
- * First not-done step in the existing action order whose prerequisites are done.
- * A null progress map cannot make that choice.
+ * Rust eligibility for the accepted snapshot. `null` means the read has not
+ * returned. The UI does not infer executability from check text.
+ */
+export interface GuideEligibility {
+  planSnapshotId: string;
+  progressIdentity: string;
+  eligible: boolean;
+  staleReason: string | null;
+  rows: readonly {
+    actionId: string;
+    executable: boolean;
+    blockerCheckIds: readonly string[];
+    userAssertion: boolean;
+  }[];
+}
+
+/**
+ * First not-done step in the producer order whose prerequisites are done.
+ * A null progress map cannot make that choice. `executableIds === null` means
+ * Rust has not said which steps may run.
  */
 export function nextExecutableStep(
   actions: readonly ActionStep[],
   progress: ProgressMap | null,
+  executableIds?: ReadonlySet<string> | null,
 ): { kind: 'unavailable' } | { kind: 'none' } | { kind: 'step'; stepId: string } {
-  if (progress === null) return { kind: 'unavailable' };
+  if (progress === null || executableIds === null) return { kind: 'unavailable' };
   for (const step of actions) {
     if (progress[step.id] === 'done') continue;
     if (missingPrerequisites(step, progress).length > 0) continue;
+    if (executableIds && !executableIds.has(step.id)) continue;
     return { kind: 'step', stepId: step.id };
   }
   return { kind: 'none' };
+}
+
+const CHECK_STATUS_TEXT: Record<ConstraintCheck['status'], string> = {
+  pass: '통과',
+  fail: '실패',
+  unknown: '미확인',
+  not_applicable: '해당 없음',
+};
+
+/** Label a snapshot check. Unknown stays unknown. */
+export function conditionText(content: SnapshotContent, checkId: string): string {
+  const check = content.validation.checks.find((item) => item.id === checkId);
+  if (!check) return checkId;
+  const kind = CHECK_KIND_TEXT[check.kind] ?? check.kind;
+  return `${kind}: ${CHECK_STATUS_TEXT[check.status]}`;
 }
 
 /** Previous/next along the producer order. Null current moves forward to the first step. */

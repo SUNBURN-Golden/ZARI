@@ -91,6 +91,10 @@ it('a null progress map is unknown and is not an all-todo list', () => {
       { s1: 'done' },
     ),
   ).toEqual({ kind: 'step', stepId: 's2' });
+  expect(nextExecutableStep([step({ id: 's1' })], {}, null)).toEqual({ kind: 'unavailable' });
+  expect(
+    nextExecutableStep([step({ id: 's1' }), step({ id: 's2' })], {}, new Set(['s2'])),
+  ).toEqual({ kind: 'step', stepId: 's2' });
 });
 
 it('prev and next follow the existing order and do not wrap', () => {

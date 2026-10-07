@@ -31,7 +31,18 @@ async function seededPlan(page: Page) {
   await expect(page.getByTestId('search-status')).toHaveAttribute('data-search', 'done', {
     timeout: 60_000,
   });
-  await page.locator('[data-testid^="plan-card-"]').first().click();
+  // Decreasing depth stays inside only for the back-flush container.
+  // Snapshot-id tie-break can rank a front-flush bin first.
+  const count = await page.locator('[data-testid^="plan-card-"]').count();
+  for (let i = 0; i < count; i++) {
+    await page.getByTestId(`plan-card-${i}`).click();
+    const items = page.getByTestId('placements-list').locator('li');
+    const note = await items.first().locator('.session-note').innerText();
+    const y = Number(note.match(/\(-?\d+, (-?\d+), -?\d+\)/)?.[1]);
+    if ((await items.count()) === 1 && y >= 15) break;
+  }
+  const chosen = await page.getByTestId('placements-list').locator('li').first().locator('.session-note').innerText();
+  expect(Number(chosen.match(/\(-?\d+, (-?\d+), -?\d+\)/)?.[1])).toBeGreaterThanOrEqual(15);
   await expect(page.getByTestId('plan-workspace').first()).toBeVisible();
 }
 

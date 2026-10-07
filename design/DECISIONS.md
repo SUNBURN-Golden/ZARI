@@ -108,6 +108,18 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해."
 - 되돌리기: 이 결정과 오라클·계약 절을 걷어 내면 된다. 저장된 schemaVersion 1 레코드와 기존 fixture는 이 결정으로 다시 쓰지 않는다.
 
+## D013 — 실행 가이드 DAG와 unknown 조건·진행 guard / 채택
+
+- ID: D013
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 SP-013만 다룬다. 같은 발화의 SP-014·015·016은 각 노드에서 구현한다.
+- 문제: `build_actions`가 내용물 옮기기의 선행을 설치로 두고, `reasonIds`를 비운다. 화면이 그 빈칸을 물리 통과로 채우면 안 된다.
+- 변경 대상: [docs/adr/SP-013-execution-guide.md](../docs/adr/SP-013-execution-guide.md), 가이드 생산자와 `queryActionEligibility`, 생성 계약, 진행 CAS, 가이드 문구. `BUILD_ID`는 `zari-domain-6`에서 `zari-domain-7`이다. `ruleVersion`은 `zari-domain-v1`에서 `zari-domain-v2`다. `solverVersion`, persisted `schemaVersion` 1, canonical 1, `ActionStep` 필드 모양은 그대로다.
+- 검토한 대안: (A) 채택한 순서로 생산자를 바꾸고, 자격 읽기를 명령으로 연다. 옛 스냅샷은 읽기 전용으로 남긴다. (B) `requiredConfirmations`에 선행을 넣어 사용자가 완료할 수 없게 한다. (C) 단계 id를 쪼개 ordinal을 복원하고, done을 검사 통과로 쓴다.
+- 선택: A. 지원되는 schemaVersion 1이 역사 스냅샷을 표현하므로 마이그레이션은 없다. B는 사용자 표시 자체를 막는다. C는 잘린 id와 사람 체크를 판정으로 올린다.
+- 조건: unknown을 통과나 기본값으로 바꾸지 않는다. `done`은 사용자 행위 기록이고 사실·검사·Confirmed가 아니다. 칸 비우기, 구매 의사, 도착은 사용자 표시다. 고정 장애물을 지우지 않는다. 새 단위만 acquire와 arrival을 가진다. 적재는 설치 전이고, staging에 실린 용기의 설치는 transfer를 선행으로 두지 않는다. 손 계산 오라클 파일은 생산자가 다시 쓰지 않는다. Fable ARCHITECTURE와 비작성자 A3는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다. `contract_change=YES`라 자동 머지하지 않는다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해."
+- 되돌리기: 이 결정과 `zari-domain-v2` 생산자를 새 결정으로 되돌린다. 이미 저장된 `zari-domain-v1` 레코드의 바이트는 이 결정으로 다시 쓰지 않는다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

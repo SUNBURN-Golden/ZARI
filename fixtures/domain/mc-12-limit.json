@@ -8144,7 +8144,7 @@
           "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
           "catalogVersion": "catalog-2025-01",
           "inputDigest": "bdc80a6cc50fa632760be5c7f5c997abf5fd7ba59659e2d0c9537fe4570edacd",
-          "ruleVersion": "zari-domain-v1",
+          "ruleVersion": "zari-domain-v2",
           "schemaVersion": 1,
           "searchBudget": {
             "maxAlternatives": 3,
@@ -8160,11 +8160,11 @@
           "solverVersion": "none"
         }
       },
-      "planSnapshotId": "297d1d8671646e55c9f27dc3d047879a975884d688ce9d8d09308d051ab60608"
+      "planSnapshotId": "3a3992ae886ddcff2684963d6d25b5e798d9c0ab446f055f47e17095d4d673fe"
     }
   },
   "engineContext": {
-    "buildId": "zari-domain-6"
+    "buildId": "zari-domain-7"
   },
   "expected": {
     "kind": "queryNextFacts",

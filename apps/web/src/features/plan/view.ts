@@ -102,15 +102,15 @@ export const UNASSIGNED_TEXT: Record<string, string> = {
 };
 
 export const ACTION_TEXT: Record<string, string> = {
-  clearSpace: '공간을 비웁니다',
+  clearSpace: '칸을 비웠다고 표시합니다',
   sortContents: '내용물을 분류합니다',
-  acquire: '구매합니다',
-  confirmArrival: '도착을 확인합니다',
+  acquire: '구매 의사를 표시합니다',
+  confirmArrival: '도착했다고 표시합니다',
   install: '수납함을 배치합니다',
-  transferContents: '물건을 넣습니다',
+  transferContents: '밖에서 내용물을 넣습니다',
   label: '라벨을 붙입니다',
   verifyUnassigned: '남은 물건을 확인합니다',
-  resolveCondition: '미확인 조건을 확인합니다',
+  resolveCondition: '미확인 조건을 나중에 확인합니다',
 };
 
 export const STRATEGY_TEXT: Record<string, string> = {

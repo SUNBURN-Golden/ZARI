@@ -1,7 +1,7 @@
 {
  "caseId": "candidate-soft-budget",
  "engineContext": {
-  "buildId": "zari-domain-6"
+  "buildId": "zari-domain-7"
  },
  "expected": {
   "checks": [
@@ -131,7 +131,7 @@
   "diagnostics": [],
   "kind": "validateCandidate",
   "physicalAssurance": "conditional",
-  "snapshotDigest": "904870259d6ea68a563f530fbfb44e5dc2cac3dc813abfe61fc0bc4d41c18f81"
+  "snapshotDigest": "f9befd876ced71c66834165a86a66d43d678ec674924c1003be8e557cfd7addc"
  },
  "fixtureSchemaVersion": 1,
  "input": {
