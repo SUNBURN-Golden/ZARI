@@ -1,0 +1,3177 @@
+{
+  "fixtureSchemaVersion": 1,
+  "caseId": "mc-07-shared-fact",
+  "operation": "queryNextFacts",
+  "schemaVersion": 1,
+  "input": {
+    "input": {
+      "catalogPin": {
+        "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+        "catalogVersion": "catalog-2025-01"
+      },
+      "constraints": {
+        "hardBudget": {
+          "provenance": {
+            "evidenceIds": [],
+            "inputRefs": [],
+            "observedAt": null,
+            "origin": "userDeclared",
+            "ruleIds": [],
+            "verification": "unverified"
+          },
+          "state": "known",
+          "value": "200000"
+        },
+        "hardOneActionAccess": false,
+        "lockedZones": [],
+        "purchaseAllowed": true,
+        "safetyRestrictions": [],
+        "softBudget": {
+          "provenance": {
+            "evidenceIds": [],
+            "inputRefs": [],
+            "observedAt": null,
+            "origin": "userDeclared",
+            "ruleIds": [],
+            "verification": "unverified"
+          },
+          "state": "known",
+          "value": "100000"
+        }
+      },
+      "evidence": [
+        {
+          "confirmedBy": null,
+          "id": "ev-note",
+          "locator": null,
+          "note": "NOTE_TOKEN_91mm conflicting_sources",
+          "observedAt": null,
+          "sourceField": "space.interior.width",
+          "sourceKind": "userMeasured"
+        }
+      ],
+      "groups": [
+        {
+          "id": "group-1",
+          "itemIds": [
+            "item-a",
+            "item-b"
+          ],
+          "label": "Closet",
+          "splitPolicy": "oneTarget"
+        }
+      ],
+      "items": [
+        {
+          "activityIds": [],
+          "category": "clothing",
+          "dimensions": {
+            "envelope": {
+              "depth": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 100,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "height": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 80,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "width": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 190,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              }
+            },
+            "storageState": "folded"
+          },
+          "frequency": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": "weekly"
+          },
+          "id": "item-a",
+          "label": "Winter coats",
+          "massEach": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 800
+          },
+          "quantity": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 2
+          },
+          "requirement": {
+            "allowedOrientations": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": [
+                "upright0"
+              ]
+            },
+            "allowedRetrievalModes": [
+              "directFrontExtraction"
+            ],
+            "handling": {
+              "left": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 5
+              },
+              "liftAboveRim": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 0
+              },
+              "pullExtraDepth": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 0
+              },
+              "right": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 5
+              },
+              "top": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 5
+              }
+            },
+            "mandatoryCompatibility": [],
+            "mustStayTogether": false
+          },
+          "stockRole": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": "active"
+          }
+        },
+        {
+          "activityIds": [],
+          "category": "paper",
+          "dimensions": {
+            "envelope": {
+              "depth": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 200,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "height": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 50,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "width": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 300,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              }
+            },
+            "storageState": "boxed"
+          },
+          "frequency": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": "rare"
+          },
+          "id": "item-b",
+          "label": "Documents",
+          "massEach": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 1200
+          },
+          "quantity": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 1
+          },
+          "requirement": {
+            "allowedOrientations": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": [
+                "upright0",
+                "upright90"
+              ]
+            },
+            "allowedRetrievalModes": [
+              "directFrontExtraction",
+              "pullContainerThenRetrieve"
+            ],
+            "handling": {
+              "left": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 2
+              },
+              "liftAboveRim": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 0
+              },
+              "pullExtraDepth": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 0
+              },
+              "right": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 2
+              },
+              "top": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 2
+              }
+            },
+            "mandatoryCompatibility": [
+              "item-a"
+            ],
+            "mustStayTogether": true
+          },
+          "stockRole": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": "reserve"
+          }
+        }
+      ],
+      "ownedContainers": [],
+      "preferences": {
+        "color": null,
+        "material": null,
+        "objectiveRanking": [
+          "minimumPurchase"
+        ],
+        "visualNotes": []
+      },
+      "search": {
+        "budget": {
+          "maxAlternatives": 3,
+          "maxCandidatesPerGroup": 4,
+          "maxNodes": 64,
+          "maxWorkUnits": "1000"
+        },
+        "profile": {
+          "id": "default",
+          "version": 1
+        },
+        "seed": null
+      },
+      "space": {
+        "clearances": {
+          "back": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 0
+          },
+          "betweenUnits": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 5
+          },
+          "front": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 0
+          },
+          "left": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 5
+          },
+          "right": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 5
+          },
+          "ruleIds": [
+            "rule:clearance-v1"
+          ],
+          "top": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 10
+          }
+        },
+        "id": "space-1",
+        "interior": {
+          "depth": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 400,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          },
+          "height": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 300,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          },
+          "width": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 600,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          }
+        },
+        "kind": "rectangularCompartment",
+        "obstacles": [],
+        "opening": {
+          "bottom": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 0,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          },
+          "height": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 300,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          },
+          "left": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 0,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          },
+          "plane": "frontYZero",
+          "width": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 600,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          }
+        },
+        "staging": {
+          "baseSupport": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "loadLimit": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 50000
+              }
+            }
+          },
+          "freeVolume": {
+            "extent": {
+              "depth": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 400,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "height": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 300,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "width": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 600,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              }
+            },
+            "minX": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": {
+                "nominal": 0,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              }
+            },
+            "minY": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": {
+                "nominal": 0,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              }
+            },
+            "minZ": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": {
+                "nominal": 0,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              }
+            }
+          }
+        },
+        "support": {
+          "elevation": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": {
+              "nominal": 0,
+              "uncertainty": {
+                "state": "unknown"
+              }
+            }
+          },
+          "footprint": {
+            "depth": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": {
+                "nominal": 400,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              }
+            },
+            "width": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": {
+                "nominal": 600,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              }
+            },
+            "x": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": {
+                "nominal": 0,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              }
+            },
+            "y": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": {
+                "nominal": 0,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              }
+            }
+          },
+          "id": "floor-1",
+          "kind": "establishedFloor",
+          "loadLimit": {
+            "provenance": {
+              "evidenceIds": [],
+              "inputRefs": [],
+              "observedAt": null,
+              "origin": "userDeclared",
+              "ruleIds": [],
+              "verification": "unverified"
+            },
+            "state": "known",
+            "value": 50000
+          }
+        }
+      },
+      "strategyChoice": "minimumPurchase"
+    },
+    "inputDigest": "694ab3bca1b210c4e5de8748a44c2c07e3cfdca84edfc806c12598f2bc514bda",
+    "snapshot": {
+      "content": {
+        "actions": [
+          {
+            "id": "act-1",
+            "kind": "install",
+            "prerequisiteStepIds": [],
+            "reasonIds": [],
+            "requiredConfirmations": [],
+            "subjectIds": [
+              "place-1"
+            ]
+          }
+        ],
+        "assignments": [
+          {
+            "itemId": "item-a",
+            "location": {
+              "kind": "direct",
+              "placementId": "place-1"
+            },
+            "unitOrdinal": 0
+          }
+        ],
+        "bom": [],
+        "costSummary": {
+          "grandTotal": {
+            "reason": "notProvided",
+            "state": "unknown"
+          },
+          "productSubtotal": {
+            "reason": "notProvided",
+            "state": "unknown"
+          },
+          "shippingTotal": {
+            "reason": "notProvided",
+            "state": "unknown"
+          }
+        },
+        "creation": "referenceSearch",
+        "inputFacts": {
+          "catalogPin": {
+            "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+            "catalogVersion": "catalog-2025-01"
+          },
+          "constraints": {
+            "hardBudget": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": "200000"
+            },
+            "hardOneActionAccess": false,
+            "lockedZones": [],
+            "purchaseAllowed": true,
+            "safetyRestrictions": [],
+            "softBudget": {
+              "provenance": {
+                "evidenceIds": [],
+                "inputRefs": [],
+                "observedAt": null,
+                "origin": "userDeclared",
+                "ruleIds": [],
+                "verification": "unverified"
+              },
+              "state": "known",
+              "value": "100000"
+            }
+          },
+          "evidence": [
+            {
+              "confirmedBy": null,
+              "id": "ev-note",
+              "locator": null,
+              "note": "NOTE_TOKEN_91mm conflicting_sources",
+              "observedAt": null,
+              "sourceField": "space.interior.width",
+              "sourceKind": "userMeasured"
+            }
+          ],
+          "groups": [
+            {
+              "id": "group-1",
+              "itemIds": [
+                "item-a",
+                "item-b"
+              ],
+              "label": "Closet",
+              "splitPolicy": "oneTarget"
+            }
+          ],
+          "items": [
+            {
+              "activityIds": [],
+              "category": "clothing",
+              "dimensions": {
+                "envelope": {
+                  "depth": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 100,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  },
+                  "height": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 80,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  },
+                  "width": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 190,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  }
+                },
+                "storageState": "folded"
+              },
+              "frequency": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": "weekly"
+              },
+              "id": "item-a",
+              "label": "Winter coats",
+              "massEach": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 800
+              },
+              "quantity": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 2
+              },
+              "requirement": {
+                "allowedOrientations": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": [
+                    "upright0"
+                  ]
+                },
+                "allowedRetrievalModes": [
+                  "directFrontExtraction"
+                ],
+                "handling": {
+                  "left": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 5
+                  },
+                  "liftAboveRim": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 0
+                  },
+                  "pullExtraDepth": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 0
+                  },
+                  "right": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 5
+                  },
+                  "top": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 5
+                  }
+                },
+                "mandatoryCompatibility": [],
+                "mustStayTogether": false
+              },
+              "stockRole": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": "active"
+              }
+            },
+            {
+              "activityIds": [],
+              "category": "paper",
+              "dimensions": {
+                "envelope": {
+                  "depth": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 200,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  },
+                  "height": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 50,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  },
+                  "width": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 300,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  }
+                },
+                "storageState": "boxed"
+              },
+              "frequency": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": "rare"
+              },
+              "id": "item-b",
+              "label": "Documents",
+              "massEach": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 1200
+              },
+              "quantity": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 1
+              },
+              "requirement": {
+                "allowedOrientations": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": [
+                    "upright0",
+                    "upright90"
+                  ]
+                },
+                "allowedRetrievalModes": [
+                  "directFrontExtraction",
+                  "pullContainerThenRetrieve"
+                ],
+                "handling": {
+                  "left": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 2
+                  },
+                  "liftAboveRim": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 0
+                  },
+                  "pullExtraDepth": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 0
+                  },
+                  "right": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 2
+                  },
+                  "top": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 2
+                  }
+                },
+                "mandatoryCompatibility": [
+                  "item-a"
+                ],
+                "mustStayTogether": true
+              },
+              "stockRole": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": "reserve"
+              }
+            }
+          ],
+          "ownedContainers": [],
+          "preferences": {
+            "color": null,
+            "material": null,
+            "objectiveRanking": [
+              "minimumPurchase"
+            ],
+            "visualNotes": []
+          },
+          "search": {
+            "budget": {
+              "maxAlternatives": 3,
+              "maxCandidatesPerGroup": 4,
+              "maxNodes": 64,
+              "maxWorkUnits": "1000"
+            },
+            "profile": {
+              "id": "default",
+              "version": 1
+            },
+            "seed": null
+          },
+          "space": {
+            "clearances": {
+              "back": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 0
+              },
+              "betweenUnits": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 5
+              },
+              "front": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 0
+              },
+              "left": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 5
+              },
+              "right": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 5
+              },
+              "ruleIds": [
+                "rule:clearance-v1"
+              ],
+              "top": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 10
+              }
+            },
+            "id": "space-1",
+            "interior": {
+              "depth": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 400,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "height": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 300,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "width": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 600,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              }
+            },
+            "kind": "rectangularCompartment",
+            "obstacles": [],
+            "opening": {
+              "bottom": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 0,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "height": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 300,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "left": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 0,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "plane": "frontYZero",
+              "width": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 600,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              }
+            },
+            "staging": {
+              "baseSupport": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "loadLimit": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": 50000
+                  }
+                }
+              },
+              "freeVolume": {
+                "extent": {
+                  "depth": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 400,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  },
+                  "height": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 300,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  },
+                  "width": {
+                    "provenance": {
+                      "evidenceIds": [],
+                      "inputRefs": [],
+                      "observedAt": null,
+                      "origin": "userDeclared",
+                      "ruleIds": [],
+                      "verification": "unverified"
+                    },
+                    "state": "known",
+                    "value": {
+                      "nominal": 600,
+                      "uncertainty": {
+                        "state": "unknown"
+                      }
+                    }
+                  }
+                },
+                "minX": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": {
+                    "nominal": 0,
+                    "uncertainty": {
+                      "state": "unknown"
+                    }
+                  }
+                },
+                "minY": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": {
+                    "nominal": 0,
+                    "uncertainty": {
+                      "state": "unknown"
+                    }
+                  }
+                },
+                "minZ": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": {
+                    "nominal": 0,
+                    "uncertainty": {
+                      "state": "unknown"
+                    }
+                  }
+                }
+              }
+            },
+            "support": {
+              "elevation": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": {
+                  "nominal": 0,
+                  "uncertainty": {
+                    "state": "unknown"
+                  }
+                }
+              },
+              "footprint": {
+                "depth": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": {
+                    "nominal": 400,
+                    "uncertainty": {
+                      "state": "unknown"
+                    }
+                  }
+                },
+                "width": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": {
+                    "nominal": 600,
+                    "uncertainty": {
+                      "state": "unknown"
+                    }
+                  }
+                },
+                "x": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": {
+                    "nominal": 0,
+                    "uncertainty": {
+                      "state": "unknown"
+                    }
+                  }
+                },
+                "y": {
+                  "provenance": {
+                    "evidenceIds": [],
+                    "inputRefs": [],
+                    "observedAt": null,
+                    "origin": "userDeclared",
+                    "ruleIds": [],
+                    "verification": "unverified"
+                  },
+                  "state": "known",
+                  "value": {
+                    "nominal": 0,
+                    "uncertainty": {
+                      "state": "unknown"
+                    }
+                  }
+                }
+              },
+              "id": "floor-1",
+              "kind": "establishedFloor",
+              "loadLimit": {
+                "provenance": {
+                  "evidenceIds": [],
+                  "inputRefs": [],
+                  "observedAt": null,
+                  "origin": "userDeclared",
+                  "ruleIds": [],
+                  "verification": "unverified"
+                },
+                "state": "known",
+                "value": 50000
+              }
+            }
+          },
+          "strategyChoice": "minimumPurchase"
+        },
+        "placements": [
+          {
+            "id": "place-1",
+            "orientation": "upright0",
+            "parent": {
+              "kind": "space",
+              "spaceId": "space-1"
+            },
+            "position": {
+              "x": 5,
+              "y": 5,
+              "z": 0
+            },
+            "subject": {
+              "itemId": "item-a",
+              "kind": "directItem",
+              "unitOrdinal": 0
+            },
+            "supportId": "floor-1"
+          }
+        ],
+        "purchaseSelections": [],
+        "referencedCatalog": {
+          "evidence": [],
+          "offers": [],
+          "products": [],
+          "variants": []
+        },
+        "scope": {
+          "budget": {
+            "maxAlternatives": 3,
+            "maxCandidatesPerGroup": 4,
+            "maxNodes": 64,
+            "maxWorkUnits": "1000"
+          },
+          "groupIds": [
+            "group-1"
+          ],
+          "profile": {
+            "id": "default",
+            "version": 1
+          },
+          "restrictions": []
+        },
+        "strategy": {
+          "assumptions": [],
+          "factRefs": [],
+          "groups": [
+            {
+              "groupId": "group-1",
+              "itemIds": [
+                "item-a",
+                "item-b"
+              ],
+              "zoneId": "zone-main"
+            }
+          ],
+          "priorities": [
+            {
+              "groupId": "group-1",
+              "ordinal": 0
+            }
+          ],
+          "reasons": [],
+          "ruleIds": [
+            "rule:strategy-min-purchase"
+          ],
+          "strategy": "minimumPurchase",
+          "zones": [
+            {
+              "bounds": {
+                "extent": {
+                  "depth": 400,
+                  "height": 300,
+                  "width": 600
+                },
+                "min": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              "id": "zone-main",
+              "kind": "softPreference",
+              "label": "Main"
+            }
+          ]
+        },
+        "unassigned": [
+          {
+            "instances": {
+              "kind": "known",
+              "ranges": [
+                {
+                  "endExclusive": 2,
+                  "start": 1
+                }
+              ]
+            },
+            "itemId": "item-a",
+            "reasonCode": "no-space"
+          },
+          {
+            "instances": {
+              "kind": "known",
+              "ranges": [
+                {
+                  "endExclusive": 1,
+                  "start": 0
+                }
+              ]
+            },
+            "itemId": "item-b",
+            "reasonCode": "no-space"
+          }
+        ],
+        "validation": {
+          "assignmentCompleteness": {
+            "assignedInstances": 1,
+            "provisionalInstances": 0,
+            "unassignedInstances": 2,
+            "unknownQuantityItems": 0
+          },
+          "checks": [
+            {
+              "basis": "nominal",
+              "blocking": true,
+              "evidenceRefs": [
+                {
+                  "entityId": "space-1",
+                  "fieldPath": "space.interior.width"
+                }
+              ],
+              "id": "chk-width-a",
+              "kind": "outer_geometry",
+              "measurements": [],
+              "reasonCode": "fact_unknown",
+              "remediation": [],
+              "status": "unknown",
+              "subjectIds": [
+                "space-1"
+              ]
+            },
+            {
+              "basis": "nominal",
+              "blocking": true,
+              "evidenceRefs": [
+                {
+                  "entityId": "space-1",
+                  "fieldPath": "space.interior.width"
+                }
+              ],
+              "id": "chk-width-b",
+              "kind": "inner_capacity",
+              "measurements": [],
+              "reasonCode": "source_missing",
+              "remediation": [],
+              "status": "unknown",
+              "subjectIds": [
+                "space-1"
+              ]
+            }
+          ],
+          "commerceReadiness": "notApplicable",
+          "physicalAssurance": "conditional"
+        },
+        "versions": {
+          "canonicalVersion": 1,
+          "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+          "catalogVersion": "catalog-2025-01",
+          "inputDigest": "694ab3bca1b210c4e5de8748a44c2c07e3cfdca84edfc806c12598f2bc514bda",
+          "ruleVersion": "zari-domain-v1",
+          "schemaVersion": 1,
+          "searchBudget": {
+            "maxAlternatives": 3,
+            "maxCandidatesPerGroup": 4,
+            "maxNodes": 64,
+            "maxWorkUnits": "1000"
+          },
+          "searchProfile": {
+            "id": "default",
+            "version": 1
+          },
+          "seed": null,
+          "solverVersion": "none"
+        }
+      },
+      "planSnapshotId": "297d1d8671646e55c9f27dc3d047879a975884d688ce9d8d09308d051ab60608"
+    }
+  },
+  "engineContext": {
+    "buildId": "zari-domain-6"
+  },
+  "expected": {
+    "kind": "queryNextFacts",
+    "decodeError": false,
+    "failureCode": null,
+    "reply": {
+      "freshness": "current",
+      "sourceStamp": {
+        "inputDigest": "694ab3bca1b210c4e5de8748a44c2c07e3cfdca84edfc806c12598f2bc514bda",
+        "planSnapshotId": "297d1d8671646e55c9f27dc3d047879a975884d688ce9d8d09308d051ab60608",
+        "catalogDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+        "ruleVersion": "zari-domain-v1",
+        "canonicalVersion": 1
+      },
+      "rows": [
+        {
+          "factKey": "space-1:space.interior.width",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.interior.width"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.interior.width"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [
+            "chk-width-a",
+            "chk-width-b"
+          ],
+          "reasonCodes": [
+            "fact_unknown",
+            "source_missing"
+          ],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 2,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.dimensions.envelope.depth",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.dimensions.envelope.depth"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.dimensions.envelope.depth"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.dimensions.envelope.height",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.dimensions.envelope.height"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.dimensions.envelope.height"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.dimensions.envelope.width",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.dimensions.envelope.width"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.dimensions.envelope.width"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.massEach",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.massEach"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.massEach"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.requirement.handling.left",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.left"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.left"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.requirement.handling.liftAboveRim",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.liftAboveRim"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.liftAboveRim"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.requirement.handling.pullExtraDepth",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.pullExtraDepth"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.pullExtraDepth"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.requirement.handling.right",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.right"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.right"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.requirement.handling.top",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.top"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.requirement.handling.top"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.dimensions.envelope.depth",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.dimensions.envelope.depth"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.dimensions.envelope.depth"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.dimensions.envelope.height",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.dimensions.envelope.height"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.dimensions.envelope.height"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.dimensions.envelope.width",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.dimensions.envelope.width"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.dimensions.envelope.width"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.massEach",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.massEach"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.massEach"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.requirement.handling.left",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.left"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.left"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.requirement.handling.liftAboveRim",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.liftAboveRim"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.liftAboveRim"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.requirement.handling.pullExtraDepth",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.pullExtraDepth"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.pullExtraDepth"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.requirement.handling.right",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.right"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.right"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.requirement.handling.top",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.top"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.requirement.handling.top"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.clearances.back",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.back"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.back"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.clearances.betweenUnits",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.betweenUnits"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.betweenUnits"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.clearances.front",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.front"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.front"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.clearances.left",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.left"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.left"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.clearances.right",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.right"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.right"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.clearances.top",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.top"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.clearances.top"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.interior.depth",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.interior.depth"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.interior.depth"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.interior.height",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.interior.height"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.interior.height"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.opening.bottom",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.bottom"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.bottom"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.opening.height",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.height"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.height"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.opening.left",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.left"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.left"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.opening.width",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.width"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.opening.width"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.baseSupport",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.baseSupport"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.baseSupport"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.baseSupport.loadLimit",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.baseSupport.loadLimit"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.baseSupport.loadLimit"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.freeVolume.extent.depth",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.extent.depth"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.extent.depth"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.freeVolume.extent.height",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.extent.height"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.extent.height"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.freeVolume.extent.width",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.extent.width"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.extent.width"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.freeVolume.minX",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.minX"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.minX"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.freeVolume.minY",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.minY"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.minY"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.staging.freeVolume.minZ",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.minZ"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.staging.freeVolume.minZ"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.support.elevation",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.elevation"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.elevation"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.support.footprint.depth",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.depth"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.depth"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.support.footprint.width",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.width"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.width"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.support.footprint.x",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.x"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.x"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.support.footprint.y",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.y"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.footprint.y"
+            }
+          ],
+          "needKind": "missingBound",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "space-1:space.support.loadLimit",
+          "fieldRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.loadLimit"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "space-1",
+              "fieldPath": "space.support.loadLimit"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "requiredPhysicalUnknown",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-a:items.item-a.quantity",
+          "fieldRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.quantity"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-a",
+              "fieldPath": "items.item-a.quantity"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "quantityCompleteness",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        },
+        {
+          "factKey": "item-b:items.item-b.quantity",
+          "fieldRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.quantity"
+            }
+          ],
+          "targetRefs": [
+            {
+              "entityId": "item-b",
+              "fieldPath": "items.item-b.quantity"
+            }
+          ],
+          "needKind": "missingEvidence",
+          "checkIds": [],
+          "reasonCodes": [],
+          "priorityClass": "quantityCompleteness",
+          "relatedCheckCount": 0,
+          "resolutionActions": [
+            "editSupportedField"
+          ]
+        }
+      ],
+      "resolutionActions": []
+    }
+  },
+  "groupFormatRequests": []
+}

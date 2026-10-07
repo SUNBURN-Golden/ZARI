@@ -1,24 +1,28 @@
-//! Frozen measurement-completion read model for SP-010.
+//! Measurement-completion classification frozen by SP-008.
 //!
-//! These types and the priority table are the SP-008 ADR contract. They are
-//! not a `DomainOperation`, not a capability, and not part of the generated
-//! runtime schema. SP-010 is the first node that may export and handle
-//! `queryNextFacts`.
+//! `classify_check` is the priority table. It does not invent
+//! `missingNominal`, `missingBound`, or `missingEvidence`; the SP-010 query
+//! fills those by inspecting the fact. Pass and NotApplicable create no row.
 
 use crate::plan::{CheckKind, CheckStatus};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
-/// Wire name reserved for the future completion query. Not registered.
+/// Wire name of the completion query.
 pub const COMPLETION_QUERY_OPERATION: &str = "queryNextFacts";
-/// Capability name reserved for that operation. Not advertised.
+/// Capability name advertised with the executable query.
 pub const COMPLETION_QUERY_CAPABILITY: &str = "queryNextFacts";
-/// Whole-result failure when the query would exceed its caps. Not emitted yet.
+/// Whole-result failure when the query would exceed its caps.
 pub const COMPLETION_LIMIT_CODE: &str = "completion_limit_exceeded";
 pub const COMPLETION_MAX_FACT_ROWS: usize = 512;
 pub const COMPLETION_MAX_CHECK_REFS: usize = 2048;
 pub const COMPLETION_MAX_BYTES: usize = 5 * 1024 * 1024;
 
 /// Stable sort rank. Lower is earlier. Not a fitness score.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
+#[serde(rename_all = "camelCase")]
 pub enum CompletionPriority {
     RepairKnownFailure = 0,
     RequiredPhysicalUnknown = 1,
@@ -30,7 +34,8 @@ pub enum CompletionPriority {
 /// Fact-shaped need. Nominal versus bound versus evidence is filled by the
 /// SP-010 fact inspection. This node only emits the two needs that are
 /// already decided by a structured check, and leaves the rest unset.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub enum CompletionNeed {
     MissingNominal,
     MissingBound,

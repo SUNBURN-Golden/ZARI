@@ -65,6 +65,7 @@ fn capability_subset_is_honest() {
             "validateCandidate",
             "evaluateLayoutEdit",
             "projectSpatialView",
+            "queryNextFacts",
             "disposeProject"
         ])
     );
@@ -455,6 +456,7 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             "validateCandidate",
             "evaluateLayoutEdit",
             "projectSpatialView",
+            "queryNextFacts",
             "disposeProject",
             "proposeStrategies",
             "startSearch",
@@ -467,13 +469,21 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             .as_array()
             .unwrap()
             .iter()
-            .all(|capability| capability != COMPLETION_QUERY_CAPABILITY)
+            .any(|capability| capability == COMPLETION_QUERY_CAPABILITY)
     );
     assert_eq!(
         send(
             &mut runtime,
             meta("future-query"),
             json!({"kind":"queryNextFacts"})
+        )["event"]["code"],
+        "invalid_input"
+    );
+    assert_eq!(
+        send(
+            &mut runtime,
+            meta("unknown-op"),
+            json!({"kind":"notARealOperation"})
         )["event"]["code"],
         "operation_not_supported"
     );

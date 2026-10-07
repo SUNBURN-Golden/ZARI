@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
 import { afterEach, expect, it } from 'vitest';
 import { initSync, Runtime } from '../../../../crates/wasm/pkg/zari_wasm.js';
+import { WORKER_BUILD_ID } from '../../src/worker/client';
 import type {
   CatalogSnapshot,
   PlanSnapshot,
@@ -100,7 +101,7 @@ function normalizeSample(): { input: ProjectInput; digest: string } {
     };
   send({
     meta: meta('i', { projectActivationId: 'system', projectId: 'system' }),
-    command: { kind: 'initialize', buildId: 'zari-domain-5', expectedProtocolVersion: 1, expectedSchemaVersion: 1 },
+    command: { kind: 'initialize', buildId: WORKER_BUILD_ID, expectedProtocolVersion: 1, expectedSchemaVersion: 1 },
   });
   send({ meta: meta('a'), command: { kind: 'activateProject', context: { kind: 'bootstrap' } } });
   const reply = send({

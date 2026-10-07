@@ -37,6 +37,7 @@ const expected = {
   validateCandidate: 'candidateValidated',
   evaluateLayoutEdit: 'editEvaluated',
   projectSpatialView: 'spatialViewProjected',
+  queryNextFacts: 'nextFactsQueried',
   proposeStrategies: 'strategiesProposed',
   startSearch: 'searchStarted',
   disposeProject: 'projectDisposed',
@@ -48,7 +49,7 @@ const multiExpected: Partial<Record<Command['kind'], readonly string[]>> = {
 };
 const sameMeta = (a: Meta, b: Meta) =>
   Object.keys(a).every((key) => a[key as keyof Meta] === b[key as keyof Meta]);
-export const WORKER_BUILD_ID = 'zari-domain-5';
+export const WORKER_BUILD_ID = 'zari-domain-6';
 /** Exact ready-event order. A swap, extra, or omission is a version mismatch. */
 export const WORKER_CAPABILITIES = [
   'initialize',
@@ -62,6 +63,7 @@ export const WORKER_CAPABILITIES = [
   'validateCandidate',
   'evaluateLayoutEdit',
   'projectSpatialView',
+  'queryNextFacts',
   'disposeProject',
   'proposeStrategies',
   'startSearch',

@@ -8,6 +8,7 @@ import { fieldCaption, preferredMeasureView } from '../features/workspace/projec
 import { AttachmentManager } from '../features/attachments/model';
 import { reencodeImage } from '../features/attachments/image';
 import { DetailMeasure } from '../features/project/DetailPanel';
+import { NextFactsList } from '../features/project/NextFactsList';
 import { diagnosticText, uncertaintyLabel } from '../features/project/detailFacts';
 import {
   fieldPathFor,
@@ -426,6 +427,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     () => session.snapshot,
   );
   const [exported, setExported] = useState<string | null>(null);
+  const [detailTarget, setDetailTarget] = useState<{ path: string; token: number } | null>(null);
   const workspace = useWorkspace({
     projectId,
     sourceKey: state.inputDigest ? inputSourceKey(state.inputDigest) : `input:pending:${projectId}`,
@@ -568,6 +570,17 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
       >
         <div className="section-kicker">01 · 공간 치수</div>
         <h2 id="measure-title">공간을 측정해 주세요.</h2>
+        <NextFactsList
+          view={state.plan.nextFacts}
+          onRecompile={() => session.recompileNextFacts()}
+          onField={(path) => {
+            setDetailTarget({ path, token: Date.now() });
+            if ((MEASUREMENT_FIELDS as readonly string[]).includes(path)) {
+              setFocused(path as MeasurementField);
+            }
+          }}
+          onCatalog={() => navigate('#/catalog')}
+        />
         <div className="measure-workspace">
           <div>
         <FieldGroup
@@ -620,7 +633,12 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
             ))}
           </ul>
         )}
-        <DetailMeasure session={session} state={state} focusedField={focused} />
+        <DetailMeasure
+          session={session}
+          state={state}
+          focusedField={focused}
+          detailTarget={detailTarget}
+        />
         {state.diagnostics.length > 0 && state.saveState === 'saved' && (
           <p className="session-note" data-testid="normalize-held">
             원문은 저장되었습니다. 정규화된 입력과 근거는 이전 확인 값을 유지합니다.

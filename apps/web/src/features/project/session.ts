@@ -59,6 +59,20 @@ import {
 import { leasesEqual, type WorkspaceLease } from '../workspace/lease';
 import { holdProgressReply } from './progressGate';
 import { holdProjectionReply, maybeCorruptProjection } from './projectionGate';
+import {
+  EMPTY_NEXT_FACTS,
+  nextFactsLeaseMatches,
+  nextFactsReplyMatches,
+  nextFactsSourceKey,
+  type NextFactsLease,
+  type NextFactsView,
+} from './nextFacts';
+import {
+  holdNextFactsReply,
+  maybeForeignNextFacts,
+  takeNextFactsInjection,
+} from './nextFactsGate';
+import type { NextFactsReply } from '../../contracts/generated/dto';
 import { shouldApplyProgressReply } from '../workspace/stepFocus';
 
 export type SaveState =
@@ -150,6 +164,8 @@ export interface PlanState {
    * Not written to IndexedDB, export, or the snapshot hash.
    */
   projections: Record<string, ProjectionEntry>;
+  /** Ephemeral completion list. Not written to IndexedDB, export, or a snapshot. */
+  nextFacts: NextFactsView;
 }
 
 export interface SessionSnapshot {
@@ -219,6 +235,13 @@ export class ProjectSession {
   private projectionFlight = new Set<string>();
   /** Worker `projectSpatialView` sends. Cache hits and focus changes do not increment. */
   private spatialRequestsSent = 0;
+  /** Worker `queryNextFacts` sends. Focus, keystrokes, and cache hits do not increment. */
+  private nextFactsRequestsSent = 0;
+  private nextFactsMounted = 0;
+  private nextFactsFlight: string | null = null;
+  private nextFactsCache = new Map<string, NextFactsReply>();
+  private nextFactsPrimed = false;
+  private nextFactsAwaitingRecovery = false;
   /**
    * Bumped when the accepted binding is replaced or the session reloads.
    * An in-flight progress reply captured against an older epoch is dropped.
@@ -285,6 +308,7 @@ export class ProjectSession {
           redo: [],
         },
         projections: {},
+        nextFacts: EMPTY_NEXT_FACTS,
       },
     };
     controller.onLifecycle((worker, error) => {
@@ -294,6 +318,7 @@ export class ProjectSession {
       // status is still 'loading' while open() runs its own installContext.
       if (worker === 'failed' && !this.closed && this.state.status === 'ready')
         this.patch({ context: 'none' });
+      if (worker === 'failed' && !this.closed) this.dropNextFactsForWorker();
       if (worker === 'ready' && !this.closed && this.state.status === 'ready')
         this.patch({ context: 'installing' });
       if (worker === 'ready' && !this.closed) void this.recoverContext();
@@ -345,6 +370,7 @@ export class ProjectSession {
     this.generation += 1;
     this.epoch += 1;
     this.controller.current?.setEpoch(String(this.epoch));
+    this.invalidateNextFactsForDraft();
     return {
       generation: String(this.generation),
       epoch: String(this.epoch),
@@ -526,6 +552,20 @@ export class ProjectSession {
       // activate() rejects in-flight system requests. Ask again after it
       // settles so a projection started during commit is not left failed.
       if (!this.closed) this.refreshInputProjection();
+      if (!this.closed && this.nextFactsAwaitingRecovery) {
+        this.nextFactsAwaitingRecovery = false;
+        this.nextFactsCache.clear();
+        if (!this.state.staleInput) this.ensureNextFacts();
+      } else if (
+        !this.closed &&
+        this.nextFactsPrimed &&
+        !this.state.staleInput &&
+        this.state.plan.nextFacts.status === 'loading'
+      ) {
+        // activate() rejects an in-flight system query. Ask again for the
+        // same source; a request that is still in flight is coalesced.
+        this.ensureNextFacts();
+      }
     }
   }
   private async activateContext(
@@ -829,6 +869,7 @@ export class ProjectSession {
       });
       return;
     }
+    const previousDigest = this.state.inputDigest;
     this.patch({ diagnostics, normalizedInput: normalized ?? this.state.normalizedInput });
     // Skip the write when nothing semantic changed and the stored draft
     // already carries the same validation state (e.g. a plain reload). The
@@ -839,6 +880,7 @@ export class ProjectSession {
         staleInput: false,
         inputDigest: inputDigest ?? this.state.inputDigest,
       });
+      this.settleNextFacts(previousDigest);
       return;
     }
     const result = await this.repo
@@ -869,6 +911,7 @@ export class ProjectSession {
       staleInput: this.generation > this.lastCommittedGeneration,
       inputDigest: inputDigest ?? this.state.inputDigest,
     });
+    this.settleNextFacts(previousDigest);
     if (revisionChanged && normalized) {
       // The committed input moved: any in-flight search belongs to the old
       // context — `activateProject` drops it engine-side, so retire the pump
@@ -1234,6 +1277,7 @@ export class ProjectSession {
           actionRetry: null,
           progressLoad: 'loading',
         });
+        this.holdNextFactsForRecompile();
         // A new binding starts with its own rows — reload rather than carry.
         void this.loadActionProgress();
       } else if (result.status === 'conflict') {
@@ -1756,6 +1800,10 @@ export class ProjectSession {
         : null,
     });
     void this.loadActionProgress();
+    if (this.nextFactsPrimed) {
+      this.holdNextFactsForRecompile();
+      this.ensureNextFacts();
+    }
   }
   /** Conflict path: copy the dirty draft into a fresh project. */
   async saveAsCopy(name?: string): Promise<string | null> {
@@ -1772,6 +1820,192 @@ export class ProjectSession {
     } catch {
       return null;
     }
+  }
+
+  // ---------- completion query ----------
+
+  /** Ask again for the committed source. A dirty draft does not send. */
+  recompileNextFacts(): void {
+    if (this.state.staleInput) {
+      this.invalidateNextFactsForDraft();
+      return;
+    }
+    this.ensureNextFacts();
+  }
+  private settleNextFacts(previousDigest: string | null): void {
+    if (!this.nextFactsPrimed) {
+      this.primeNextFacts();
+      return;
+    }
+    if (previousDigest !== this.state.inputDigest) this.holdNextFactsForRecompile();
+  }
+  private primeNextFacts(): void {
+    if (this.nextFactsPrimed || this.closed || this.state.staleInput) return;
+    if (!this.state.normalizedInput || !this.state.inputDigest || !this.controller.current) return;
+    this.nextFactsPrimed = true;
+    this.ensureNextFacts();
+  }
+  private ensureNextFacts(): void {
+    if (this.closed || this.state.staleInput) return;
+    const input = this.state.normalizedInput;
+    const inputDigest = this.state.inputDigest;
+    const client = this.controller.current;
+    if (!input || !inputDigest || !client) return;
+    const snapshot = this.state.plan.acceptedSnapshot;
+    const lease: NextFactsLease = {
+      projectId: this.projectId,
+      inputDigest,
+      snapshotId: snapshot?.planSnapshotId ?? null,
+      catalogDigest: input.catalogPin.catalogDigest,
+      rawGeneration: this.epoch,
+      worker: client,
+      mount: this.nextFactsMounted,
+    };
+    const sourceKey = nextFactsSourceKey(lease);
+    const cached = this.nextFactsCache.get(sourceKey);
+    if (cached) {
+      this.publishNextFactsReply(sourceKey, cached, null);
+      return;
+    }
+    if (this.nextFactsFlight === sourceKey) return;
+    this.nextFactsFlight = sourceKey;
+    this.nextFactsRequestsSent += 1;
+    this.publishNextFacts({
+      status: 'loading',
+      reason: null,
+      freshness: null,
+      rows: [],
+      actions: [],
+      failureCode: null,
+      sourceKey,
+      roundTripMs: null,
+    });
+    const started = performance.now();
+    void client
+      .systemRequest({ kind: 'queryNextFacts', input, inputDigest, snapshot })
+      .then(async (event) => {
+        let received = event;
+        if (import.meta.env.MODE === 'test') {
+          await holdNextFactsReply();
+          received = maybeForeignNextFacts(received);
+          if (takeNextFactsInjection() === 'limit') {
+            if (!this.nextFactsLeaseHolds(lease)) return;
+            this.publishNextFacts({
+              status: 'limited',
+              reason: null,
+              freshness: null,
+              rows: [],
+              actions: [],
+              failureCode: 'completion_limit_exceeded',
+              sourceKey,
+              roundTripMs: performance.now() - started,
+            });
+            return;
+          }
+        }
+        if (!this.nextFactsLeaseHolds(lease)) return;
+        if (received.kind !== 'nextFactsQueried') return;
+        if (!nextFactsReplyMatches(lease, received.reply)) return;
+        this.nextFactsCache.set(sourceKey, received.reply);
+        this.publishNextFactsReply(sourceKey, received.reply, performance.now() - started);
+      })
+      .catch((error: unknown) => {
+        if (!this.nextFactsLeaseHolds(lease)) return;
+        if (error instanceof StaleRequest) return;
+        const code = error instanceof Error ? error.message : 'next_facts_failed';
+        this.publishNextFacts({
+          status: code === 'completion_limit_exceeded' ? 'limited' : 'failed',
+          reason: null,
+          freshness: null,
+          rows: [],
+          actions: [],
+          failureCode: code,
+          sourceKey,
+          roundTripMs: performance.now() - started,
+        });
+      })
+      .finally(() => {
+        if (this.nextFactsFlight === sourceKey) this.nextFactsFlight = null;
+      });
+  }
+  private nextFactsLeaseHolds(lease: NextFactsLease): boolean {
+    const client = this.controller.current;
+    if (!client || !this.state.inputDigest || !this.state.normalizedInput) return false;
+    return nextFactsLeaseMatches(lease, {
+      projectId: this.projectId,
+      inputDigest: this.state.inputDigest,
+      snapshotId: this.state.plan.acceptedSnapshot?.planSnapshotId ?? null,
+      catalogDigest: this.state.normalizedInput.catalogPin.catalogDigest,
+      rawGeneration: this.epoch,
+      worker: client,
+      mount: this.nextFactsMounted,
+    });
+  }
+  private publishNextFactsReply(sourceKey: string, reply: NextFactsReply, roundTripMs: number | null): void {
+    this.publishNextFacts({
+      status: 'ready',
+      reason: null,
+      freshness: reply.freshness,
+      rows: reply.rows,
+      actions: reply.resolutionActions,
+      failureCode: null,
+      sourceKey,
+      ...(roundTripMs === null ? {} : { roundTripMs }),
+    });
+  }
+  private publishNextFacts(part: Partial<NextFactsView>): void {
+    const current = this.state.plan.nextFacts;
+    const next: NextFactsView = { ...current, ...part, requests: this.nextFactsRequestsSent };
+    if (
+      current.status === next.status &&
+      current.reason === next.reason &&
+      current.freshness === next.freshness &&
+      current.rows === next.rows &&
+      current.failureCode === next.failureCode &&
+      current.requests === next.requests &&
+      current.roundTripMs === next.roundTripMs &&
+      current.sourceKey === next.sourceKey
+    ) {
+      return;
+    }
+    this.patchPlan({ nextFacts: next });
+  }
+  private invalidateNextFactsForDraft(): void {
+    if (this.state.plan.nextFacts.status === 'idle') return;
+    this.publishNextFacts({
+      status: 'stale',
+      reason: 'draft',
+      freshness: null,
+      rows: [],
+      actions: [],
+      failureCode: null,
+    });
+  }
+  private holdNextFactsForRecompile(): void {
+    if (!this.nextFactsPrimed) return;
+    this.publishNextFacts({
+      status: 'stale',
+      reason: 'committed',
+      freshness: null,
+      rows: [],
+      actions: [],
+      failureCode: null,
+    });
+  }
+  private dropNextFactsForWorker(): void {
+    this.nextFactsMounted += 1;
+    this.nextFactsFlight = null;
+    this.nextFactsCache.clear();
+    this.nextFactsAwaitingRecovery = this.nextFactsPrimed;
+    if (!this.nextFactsPrimed) return;
+    this.publishNextFacts({
+      status: 'stale',
+      reason: 'worker',
+      freshness: null,
+      rows: [],
+      actions: [],
+      failureCode: null,
+    });
   }
 
   // ---------- spatial projection ----------
@@ -1905,6 +2139,9 @@ export class ProjectSession {
     }
     this.closed = true;
     this.projectionMounted += 1;
+    this.nextFactsMounted += 1;
+    this.nextFactsFlight = null;
+    this.nextFactsCache.clear();
     this.projectionFlight.clear();
     this.projectionCache.clear();
     this.pump?.dispose();

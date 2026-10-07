@@ -700,6 +700,12 @@ export type DomainFixtureExpected =
       projectionDigest: Digest;
     }
   | {
+      decodeError: boolean;
+      failureCode: string | null;
+      kind: 'queryNextFacts';
+      reply: NextFactsReply | null;
+    }
+  | {
       /**
        * Ordered snapshot digests of the emitted ranked alternatives.
        */
@@ -993,6 +999,48 @@ export type SpatialOverlayRole =
   | 'supportFootprint';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "NextFactsFreshness".
+ */
+export type NextFactsFreshness = 'current' | 'inputOnly' | 'stale';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ResolutionAction".
+ */
+export type ResolutionAction =
+  | 'editSupportedField'
+  | 'inspectCatalogSource'
+  | 'recalculate'
+  | 'requestSupportedScope'
+  | 'remeasure';
+/**
+ * Fact-shaped need. Nominal versus bound versus evidence is filled by the
+ * SP-010 fact inspection. This node only emits the two needs that are
+ * already decided by a structured check, and leaves the rest unset.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CompletionNeed".
+ */
+export type CompletionNeed =
+  | 'missingNominal'
+  | 'missingBound'
+  | 'missingEvidence'
+  | 'conflictingEvidence'
+  | 'unsupportedInput'
+  | 'repairKnownFailure';
+/**
+ * Stable sort rank. Lower is earlier. Not a fitness score.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CompletionPriority".
+ */
+export type CompletionPriority =
+  | 'repairKnownFailure'
+  | 'requiredPhysicalUnknown'
+  | 'quantityCompleteness'
+  | 'procurementUnknown'
+  | 'softOrUnsupported';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "WorkCount".
  */
 export type WorkCount = string;
@@ -1014,7 +1062,8 @@ export type DomainOperation =
   | 'evaluateLayoutEdit'
   | 'proposeStrategies'
   | 'runSearch'
-  | 'projectSpatialView';
+  | 'projectSpatialView'
+  | 'queryNextFacts';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "LayoutEditCommand".
@@ -1330,6 +1379,12 @@ export type Command =
   | {
       kind: 'projectSpatialView';
       source: SpatialViewSource;
+    }
+  | {
+      input: ProjectInput;
+      inputDigest: Digest;
+      kind: 'queryNextFacts';
+      snapshot: PlanSnapshot | null;
     }
   | {
       kind: 'proposeStrategies';
@@ -1759,6 +1814,10 @@ export type Event =
   | {
       kind: 'spatialViewProjected';
       projection: SpatialProjection;
+    }
+  | {
+      kind: 'nextFactsQueried';
+      reply: NextFactsReply;
     }
   | {
       kind: 'searchStarted';
@@ -2444,6 +2503,42 @@ export interface ExpectedSpatialOverlay {
   motionPhase: SpatialMotionPhase | null;
   role: SpatialOverlayRole;
   target: SpatialTarget;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "NextFactsReply".
+ */
+export interface NextFactsReply {
+  freshness: NextFactsFreshness;
+  resolutionActions: ResolutionAction[];
+  rows: NextFactRow[];
+  sourceStamp: NextFactsSourceStamp;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "NextFactRow".
+ */
+export interface NextFactRow {
+  checkIds: Id[];
+  factKey: string;
+  fieldRefs: FieldRef[];
+  needKind: CompletionNeed;
+  priorityClass: CompletionPriority;
+  reasonCodes: string[];
+  relatedCheckCount: number;
+  resolutionActions: ResolutionAction[];
+  targetRefs: FieldRef[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "NextFactsSourceStamp".
+ */
+export interface NextFactsSourceStamp {
+  canonicalVersion: number;
+  catalogDigest: Digest | null;
+  inputDigest: Digest;
+  planSnapshotId: Digest | null;
+  ruleVersion: string;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

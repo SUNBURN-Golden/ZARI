@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from 'react-aria-components';
 import type { MeasurementOrigin, Unit } from '../../contracts/generated/dto';
 import type { ProjectSession, SessionSnapshot } from './session';
@@ -26,13 +26,15 @@ type DetailMeasureProps = {
   session: ProjectSession;
   state: SessionSnapshot;
   focusedField: string | null;
+  /** Opens this field once per token. Later draft edits do not move focus. */
+  detailTarget?: { path: string; token: number } | null;
 };
 
 function groupFor(path: string, form: NonNullable<SessionSnapshot['form']>): string | null {
   return detailGroups(form).find((group) => group.fields.some((field) => field.path === path))?.id ?? null;
 }
 
-export function DetailMeasure({ session, state, focusedField }: DetailMeasureProps) {
+export function DetailMeasure({ session, state, focusedField, detailTarget = null }: DetailMeasureProps) {
   const form = state.form;
   const [open, setOpen] = useState(false);
   const [groupId, setGroupId] = useState<string | null>(null);
@@ -40,19 +42,84 @@ export function DetailMeasure({ session, state, focusedField }: DetailMeasurePro
   const [inactiveBounds, setInactiveBounds] = useState<Record<string, { minus: string; plus: string }>>({});
   const [pendingOrigin, setPendingOrigin] = useState<MeasurementOrigin>('userDeclared');
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const pendingFocus = useRef<string | null>(null);
   const compact = useCompact();
   const compactRef = useRef(compact);
   compactRef.current = compact;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!detailTarget || !form) return;
+    const group = groupFor(detailTarget.path, form);
+    if (!group) return;
+    pendingFocus.current = detailTarget.path;
+    setOpen(true);
+    setGroupId(group);
+    setPath(detailTarget.path);
+  }, [detailTarget?.token]);
+
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && compact) {
+    const targetPath = pendingFocus.current;
+    const nominal = targetPath ? document.getElementById(`nominal-${targetPath}`) : null;
+    if (open && compact && dialog) {
+      // Dialog focusing steps pick the autofocus delegate. Without it, WebKit
+      // lands on the close control after the animation frame that used to focus.
+      nominal?.setAttribute('autofocus', '');
       if (!dialog.open) dialog.showModal();
-    } else if (dialog.open) {
+    } else if (dialog?.open) {
       dialog.close();
     }
-  }, [open, compact]);
+    if (!targetPath) return;
+    const nominalNow = () =>
+      targetPath ? document.getElementById(`nominal-${targetPath}`) : null;
+    const focusNominal = () => {
+      if (pendingFocus.current !== targetPath) return;
+      nominalNow()?.focus();
+    };
+    const release = () => {
+      if (pendingFocus.current !== targetPath) return;
+      const node = nominalNow();
+      if (!node || document.activeElement !== node) return;
+      node.removeAttribute('autofocus');
+      pendingFocus.current = null;
+      dialog?.removeEventListener('focusin', onFocusIn, true);
+    };
+    function onFocusIn(event: Event) {
+      if (pendingFocus.current !== targetPath) return;
+      const node = nominalNow();
+      if (!node || event.target === node) return;
+      node.focus();
+    }
+    focusNominal();
+    dialog?.addEventListener('focusin', onFocusIn, true);
+    const onToggle = () => {
+      if (dialog?.open) focusNominal();
+    };
+    dialog?.addEventListener('toggle', onToggle);
+    // showModal can move focus to the close control on a later task. The
+    // listener hands that back until the nominal has stayed focused past it.
+    const timers = [window.setTimeout(focusNominal, 0)];
+    let inner = 0;
+    const outer = window.requestAnimationFrame(() => {
+      focusNominal();
+      inner = window.requestAnimationFrame(() => {
+        focusNominal();
+        timers.push(
+          window.setTimeout(() => {
+            focusNominal();
+            release();
+          }, 0),
+        );
+      });
+    });
+    return () => {
+      dialog?.removeEventListener('focusin', onFocusIn, true);
+      dialog?.removeEventListener('toggle', onToggle);
+      window.cancelAnimationFrame(outer);
+      window.cancelAnimationFrame(inner);
+      for (const timer of timers) window.clearTimeout(timer);
+    };
+  }, [open, compact, path]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

@@ -1,10 +1,12 @@
 use crate::{
     canonical::{self, CatalogContent},
     catalog::*,
+    completion::COMPLETION_LIMIT_CODE,
     facts::*,
     finalize,
     input::*,
     measurement::*,
+    next_facts::{self, NextFactsError, NextFactsReply},
     normalize::*,
     plan::*,
     probe::*,
@@ -25,8 +27,8 @@ use std::{
     fmt,
 };
 
-pub const BUILD_ID: &str = "zari-domain-5";
-const CAPABILITIES: [&str; 12] = [
+pub const BUILD_ID: &str = "zari-domain-6";
+const CAPABILITIES: [&str; 13] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -38,6 +40,7 @@ const CAPABILITIES: [&str; 12] = [
     "validateCandidate",
     "evaluateLayoutEdit",
     "projectSpatialView",
+    "queryNextFacts",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -47,7 +50,7 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 15] = [
+const COMMAND_KINDS: [&str; 16] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -58,6 +61,7 @@ const COMMAND_KINDS: [&str; 15] = [
     "validateCandidate",
     "evaluateLayoutEdit",
     "projectSpatialView",
+    "queryNextFacts",
     "disposeProject",
     "proposeStrategies",
     "startSearch",
@@ -243,6 +247,15 @@ pub enum Command {
     ProjectSpatialView {
         source: SpatialViewSource,
     },
+    /// Static completion read. The supplied input and optional snapshot are
+    /// not activated, and the command does not touch search or counters.
+    QueryNextFacts {
+        input: ProjectInput,
+        input_digest: Digest,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
+        snapshot: Option<PlanSnapshot>,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -369,6 +382,11 @@ pub enum Event {
     SpatialViewProjected {
         projection: SpatialProjection,
     },
+    /// Result of `queryNextFacts`. Rows are empty when the snapshot binding
+    /// is stale. A limit failure is `operationFailed`, not a short list.
+    NextFactsQueried {
+        reply: NextFactsReply,
+    },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
     SearchStarted {
@@ -463,6 +481,8 @@ pub enum DomainOperation {
     RunSearch,
     /// One spatial projection over an embedded integrity-validated source.
     ProjectSpatialView,
+    /// One completion query over a normalized input and optional snapshot.
+    QueryNextFacts,
 }
 /// Step recipe for a `runSearch` fixture: `count` requests of `allowance`
 /// work units each. Declared steps are expanded in order; `cancelAfterSteps`
@@ -718,6 +738,17 @@ pub enum DomainFixtureExpected {
         dimensions: Vec<ExpectedDimensionGuide>,
         projection_digest: Digest,
     },
+    /// `queryNextFacts` oracle. `reply` is null when `failureCode` names the
+    /// structured rejection. Row order, check ids, and needs are exact.
+    QueryNextFacts {
+        decode_error: bool,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<String>")]
+        failure_code: Option<String>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<NextFactsReply>")]
+        reply: Option<NextFactsReply>,
+    },
     RunSearch {
         decode_error: bool,
         /// Required terminal reason; `null` asserts the run never terminated
@@ -941,6 +972,18 @@ pub fn domain_fixture_requests(fixture: &DomainFixture) -> Vec<Value> {
                 ),
             ]
         }
+        DomainOperation::QueryNextFacts => vec![
+            initialize,
+            request(
+                meta("fixture-operation", true, None),
+                json!({
+                    "kind": "queryNextFacts",
+                    "input": fixture.input["input"].clone(),
+                    "inputDigest": fixture.input["inputDigest"].clone(),
+                    "snapshot": fixture.input["snapshot"].clone()
+                }),
+            ),
+        ],
         DomainOperation::ProjectSpatialView => vec![
             // A projection over an embedded validated source runs under the
             // initialized system identity — no project is fabricated.
@@ -1184,7 +1227,8 @@ pub fn execute_domain_fixture_with(
         | DomainFixtureExpected::EvaluateLayoutEdit { decode_error, .. }
         | DomainFixtureExpected::ProposeStrategies { decode_error, .. }
         | DomainFixtureExpected::RunSearch { decode_error, .. }
-        | DomainFixtureExpected::ProjectSpatialView { decode_error, .. } => *decode_error,
+        | DomainFixtureExpected::ProjectSpatialView { decode_error, .. }
+        | DomainFixtureExpected::QueryNextFacts { decode_error, .. } => *decode_error,
     };
     if declared_decode != decode_error {
         return Err(format!(
@@ -1197,9 +1241,11 @@ pub fn execute_domain_fixture_with(
     }
     // A structured projection rejection (integrity/limit/range) is asserted
     // by its exact failure code; geometry assertions do not apply then.
-    if let DomainFixtureExpected::ProjectSpatialView { failure_code, .. } = expected
-        && let Some(code) = failure_code
-    {
+    if let Some(code) = match expected {
+        DomainFixtureExpected::ProjectSpatialView { failure_code, .. }
+        | DomainFixtureExpected::QueryNextFacts { failure_code, .. } => failure_code.as_ref(),
+        _ => None,
+    } {
         if event["kind"] != "operationFailed" || event["code"].as_str() != Some(code.as_str()) {
             return Err(format!(
                 "{}: expected operationFailed/{code}, got {event}",
@@ -1519,6 +1565,24 @@ pub fn execute_domain_fixture_with(
             if actual_codes != expected_codes {
                 return Err(format!(
                     "{}: condition codes mismatch: {event}",
+                    fixture.case_id
+                ));
+            }
+        }
+        DomainFixtureExpected::QueryNextFacts { reply, .. } => {
+            if event["kind"] != "nextFactsQueried" {
+                return Err(format!(
+                    "{}: expected nextFactsQueried event, got {event}",
+                    fixture.case_id
+                ));
+            }
+            let actual: NextFactsReply =
+                serde_json::from_value(event["reply"].clone()).map_err(|error| {
+                    format!("{}: next facts reply decode: {error}", fixture.case_id)
+                })?;
+            if Some(&actual) != reply.as_ref() {
+                return Err(format!(
+                    "{}: next facts reply mismatch: {event}",
                     fixture.case_id
                 ));
             }
@@ -2049,6 +2113,7 @@ impl Runtime {
                     | Command::NormalizeCatalogFields { .. }
                     | Command::ValidateCatalog { .. }
                     | Command::ProjectSpatialView { .. }
+                    | Command::QueryNextFacts { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -2233,7 +2298,8 @@ impl Runtime {
             Command::VerifyRecord { .. }
             | Command::NormalizeCatalogFields { .. }
             | Command::ValidateCatalog { .. }
-            | Command::ProjectSpatialView { .. } => self.execute_stateless(&request.command),
+            | Command::ProjectSpatialView { .. }
+            | Command::QueryNextFacts { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2495,6 +2561,15 @@ impl Runtime {
                     fields: normalize_catalog_fields(fields),
                 }
             }
+            Command::QueryNextFacts {
+                input,
+                input_digest,
+                snapshot,
+            } => match next_facts::query_next_facts(input, input_digest, snapshot.as_ref()) {
+                Ok(reply) => Event::NextFactsQueried { reply },
+                Err(NextFactsError::DigestMismatch) => failure("digest_mismatch"),
+                Err(NextFactsError::LimitExceeded) => failure(COMPLETION_LIMIT_CODE),
+            },
             Command::ProjectSpatialView { source } => {
                 match crate::spatial_view::project_spatial_view(source) {
                     Ok(projection) => Event::SpatialViewProjected { projection },
