@@ -131,9 +131,21 @@ enum Op {
     /// pushes `Validate`).
     EmitTuple,
     /// Validate frame: run the independent evaluation and collect.
+    /// Profile `default` version 1 only. The cost is the SP-012 lump.
     RunEval,
+    /// Profile `default` version 2: one SP-012 evaluation quantum.
+    EvalQuantum,
+    /// Move a finished split evaluation into accept or reject. Cost 1.
+    /// Not an evaluation quantum, and it does not run on a discarded candidate.
+    FinishEval,
     /// Pop the top frame and restore its marks.
     Pop,
+}
+
+struct Inflight {
+    continuation: zari_core::eval_continue::EvaluationContinuation,
+    physical_key: Digest,
+    ready: Option<CandidateEvaluation>,
 }
 
 /// Cost bound for anchor evaluation: orientation list + anchors + placed
@@ -168,6 +180,9 @@ pub(crate) struct Machine {
     diagnostics: Vec<RejectedCandidate>,
     cancelled: bool,
     terminated: Option<SearchTermination>,
+    /// In-progress split evaluation. Absent for the version-1 lump profile.
+    /// Never accepted until `FinishEval`.
+    inflight: Option<Inflight>,
 }
 
 /// Rank tuple: lower is better; the final field is the physical digest for a
@@ -185,7 +200,7 @@ impl Machine {
             catalog_version: catalog.catalog_version.clone(),
             catalog_digest: catalog_digest(&catalog),
             rule_version: RULE_VERSION.to_owned(),
-            solver_version: SOLVER_VERSION.to_owned(),
+            solver_version: solver_version_for(&input.search.profile).to_owned(),
             search_profile: input.search.profile.clone(),
             search_budget: input.search.budget.clone(),
             seed: input.search.seed.clone(),
@@ -270,6 +285,7 @@ impl Machine {
             diagnostics,
             cancelled: false,
             terminated,
+            inflight: None,
         }
     }
 
@@ -350,9 +366,21 @@ impl Machine {
                 Op::EmitTuple,
             ),
             Frame::Validate { layout, .. } => {
-                let p = layout.placements.len() as u64;
-                let a = layout.assignments.len() as u64;
-                (64 + p * p + 4 * a, Op::RunEval)
+                if split_accounting(&self.input.search.profile) {
+                    if let Some(inflight) = &self.inflight {
+                        if let Some(cost) = inflight.continuation.next_cost() {
+                            (cost, Op::EvalQuantum)
+                        } else {
+                            (1, Op::FinishEval)
+                        }
+                    } else {
+                        (1, Op::EvalQuantum)
+                    }
+                } else {
+                    let p = layout.placements.len() as u64;
+                    let a = layout.assignments.len() as u64;
+                    (64 + p * p + 4 * a, Op::RunEval)
+                }
             }
         })
     }
@@ -731,6 +759,8 @@ impl Machine {
                     self.reject(&evaluation, &proposal.layout);
                 }
             }
+            Op::EvalQuantum => self.exec_eval_quantum(),
+            Op::FinishEval => self.exec_finish_eval(),
             Op::Pop => {
                 if let Some(frame) = self.stack.pop() {
                     self.restore(frame.marks);
@@ -1067,7 +1097,74 @@ impl Machine {
     /// Cooperative cancellation: the next step reports `Cancelled`.
     pub(crate) fn cancel(&mut self) -> SearchCounters {
         self.cancelled = true;
+        self.inflight = None;
         self.counters.clone()
+    }
+
+    fn exec_eval_quantum(&mut self) {
+        if self.inflight.is_none() {
+            let Some((layout, physical_key)) = self.stack.last().and_then(|frame| {
+                if let Frame::Validate {
+                    layout,
+                    physical_key,
+                } = &frame.frame
+                {
+                    Some((layout.clone(), physical_key.clone()))
+                } else {
+                    None
+                }
+            }) else {
+                return;
+            };
+            let proposal = CandidateProposal {
+                layout,
+                strategy: self.prepared.decision.clone(),
+                creation: PlanCreation::ReferenceSearch,
+            };
+            let continuation = zari_core::eval_continue::EvaluationContinuation::start(
+                &self.input,
+                &self.catalog,
+                &proposal,
+                self.versions.clone(),
+                self.scope.clone(),
+            );
+            self.inflight = Some(Inflight {
+                continuation,
+                physical_key,
+                ready: None,
+            });
+        }
+        let mut inflight = self.inflight.take().expect("split evaluation");
+        let _ = inflight
+            .continuation
+            .run_quantum(&self.input, &self.catalog);
+        if inflight.continuation.next_cost().is_none() {
+            inflight.ready = inflight.continuation.take_result();
+        }
+        self.inflight = Some(inflight);
+    }
+
+    fn exec_finish_eval(&mut self) {
+        let inflight = self.inflight.take();
+        let Some(StackFrame {
+            frame: Frame::Validate { layout, .. },
+            ..
+        }) = self.stack.pop()
+        else {
+            return;
+        };
+        let Some(inflight) = inflight else {
+            return;
+        };
+        let Some(evaluation) = inflight.ready else {
+            return;
+        };
+        self.counters.validated_candidates += 1;
+        if let Some(snapshot) = evaluation.snapshot {
+            self.accept(inflight.physical_key, snapshot);
+        } else {
+            self.reject(&evaluation, &layout);
+        }
     }
 
     /// One bounded step: consume at most `allowance` work units, except that a
@@ -1093,6 +1190,11 @@ impl Machine {
                 self.terminated = Some(SearchTermination::ScopeComplete);
                 continue;
             };
+            // A zero-cost quantum would spin without advancing. Stop honestly.
+            if cost == 0 {
+                self.terminated = Some(SearchTermination::Interrupted);
+                continue;
+            }
             // Stop before executing a unit that would exceed limits.
             if self.counters.work_units.get() + cost > self.max_work {
                 self.terminated = Some(SearchTermination::BudgetExhausted);

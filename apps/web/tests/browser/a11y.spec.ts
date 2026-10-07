@@ -139,7 +139,7 @@ test('keyboard-only: create, edit, commit, plan, cancel', async ({ page }) => {
     await page.keyboard.press('Enter');
     await expect(page.getByTestId('search-status')).toHaveAttribute(
       'data-search',
-      /cancelled|done/,
+      /cancelled|done|interrupted/,
       { timeout: 30000 },
     );
   } else {

@@ -451,3 +451,101 @@ fn bundled_demo_produces_container_and_no_purchase_alternatives() {
     );
     assert_snapshots_valid(&catalog, &result);
 }
+
+fn split_profile() -> (ProjectInput, CatalogContent) {
+    let (mut input, catalog) = fixture(true);
+    input.search.profile.version = 2;
+    input.search.budget.max_nodes = 24;
+    input.search.budget.max_work_units = WorkCount::new(200_000).unwrap();
+    (input, catalog)
+}
+
+#[test]
+fn split_profile_allowances_and_offer_order_match() {
+    let (input, catalog) = split_profile();
+    let engine = SolverEngine;
+    let reference = {
+        let mut session = engine.start(&input, &catalog);
+        serde_json::to_value(run(session.as_mut(), 1024)).unwrap()
+    };
+    assert_eq!(reference["scope"]["profile"]["version"], 2);
+    assert!(
+        !reference["alternatives"].as_array().unwrap().is_empty(),
+        "split profile published nothing"
+    );
+    assert_eq!(
+        reference["alternatives"][0]["content"]["versions"]["solverVersion"],
+        "zari-solver-v2"
+    );
+    for allowance in [1u32, 7, 128, 256, 1024] {
+        let mut session = engine.start(&input, &catalog);
+        let result = run(session.as_mut(), allowance);
+        assert_eq!(
+            serde_json::to_value(&result).unwrap(),
+            reference,
+            "allowance {allowance}"
+        );
+        assert_snapshots_valid(&catalog, &result);
+    }
+    let mut reversed = catalog.clone();
+    reversed.offers.reverse();
+    assert_eq!(
+        catalog_digest(&catalog),
+        catalog_digest(&reversed),
+        "offer order is canonical"
+    );
+    let mut session = engine.start(&input, &reversed);
+    let result = run(session.as_mut(), 7);
+    assert_eq!(serde_json::to_value(&result).unwrap(), reference);
+}
+
+#[test]
+fn split_profile_stops_before_the_work_budget_and_publishes_only_finished_snapshots() {
+    let (mut input, catalog) = split_profile();
+    // Above preparation, below the wide profile's scope, so the machine stops
+    // on the work budget during evaluation. The budget is part of the snapshot
+    // stamp, so this result is compared only with itself.
+    input.search.budget.max_work_units = WorkCount::new(8_000).unwrap();
+    let engine = SolverEngine;
+    let stopped = {
+        let mut session = engine.start(&input, &catalog);
+        run(session.as_mut(), 1)
+    };
+    assert_eq!(stopped.termination, SearchTermination::BudgetExhausted);
+    assert!(stopped.consumed.work_units.get() <= 8_000);
+    assert_ne!(stopped.termination, SearchTermination::ScopeComplete);
+    assert_ne!(stopped.termination, SearchTermination::Cancelled);
+    assert_snapshots_valid(&catalog, &stopped);
+    let again = {
+        let mut session = engine.start(&input, &catalog);
+        run(session.as_mut(), 7)
+    };
+    assert_eq!(
+        serde_json::to_value(&again).unwrap(),
+        serde_json::to_value(&stopped).unwrap()
+    );
+}
+
+#[test]
+fn split_profile_cancel_is_not_scope_or_budget() {
+    let (input, catalog) = split_profile();
+    let engine = SolverEngine;
+    let mut session = engine.start(&input, &catalog);
+    for _ in 0..3 {
+        match session.step(1) {
+            SearchStep::Progress { .. } => {}
+            SearchStep::Completed { .. } | SearchStep::Cancelled { .. } => {
+                panic!("expected progress before cancel")
+            }
+        }
+    }
+    session.cancel();
+    match session.step(1024) {
+        SearchStep::Cancelled { consumed } => {
+            assert!(consumed.work_units.get() > 0);
+        }
+        SearchStep::Progress { .. } | SearchStep::Completed { .. } => {
+            panic!("expected Cancelled")
+        }
+    }
+}

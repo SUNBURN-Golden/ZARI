@@ -20,6 +20,10 @@ use crate::validator::{self, CostAccumulator};
 
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "action_drive.rs"]
+mod action_drive;
+pub(crate) use action_drive::ActionDrive;
+
 /// The outcome of evaluating one proposal through the trust boundary.
 pub struct CandidateEvaluation {
     /// Present only for structurally valid proposals.
@@ -120,7 +124,7 @@ fn collect_evidence_ids(value: &serde_json::Value, out: &mut std::collections::B
 /// The catalog rows a snapshot must retain: used variants, selected offers,
 /// their products and evidence, closed over compatibility and bundle
 /// references so the retained subset stays self-consistent.
-fn referenced_subset(
+pub(crate) fn referenced_subset(
     catalog: &CatalogContent,
     input: &ProjectInput,
     layout: &CandidateLayout,
@@ -303,6 +307,167 @@ pub fn evaluate_candidate(
     }
 }
 
+/// One purchased or reused BOM line per quantum. Line order follows owned id
+/// then variant id, then the finished list is sorted by line id — the same
+/// order `build_bom` has always published.
+#[derive(Clone)]
+pub(crate) struct BomCursor {
+    owned: Vec<(String, Vec<Id>)>,
+    variants: Vec<(String, Vec<Id>)>,
+    index: usize,
+    lines: Vec<BOMLine>,
+    sorted: bool,
+}
+
+impl BomCursor {
+    pub(crate) fn new(layout: &CandidateLayout) -> Self {
+        let mut owned_placements: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
+        let mut variant_placements: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
+        for placement in &layout.placements {
+            match &placement.subject {
+                PlacementSubject::OwnedContainer { owned_id, .. } => {
+                    owned_placements
+                        .entry(owned_id.as_str())
+                        .or_default()
+                        .push(placement.id.clone());
+                }
+                PlacementSubject::NewContainer { variant_id, .. } => {
+                    variant_placements
+                        .entry(variant_id.as_str())
+                        .or_default()
+                        .push(placement.id.clone());
+                }
+                PlacementSubject::DirectItem { .. } => {}
+            }
+        }
+        Self {
+            owned: owned_placements
+                .into_iter()
+                .map(|(k, v)| (k.to_owned(), v))
+                .collect(),
+            variants: variant_placements
+                .into_iter()
+                .map(|(k, v)| (k.to_owned(), v))
+                .collect(),
+            index: 0,
+            lines: vec![],
+            sorted: false,
+        }
+    }
+
+    /// `Some(4)` is one BOM line. `None` means the phase is finished and the
+    /// lines are sorted.
+    pub(crate) fn step(
+        &mut self,
+        layout: &CandidateLayout,
+        input: &ProjectInput,
+        offers: &BTreeMap<&str, &Offer>,
+    ) -> Option<u64> {
+        if self.index < self.owned.len() {
+            let (owned_id, placements) = self.owned[self.index].clone();
+            self.lines
+                .push(owned_bom_line(input, &owned_id, placements));
+            self.index += 1;
+            return Some(4);
+        }
+        let variant_index = self.index - self.owned.len();
+        if variant_index < self.variants.len() {
+            let (variant_id, placements) = self.variants[variant_index].clone();
+            self.lines
+                .push(variant_bom_line(layout, offers, &variant_id, placements));
+            self.index += 1;
+            return Some(4);
+        }
+        if !self.sorted {
+            self.lines.sort_by(|a, b| a.id.as_str().cmp(b.id.as_str()));
+            self.sorted = true;
+        }
+        None
+    }
+
+    pub(crate) fn lines(&self) -> &[BOMLine] {
+        &self.lines
+    }
+}
+
+fn owned_bom_line(input: &ProjectInput, owned_id: &str, placements: Vec<Id>) -> BOMLine {
+    let used = placements.len() as u32;
+    BOMLine {
+        id: bounded_id(&format!("bom:owned:{owned_id}")),
+        variant_id: input
+            .owned_containers
+            .iter()
+            .find(|o| o.id.as_str() == owned_id)
+            .and_then(|o| o.variant_ref.as_ref())
+            .map(|r| r.variant_id.clone()),
+        owned_id: Some(Id::new(owned_id).expect("validated id")),
+        placement_ids: placements,
+        offer_id: None,
+        physical_needed: Quantity::new(used).expect("bounded"),
+        reused: Quantity::new(used).expect("bounded"),
+        new_units_needed: Quantity::new(0).expect("bounded"),
+        pack_quantity: not_applicable_fact("owned_reuse"),
+        packs_to_order: not_applicable_fact("owned_reuse"),
+        supplied: derived_fact("validator:bom", UnitCount::new(used).expect("bounded")),
+        surplus: derived_fact("validator:bom", UnitCount::new(0).expect("bounded")),
+        product_subtotal: not_applicable_fact("owned_reuse"),
+        evidence_refs: vec![],
+    }
+}
+
+fn variant_bom_line(
+    layout: &CandidateLayout,
+    offers: &BTreeMap<&str, &Offer>,
+    variant_id: &str,
+    placements: Vec<Id>,
+) -> BOMLine {
+    let needed = placements.len() as u32;
+    let representative = &placements[0];
+    let selection = layout
+        .purchase_selections
+        .iter()
+        .find(|s| &s.placement_id == representative);
+    let offer = selection.and_then(|s| match &s.offer {
+        OfferSelection::Selected { offer_id } => offers.get(offer_id.as_str()).copied(),
+        OfferSelection::Unresolved { .. } => None,
+    });
+    let usable = offer.filter(|o| o.bundle_components.is_empty());
+    let pack_quantity = usable
+        .map(|o| o.pack_quantity.clone())
+        .unwrap_or_else(unknown_fact);
+    let packs = usable.and_then(|o| o.pack_quantity.value().map(|p| needed.div_ceil(p.get())));
+    let supplied =
+        usable.and_then(|o| packs.and_then(|p| p.checked_mul(o.pack_quantity.value()?.get())));
+    let surplus = supplied.map(|s| s - needed);
+    let subtotal = usable
+        .and_then(|o| packs.and_then(|p| (p as u64).checked_mul(o.pack_price.value()?.get())));
+    BOMLine {
+        id: bounded_id(&format!("bom:new:{variant_id}")),
+        variant_id: Some(Id::new(variant_id).expect("validated id")),
+        owned_id: None,
+        placement_ids: placements,
+        offer_id: offer.map(|o| o.id.clone()),
+        physical_needed: Quantity::new(needed).expect("bounded"),
+        reused: Quantity::new(0).expect("bounded"),
+        new_units_needed: Quantity::new(needed).expect("bounded"),
+        pack_quantity,
+        packs_to_order: fact_or_unknown("validator:bom", packs.and_then(|p| Quantity::new(p).ok())),
+        supplied: fact_or_unknown(
+            "validator:bom",
+            supplied.and_then(|s| UnitCount::new(s).ok()),
+        ),
+        surplus: fact_or_unknown(
+            "validator:bom",
+            surplus.and_then(|s| UnitCount::new(s).ok()),
+        ),
+        product_subtotal: fact_or_unknown(
+            "validator:bom",
+            subtotal.and_then(|s| MoneyKrw::new(s).ok()),
+        ),
+        evidence_refs: vec![],
+    }
+}
+
 /// Deterministic BOM: one line per owned container id and per purchased
 /// variant, in id order. Pack surplus is exact integer arithmetic over the
 /// selected offer's pack quantity.
@@ -312,108 +477,17 @@ fn build_bom(
     _variants: &BTreeMap<&str, &ProductVariant>,
     offers: &BTreeMap<&str, &Offer>,
 ) -> Vec<BOMLine> {
-    let mut lines = vec![];
-    // Owned reuse lines, grouped by owned container id.
-    let mut owned_placements: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
-    for placement in &layout.placements {
-        if let PlacementSubject::OwnedContainer { owned_id, .. } = &placement.subject {
-            owned_placements
-                .entry(owned_id.as_str())
-                .or_default()
-                .push(placement.id.clone());
-        }
-    }
-    for (owned_id, placements) in owned_placements {
-        let used = placements.len() as u32;
-        lines.push(BOMLine {
-            id: bounded_id(&format!("bom:owned:{owned_id}")),
-            variant_id: input
-                .owned_containers
-                .iter()
-                .find(|o| o.id.as_str() == owned_id)
-                .and_then(|o| o.variant_ref.as_ref())
-                .map(|r| r.variant_id.clone()),
-            owned_id: Some(Id::new(owned_id).expect("validated id")),
-            placement_ids: placements,
-            offer_id: None,
-            physical_needed: Quantity::new(used).expect("bounded"),
-            reused: Quantity::new(used).expect("bounded"),
-            new_units_needed: Quantity::new(0).expect("bounded"),
-            pack_quantity: not_applicable_fact("owned_reuse"),
-            packs_to_order: not_applicable_fact("owned_reuse"),
-            supplied: derived_fact("validator:bom", UnitCount::new(used).expect("bounded")),
-            surplus: derived_fact("validator:bom", UnitCount::new(0).expect("bounded")),
-            product_subtotal: not_applicable_fact("owned_reuse"),
-            evidence_refs: vec![],
-        });
-    }
-    // New purchase lines, grouped by variant id.
-    let mut variant_placements: BTreeMap<&str, Vec<Id>> = BTreeMap::new();
-    for placement in &layout.placements {
-        if let PlacementSubject::NewContainer { variant_id, .. } = &placement.subject {
-            variant_placements
-                .entry(variant_id.as_str())
-                .or_default()
-                .push(placement.id.clone());
-        }
-    }
-    for (variant_id, placements) in variant_placements {
-        let needed = placements.len() as u32;
-        let representative = &placements[0];
-        let selection = layout
-            .purchase_selections
-            .iter()
-            .find(|s| &s.placement_id == representative);
-        let offer = selection.and_then(|s| match &s.offer {
-            OfferSelection::Selected { offer_id } => offers.get(offer_id.as_str()).copied(),
-            OfferSelection::Unresolved { .. } => None,
-        });
-        let usable = offer.filter(|o| o.bundle_components.is_empty());
-        let pack_quantity = usable
-            .map(|o| o.pack_quantity.clone())
-            .unwrap_or_else(unknown_fact);
-        let packs = usable.and_then(|o| o.pack_quantity.value().map(|p| needed.div_ceil(p.get())));
-        let supplied =
-            usable.and_then(|o| packs.and_then(|p| p.checked_mul(o.pack_quantity.value()?.get())));
-        let surplus = supplied.map(|s| s - needed);
-        let subtotal = usable
-            .and_then(|o| packs.and_then(|p| (p as u64).checked_mul(o.pack_price.value()?.get())));
-        lines.push(BOMLine {
-            id: bounded_id(&format!("bom:new:{variant_id}")),
-            variant_id: Some(Id::new(variant_id).expect("validated id")),
-            owned_id: None,
-            placement_ids: placements,
-            offer_id: offer.map(|o| o.id.clone()),
-            physical_needed: Quantity::new(needed).expect("bounded"),
-            reused: Quantity::new(0).expect("bounded"),
-            new_units_needed: Quantity::new(needed).expect("bounded"),
-            pack_quantity,
-            packs_to_order: fact_or_unknown(
-                "validator:bom",
-                packs.and_then(|p| Quantity::new(p).ok()),
-            ),
-            supplied: fact_or_unknown(
-                "validator:bom",
-                supplied.and_then(|s| UnitCount::new(s).ok()),
-            ),
-            surplus: fact_or_unknown(
-                "validator:bom",
-                surplus.and_then(|s| UnitCount::new(s).ok()),
-            ),
-            product_subtotal: fact_or_unknown(
-                "validator:bom",
-                subtotal.and_then(|s| MoneyKrw::new(s).ok()),
-            ),
-            evidence_refs: vec![],
-        });
-    }
-    lines.sort_by(|a, b| a.id.as_str().cmp(b.id.as_str()));
-    lines
+    let mut cursor = BomCursor::new(layout);
+    while cursor.step(layout, input, offers).is_some() {}
+    cursor.lines().to_vec()
 }
 
 /// Cost summary over the same `CostAccumulator` arithmetic the validator's
 /// budget checks use, so the two projections never disagree.
-fn cost_summary(layout: &CandidateLayout, offers: &BTreeMap<&str, &Offer>) -> CostSummary {
+pub(crate) fn cost_summary(
+    layout: &CandidateLayout,
+    offers: &BTreeMap<&str, &Offer>,
+) -> CostSummary {
     let mut by_variant: BTreeMap<&str, Vec<&Placement>> = BTreeMap::new();
     for placement in &layout.placements {
         if let PlacementSubject::NewContainer { variant_id, .. } = &placement.subject {
@@ -462,6 +536,15 @@ fn cost_summary(layout: &CandidateLayout, offers: &BTreeMap<&str, &Offer>) -> Co
 /// id. Prerequisite lists are byte-sorted. `required_confirmations` stay
 /// empty: user assertions are their own steps, not a second fact-confirmation
 /// edge. `reason_ids` name structured checks and are never action ids.
+fn build_actions(
+    layout: &CandidateLayout,
+    validation: &validator::CandidateValidation,
+) -> Vec<ActionStep> {
+    let mut drive = action_drive::ActionDrive::new();
+    while drive.step(layout, validation) {}
+    drive.into_actions()
+}
+
 pub fn assemble_action_guide(
     layout: &CandidateLayout,
     validation: &validator::CandidateValidation,
@@ -630,7 +713,8 @@ fn display_order(actions: Vec<ActionStep>) -> Vec<ActionStep> {
 
 /// Load outside, then install the loaded container. Direct placements have
 /// no transfer, acquire, or arrival. Owned ordinals are not purchase steps.
-fn build_actions(
+#[cfg(test)]
+fn build_actions_reference(
     layout: &CandidateLayout,
     validation: &validator::CandidateValidation,
 ) -> Vec<ActionStep> {

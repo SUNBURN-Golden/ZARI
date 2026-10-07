@@ -156,6 +156,7 @@ test('editing the input marks old results stale and the CAS binding refuses a st
 test('cancel during a real search then a fresh search completes', async ({
   page,
 }) => {
+  test.setTimeout(90_000);
   const errors: string[] = [];
   collectErrors(page, errors);
   await seededProject(page);
@@ -164,10 +165,20 @@ test('cancel during a real search then a fresh search completes', async ({
   await expect(page.getByTestId('cancel-search')).toBeVisible();
   await page.getByTestId('cancel-search').click();
   const status = page.getByTestId('search-status');
-  // The search either lands in 'cancelled' (the honest path) or completed
-  // before the cancel arrived — never a fake state.
-  await expect(status).toHaveAttribute('data-search', /cancelled|done/, {
-    timeout: 60000,
+  // Cooperative cancel, a search that finished first, or the 250ms hard
+  // timeout. The hard timeout is interrupted, not scopeComplete.
+  await expect(status).toHaveAttribute('data-search', /cancelled|done|interrupted/, {
+    timeout: 20000,
+  });
+  // A hard timeout restarts the worker. If the context drops, wait for it
+  // to come back before starting another search. A cooperative cancel never
+  // drops it; the short negative wait then continues.
+  const context = page.getByTestId('plan-context');
+  await expect(context)
+    .not.toHaveAttribute('data-context', 'installed', { timeout: 5000 })
+    .catch(() => undefined);
+  await expect(context).toHaveAttribute('data-context', 'installed', {
+    timeout: 30000,
   });
   // A new search on the same context completes.
   await page.getByTestId('compute-plan').click();

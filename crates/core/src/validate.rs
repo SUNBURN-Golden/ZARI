@@ -15,6 +15,37 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "layout_drive.rs"]
+mod layout_drive;
+pub(crate) use layout_drive::LayoutDrive;
+
+pub(crate) fn catalog_body_diagnostics(
+    products: &[crate::catalog::Product],
+    variants: &[crate::catalog::ProductVariant],
+    offers: &[crate::catalog::Offer],
+    evidence: &[Evidence],
+) -> Vec<Diagnostic> {
+    let mut diagnostics = vec![];
+    check_catalog_body(&mut diagnostics, products, variants, offers, evidence);
+    diagnostics
+}
+
+pub(crate) fn snapshot_applicability(content: &SnapshotContent) -> Vec<Diagnostic> {
+    let mut diagnostics = vec![];
+    let serialized = serde_json::to_value(content).expect("typed DTO serializes");
+    reject_not_applicable(
+        &mut diagnostics,
+        &serialized,
+        "content",
+        &[
+            "content.referencedCatalog.offers",
+            "content.bom",
+            "content.costSummary",
+        ],
+    );
+    diagnostics
+}
+
 pub const MAX_OBSTACLES: usize = 20;
 pub const MAX_GROUPS: usize = 50;
 pub const MAX_PLACED_CONTAINERS: usize = 20;
@@ -24,7 +55,7 @@ pub const MAX_CATALOG_OFFERS: usize = 4000;
 /// Transport bound for collections without an explicit domain cap.
 pub const MAX_COLLECTION: usize = 1024;
 
-fn err(diagnostics: &mut Vec<Diagnostic>, path: impl Into<String>, code: &str) {
+pub(crate) fn err(diagnostics: &mut Vec<Diagnostic>, path: impl Into<String>, code: &str) {
     diagnostics.push(Diagnostic {
         field_path: path.into(),
         code: code.into(),

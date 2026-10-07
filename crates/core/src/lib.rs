@@ -3,6 +3,7 @@ pub mod catalog;
 pub mod completion;
 pub mod edit;
 pub mod eligibility;
+pub mod eval_continue;
 pub mod facts;
 pub mod finalize;
 pub mod geometry;

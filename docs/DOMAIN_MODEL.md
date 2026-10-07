@@ -555,3 +555,7 @@ Adopted by [D013](../design/DECISIONS.md). Normative detail is [docs/adr/SP-013-
 `zari-domain-v1` snapshots stay readable. Their hashes and action bytes are not rewritten. Completion is refused and stored done rows stay on that binding. `reasonIds` on a v2 guide reference `ConstraintCheck.id` values in the same snapshot. Empty `reasonIds` on a v1 snapshot remain valid. `requiredConfirmations` stay empty; prerequisite edges are `prerequisiteStepIds`. A checkbox does not change check status, fact state, or provenance.
 
 Persistent additions to `ActionStep`, new action or check kinds, and schema migration are held. The ephemeral instance reference used by a future eligibility read is specified in the ADR and is not a generated schema in this delivery.
+
+## 11. SP-014 evaluation continuation
+
+Adopted by [D014](../design/DECISIONS.md). Normative detail is [docs/adr/SP-014-evaluation-continuation.md](adr/SP-014-evaluation-continuation.md). Profile `default` version 1 still stamps `zari-solver-v1` and prices `RunEval` as one lump. Profile `default` version 2 stamps `zari-solver-v2` and counts the SP-012 quanta. `BUILD_ID` stays `zari-domain-7`. No schema migration and no new command. A snapshot is published only after revalidation. `budgetExhausted`, `cancelled`, and `interrupted` stay distinct.

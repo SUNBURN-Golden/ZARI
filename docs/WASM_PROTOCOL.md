@@ -186,3 +186,5 @@ SP-013 ([D013](../design/DECISIONS.md), [docs/adr/SP-013-execution-guide.md](adr
 
 The read takes one immutable snapshot and at most 4096 progress rows. It does not search, persist, promote facts, or interpret arbitrary strings. The reply stamp is project, input digest, snapshot id, catalog digest and version, rule, solver, schema, canonical, build, search profile, accepted input revision, observed project revision, editor epoch, and progress-row identity. A missing target or a mismatched stamp is not eligible. Publication of search results is unchanged: one complete candidate or a rejection, never a validator-in-progress snapshot.
 
+SP-014 ([D014](../design/DECISIONS.md)) does not add a command or a capability. `stepSearch` stays the host step. The evaluation continuation is private to the solver. `ready.solverVersion` is `zari-solver-v2`, the current engine. A snapshot still stamps `solver_version_for` of its own profile, so profile `default` version 1 remains `zari-solver-v1`. A digest mismatch discards the in-progress candidate and does not apply a late reply.
+

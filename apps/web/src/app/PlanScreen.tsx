@@ -1015,11 +1015,13 @@ export function PlanScreen({ projectId }: { projectId: string }) {
             ? `계산 중 — 작업 ${plan.progress ? BigInt(plan.progress.workUnits).toLocaleString('ko-KR') : '0'} / 노드 ${plan.progress?.nodes ?? 0}`
             : plan.search === 'done'
               ? `완료 — ${TERMINATION_TEXT[plan.termination ?? ''] ?? plan.termination}`
-              : plan.search === 'cancelled'
-                ? '취소되었습니다. 다시 계산할 수 있습니다.'
-                : plan.search === 'failed'
-                  ? `계산에 실패했습니다: ${plan.searchError ?? ''}`
-                  : '아직 계산하지 않았습니다.'}
+                : plan.search === 'cancelled'
+                  ? '취소되었습니다. 다시 계산할 수 있습니다.'
+                  : plan.search === 'interrupted'
+                    ? '중단되었습니다. 이전 계획과 입력은 그대로입니다.'
+                    : plan.search === 'failed'
+                      ? `계산에 실패했습니다: ${plan.searchError ?? ''}`
+                      : '아직 계산하지 않았습니다.'}
           {plan.searchError && plan.search === 'done' ? ` (${plan.searchError})` : ''}
         </p>
       </section>

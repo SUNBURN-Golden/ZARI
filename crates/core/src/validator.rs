@@ -24,6 +24,10 @@ use crate::scalars::*;
 
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "check_drive.rs"]
+mod check_drive;
+pub(crate) use check_drive::{CheckDrive, DriveQuantum};
+
 /// The kinds whose `Fail` status rejects publication of a candidate. A known
 /// violation of physical fit, conservation, orientation or a hard budget is
 /// never a publishable plan; commercial unknowns stay conditional instead.
@@ -63,6 +67,7 @@ use Verdict::{Fail, NotApplicable, Pass, Unknown as VUnknown};
 
 /// Result of independent validation: the report plus the deterministically
 /// derived insertion order used by the finalizer's action sequence.
+#[derive(Clone)]
 pub struct CandidateValidation {
     pub report: ValidationReport,
     /// Top-level placement ids in validated insertion order; empty when no
@@ -98,6 +103,7 @@ fn measurement(field_path: &str, value: Option<i64>) -> CheckMeasurement {
     }
 }
 
+#[derive(Clone, Debug)]
 struct Checks(Vec<ConstraintCheck>);
 impl Checks {
     fn emit(
@@ -1928,7 +1934,7 @@ pub fn has_blocking_failure(report: &ValidationReport) -> bool {
 
 /// Shared cost arithmetic for the budget checks; the same computation feeds
 /// the finalizer's BOM and cost summary so both views agree.
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct CostAccumulator {
     product_subtotal: Option<u64>,
     shipping_total: Option<u64>,
