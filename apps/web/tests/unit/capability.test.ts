@@ -61,10 +61,14 @@ it('the actual Worker handshake advertises queryNextFacts and rejects an unknown
   expect(ready.event.buildId).toBe('zari-domain-6');
   expect(ready.event.capabilities).toEqual([...WORKER_CAPABILITIES]);
   expect(ready.event.capabilities).toContain('queryNextFacts');
+  expect(ready.event.capabilities).not.toContain('queryActionEligibility');
   expect(
     send(runtime, 'query', { kind: 'queryNextFacts' }, true).event,
   ).toMatchObject({ kind: 'operationFailed', code: 'invalid_input' });
   expect(
     send(runtime, 'unknown', { kind: 'notARealOperation' }, true).event,
+  ).toMatchObject({ kind: 'operationFailed', code: 'operation_not_supported' });
+  expect(
+    send(runtime, 'eligibility', { kind: 'queryActionEligibility' }, true).event,
   ).toMatchObject({ kind: 'operationFailed', code: 'operation_not_supported' });
 });

@@ -1,3 +1,32 @@
+# 2026-10-07 — ZARI-SPATIAL-012 행동·조건·버전·평가 계약
+
+정본은 GitHub issue #65, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-012`이다. 관찰한 base SHA는 `1ef692c618c88e5dc8f966f2afd7699ccf28593a`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 SP-012만 구현한다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-012-action-evaluation.md`와 `design/DECISIONS.md` D012. 제품 완성 후보 문서에는 SP-012 노트만 추가했다.
+- DOMAIN_MODEL, SOLVER, WASM_PROTOCOL, PERSISTENCE, FRONTEND, TEST_STRATEGY에 계약 절을 더했다. 생산 Rust, `BUILD_ID` `zari-domain-6`, capability, 생성 계약, persisted `schemaVersion` 1, 기존 fixture 124건은 바꾸지 않았다.
+- 손 계산 오라클 PC-01–11은 `docs/oracles/product-completion/`이다. fixture runner 입력이 아니다. PC-02는 need 1 / pack 2 → packs 1 / supplied 2 / surplus 1이다. PC-03은 외부 staging에서 담은 뒤, 뒤 수납함을 먼저 넣는다. PC-04는 done이 unknown을 pass나 Confirmed로 올리지 않는다.
+- `queryActionEligibility`는 명령이 아니다. 요청은 `operation_not_supported`다. 다음 `BUILD_ID`는 단정하지 않는다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 116 passed, 1 ignored
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 124
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 18 files / 135), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `fd65aad9808ae654`), `node scripts/check-design-tokens.mjs --self-test` (자체 10, 대비 39/39): exit 0
+- `npm run test:browser -- --project=chromium --workers=1`: 78 passed (2.3m). `worker-state` flake는 없었다. 타임아웃을 올리지 않았다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (21.8s)
+- 새 브라우저 spec이 없어 Firefox·WebKit은 다시 실행하지 않았다. 전화와 전용 GPU는 확인하지 않았다
+
+하지 않은 것: SP-013 가이드 생산 변경, SP-014 평가 분할, SP-015 저장 수명, 스키마 마이그레이션, `BUILD_ID` 변경, 화면, 전화, 전용 GPU. 상세는 `docs/evidence/ZARI-SPATIAL-012.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 역사 호환, 물리 가이드 순서, 인스턴스 보존, 예산·취소를 본 뒤 머지한다. SP-013은 그 노드에서 가이드를 바꾼다.
+
 # 2026-10-07 — ZARI-SPATIAL-011 후속 측정 통합 검증과 새 draft capture
 
 정본은 GitHub issue #63, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-011`이다. 관찰한 base SHA는 `6f1c5c696d964487f8b52cdec428ae6cd0aba596`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

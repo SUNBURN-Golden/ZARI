@@ -310,3 +310,13 @@ Minimum interaction cases:
 6. 320/390/768/1280/1440 CSS px; 200% zoom; mobile keyboard/safe-area coverage; reduced motion; forced colors; long Korean names and large exact monetary strings.
 
 Use approved baselines only for approval-sensitive visual regression. New captures are draft evidence until user/delegated approval; record source SHA, fixture, route, viewport and environment. Storybook, if later introduced, covers reusable component states; it does not replace this app/Worker/browser matrix. [TEST_STRATEGY.md](TEST_STRATEGY.md) owns detailed fixture and verification gates.
+
+## 12. SP-012 guide presentation
+
+Adopted by [D012](../design/DECISIONS.md). This delivery adds no screen and no client command.
+
+The guide, diagram, and BOM keep one snapshot's subject refs. A step checkbox records `done` or `todo` for that full binding only. It does not parse a step id, invent an ordinal, mark a check passed, or set Confirmed. `clearSpace` and `resolveCondition` explain the user assertion and the blocking check; completing them does not clear staging, load, handling, or parking unknowns. Fixed obstacles are not listed as items the checkbox removes.
+
+Price and shipping unknowns stay on the purchase steps of that variant. They are not shown as blockers of an unrelated direct install. A null progress map stays unknown, not an all-todo list. A historical rule or a stale stamp disables completion and offers recompute. Old done rows stay on their binding.
+
+Until `queryActionEligibility` is adopted, the page must not send that command and must not treat `operation_not_supported` as an empty eligible list. The current capability list is unchanged.

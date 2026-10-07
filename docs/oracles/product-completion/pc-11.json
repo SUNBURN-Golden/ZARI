@@ -1,0 +1,20 @@
+{
+  "oracleId": "PC-11",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-015",
+  "gapIds": ["history-cas"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "IndexedDB rollback, quota, corruption, export and import",
+  "halfProject": 0,
+  "fakeSaved": 0,
+  "corruptionRewrittenAsValid": false,
+  "digestPreserved": true,
+  "historicalReadOnlyPreserved": true,
+  "missingPhotosExplicit": true,
+  "missingPhotosCalledBackup": false,
+  "duplicateResetsProgress": true
+}

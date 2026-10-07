@@ -1,0 +1,72 @@
+{
+  "contract": "zari-pc-oracle-1",
+  "engineOutput": false,
+  "currentBuildId": "zari-domain-6",
+  "assertedFutureBuildId": null,
+  "schemaVersion": 1,
+  "canonicalVersion": 1,
+  "ruleVersion": "zari-domain-v1",
+  "solverVersion": "zari-solver-v1",
+  "searchProfile": { "id": "default", "version": 1 },
+  "reviewChecks": [
+    "historyCompatibility",
+    "physicalGuideOrder",
+    "instanceConservation",
+    "budgetCancelSemantics"
+  ],
+  "heldUntilSeparateAdoption": [
+    "persisted ActionStep field",
+    "new ActionKind or CheckKind",
+    "schema migration",
+    "dbVersion migration",
+    "queryActionEligibility command",
+    "queryActionEligibility capability",
+    "queryActionEligibility generated schema",
+    "BUILD_ID bump",
+    "internal loading",
+    "tilt",
+    "lift around sill",
+    "blocker parking guidance",
+    "fact confirmation",
+    "checkout",
+    "release"
+  ],
+  "gaps": [
+    {
+      "id": "guide-order",
+      "source": "finalize.rs build_actions emits Install before TransferContents",
+      "owner": "SP-013",
+      "oracles": ["PC-03"]
+    },
+    {
+      "id": "empty-reasons",
+      "source": "build_actions writes empty required_confirmations and reason_ids and does not emit ClearSpace",
+      "owner": "SP-013",
+      "oracles": ["PC-01", "PC-04"]
+    },
+    {
+      "id": "sp004-frozen",
+      "source": "SP-004 forbids regenerating source actions",
+      "owner": "SP-013",
+      "oracles": ["PC-03"]
+    },
+    {
+      "id": "run-eval-lump",
+      "source": "search.rs RunEval calls evaluate_candidate at cost 64+p^2+4a",
+      "owner": "SP-014",
+      "oracles": ["PC-05", "PC-06", "PC-07"]
+    },
+    {
+      "id": "history-cas",
+      "source": "persistence CAS does not yet stamp catalog, rule, and progress identity together",
+      "owner": "SP-015",
+      "oracles": ["PC-08", "PC-09", "PC-10", "PC-11"]
+    },
+    {
+      "id": "new-only-acquire",
+      "source": "BOM arithmetic exists; acquire is not yet limited by the adopted guide contract in the producer",
+      "owner": "SP-013",
+      "oracles": ["PC-02"]
+    }
+  ]
+}

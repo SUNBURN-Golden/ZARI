@@ -1,0 +1,32 @@
+{
+  "contract": "zari-pc-oracle-1",
+  "engineOutput": false,
+  "buildId": null,
+  "currentProfile": { "id": "default", "version": 1 },
+  "currentSolverVersion": "zari-solver-v1",
+  "currentLump": "64+p^2+4*a",
+  "lumpIsMilliseconds": false,
+  "futureProfileRegistered": false,
+  "lumpIsFutureQuantum": false,
+  "allowanceBelowQuantumStillRunsThatQuantum": true,
+  "phases": [
+    "structuralValidation",
+    "independentChecks",
+    "quantityAudit",
+    "bomAndCost",
+    "actionDag",
+    "canonicalHash",
+    "structuralRevalidation"
+  ],
+  "quanta": [
+    { "phase": "structuralValidation", "unit": "one reference", "cost": 1 },
+    { "phase": "independentChecks", "unit": "one check basis or one pair", "cost": 1 },
+    { "phase": "quantityAudit", "unit": "one row", "cost": 1 },
+    { "phase": "bomAndCost", "unit": "one BOM line", "cost": 4 },
+    { "phase": "actionDag", "unit": "one step or one edge", "cost": 1 },
+    { "phase": "canonicalHash", "unit": "4096 canonical bytes, minimum 1", "cost": 1 },
+    { "phase": "structuralRevalidation", "unit": "one check id or one action id", "cost": 1 }
+  ],
+  "publishBeforeRevalidation": 0,
+  "terminationsDistinct": ["budgetExhausted", "cancelled", "interrupted", "scopeComplete"]
+}

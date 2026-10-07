@@ -1,0 +1,55 @@
+{
+  "oracleId": "PC-04",
+  "handDerived": true,
+  "handArithmetic": true,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-013",
+  "gapIds": ["empty-reasons"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "support, load, handling, and parking unknown",
+  "promotions": 0,
+  "blockers": [
+    {
+      "checkId": "chk:sg:bin-a:c",
+      "kind": "supportGeometry",
+      "status": "unknown",
+      "reason": "fact_unknown",
+      "blocks": ["act:transfer:cup:0", "act:install:bin-a"],
+      "notClearedBy": ["clearSpace", "resolveCondition", "done"]
+    },
+    {
+      "checkId": "chk:ld:staging:bin-a",
+      "kind": "supportLoad",
+      "status": "unknown",
+      "reason": "staging_support_unknown",
+      "blocks": ["act:transfer:cup:0", "act:install:bin-a"],
+      "notClearedBy": ["clearSpace", "done"]
+    },
+    {
+      "checkId": "chk:oac:bin-b:x",
+      "kind": "operationalAccess",
+      "status": "unknown",
+      "reason": "temporary_parking_unsupported",
+      "blocks": ["act:install:bin-b"],
+      "notClearedBy": ["resolveCondition", "done"]
+    },
+    {
+      "checkId": "chk:ip:place-tray:c",
+      "kind": "installationPath",
+      "status": "unknown",
+      "reason": "fact_unknown",
+      "blocks": ["act:install:place-tray"],
+      "notClearedBy": ["clearSpace", "done"]
+    }
+  ],
+  "unrelated": {
+    "directInstall": "act:install:place-tray",
+    "doesNotInclude": ["chk:pr:variant-new", "chk:sh:variant-new", "chk:bg:soft"]
+  },
+  "resolveConditionDone": {
+    "changesCheckStatus": false,
+    "setsConfirmed": false
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "oracleId": "PC-08",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-015",
+  "gapIds": ["history-cas"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "eligibility stamp versus dirty input, two tabs, accept switch",
+  "checkedByCurrentRepository": [
+    "projectRevision",
+    "acceptedInputRevision",
+    "acceptedPlanSnapshotId",
+    "currentInputRevision",
+    "currentInputDigest"
+  ],
+  "requiredStamp": [
+    "projectId",
+    "inputDigest",
+    "planSnapshotId",
+    "catalogDigest",
+    "catalogVersion",
+    "ruleVersion",
+    "solverVersion",
+    "schemaVersion",
+    "canonicalVersion",
+    "buildId",
+    "searchProfile",
+    "acceptedInputRevision",
+    "projectRevision",
+    "editorEpoch",
+    "progressIdentity"
+  ],
+  "workerInsideTransaction": false,
+  "progressRowCap": 4096,
+  "nullProgressEligible": false,
+  "mismatches": ["dirtyInput", "twoTab", "acceptSwitch"],
+  "staleWrite": 0,
+  "previousDoneRowKept": true,
+  "reloadBinding": ["projectId", "inputRevision", "planSnapshotId", "stepId"]
+}

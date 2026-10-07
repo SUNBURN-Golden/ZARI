@@ -1,0 +1,132 @@
+{
+  "oracleId": "PC-03",
+  "handDerived": true,
+  "handArithmetic": true,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-013",
+  "gapIds": ["guide-order", "sp004-frozen"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "2 containers, 3 contained units, rear-first install",
+  "axes": "origin front-left-bottom, +y rear, millimetres, half-open",
+  "geometry": {
+    "front": { "placementId": "bin-front", "y": 100, "depth": 200 },
+    "rear": { "placementId": "bin-rear", "y": 400, "depth": 200 },
+    "note": "Rear insertion from y<0 crosses the front occupied interval. Front install depends on rear install. The boxes do not overlap."
+  },
+  "conservation": {
+    "assigned": 3,
+    "provisional": 0,
+    "unassignedKnown": 1,
+    "unknownQuantityItems": 0
+  },
+  "absentKinds": ["acquire", "confirmArrival"],
+  "actions": [
+    {
+      "id": "act:clear:space-1",
+      "kind": "clearSpace",
+      "prerequisiteStepIds": [],
+      "instanceRefs": [{ "kind": "space", "spaceId": "space-1" }]
+    },
+    {
+      "id": "act:transfer:book:0",
+      "kind": "transferContents",
+      "prerequisiteStepIds": ["act:clear:space-1"],
+      "instanceRefs": [
+        {
+          "kind": "containedItem",
+          "itemId": "book",
+          "unitOrdinal": 0,
+          "containerPlacementId": "bin-front"
+        }
+      ]
+    },
+    {
+      "id": "act:transfer:cup:0",
+      "kind": "transferContents",
+      "prerequisiteStepIds": ["act:clear:space-1"],
+      "instanceRefs": [
+        {
+          "kind": "containedItem",
+          "itemId": "cup",
+          "unitOrdinal": 0,
+          "containerPlacementId": "bin-rear"
+        }
+      ]
+    },
+    {
+      "id": "act:transfer:plate:0",
+      "kind": "transferContents",
+      "prerequisiteStepIds": ["act:clear:space-1"],
+      "instanceRefs": [
+        {
+          "kind": "containedItem",
+          "itemId": "plate",
+          "unitOrdinal": 0,
+          "containerPlacementId": "bin-rear"
+        }
+      ]
+    },
+    {
+      "id": "act:install:bin-rear",
+      "kind": "install",
+      "prerequisiteStepIds": [
+        "act:clear:space-1",
+        "act:transfer:cup:0",
+        "act:transfer:plate:0"
+      ],
+      "instanceRefs": [
+        {
+          "kind": "ownedContainer",
+          "ownedId": "owned-rear",
+          "unitOrdinal": 0,
+          "placementId": "bin-rear"
+        }
+      ]
+    },
+    {
+      "id": "act:install:bin-front",
+      "kind": "install",
+      "prerequisiteStepIds": [
+        "act:clear:space-1",
+        "act:install:bin-rear",
+        "act:transfer:book:0"
+      ],
+      "instanceRefs": [
+        {
+          "kind": "ownedContainer",
+          "ownedId": "owned-front",
+          "unitOrdinal": 0,
+          "placementId": "bin-front"
+        }
+      ]
+    },
+    {
+      "id": "act:verify:spare",
+      "kind": "verifyUnassigned",
+      "prerequisiteStepIds": [],
+      "instanceRefs": [
+        {
+          "kind": "unassigned",
+          "itemId": "spare",
+          "range": { "start": 0, "endExclusive": 1 }
+        }
+      ]
+    }
+  ],
+  "displayOrder": [
+    "act:clear:space-1",
+    "act:transfer:book:0",
+    "act:transfer:cup:0",
+    "act:transfer:plate:0",
+    "act:install:bin-rear",
+    "act:install:bin-front",
+    "act:verify:spare"
+  ],
+  "rejected": [
+    { "code": "cyclic_action_dependencies", "why": "transfer depends on its install and that install depends on the transfer" },
+    { "code": "duplicate_id", "why": "two steps share act:install:bin-rear" },
+    { "code": "dangling_action_ref", "why": "a prerequisite names act:install:missing" }
+  ]
+}

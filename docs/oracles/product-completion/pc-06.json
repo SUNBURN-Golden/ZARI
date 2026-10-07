@@ -1,0 +1,21 @@
+{
+  "oracleId": "PC-06",
+  "handDerived": true,
+  "handArithmetic": false,
+  "engineOutput": false,
+  "buildId": null,
+  "owner": "SP-014",
+  "gapIds": ["run-eval-lump"],
+  "checkboxResolvesUnknown": false,
+  "checkboxSetsConfirmed": false,
+  "case": "allowances 1, 7, 128, 256, 1024 and a budget boundary",
+  "profile": { "id": "default", "version": 1 },
+  "allowances": [1, 7, 128, 256, 1024],
+  "sameTotalBudgetSameTerminalOutput": true,
+  "publicationBeforeChecksComplete": 0,
+  "nearBudget": {
+    "quantumThatWouldExceedMaxWorkStarts": false,
+    "termination": "budgetExhausted",
+    "notTermination": ["cancelled", "interrupted", "scopeComplete"]
+  }
+}

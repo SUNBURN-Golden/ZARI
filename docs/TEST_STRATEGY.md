@@ -308,3 +308,11 @@ Every PR reports exact base SHA, final HEAD, commands, exit/results, applicable 
 Review loop at each substantive milestone: author verification → PR → independent reviewer → findings → same author fixes → exact-HEAD re-review → applicable architecture gate → user merge decision. Findings use `BLOCKER`, `MUST FIX`, `NOTE`, or `ARCHITECTURE DECISION REQUIRED`. The author cannot declare its own independent PASS, and a new author chat is not independence. AGENTS.md's author-conflict designation and audit-depth requirements remain in force.
 
 Only the user merges. No CI workflow, automatic visual update, reviewer, or architecture verdict substitutes for that decision. A repeated manual procedure may later become a durable Devin playbook after it has worked reliably; no new automation/control plane is activated by this test design.
+
+## 13. SP-012 hand-checked product oracles
+
+Adopted by [D012](../design/DECISIONS.md). `docs/oracles/product-completion/pc-01.json` through `pc-11.json` are hand-checked contract oracles. They are not fixture-runner inputs, not generated expectations, and not proof that the running engine already emits the adopted guide. `cargo run -p zari-core --example fixture_runner -- fixtures` must not load them. Existing fixture expected outputs stay in place. No future `BUILD_ID` appears in an oracle.
+
+PC-02, PC-03, and PC-04 are manually derived: pack arithmetic `need 1 / pack 2 → packs 1 / supplied 2 / surplus 1`, the rear-before-front load-then-install graph, and the unknown blockers a checkbox must not promote. PC-05 through PC-07 fix evaluation publication, allowance parity, and cancel versus budget versus interruption. PC-08 through PC-11 fix freshness, history, and storage failure. Owners are SP-013 (PC-01–04), SP-014 (PC-05–07), and SP-015 (PC-08–11). A test may check oracle structure and the current source gap. It must not regenerate the adopted graph by calling `build_actions`.
+
+This check is design verification. It is not app, browser, phone, or hardware qualification. The independent reviewer, not the author, checks history compatibility, physical guide order, instance conservation, and budget/cancel semantics.
