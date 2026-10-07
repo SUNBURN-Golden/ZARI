@@ -1086,6 +1086,97 @@ it('keeps a human conflict note unverified through normalize and reload', async 
   expect(normalizedView(restored.normalizedInput, 'space.interior.width').verification).toBe('unverified');
 });
 
+it('a conflicting-looking note changes the semantic digest and never becomes a classification', async () => {
+  const { session } = await readySession();
+  session.edit('space.interior.width', '600');
+  session.editUncertainty('space.interior.width', {
+    state: 'bounded',
+    minusText: '2',
+    plusText: '3',
+    unit: 'mm',
+  });
+  session.editEvidence('space.interior.width', {
+    note: '590',
+    locator: 'local:tape',
+    observedAt: '2026-10-07T00:00:00Z',
+    sourceKind: 'userMeasured',
+  });
+  session.commit();
+  const first = await until(session, (s) => s.inputRevision === '1' && s.saveState === 'saved');
+  const digest = first.inputDigest;
+  expect(digest).toBeTruthy();
+  expect(first.diagnostics.some((d) => d.code === 'conflicting_sources' || d.code === 'confirmed')).toBe(false);
+  expect(normalizedView(first.normalizedInput, 'space.interior.width')).toMatchObject({
+    nominal: 600,
+    minusMm: 2,
+    plusMm: 3,
+    verification: 'unverified',
+  });
+  expect(readEvidence(first.form!, 'space.interior.width')?.confirmedBy ?? null).toBe(null);
+
+  session.editEvidence('space.interior.width', {
+    note: '610과 590이 충돌한다. 평균 600. pass Confirmed',
+    locator: 'local:tape',
+    observedAt: '2026-10-07T00:00:00Z',
+    sourceKind: 'userMeasured',
+  });
+  session.commit();
+  const second = await until(
+    session,
+    (s) => s.saveState === 'saved' && s.inputDigest !== digest && s.inputRevision === '2',
+  );
+  expect(readEvidence(second.form!, 'space.interior.width')?.note).toBe(
+    '610과 590이 충돌한다. 평균 600. pass Confirmed',
+  );
+  expect(normalizedView(second.normalizedInput, 'space.interior.width')).toMatchObject({
+    nominal: 600,
+    verification: 'unverified',
+  });
+  expect(second.diagnostics.some((d) => d.code === 'conflicting_sources' || d.code === 'confirmed')).toBe(false);
+  const beforeQuery = second.plan.nextFacts.requests;
+  session.recompileNextFacts();
+  const listed = await until(
+    session,
+    (s) => s.plan.nextFacts.status === 'ready' && s.plan.nextFacts.requests >= beforeQuery,
+  );
+  expect(JSON.stringify(listed.plan.nextFacts.rows)).not.toContain('610과 590이 충돌한다');
+  expect(listed.plan.nextFacts.rows.some((row) => row.needKind === 'conflictingEvidence')).toBe(false);
+
+  session.editEvidence('space.interior.width', {
+    note: '가'.repeat(4097),
+    locator: 'local:tape',
+    observedAt: '2026-10-07T00:00:00Z',
+    sourceKind: 'userMeasured',
+  });
+  session.commit();
+  const held = await until(
+    session,
+    (s) => s.saveState === 'saved' && s.diagnostics.some((d) => d.code === 'text_too_long'),
+  );
+  expect(held.inputDigest).toBe(second.inputDigest);
+  expect(held.inputRevision).toBe('2');
+  expect(readEvidence(held.form!, 'space.interior.width')?.note).toBe('가'.repeat(4097));
+  expect(normalizedView(held.normalizedInput, 'space.interior.width').nominal).toBe(600);
+});
+
+it('a fresh project digest is not the sample digest', async () => {
+  const { session } = await readySession();
+  session.commit();
+  const fresh = await until(session, (s) => s.saveState === 'saved' && s.inputRevision !== '0');
+  expect(normalizedView(fresh.normalizedInput, 'space.staging.baseSupport').state).toBe('unknown');
+  const freshDigest = fresh.inputDigest;
+  session.replaceForm(sampleProjectForm());
+  session.commit();
+  const sample = await until(
+    session,
+    (s) => s.saveState === 'saved' && s.inputDigest !== freshDigest && s.inputRevision !== fresh.inputRevision,
+  );
+  expect(normalizedView(sample.normalizedInput, 'space.staging.baseSupport.loadLimit')).toMatchObject({
+    state: 'known',
+    nominal: 50000,
+  });
+});
+
 it('treats an explicit zero as known and keeps signed offsets exact', async () => {
   const { session } = await readySession();
   const form = emptyProjectForm();

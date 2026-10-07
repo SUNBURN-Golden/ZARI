@@ -7,6 +7,7 @@ describe('draft baseline index', () => {
       encoding: 'utf8',
     });
     expect(output).toContain('approved 0');
-    expect(output).toMatch(/zari007 \d+/);
+    expect(output).toMatch(/zari007 47/);
+    expect(output).toMatch(/zari011 26/);
   });
 });
