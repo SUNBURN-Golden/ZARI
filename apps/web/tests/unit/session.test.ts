@@ -43,7 +43,12 @@ class WasmPort implements WorkerPort {
   sent: ProtocolRequest[] = [];
   private runtime = new Runtime();
   private dead = false;
+  hangCancel = false;
   postMessage(text: string) {
+    if (this.hangCancel) {
+      const request = JSON.parse(text) as ProtocolRequest;
+      if (request.command.kind === 'cancelSearch') return;
+    }
     if (this.dead) return;
     this.sent.push(JSON.parse(text) as ProtocolRequest);
     let reply: string;
@@ -452,7 +457,7 @@ it('a cancelled search can be restarted on the same context', async () => {
   expect(done.plan.alternatives.length).toBeGreaterThan(0);
 }, 90000);
 
-it('a worker crash mid-search is reported as a failed search, not a fake result', async () => {
+it('a worker crash mid-search is interrupted, not a completed result', async () => {
   const { repo, controller, ports } = world();
   const projectId = await seedCommitted(repo);
   const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
@@ -460,15 +465,95 @@ it('a worker crash mid-search is reported as a failed search, not a fake result'
   await until(session, (s) => s.context === 'installed');
   session.startSearch({ stepAllowance: 32 });
   await until(session, (s) => s.plan.progress !== null, 15000);
+  const acceptedBefore = session.snapshot.plan.acceptedSnapshot?.planSnapshotId ?? null;
+  const inputBefore = session.snapshot.inputDigest;
   ports[0]!.crash();
-  const failed = await until(session, (s) => s.plan.search === 'failed', 15000);
+  const failed = await until(session, (s) => s.plan.search === 'interrupted', 15000);
+  expect(failed.plan.termination).toBe('interrupted');
   expect(failed.plan.searchError).not.toBeNull();
+  expect(failed.plan.termination).not.toBe('scopeComplete');
+  expect(failed.plan.termination).not.toBe('budgetExhausted');
+  expect(failed.plan.acceptedSnapshot?.planSnapshotId ?? null).toBe(acceptedBefore);
+  expect(failed.inputDigest).toBe(inputBefore);
   // Recovery reinstalls context; a fresh search works on the new worker.
   await controller.recover();
   await until(session, (s) => s.worker === 'ready' && s.context === 'installed');
   session.startSearch();
   const done = await until(session, (s) => s.plan.search === 'done', 30000);
   expect(done.plan.alternatives.length).toBeGreaterThan(0);
+}, 90000);
+
+it('a cancel that never returns is interrupted and keeps the accepted plan', async () => {
+  const { repo, controller, ports } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  const kept = done.plan.alternatives.map((alt) => alt.planSnapshotId);
+  const chosen = done.plan.alternatives[0]!;
+  void session.acceptPlan(chosen.planSnapshotId);
+  await until(session, (s) => s.plan.acceptState === 'saved');
+  const acceptedId = session.snapshot.plan.acceptedSnapshot?.planSnapshotId;
+  const inputDigest = session.snapshot.inputDigest;
+  ports[0]!.hangCancel = true;
+  session.startSearch({ stepAllowance: 32, cancelTimeoutMs: 40 });
+  await until(session, (s) => s.plan.progress !== null, 15000);
+  session.cancelSearch();
+  const interrupted = await until(session, (s) => s.plan.search === 'interrupted', 15000);
+  expect(interrupted.plan.termination).toBe('interrupted');
+  expect(interrupted.plan.searchError).toBe('cancel_timeout');
+  expect(interrupted.plan.termination).not.toBe('scopeComplete');
+  expect(interrupted.plan.termination).not.toBe('budgetExhausted');
+  expect(interrupted.plan.acceptedSnapshot?.planSnapshotId).toBe(acceptedId);
+  expect(interrupted.inputDigest).toBe(inputDigest);
+  expect(interrupted.plan.alternatives.map((alt) => alt.planSnapshotId)).toEqual(kept);
+}, 90000);
+
+it('a source change during search does not apply the in-flight result', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  await until(session, (s) => s.context === 'installed');
+  session.startSearch();
+  const done = await until(session, (s) => s.plan.search === 'done', 30000);
+  const kept = done.plan.alternatives.map((alt) => alt.planSnapshotId);
+  const before = done.inputDigest;
+  let hold = true;
+  const queued: Array<() => void> = [];
+  session.startSearch({
+    stepAllowance: 1,
+    schedule: (fn) => {
+      if (!hold) return setTimeout(fn, 0);
+      queued.push(fn);
+      return 0;
+    },
+    unschedule: () => {},
+  });
+  const queuedDeadline = Date.now() + 15000;
+  while (queued.length === 0) {
+    if (Date.now() > queuedDeadline) throw new Error('search did not schedule a step');
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  session.edit('space.interior.width', '610');
+  session.commit();
+  const interrupted = await until(
+    session,
+    (s) => s.plan.search === 'interrupted' && s.inputDigest !== before,
+    15000,
+  );
+  hold = false;
+  for (const fn of queued.splice(0)) fn();
+  await new Promise((r) => setTimeout(r, 50));
+  expect(session.snapshot.plan.search).toBe('interrupted');
+  expect(session.snapshot.plan.alternatives.map((alt) => alt.planSnapshotId)).toEqual(kept);
+  expect(interrupted.plan.termination).toBe('interrupted');
+  expect(interrupted.plan.searchError).toBe('source_changed');
+  expect(interrupted.plan.alternatives.map((alt) => alt.planSnapshotId)).toEqual(kept);
+  expect(interrupted.plan.termination).not.toBe('scopeComplete');
+  expect(interrupted.plan.termination).not.toBe('budgetExhausted');
 }, 90000);
 
 it('a layout edit is re-verified by Rust into a new snapshot; undo/redo ride restoreLayout', async () => {

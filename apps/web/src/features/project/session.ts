@@ -94,6 +94,7 @@ export type SearchState =
   | 'cancelling'
   | 'done'
   | 'cancelled'
+  | 'interrupted'
   | 'failed';
 export type AcceptState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -925,9 +926,17 @@ export class ProjectSession {
       // The committed input moved: any in-flight search belongs to the old
       // context — `activateProject` drops it engine-side, so retire the pump
       // rather than let its steps fail against a stale search id.
-      if (this.pump?.isRunning || this.state.plan.search === 'running' || this.state.plan.search === 'cancelling') {
+      if (
+        this.pump?.isRunning ||
+        this.state.plan.search === 'running' ||
+        this.state.plan.search === 'cancelling'
+      ) {
         this.pump?.dispose();
-        this.patchPlan({ search: 'idle', progress: null, searchError: null });
+        this.patchPlan({
+          search: 'interrupted',
+          termination: 'interrupted',
+          searchError: 'source_changed',
+        });
       }
       // A committed input change ends the layout-edit chain too — the chain
       // is bound to the old input digest and can never ride across.
@@ -1352,7 +1361,12 @@ export class ProjectSession {
    * calls on macrotasks so a cancel request is always serviced between them.
    * Starting a new search disposes the old one (Rust does the same).
    */
-  startSearch(options?: { stepAllowance?: number }): void {
+  startSearch(options?: {
+    stepAllowance?: number;
+    cancelTimeoutMs?: number;
+    schedule?: (fn: () => void) => unknown;
+    unschedule?: (token: unknown) => void;
+  }): void {
     if (this.editLocked()) return;
     const client = this.controller.current;
     if (
@@ -1372,25 +1386,47 @@ export class ProjectSession {
     this.pump?.dispose();
     const pump = new SearchPump(client, {
       stepAllowance: options?.stepAllowance,
+      cancelTimeoutMs: options?.cancelTimeoutMs,
+      schedule: options?.schedule,
+      unschedule: options?.unschedule,
     });
     this.pump = pump;
     const resultInputDigest = this.state.inputDigest;
+    const resultCatalogDigest =
+      this.state.normalizedInput?.catalogPin.catalogDigest ?? '';
+    const sourceMoved = () =>
+      this.state.inputDigest !== resultInputDigest ||
+      (this.state.normalizedInput?.catalogPin.catalogDigest ?? '') !==
+        resultCatalogDigest;
     this.patchPlan({
       search: 'running',
       progress: null,
       searchError: null,
-      alternatives: [],
       termination: null,
       diagnostics: [],
-      selectedId: null,
-      resultInputDigest: null,
     });
+    const interrupt = (reason: string) => {
+      this.pump?.dispose();
+      this.patchPlan({
+        search: 'interrupted',
+        termination: 'interrupted',
+        searchError: reason,
+      });
+    };
     void pump
       .start('continuous', {
         onProgress: (event) => {
+          if (sourceMoved()) {
+            interrupt('source_changed');
+            return;
+          }
           this.patchPlan({ progress: event.consumed });
         },
         onCompleted: (event) => {
+          if (sourceMoved()) {
+            interrupt('source_changed');
+            return;
+          }
           const alternatives = event.result.alternatives;
           for (const alt of alternatives)
             this.snapshotIndex.set(alt.planSnapshotId, alt);
@@ -1408,13 +1444,30 @@ export class ProjectSession {
           this.patchPlan({ search: 'cancelled', progress: event.consumed });
         },
         onFailed: (error) => {
-          this.patchPlan({ search: 'failed', searchError: error.message });
+          this.pump?.dispose();
+          this.patchPlan({
+            search: 'interrupted',
+            termination: 'interrupted',
+            searchError: error.message,
+          });
         },
         onCancelTimeout: () => {
-          this.patchPlan({ searchError: 'cancel_timeout' });
+          this.pump?.dispose();
+          this.patchPlan({
+            search: 'interrupted',
+            termination: 'interrupted',
+            searchError: 'cancel_timeout',
+          });
+          void this.controller.recover();
         },
         onStalled: () => {
-          this.patchPlan({ searchError: 'search_stalled' });
+          this.pump?.dispose();
+          this.patchPlan({
+            search: 'interrupted',
+            termination: 'interrupted',
+            searchError: 'search_stalled',
+          });
+          void this.controller.recover();
         },
       })
       .catch((error: unknown) => {

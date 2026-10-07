@@ -24,8 +24,29 @@ pub const CANONICAL_VERSION: u32 = 1;
 /// Guide meaning from SP-013. `zari-domain-v1` snapshots stay readable and
 /// are not completable. See `docs/adr/SP-013-execution-guide.md`.
 pub const RULE_VERSION: &str = "zari-domain-v2";
-/// `zari-solver-v1`: resumable bounded rule→strategy→recipe→placement search.
+/// `zari-solver-v1`: profile `default` version 1, one `RunEval` lump
+/// `64+p²+4a`. SP-014 does not rewrite that accounting.
 pub const SOLVER_VERSION: &str = "zari-solver-v1";
+/// `zari-solver-v2`: profile `default` version 2. Evaluation is the SP-012
+/// quantum table. Registered by SP-014.
+pub const SOLVER_VERSION_V2: &str = "zari-solver-v2";
+pub const SPLIT_PROFILE_ID: &str = "default";
+pub const SPLIT_PROFILE_VERSION: u32 = 2;
+
+/// Profile `default` version 2 is the only split-accounting profile.
+pub fn split_accounting(profile: &SearchProfile) -> bool {
+    profile.id == SPLIT_PROFILE_ID && profile.version == SPLIT_PROFILE_VERSION
+}
+
+/// Solver identity stamped into a compilation. Version 1 profiles keep
+/// `zari-solver-v1`. The split profile stamps `zari-solver-v2`.
+pub fn solver_version_for(profile: &SearchProfile) -> &'static str {
+    if split_accounting(profile) {
+        SOLVER_VERSION_V2
+    } else {
+        SOLVER_VERSION
+    }
+}
 
 fn canonicalize_strings(value: Value) -> Value {
     match value {
@@ -529,7 +550,7 @@ pub fn context_id(input: &ProjectInput, catalog_content: &CatalogContent) -> Dig
         input_digest: &input_digest(input),
         catalog_digest: &catalog_digest(catalog_content),
         rule_version: RULE_VERSION,
-        solver_version: SOLVER_VERSION,
+        solver_version: solver_version_for(&input.search.profile),
         search_profile: &input.search.profile,
         search_budget: &input.search.budget,
         seed: &input.search.seed,

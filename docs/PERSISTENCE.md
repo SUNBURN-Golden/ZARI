@@ -230,3 +230,5 @@ Action progress stays outside the snapshot. `done` does not rewrite checks, fact
 Offer, owned-library, and evidence edits do not mutate an old snapshot or its progress. The next accepted binding starts with its own progress. Duplicate still resets progress. Quota, conflict, and rollback do not report a fake save or a half-written project. Corruption is not rewritten into a valid plan. Missing photo bytes stay missing.
 
 A snapshot whose `ruleVersion` is older than the engine's current rule is historical: readable, not completable, not rewritten. SP-013 makes `zari-domain-v1` historical and `zari-domain-v2` current. There is no automatic progress migration. The decoding matrix is `docs/oracles/product-completion/decoding-matrix.json`.
+
+SP-014 does not change `dbVersion` or schemaVersion. A new project's search profile is `default` version 2. Snapshots from profile version 1 keep `zari-solver-v1`. The progress CAS still rejects a solver-version mismatch and does not move done rows onto the other profile.

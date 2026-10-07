@@ -2158,7 +2158,7 @@ impl Runtime {
                 schema_version: 1,
                 canonical_version: canonical::CANONICAL_VERSION,
                 rule_version: canonical::RULE_VERSION.into(),
-                solver_version: canonical::SOLVER_VERSION.into(),
+                solver_version: canonical::SOLVER_VERSION_V2.into(),
                 capabilities,
             };
         }
@@ -2382,7 +2382,7 @@ impl Runtime {
                     catalog_version: catalog.catalog_version.clone(),
                     catalog_digest: canonical::catalog_digest(catalog),
                     rule_version: canonical::RULE_VERSION.into(),
-                    solver_version: canonical::SOLVER_VERSION.into(),
+                    solver_version: canonical::solver_version_for(&input.search.profile).into(),
                     search_profile: input.search.profile.clone(),
                     search_budget: input.search.budget.clone(),
                     seed: input.search.seed.clone(),
@@ -2417,7 +2417,7 @@ impl Runtime {
                     catalog_version: catalog.catalog_version.clone(),
                     catalog_digest: canonical::catalog_digest(catalog),
                     rule_version: canonical::RULE_VERSION.into(),
-                    solver_version: canonical::SOLVER_VERSION.into(),
+                    solver_version: canonical::solver_version_for(&input.search.profile).into(),
                     search_profile: input.search.profile.clone(),
                     search_budget: input.search.budget.clone(),
                     seed: input.search.seed.clone(),
