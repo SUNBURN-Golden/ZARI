@@ -90,6 +90,7 @@ export function StepFocus({
   onFocusStep,
   onToggle,
   onShowAccepted,
+  onExport = null,
 }: {
   surface: GuideSurface;
   actions: readonly ActionStep[];
@@ -111,6 +112,7 @@ export function StepFocus({
   onFocusStep: (stepId: string) => void;
   onToggle: (stepId: string, done: boolean) => void;
   onShowAccepted: (() => void) | null;
+  onExport?: (() => void) | null;
 }) {
   const access = stepAccess({
     surface,
@@ -199,6 +201,15 @@ export function StepFocus({
           {errorText(actionError)}
         </p>
       )}
+      {actionError &&
+        onExport &&
+        (actionError.includes('persistence_failed') || actionError.includes('record_corrupt')) && (
+          <p className="form-actions">
+            <button type="button" className="button button-quiet" data-testid="action-export" onClick={onExport}>
+              보내기
+            </button>
+          </p>
+        )}
       {retry && (
         <p className="form-actions">
           <button

@@ -18,6 +18,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **SP-014 채택 (2026-10-07).** 같은 원문으로 SP-014만 구현한다. 기록은 [D014](../design/DECISIONS.md)와 [docs/adr/SP-014-evaluation-continuation.md](adr/SP-014-evaluation-continuation.md)이다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. profile `default` version 2가 평가를 양자로 나누고 `solverVersion`은 `zari-solver-v2`다. version 1은 lump와 `zari-solver-v1`을 유지한다. 이 노트는 SP-015·016의 구현이 아니다.
 
+**SP-015 채택 (2026-10-07).** 같은 원문으로 SP-015만 구현한다. 기록은 [D015](../design/DECISIONS.md)와 [docs/adr/SP-015-lifecycle.md](adr/SP-015-lifecycle.md)이다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 사실·증빙 변경은 완료를 막고, 잘못된 초안은 좋은 정규 입력을 바꾸지 않는다. 옛 판매 항목과 진행은 그 스냅샷에 남고, 복제는 Rust 확인 뒤에 진행을 비우며 사진을 빠졌다고 말한다. 계약·DB 스키마·`BUILD_ID`는 바꾸지 않는다. 이 노트는 SP-016의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

@@ -182,10 +182,34 @@ export class CatalogManager {
     const { catalog, issues: buildIssues } = buildImport(entries, fields, meta);
     return this.validateDto(catalog, [...issues, ...buildIssues]);
   }
+  /**
+   * A catalogue with no products, variants, or offers. Rust still assigns a
+   * digest. This does not invent a seller or a price.
+   */
+  stageEmpty(meta: ImportMeta): Promise<StageResult> {
+    if (meta.catalogVersion.trim() === '' || meta.ingestionVersion.trim() === '')
+      return Promise.resolve({
+        status: 'rejected',
+        diagnostics: [],
+        issues: [{ fieldPath: 'catalogVersion', code: 'required_text_missing' }],
+      });
+    const catalog: CatalogImportDto = {
+      schemaVersion: 1,
+      catalogVersion: meta.catalogVersion,
+      sourceKind: 'imported',
+      products: [],
+      variants: [],
+      offers: [],
+      evidence: [],
+      ingestionVersion: meta.ingestionVersion,
+      sourceObservations: [],
+    };
+    return this.validateDto(catalog, []);
+  }
   /** Persist only a Rust-validated snapshot; the digest is the row key. */
-  async commit(snapshot: CatalogSnapshot): Promise<void> {
+  async commit(snapshot: CatalogSnapshot, origin = 'imported'): Promise<void> {
     await this.repo.open();
-    await this.repo.putCatalog(snapshot, 'imported');
+    await this.repo.putCatalog(snapshot, origin);
   }
   list(): ReturnType<ProjectRepository['listCatalogs']> {
     return this.repo.listCatalogs();

@@ -16,7 +16,7 @@ import {
   type SnapshotRow,
 } from '../../persistence/db';
 import { EXPORT_VERSION } from '../../persistence/export';
-import type { ProjectRepository } from '../../persistence/repository';
+import type { DuplicateStage, ProjectRepository } from '../../persistence/repository';
 import type { ProbeClient } from '../../worker/client';
 
 /**
@@ -451,4 +451,71 @@ export async function commitProjectImport(
     actionProgress: staged.actionProgress,
     catalogs: staged.catalogs,
   });
+}
+
+export type DuplicateResult =
+  | { status: 'copied'; project: ProjectRow; excludedAttachmentIds: string[] }
+  | { status: 'rejected'; issues: TransferIssue[] }
+  | { status: 'unavailable'; error: string };
+
+/**
+ * Rust-check the staged rows, then insert them in one transaction. The
+ * worker call finishes before `commitDuplicate`. A rejected check writes
+ * nothing. Progress rows are not copied. Photo ids are returned so the
+ * screen can say those bytes stayed on the source.
+ */
+export async function duplicateVerifiedProject(
+  repo: ProjectRepository,
+  client: ProbeClient,
+  sourceId: string,
+  name?: string,
+): Promise<DuplicateResult> {
+  let stage: DuplicateStage;
+  try {
+    stage = await repo.readDuplicateStage(sourceId);
+  } catch (error) {
+    return {
+      status: 'unavailable',
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+  const verify = async (record: VerifiableRecordDto) => {
+    const reply = await client.systemRequest({ kind: 'verifyRecord', record });
+    if (reply.kind !== 'recordVerified') throw new Error('unexpected_worker_event');
+    return reply;
+  };
+  const issues: TransferIssue[] = [];
+  try {
+    if (stage.input !== null) {
+      const reply = await verify({
+        kind: 'input',
+        input: stage.input.input,
+        inputDigest: stage.input.inputDigest,
+      });
+      if (!reply.verified) issues.push(issue('input', 'digest_mismatch'));
+    } else if (stage.currentInputDigest !== null) {
+      issues.push(issue('input', 'record_corrupt'));
+    }
+    if (stage.snapshot !== null) {
+      const reply = await verify({ kind: 'snapshot', snapshot: stage.snapshot.snapshot });
+      if (!reply.verified) issues.push(issue('snapshot', 'digest_mismatch'));
+    }
+    if (stage.catalog !== null) {
+      const reply = await verify({ kind: 'catalog', catalog: stage.catalog.catalog });
+      if (!reply.verified) issues.push(issue('catalog', 'digest_mismatch'));
+    }
+  } catch (error) {
+    const code = error instanceof Error ? error.message : String(error);
+    return { status: 'unavailable', error: code };
+  }
+  if (issues.length > 0) return { status: 'rejected', issues };
+  try {
+    const project = await repo.commitDuplicate(stage, name);
+    return { status: 'copied', project, excludedAttachmentIds: stage.excludedAttachmentIds };
+  } catch (error) {
+    return {
+      status: 'unavailable',
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }

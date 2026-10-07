@@ -60,6 +60,8 @@ function diagnosticText(d: Diagnostic): string {
 
 /** Demo/imported label: the stored origin decides — never inferred. */
 function catalogBadge(row: CatalogRow): { text: string; demo: boolean } {
+  if (row.origin === 'empty-real')
+    return { text: '상품 없는 카탈로그', demo: false };
   if (row.origin === 'synthetic-bundled' || row.catalog.sourceKind === 'synthetic')
     return { text: '데모 · 합성 데이터', demo: true };
   return { text: `가져온 카탈로그 · ${row.origin}`, demo: false };
@@ -709,6 +711,36 @@ export function CatalogScreen() {
             <li data-testid="catalog-empty">저장된 카탈로그가 없습니다.</li>
           )}
         </ul>
+        <div className="form-actions">
+          <Button
+            className="button button-secondary"
+            data-testid="save-empty-catalog"
+            onPress={() => {
+              void catalogManager
+                .stageEmpty({
+                  catalogVersion: 'empty-real',
+                  ingestionVersion: 'ingest-1',
+                  observedAt: null,
+                  note: '',
+                })
+                .then(async (staged) => {
+                  if (staged.status !== 'validated') {
+                    setError('빈 카탈로그를 확인하지 못했습니다.');
+                    return;
+                  }
+                  await catalogManager.commit(staged.snapshot, 'empty-real');
+                  await refresh();
+                })
+                .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+            }}
+          >
+            상품 없는 카탈로그 저장
+          </Button>
+        </div>
+        <p className="session-note" data-testid="empty-catalog-note">
+          상품이나 판매처를 만들지 않습니다. 직접 배치와 보유품만 계산하고, 새 구매 비용은
+          알려진 0입니다. 배송은 해당 없습니다.
+        </p>
       </section>
       <CatalogImport onCommitted={() => void refresh()} />
       {owned !== null && catalogs !== null && (

@@ -2,7 +2,12 @@ import 'fake-indexeddb/auto';
 import { expect, it } from 'vitest';
 import type { RawProjectInputDto } from '../../src/contracts/generated/dto';
 import { validateProjectInput } from '../../src/contracts/generated/validators.mjs';
-import { emptyProjectForm, sampleProjectForm } from '../../src/features/project/draft';
+import {
+  emptyProjectForm,
+  getMeasurement,
+  sampleProjectForm,
+  setMeasurementText,
+} from '../../src/features/project/draft';
 import { SCHEMA_VERSION, ZariDb } from '../../src/persistence/db';
 import {
   ProjectRepository,
@@ -25,6 +30,37 @@ it('creates a project with a draft and reloads the bundle', async () => {
   expect(bundle.input).toBeNull();
   expect(bundle.corrupt).toEqual([]);
   expect(validateProjectInput === undefined).toBe(false);
+});
+
+it('a null digest commit keeps the previous normalized digest and stores the raw draft', async () => {
+  const r = repo();
+  const project = await seedProject(r);
+  const digest = 'ab'.repeat(32);
+  await r.db.projects.update(project.projectId, {
+    currentInputRevision: '1',
+    currentInputDigest: digest,
+  });
+  const form = setMeasurementText(emptyProjectForm(), 'space.interior.width', 'not-a-length');
+  const saved = await r.commitNormalizedInput({
+    projectId: project.projectId,
+    generation: '2',
+    editorSessionId: 'draft',
+    form,
+    validation: {
+      status: 'invalid',
+      diagnostics: [{ fieldPath: 'name', code: 'required_text_missing', reasonCode: 'required_text_missing' }],
+    },
+    normalized: null,
+    inputDigest: null,
+    engineBuildId: 'test',
+  });
+  expect(saved.status).toBe('committed');
+  const row = await r.db.projects.get(project.projectId);
+  expect(row?.currentInputDigest).toBe(digest);
+  expect(row?.currentInputRevision).toBe('1');
+  const draft = await r.db.drafts.get(project.projectId);
+  expect(draft?.validation.status).toBe('invalid');
+  expect(draft ? getMeasurement(draft.form, 'space.interior.width').text : '').toBe('not-a-length');
 });
 
 it('template forms satisfy the generated raw DTO shape', async () => {

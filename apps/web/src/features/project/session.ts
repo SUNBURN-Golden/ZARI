@@ -232,6 +232,11 @@ export class ProjectSession {
   private closed = false;
   private reconcileQueue: Promise<unknown> = Promise.resolve();
   private pump: SearchPump | null = null;
+  /**
+   * Set only by a successful activate on the current worker. A trap, hard
+   * cancel, or crash clears it. The next search waits for a new activation.
+   */
+  private searchLease: { activationId: string; workerSessionId: string } | null = null;
   /** Every verified snapshot this session has seen, keyed by immutable id. */
   private snapshotIndex = new Map<string, PlanSnapshot>();
   /** Monotonic edit token: a late reply older than the newest request dies. */
@@ -326,8 +331,10 @@ export class ProjectSession {
       // A crash takes the activated context with it; do not keep advertising
       // 'installed' from the dead Worker session. The first open skips this —
       // status is still 'loading' while open() runs its own installContext.
-      if (worker === 'failed' && !this.closed && this.state.status === 'ready')
+      if (worker === 'failed' && !this.closed && this.state.status === 'ready') {
+        this.searchLease = null;
         this.patch({ context: 'none' });
+      }
       if (worker === 'failed' && !this.closed) this.dropNextFactsForWorker();
       if (worker === 'ready' && !this.closed && this.state.status === 'ready')
         this.patch({ context: 'installing' });
@@ -592,6 +599,7 @@ export class ProjectSession {
           input,
           catalog: catalog.catalog,
         });
+        this.captureSearchLease(client);
         this.patch({ context: 'installed', degradedReason: null });
         await this.refreshStrategies(client);
         return;
@@ -602,9 +610,11 @@ export class ProjectSession {
           await client.activate(this.projectId, String(this.epoch), this.state.inputRevision, {
             kind: 'bootstrap',
           });
+          this.searchLease = null;
           this.patch({ context: 'degraded', degradedReason: reason });
           return;
         } catch (inner) {
+          this.searchLease = null;
           this.patch({ context: 'none', degradedReason: String(inner) });
           return;
         }
@@ -614,13 +624,48 @@ export class ProjectSession {
       await client.activate(this.projectId, String(this.epoch), this.state.inputRevision, {
         kind: 'bootstrap',
       });
+      if (input) this.searchLease = null;
+      else this.captureSearchLease(client);
       this.patch({
         context: input ? 'degraded' : 'installed',
         degradedReason: input && !catalog ? 'catalog_unavailable' : null,
       });
     } catch (error) {
+      this.searchLease = null;
       this.patch({ context: 'none', degradedReason: String(error) });
     }
+  }
+  private captureSearchLease(client: ProbeClient): void {
+    const transport = client.transportIdentity;
+    this.searchLease = {
+      activationId: transport.projectActivationId,
+      workerSessionId: transport.workerSessionId,
+    };
+  }
+  private searchLeaseHolds(
+    captured: { activationId: string; workerSessionId: string },
+    client: ProbeClient,
+  ): boolean {
+    const transport = client.transportIdentity;
+    return (
+      this.controller.current === client &&
+      this.searchLease !== null &&
+      this.searchLease.activationId === captured.activationId &&
+      this.searchLease.workerSessionId === captured.workerSessionId &&
+      transport.projectActivationId === captured.activationId &&
+      transport.workerSessionId === captured.workerSessionId
+    );
+  }
+  /** Drop the search lease. A later calculation needs a new activation. */
+  private retireSearch(reason: string): void {
+    this.searchLease = null;
+    this.pump?.dispose();
+    this.patch({ context: 'none' });
+    this.patchPlan({
+      search: 'interrupted',
+      termination: 'interrupted',
+      searchError: reason,
+    });
   }
   /** After a Worker restart: fresh session → re-activate → re-fence epoch. */
   private async recoverContext(): Promise<void> {
@@ -880,14 +925,24 @@ export class ProjectSession {
       return;
     }
     const previousDigest = this.state.inputDigest;
-    this.patch({ diagnostics, normalizedInput: normalized ?? this.state.normalizedInput });
+    const keepNormalized = diagnostics.length > 0;
+    this.patch({
+      diagnostics,
+      normalizedInput: keepNormalized
+        ? this.state.normalizedInput
+        : (normalized ?? this.state.normalizedInput),
+    });
     // Skip the write when nothing semantic changed and the stored draft
     // already carries the same validation state (e.g. a plain reload). The
     // normalize round-trip still ran, so the restored draft is confirmed —
     // clear staleInput rather than leaving the project dirty forever.
+    if (diagnostics.length > 0) {
+      normalized = null;
+      inputDigest = null;
+    }
     if (opts.skipWriteIfSame && generation === String(this.lastCommittedGeneration)) {
       this.patch({
-        staleInput: false,
+        staleInput: diagnostics.length > 0,
         inputDigest: inputDigest ?? this.state.inputDigest,
       });
       this.settleNextFacts(previousDigest);
@@ -918,7 +973,8 @@ export class ProjectSession {
     this.applyCommit(result, generation);
     if (this.closed) return;
     this.patch({
-      staleInput: this.generation > this.lastCommittedGeneration,
+      staleInput:
+        diagnostics.length > 0 || this.generation > this.lastCommittedGeneration,
       inputDigest: inputDigest ?? this.state.inputDigest,
     });
     this.settleNextFacts(previousDigest);
@@ -1313,6 +1369,7 @@ export class ProjectSession {
       this.patchPlan({ actionError: 'stamp_mismatch', actionRetry: null });
       return;
     }
+    const draftGeneration = captured.generation;
     const result: ActionStepResult | Error = await this.repo
       .setActionStep({
         projectId: this.projectId,
@@ -1321,6 +1378,9 @@ export class ProjectSession {
         stepId,
         done,
         stamp,
+        draftGeneration,
+        holds: () =>
+          this.progressLeaseHolds(captured) && String(this.generation) === draftGeneration,
       })
       .catch((error: unknown) => error as Error);
     // Vite replaces MODE, so the production bundle drops this call and progressGate.ts.
@@ -1383,6 +1443,21 @@ export class ProjectSession {
       });
       return;
     }
+    const leaseNow = this.searchLease;
+    const transport = client.transportIdentity;
+    if (
+      leaseNow === null ||
+      leaseNow.activationId !== transport.projectActivationId ||
+      leaseNow.workerSessionId !== transport.workerSessionId
+    ) {
+      this.patchPlan({
+        search: 'interrupted',
+        termination: 'interrupted',
+        searchError: 'activation_required',
+      });
+      return;
+    }
+    const capturedLease = { ...leaseNow };
     this.pump?.dispose();
     const pump = new SearchPump(client, {
       stepAllowance: options?.stepAllowance,
@@ -1416,6 +1491,7 @@ export class ProjectSession {
     void pump
       .start('continuous', {
         onProgress: (event) => {
+          if (!this.searchLeaseHolds(capturedLease, client)) return;
           if (sourceMoved()) {
             interrupt('source_changed');
             return;
@@ -1423,6 +1499,7 @@ export class ProjectSession {
           this.patchPlan({ progress: event.consumed });
         },
         onCompleted: (event) => {
+          if (!this.searchLeaseHolds(capturedLease, client)) return;
           if (sourceMoved()) {
             interrupt('source_changed');
             return;
@@ -1441,10 +1518,12 @@ export class ProjectSession {
           });
         },
         onCancelled: (event) => {
+          if (!this.searchLeaseHolds(capturedLease, client)) return;
           this.patchPlan({ search: 'cancelled', progress: event.consumed });
         },
         onFailed: (error) => {
           this.pump?.dispose();
+          if (this.controller.state === 'failed') this.searchLease = null;
           this.patchPlan({
             search: 'interrupted',
             termination: 'interrupted',
@@ -1452,21 +1531,11 @@ export class ProjectSession {
           });
         },
         onCancelTimeout: () => {
-          this.pump?.dispose();
-          this.patchPlan({
-            search: 'interrupted',
-            termination: 'interrupted',
-            searchError: 'cancel_timeout',
-          });
+          this.retireSearch('cancel_timeout');
           void this.controller.recover();
         },
         onStalled: () => {
-          this.pump?.dispose();
-          this.patchPlan({
-            search: 'interrupted',
-            termination: 'interrupted',
-            searchError: 'search_stalled',
-          });
+          this.retireSearch('search_stalled');
           void this.controller.recover();
         },
       })
