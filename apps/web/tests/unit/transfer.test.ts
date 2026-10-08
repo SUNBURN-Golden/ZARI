@@ -17,6 +17,7 @@ import {
 import bundledCatalog from '../../src/features/project/synthetic-catalog.json';
 import {
   commitProjectImport,
+  duplicateVerifiedProject,
   stageProjectImport,
 } from '../../src/features/project/transfer';
 import {
@@ -47,9 +48,11 @@ class WasmPort implements WorkerPort {
   onmessage: WorkerPort['onmessage'] = null;
   onerror: WorkerPort['onerror'] = null;
   onmessageerror: WorkerPort['onmessageerror'] = null;
+  messages = 0;
   private runtime = new Runtime();
   private dead = false;
   postMessage(text: string) {
+    this.messages += 1;
     if (this.dead) return;
     let reply: string;
     try {
@@ -76,9 +79,10 @@ afterEach(() => {
 function world() {
   const db = new ZariDb(`test-${crypto.randomUUID()}`);
   const repo = new ProjectRepository(db);
-  const controller = new WorkerController(() => new WasmPort());
+  const port = new WasmPort();
+  const controller = new WorkerController(() => port);
   controllers.push(controller);
-  return { db, repo, controller };
+  return { db, repo, controller, port };
 }
 
 function normalizeSample(): { input: ProjectInput; digest: string } {
@@ -468,29 +472,58 @@ it('a failed commit inserts no half-project', async () => {
   expect(source.project.projectId).toBe(project.projectId);
 });
 
-it('duplicate creates a fresh project with revision 1 and no progress', async () => {
-  const { repo } = world();
+it('duplicate verifies in Rust before the insert and resets progress', async () => {
+  const { repo, controller, port } = world();
   const { project, snapshot } = await seedProject(repo);
-  const copy = await repo.duplicateProject(project.projectId);
-  expect(copy.projectId).not.toBe(project.projectId);
-  expect(copy.projectRevision).toBe('1');
-  expect(copy.name).toContain('사본');
-  const bundle = await repo.loadBundle(copy.projectId);
+  const bytes = new Uint8Array([1, 2, 3, 4]).buffer;
+  await repo.addAttachment({
+    schemaVersion: SCHEMA_VERSION,
+    attachmentId: 'photo-1',
+    projectId: project.projectId,
+    name: 'room.png',
+    mime: 'image/png',
+    byteSize: 4,
+    originalByteSize: 4,
+    width: 2,
+    height: 2,
+    bytes,
+    createdAt: new Date().toISOString(),
+  });
+  const client = await clientFor(controller);
+  const before = port.messages;
+  const result = await duplicateVerifiedProject(repo, client, project.projectId);
+  expect(result.status).toBe('copied');
+  if (result.status !== 'copied') throw new Error('expected copied');
+  expect(result.excludedAttachmentIds).toEqual(['photo-1']);
+  expect(result.project.projectId).not.toBe(project.projectId);
+  expect(result.project.projectRevision).toBe('1');
+  expect(result.project.name).toContain('사본');
+  const sentDuringVerify = port.messages - before;
+  expect(sentDuringVerify).toBeGreaterThan(0);
+  const atCommit = port.messages;
+  const stage = await repo.readDuplicateStage(project.projectId);
+  await repo.commitDuplicate(stage, '다시 넣기 없음');
+  expect(port.messages).toBe(atCommit);
+  const bundle = await repo.loadBundle(result.project.projectId);
   expect(bundle.input?.inputDigest).not.toBeNull();
-  // The accepted snapshot re-bound because its input revision still matches.
   expect(bundle.project.accepted?.planSnapshotId).toBe(snapshot.planSnapshotId);
-  // Progress starts empty — done states never transfer.
   expect(
-    await repo.actionProgressFor(
-      copy.projectId,
-      '1',
-      snapshot.planSnapshotId,
-    ),
+    await repo.actionProgressFor(result.project.projectId, '1', snapshot.planSnapshotId),
   ).toEqual([]);
-  // The source is untouched.
-  expect((await repo.loadBundle(project.projectId)).project.projectId).toBe(
-    project.projectId,
-  );
+  expect(await repo.listAttachments(result.project.projectId)).toEqual([]);
+  expect((await repo.loadBundle(project.projectId)).project.projectId).toBe(project.projectId);
+  expect(await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId)).toHaveLength(1);
+});
+
+it('a tampered duplicate is refused and writes no second project', async () => {
+  const { repo, controller } = world();
+  const { project } = await seedProject(repo);
+  await repo.db.inputs.update([project.projectId, '1'], { inputDigest: 'a'.repeat(64) });
+  const before = await repo.listProjects();
+  const client = await clientFor(controller);
+  const result = await duplicateVerifiedProject(repo, client, project.projectId);
+  expect(result.status).toBe('rejected');
+  expect(await repo.listProjects()).toHaveLength(before.length);
 });
 
 it('deletion removes project rows including attachment bytes atomically', async () => {

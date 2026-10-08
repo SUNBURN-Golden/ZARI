@@ -232,3 +232,13 @@ Offer, owned-library, and evidence edits do not mutate an old snapshot or its pr
 A snapshot whose `ruleVersion` is older than the engine's current rule is historical: readable, not completable, not rewritten. SP-013 makes `zari-domain-v1` historical and `zari-domain-v2` current. There is no automatic progress migration. The decoding matrix is `docs/oracles/product-completion/decoding-matrix.json`.
 
 SP-014 does not change `dbVersion` or schemaVersion. A new project's search profile is `default` version 2. Snapshots from profile version 1 keep `zari-solver-v1`. The progress CAS still rejects a solver-version mismatch and does not move done rows onto the other profile.
+
+## 10. SP-015 lifecycle
+
+Adopted by [D015](../design/DECISIONS.md). No `dbVersion` change and no migration. A progress put also refuses when the stored draft generation is newer than the generation observed before the worker call, or when the synchronous in-memory fence is false. That fence does not call the worker. The previous done row stays.
+
+`commitNormalizedInput` writes a new input row only when both the digest and the normalized input are present and the digest differs. An invalid draft stores the raw form and leaves the previous digest.
+
+`duplicateVerifiedProject` calls `verifyRecord` for the input, accepted snapshot, and pinned catalog, then `commitDuplicate` inserts the new project in one transaction. The insert does not call the worker, does not copy action progress, and does not copy photo bytes. The caller lists the excluded attachment ids. Import already verified before its transaction; that order is unchanged.
+
+The same catalog digest with a different body is refused. An empty catalogue is stored as origin `empty-real` without a new source-kind value. A hard cancel or a stalled search drops the activation lease. The next search waits for a fresh activation. A cooperative cancel keeps the lease.

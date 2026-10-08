@@ -1,3 +1,33 @@
+# 2026-10-07 — ZARI-SPATIAL-015 실측·offer·보유품·역사 계획·저장 복구 lifecycle
+
+정본은 GitHub issue #71, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-015`이다. 관찰한 base SHA는 `d2de86d5c0ebf1df6e3db382049142c30df76a59`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 SP-015만 구현한다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-015-lifecycle.md`와 `design/DECISIONS.md` D015. 제품 완성 후보 문서에는 SP-015 노트만 추가했다.
+- 진단이 있는 초안은 원본만 저장하고 기존 정규 다이제스트를 바꾸지 않는다. 진행 쓰기는 더 새로운 초안 세대와 거짓인 동기 fence를 거절한다. Worker 대기는 트랜잭션 밖이다. 새 채택 바인딩의 진행 이월은 0이다.
+- 같은 카탈로그 다이제스트의 다른 본문은 거절한다. 상품 없는 카탈로그는 기존 `imported`와 origin `empty-real`이다. 계획의 판매 항목 목록은 그 스냅샷의 `referencedCatalog`다. 보유 라이브러리는 명시 버튼으로만 프로젝트 사본에 적용된다.
+- 복제는 Rust `verifyRecord` 뒤에 한 트랜잭션으로 넣고, 진행과 사진을 복사하지 않으며 빠진 사진 수를 말한다. 한도 초과는 이전 done 행을 남기고 보내기를 보여 준다. `zari-domain-v1` 규칙은 읽을 수 있고 완료할 수 없으며 바이트를 고치지 않는다. 취소 시간 초과·정지·Worker 실패 뒤의 계산은 새 활성화가 있어야 한다.
+- `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, DB version 2, Command, capability는 그대로다. 생성 계약과 fixture 바이트는 바꾸지 않았다. 손 계산 오라클은 다시 쓰지 않았다. 새 색 토큰은 없다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked -- --test-threads=8`: exit 0, 134 passed, 1 ignored (core lib 37, search 17)
+- fixture_runner `fixtures/bootstrap` 28건. `fixtures`는 그 체인과 `npm run test:parity`에서 exit 0이고 parity가 124건을 보고했다. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 18 files / 144), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `4f78ff9f83b36d6b`), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39): exit 0
+- `npm run test:browser -- --project=chromium --workers=1`: 최종 83 passed (10.4m). 그 전 lifecycle spec 한 실행은 로케이터 3건이 실패했다. 기대를 고친 뒤 Firefox 4, WebKit 4, 이어서 Chromium 전체 83이 통과했다. 타임아웃을 올리지 않았다. `worker-state` flake는 없었다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (25.5s)
+- 전화와 전용 GPU는 확인하지 않았다
+
+하지 않은 것: SP-016, 스키마 마이그레이션, 전역 재고 예약, 결제·제공자, 실시간 카탈로그, 화면 승인, 전화, 전용 GPU. 상세는 `docs/evidence/ZARI-SPATIAL-015.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `contract_change=NO`. SP-016은 이 작업에서 시작하지 않았다.
+
 # 2026-10-07 — ZARI-SPATIAL-014 취소 가능한 독립 평가·원자적 snapshot publication
 
 정본은 GitHub issue #69, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-014`이다. 관찰한 base SHA는 `c8f4c24914910afebf639e28dae896d3a2a19573`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

@@ -236,6 +236,28 @@ function CatalogAndOwned({
           <li className="session-note">이 프로젝트에 연결된 보유 수납함이 없습니다.</li>
         )}
       </ul>
+      {(owned ?? []).some((row) => inDraft.has(row.ownedContainerId)) && (
+        <ul className="plan-list" data-testid="library-owned-apply">
+          {(owned ?? [])
+            .filter((row) => inDraft.has(row.ownedContainerId))
+            .map((row) => (
+              <li key={row.ownedContainerId}>
+                <span className="session-note">라이브러리 {row.ownedContainerId}</span>
+                <Button
+                  className="button button-quiet"
+                  data-testid={`draft-owned-apply-${row.ownedContainerId}`}
+                  onPress={() => session.upsertOwnedContainer(ownedToRaw(row.container))}
+                >
+                  라이브러리 값으로 바꾸기
+                </Button>
+              </li>
+            ))}
+        </ul>
+      )}
+      <p className="session-note" data-testid="owned-copy-note">
+        라이브러리를 고쳐도 이 프로젝트의 사본은 바뀌지 않습니다. 가용 수량이 미확인이면
+        확정된 단위로 쓰지 않습니다. 다른 프로젝트가 같은 보유품을 예약하지 않습니다.
+      </p>
       {(owned ?? []).filter((row) => !inDraft.has(row.ownedContainerId)).length > 0 && (
         <ul className="plan-list" data-testid="library-owned-list">
           {(owned ?? [])
@@ -427,6 +449,14 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     () => session.snapshot,
   );
   const [exported, setExported] = useState<string | null>(null);
+  const [copyPhotos, setCopyPhotos] = useState<string | null>(null);
+  useEffect(() => {
+    const key = `zari-copy-notice:${projectId}`;
+    const raw = sessionStorage.getItem(key);
+    if (raw === null) return;
+    sessionStorage.removeItem(key);
+    setCopyPhotos(raw);
+  }, [projectId]);
   const [detailTarget, setDetailTarget] = useState<{ path: string; token: number } | null>(null);
   const workspace = useWorkspace({
     projectId,
@@ -498,6 +528,15 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
   const otherDiagnostics = state.diagnostics.filter((d) => fieldPathFor(d.fieldPath) === null);
   return (
     <Shell name={state.name || '프로젝트'}>
+      {copyPhotos !== null && (
+        <div className="recovery-panel" role="status" data-testid="copy-notice">
+          <strong>사본을 만들었습니다.</strong>
+          <p>
+            진행 기록은 비웠습니다. 사진 {copyPhotos}건은 복사하지 않았습니다. 이 사본은
+            보유품을 예약하지 않습니다.
+          </p>
+        </div>
+      )}
       <div className="session-status" data-testid="save-state" data-save-state={state.saveState}>
         {SAVE_TEXT[state.saveState]}
         {state.saveError ? ` · ${state.saveError}` : ''}
@@ -515,6 +554,23 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           <Button className="button button-secondary" onPress={() => void download('recovery')}>
             복구용보내기
           </Button>
+        </div>
+      )}
+      {state.saveState === 'error' && (
+        <div className="recovery-panel" role="alert" data-testid="save-failed">
+          <strong>저장하지 못했습니다.</strong>
+          <p>화면의 입력은 그대로입니다. 이전에 저장된 완료 기록도 바꾸지 않았습니다.</p>
+          <div className="form-actions">
+            <Button className="button button-secondary" onPress={() => session.retrySave()} data-testid="save-failed-retry">
+              다시 저장
+            </Button>
+            <Button className="button button-secondary" onPress={() => void session.saveAsCopy()} data-testid="save-failed-copy">
+              사본으로 저장
+            </Button>
+            <Button className="button button-quiet" onPress={() => void download('standard')} data-testid="save-failed-export">
+              보내기
+            </Button>
+          </div>
         </div>
       )}
       {state.conflict && (

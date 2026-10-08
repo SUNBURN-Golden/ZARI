@@ -154,6 +154,21 @@ export type AcceptResult =
   /** The snapshot claims a binding the durable rows do not have. */
   | { status: 'binding_mismatch' };
 
+/** Bytes a duplicate will copy. Progress and photo bytes are absent on purpose. */
+export interface DuplicateStage {
+  sourceId: string;
+  name: string;
+  currentInputRevision: string;
+  currentInputDigest: string | null;
+  accepted: ProjectRow['accepted'];
+  lastStep: string;
+  draft: DraftRow | null;
+  input: InputRow | null;
+  snapshot: SnapshotRow | null;
+  catalog: CatalogRow | null;
+  excludedAttachmentIds: string[];
+}
+
 const QUARANTINE_LIMIT = 10;
 const QUARANTINE_BYTES = 10 * 1024 * 1024;
 
@@ -752,13 +767,25 @@ export class ProjectRepository {
   async putCatalog(catalog: CatalogRow['catalog'], origin: string): Promise<void> {
     return this.enqueue(async () => {
       try {
-        await this.db.catalogs.put({
-          schemaVersion: SCHEMA_VERSION,
-          catalogDigest: catalog.catalogDigest,
-          catalogVersion: catalog.catalogVersion,
-          origin,
-          catalog,
-          ingestedAt: this.now(),
+        await this.db.transaction('rw', this.db.catalogs, async () => {
+          const existing = await this.db.catalogs.get(catalog.catalogDigest);
+          if (existing !== undefined) {
+            const row = readCatalogRow(existing);
+            // Same digest is the same quote. A different body is not written
+            // over the stored evidence.
+            if (JSON.stringify(row.catalog) !== JSON.stringify(catalog)) {
+              throw new StoreError('record_corrupt', 'catalog_content_mismatch');
+            }
+            return;
+          }
+          await this.db.catalogs.add({
+            schemaVersion: SCHEMA_VERSION,
+            catalogDigest: catalog.catalogDigest,
+            catalogVersion: catalog.catalogVersion,
+            origin,
+            catalog,
+            ingestedAt: this.now(),
+          });
         });
       } catch (error) {
         throw storeError(error);
@@ -888,6 +915,13 @@ export class ProjectRepository {
     stepId: string;
     done: boolean;
     stamp: ActionProgressStamp;
+    /** Draft generation observed before the worker call. A newer stored draft refuses the write. */
+    draftGeneration?: string;
+    /**
+     * Synchronous fence read immediately before the progress put. No worker
+     * call belongs here. False refuses the write and leaves existing rows.
+     */
+    holds?: () => boolean;
   }): Promise<ActionStepResult> {
     return this.enqueue(async () => {
       const expected = await this.expectedRevision(args.projectId);
@@ -895,6 +929,7 @@ export class ProjectRepository {
         return await this.db.transaction(
           'rw',
           this.db.projects,
+          this.db.drafts,
           this.db.snapshots,
           this.db.actionProgress,
           async (): Promise<ActionStepResult> => {
@@ -980,6 +1015,16 @@ export class ProjectRepository {
               if (dependents.length > 0)
                 return { status: 'blocked_dependents', dependents };
             }
+            if (args.draftGeneration !== undefined) {
+              const rawDraft = await this.db.drafts.get(args.projectId);
+              const stored =
+                rawDraft === undefined ? '0' : readDraftRow(rawDraft).generation;
+              if (BigInt(stored) > BigInt(args.draftGeneration))
+                return { status: 'stamp_mismatch' };
+            }
+            // Re-read the in-memory fence with no await before the put, so a
+            // fact edit that landed during the reads cannot commit.
+            if (args.holds && !args.holds()) return { status: 'stamp_mismatch' };
             await this.db.actionProgress.put({
               schemaVersion: SCHEMA_VERSION,
               projectId: args.projectId,
@@ -1140,15 +1185,57 @@ export class ProjectRepository {
     });
   }
   /**
-   * PERSISTENCE §7 duplication: fresh project id with `projectRevision` '1',
-   * the current normalized input and draft copied, and the accepted snapshot
-   * re-bound only when its bytes still resolve under the current input
-   * revision. Action progress starts empty — done states never transfer.
+   * Read the rows a duplicate would copy. This does not write and does not
+   * call the worker. Photos are listed so the caller can say they were left
+   * behind. Action progress is not part of the stage.
    */
-  async duplicateProject(
-    sourceId: string,
-    name?: string,
-  ): Promise<ProjectRow> {
+  async readDuplicateStage(sourceId: string): Promise<DuplicateStage> {
+    const project = readProjectRow(await this.db.projects.get(sourceId));
+    const rawDraft = await this.db.drafts.get(sourceId);
+    const draft = rawDraft === undefined ? null : readDraftRow(rawDraft);
+    let input: InputRow | null = null;
+    if (project.currentInputDigest !== null) {
+      const raw = await this.db.inputs.get([sourceId, project.currentInputRevision]);
+      if (raw === undefined) throw new StoreError('record_corrupt', 'input_missing');
+      input = readInputRow(raw);
+    }
+    let accepted = project.accepted;
+    let snapshot: SnapshotRow | null = null;
+    if (accepted !== null && accepted.inputRevision === project.currentInputRevision) {
+      const raw = await this.db.snapshots.get([
+        sourceId,
+        accepted.inputRevision,
+        accepted.planSnapshotId,
+      ]);
+      if (raw !== undefined) snapshot = readSnapshotRow(raw);
+    }
+    if (snapshot === null) accepted = null;
+    let catalog: CatalogRow | null = null;
+    if (input !== null) {
+      const rawCatalog = await this.db.catalogs.get(input.input.catalogPin.catalogDigest);
+      if (rawCatalog !== undefined) catalog = readCatalogRow(rawCatalog);
+    }
+    const attachments = await this.listAttachments(sourceId);
+    return {
+      sourceId,
+      name: project.name,
+      currentInputRevision: project.currentInputRevision,
+      currentInputDigest: project.currentInputDigest,
+      accepted,
+      lastStep: project.lastStep,
+      draft,
+      input,
+      snapshot,
+      catalog,
+      excludedAttachmentIds: attachments.map((row) => row.attachmentId),
+    };
+  }
+  /**
+   * Insert one already-read duplicate. The caller verifies the stage with
+   * Rust before this transaction. The transaction does not wait on a worker
+   * and does not copy action progress or photo bytes.
+   */
+  commitDuplicate(stage: DuplicateStage, name?: string): Promise<ProjectRow> {
     return this.enqueue(async () => {
       const newId = crypto.randomUUID();
       const at = this.now();
@@ -1160,82 +1247,53 @@ export class ProjectRepository {
           this.db.inputs,
           this.db.snapshots,
           async () => {
-            const project = readProjectRow(await this.db.projects.get(sourceId));
-            const rawDraft = await this.db.drafts.get(sourceId);
-            const draft = rawDraft === undefined ? null : readDraftRow(rawDraft);
-            let input: InputRow | null = null;
-            if (project.currentInputDigest !== null) {
-              const raw = await this.db.inputs.get([
-                sourceId,
-                project.currentInputRevision,
-              ]);
-              if (raw === undefined)
-                throw new StoreError('record_corrupt', 'input_missing');
-              input = readInputRow(raw);
-            }
-            // Re-bind only a snapshot that still matches the current input
-            // revision and resolves as a durable row.
-            let accepted = project.accepted;
-            let snapshot: SnapshotRow | null = null;
-            if (
-              accepted !== null &&
-              accepted.inputRevision === project.currentInputRevision
-            ) {
-              const raw = await this.db.snapshots.get([
-                sourceId,
-                accepted.inputRevision,
-                accepted.planSnapshotId,
-              ]);
-              if (raw !== undefined) snapshot = readSnapshotRow(raw);
-            }
-            if (snapshot === null) accepted = null;
             await this.db.projects.add({
               schemaVersion: SCHEMA_VERSION,
               projectId: newId,
-              name: name ?? `${project.name} (사본)`,
+              name: name ?? `${stage.name} (사본)`,
               status: 'active',
               projectRevision: '1',
-              currentInputRevision: project.currentInputRevision,
-              currentInputDigest: project.currentInputDigest,
-              accepted,
-              lastStep: project.lastStep,
+              currentInputRevision: stage.currentInputRevision,
+              currentInputDigest: stage.currentInputDigest,
+              accepted: stage.accepted,
+              lastStep: stage.lastStep,
               createdAt: at,
               updatedAt: at,
               recovery: null,
             });
-            if (draft !== null) {
+            if (stage.draft !== null) {
               await this.db.drafts.add({
                 schemaVersion: SCHEMA_VERSION,
                 projectId: newId,
                 generation: '0',
                 editorSessionId: crypto.randomUUID(),
-                baseInputRevision: project.currentInputRevision,
-                form: draft.form,
-                validation: draft.validation,
+                baseInputRevision: stage.currentInputRevision,
+                form: stage.draft.form,
+                validation: stage.draft.validation,
                 edit: null,
                 updatedAt: at,
               });
             }
-            if (input !== null) {
+            if (stage.input !== null) {
               await this.db.inputs.add({
                 schemaVersion: SCHEMA_VERSION,
                 projectId: newId,
-                inputRevision: input.inputRevision,
-                inputDigest: input.inputDigest,
-                input: input.input,
-                engineBuildId: input.engineBuildId,
+                inputRevision: stage.input.inputRevision,
+                inputDigest: stage.input.inputDigest,
+                input: stage.input.input,
+                engineBuildId: stage.input.engineBuildId,
                 createdAt: at,
               });
             }
-            if (snapshot !== null) {
+            if (stage.snapshot !== null) {
               await this.db.snapshots.add({
                 schemaVersion: SCHEMA_VERSION,
                 projectId: newId,
-                inputRevision: snapshot.inputRevision,
-                planSnapshotId: snapshot.planSnapshotId,
-                snapshot: snapshot.snapshot,
+                inputRevision: stage.snapshot.inputRevision,
+                planSnapshotId: stage.snapshot.planSnapshotId,
+                snapshot: stage.snapshot.snapshot,
                 acceptedAt: at,
-                engineBuildId: snapshot.engineBuildId,
+                engineBuildId: stage.snapshot.engineBuildId,
               });
             }
           },

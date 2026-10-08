@@ -287,7 +287,7 @@ function Inspector({
                 <option value="">
                   {offerFor?.offer.kind === 'unresolved' ? '미정 (보류)' : '선택…'}
                 </option>
-                {(state.plan.catalog?.offers ?? [])
+                {(content.referencedCatalog.offers ?? [])
                   .filter((o) => o.variantId === variant.id)
                   .map((o) => (
                     <option key={o.id} value={o.id}>
@@ -297,6 +297,10 @@ function Inspector({
               </select>
             </label>
           )}
+          <p className="session-note" data-testid="offer-bound-note">
+            이 계획에 기록된 판매 항목만 고릅니다. 다른 판매 항목은 카탈로그를 바꾼 뒤
+            다시 계산해야 하며, 예전 구매 목록의 가격을 바꾸지 않습니다.
+          </p>
         </div>
       )}
       <p className="session-note">
@@ -824,6 +828,7 @@ function PlanDetail({
           }
           onFocusStep={(stepId) => workspace.setFocus({ kind: 'action', stepId })}
           onToggle={(stepId, done) => void session.toggleActionStep(stepId, done)}
+          onExport={() => void downloadPlanExport(session, session.snapshot.projectId)}
           onShowAccepted={
             state.plan.accepted
               ? () => document.getElementById('accepted-guide')?.scrollIntoView({ block: 'nearest' })
@@ -1018,7 +1023,11 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                 : plan.search === 'cancelled'
                   ? '취소되었습니다. 다시 계산할 수 있습니다.'
                   : plan.search === 'interrupted'
-                    ? '중단되었습니다. 이전 계획과 입력은 그대로입니다.'
+                    ? plan.searchError === 'activation_required' ||
+                      plan.searchError === 'cancel_timeout' ||
+                      plan.searchError === 'search_stalled'
+                      ? '중단되었습니다. 이전 계획과 입력은 그대로입니다. 다시 계산하려면 계산기가 새로 연결된 뒤 시작하세요.'
+                      : '중단되었습니다. 이전 계획과 입력은 그대로입니다.'
                     : plan.search === 'failed'
                       ? `계산에 실패했습니다: ${plan.searchError ?? ''}`
                       : '아직 계산하지 않았습니다.'}

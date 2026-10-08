@@ -3,6 +3,7 @@ import { Button } from 'react-aria-components';
 import { emptyProjectForm } from '../features/project/draft';
 import {
   commitProjectImport,
+  duplicateVerifiedProject,
   stageProjectImport,
   type StagedImport,
   type TransferIssue,
@@ -174,12 +175,24 @@ export function ProjectsScreen() {
   async function duplicate(projectId: string) {
     setBusy(true);
     setError(null);
+    setRejections(null);
     try {
-      const row = await repository.duplicateProject(projectId);
-      await refresh();
-      navigate(`#/project/${row.projectId}`);
+      const client = await libraryController.ensure();
+      const result = await duplicateVerifiedProject(repository, client, projectId);
+      if (result.status === 'copied') {
+        sessionStorage.setItem(
+          `zari-copy-notice:${result.project.projectId}`,
+          String(result.excludedAttachmentIds.length),
+        );
+        await refresh();
+        navigate(`#/project/${result.project.projectId}`);
+        return;
+      }
+      if (result.status === 'rejected') setRejections(result.issues);
+      else setError(`사본을 만들지 못했습니다: ${result.error}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
       setBusy(false);
     }
   }
@@ -225,6 +238,10 @@ export function ProjectsScreen() {
             <p>
               측정값은 이 기기의 브라우저 저장소에만 기록됩니다.보내기가 유일한
               백업입니다.
+            </p>
+            <p className="session-note" data-testid="duplicate-disclosure">
+              사본은 진행 기록을 비웁니다. 사진은 복사하지 않습니다. 보유품을 여러
+              프로젝트에 예약하지 않습니다.
             </p>
           </div>
         </div>

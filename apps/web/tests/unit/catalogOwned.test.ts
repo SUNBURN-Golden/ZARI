@@ -458,6 +458,61 @@ it('an older guide rule refuses completion and keeps the previous done row', asy
   expect(rows.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
 });
 
+it('a dirty fence and a newer draft refuse the progress write', async () => {
+  const { repo } = world();
+  const { project, snapshot } = await seedAccepted(repo);
+  const args = {
+    projectId: project.projectId,
+    inputRevision: '1',
+    planSnapshotId: snapshot.planSnapshotId,
+    stepId: 'act-1',
+    done: true,
+    stamp: stampFor(snapshot, '1', progressIdentity([])),
+  };
+  expect(await repo.setActionStep({ ...args, holds: () => false })).toEqual({
+    status: 'stamp_mismatch',
+  });
+  expect(await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId)).toEqual([]);
+  const saved = await repo.setActionStep({ ...args, holds: () => true });
+  expect(saved.status).toBe('saved');
+  await repo.db.drafts.update(project.projectId, { generation: '4' });
+  const revision = saved.status === 'saved' ? saved.projectRevision : '1';
+  const again = await repo.setActionStep({
+    ...args,
+    stepId: 'act-2',
+    stamp: stampFor(snapshot, revision, progressIdentity([['act-1', 'done']])),
+    draftGeneration: '0',
+    holds: () => true,
+  });
+  expect(again).toEqual({ status: 'stamp_mismatch' });
+  const rows = await repo.actionProgressFor(project.projectId, '1', snapshot.planSnapshotId);
+  expect(rows.map((row) => [row.stepId, row.status])).toEqual([['act-1', 'done']]);
+});
+
+it('an empty catalogue keeps a Rust digest and no offers', async () => {
+  const { catalogs } = world();
+  const staged = await catalogs.stageEmpty({
+    catalogVersion: 'empty-real',
+    ingestionVersion: 'ingest-1',
+    observedAt: null,
+    note: '',
+  });
+  if (staged.status !== 'validated') throw new Error(JSON.stringify(staged));
+  expect(staged.snapshot.products).toEqual([]);
+  expect(staged.snapshot.variants).toEqual([]);
+  expect(staged.snapshot.offers).toEqual([]);
+  expect(staged.snapshot.catalogDigest).toMatch(/^[0-9a-f]{64}$/);
+  await catalogs.commit(staged.snapshot, 'empty-real');
+  await catalogs.commit(staged.snapshot, 'empty-real');
+  const rows = await catalogs.list();
+  expect(rows).toHaveLength(1);
+  expect(rows[0]!.origin).toBe('empty-real');
+  const mutated = structuredClone(staged.snapshot);
+  mutated.catalogVersion = 'rewritten';
+  await expect(catalogs.commit(mutated, 'imported')).rejects.toBeInstanceOf(Error);
+  expect((await catalogs.list())[0]!.catalog.catalogVersion).toBe('empty-real');
+});
+
 it('a progress stamp that does not match the stored rows writes nothing', async () => {
   const { repo } = world();
   const { project, snapshot } = await seedAccepted(repo);
