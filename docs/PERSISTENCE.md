@@ -255,3 +255,7 @@ Adopted by [Dz-inventory-lifecycle](../design/DECISIONS.md). Live `DB_VERSION` i
 ## 13. z-catalog-provenance catalog rows
 
 Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). There is no new store and no dbVersion change. A reviewed snapshot is inserted with `putCatalog` only when Rust returns one. The same digest with a different body is still refused. A quarantine does not call `putCatalog`. Photo bytes are not stored. exportVersion 1 is unchanged. The review reply itself is not a row.
+
+## 14. z-offer-bundles quote
+
+Adopted by [Dz-offer-bundles](../design/DECISIONS.md). There is no new store and no dbVersion change. The quote reply is not a row, not an export field, and not part of a PlanSnapshot hash. A preview writes nothing. Applying a sold-out replacement persists only through the existing layout-edit snapshot. exportVersion 1 is unchanged.

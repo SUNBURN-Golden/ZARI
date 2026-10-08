@@ -31,7 +31,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-7";
-const CAPABILITIES: [&str; 16] = [
+const CAPABILITIES: [&str; 17] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -47,6 +47,7 @@ const CAPABILITIES: [&str; 16] = [
     "queryActionEligibility",
     "applyInventoryLedger",
     "reviewCatalogImport",
+    "quoteOfferBundle",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -56,7 +57,7 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 19] = [
+const COMMAND_KINDS: [&str; 20] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -71,6 +72,7 @@ const COMMAND_KINDS: [&str; 19] = [
     "queryActionEligibility",
     "applyInventoryLedger",
     "reviewCatalogImport",
+    "quoteOfferBundle",
     "disposeProject",
     "proposeStrategies",
     "startSearch",
@@ -285,6 +287,11 @@ pub enum Command {
     ReviewCatalogImport {
         action: crate::catalog_provenance::CatalogReviewAction,
     },
+    /// Stateless seller quote. Does not write a PlanSnapshot. Unknown
+    /// shipping stays unknown and is not a free total.
+    QuoteOfferBundle {
+        action: crate::offer_bundles::OfferQuoteAction,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -427,6 +434,11 @@ pub enum Event {
     /// Result of `reviewCatalogImport`. `snapshot: null` publishes nothing.
     CatalogImportReviewed {
         reply: crate::catalog_provenance::CatalogProvenanceReply,
+    },
+    /// Result of `quoteOfferBundle`. `boundRevision` is the snapshot id, or
+    /// null for a preview that does not change drawing, BOM, or the guide.
+    OfferBundleQuoted {
+        reply: crate::offer_bundles::OfferQuoteReply,
     },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
@@ -2206,6 +2218,7 @@ impl Runtime {
                     | Command::QueryActionEligibility { .. }
                     | Command::ApplyInventoryLedger { .. }
                     | Command::ReviewCatalogImport { .. }
+                    | Command::QuoteOfferBundle { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -2394,7 +2407,8 @@ impl Runtime {
             | Command::QueryNextFacts { .. }
             | Command::QueryActionEligibility { .. }
             | Command::ApplyInventoryLedger { .. }
-            | Command::ReviewCatalogImport { .. } => self.execute_stateless(&request.command),
+            | Command::ReviewCatalogImport { .. }
+            | Command::QuoteOfferBundle { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2685,6 +2699,12 @@ impl Runtime {
             Command::ReviewCatalogImport { action } => {
                 match crate::catalog_provenance::review_catalog_import(action) {
                     Ok(reply) => Event::CatalogImportReviewed { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::QuoteOfferBundle { action } => {
+                match crate::offer_bundles::quote_offer_bundle(action) {
+                    Ok(reply) => Event::OfferBundleQuoted { reply },
                     Err(error) => failure(error.code),
                 }
             }

@@ -338,3 +338,7 @@ Adopted by [Dz-inventory-lifecycle](../design/DECISIONS.md). The project screen 
 ## 15. z-catalog-provenance review
 
 Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). The catalog screen gains one review panel on the existing `#/catalog` route. It uses the library Worker already used by catalog import. Manual rows, CSV, and JSON go to `reviewCatalogImport`. Three sample buttons load the Rust bundles. A quarantine hides the save control. Saving adds a new catalog row and leaves the previous digest's bytes in place. Pending, ready, quarantine, and save are visible. The review control is a form submit, so Enter reviews. Colors reuse the panel, notice, and error tokens. No new route and no approved baseline.
+
+## 16. z-offer-bundles quote
+
+Adopted by [Dz-offer-bundles](../design/DECISIONS.md). The plan screen gains one seller-quote panel on the existing plan route. It uses the project Worker. One snapshot id is quoted once. The preview form does not publish a revision. Unknown money is the word 미확인, never ₩0 and never 무료. Confirmed free shipping is 무료. Pending, ready, empty, and error stay visible. Enter submits the preview. Drawing, BOM, and guide carry the same `data-revision`. Colors reuse the panel, table, and error tokens. No new route and no approved baseline.

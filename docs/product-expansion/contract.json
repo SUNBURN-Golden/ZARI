@@ -43,6 +43,7 @@
     "queryActionEligibility",
     "applyInventoryLedger",
     "reviewCatalogImport",
+    "quoteOfferBundle",
     "disposeProject"
   ],
   "searchCapabilities": [

@@ -28,6 +28,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-catalog-provenance 채택 (2026-10-07).** 이 노트는 z-catalog-provenance만 다룬다. 같은 원문이다. 기록은 [Dz-catalog-provenance](../design/DECISIONS.md)와 [docs/adr/SP-z-catalog-provenance.md](adr/SP-z-catalog-provenance.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 실상품 검토는 스냅샷 밖의 Rust 응답이다. 다른 크기 옵션은 합쳐지지 않고, 빈 내경은 외경이 되지 않으며, 불완전 가져오기는 기존 카탈로그를 덮어쓰지 않는다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-offer-bundles 채택 (2026-10-07).** 이 노트는 z-offer-bundles만 다룬다. 같은 원문이다. 기록은 [Dz-offer-bundles](../design/DECISIONS.md)와 [docs/adr/SP-z-offer-bundles.md](adr/SP-z-offer-bundles.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 필요 개수와 판매 묶음 수는 다르고, 배송 미확인은 무료로 합산되지 않으며, 품절 교체 뒤 도면·BOM·가이드는 같은 새 revision을 쓴다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

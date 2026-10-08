@@ -13,6 +13,7 @@ pub mod inventory;
 pub mod measurement;
 pub mod next_facts;
 pub mod normalize;
+pub mod offer_bundles;
 pub mod plan;
 pub mod probe;
 pub mod protocol;
