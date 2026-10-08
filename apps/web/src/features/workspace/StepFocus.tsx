@@ -275,7 +275,7 @@ export function StepFocus({
       {current && (
         <StepTargetLine step={current} projection={projection} content={content} />
       )}
-      <ol className="plan-list" data-testid="guide-list">
+      <ol className="plan-list" data-testid="guide-list" data-revision={displayedPlanId}>
         {actions.map((step) => {
           const mark = showMarks ? stepMark(progress, step.id) : null;
           const missing = missingPrerequisites(step, showMarks ? progress : null);

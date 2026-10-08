@@ -1452,6 +1452,10 @@ export type Command =
       kind: 'reviewCatalogImport';
     }
   | {
+      action: OfferQuoteAction;
+      kind: 'quoteOfferBundle';
+    }
+  | {
       kind: 'proposeStrategies';
     }
   | {
@@ -1875,6 +1879,54 @@ export type VerificationScope = 'unknown' | 'unverified' | 'verified';
  */
 export type SampleBundleKind = 'synthetic' | 'verified' | 'unverified';
 /**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "OfferQuoteAction".
+ */
+export type OfferQuoteAction =
+  | {
+      alternates?: Offer[];
+      kind: 'snapshot';
+      sellerNotes?: SellerTaxNote[];
+      snapshot: PlanSnapshot;
+    }
+  | {
+      kind: 'preview';
+      preview: OfferPreview;
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "TaxStatus".
+ */
+export type TaxStatus = 'included' | 'excluded' | 'unknown';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "QuoteRole".
+ */
+export type QuoteRole = 'container' | 'requiredPart' | 'ownedReuse';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PreviewShipping".
+ */
+export type PreviewShipping =
+  | {
+      kind: 'unknown';
+    }
+  | {
+      kind: 'free';
+    }
+  | {
+      fee: MoneyKrw;
+      kind: 'fixed';
+    }
+  | {
+      kind: 'complex';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "StockStatus".
+ */
+export type StockStatus = 'inStock' | 'outOfStock' | 'unknown';
+/**
  * Search drive mode recorded at `startSearch`. The single-threaded runtime
  * only ever advances on explicit `stepSearch` requests, so `continuous` is a
  * scheduling hint for the host — never an autonomous loop inside WASM.
@@ -1966,6 +2018,10 @@ export type Event =
   | {
       kind: 'catalogImportReviewed';
       reply: CatalogProvenanceReply;
+    }
+  | {
+      kind: 'offerBundleQuoted';
+      reply: OfferQuoteReply;
     }
   | {
       kind: 'searchStarted';
@@ -2131,6 +2187,43 @@ export type QuantityLabelCode = 'unknown' | 'zero' | 'count';
  * via the `definition` "RowDisposition".
  */
 export type RowDisposition = 'ready' | 'quarantine';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "QuotedMoney".
+ */
+export type QuotedMoney =
+  | {
+      amount: MoneyKrw;
+      state: 'known';
+    }
+  | {
+      state: 'unknown';
+    }
+  | {
+      reasonCode: string;
+      state: 'notApplicable';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "QuotedCount".
+ */
+export type QuotedCount =
+  | {
+      state: 'known';
+      value: number;
+    }
+  | {
+      state: 'unknown';
+    }
+  | {
+      reasonCode: string;
+      state: 'notApplicable';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ShippingStatus".
+ */
+export type ShippingStatus = 'free' | 'fixed' | 'unknown' | 'complex' | 'notApplicable';
 
 export interface ZariContractBundle {
   BootstrapFixture: BootstrapFixture;
@@ -3756,6 +3849,42 @@ export interface FieldSource {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SellerTaxNote".
+ */
+export interface SellerTaxNote {
+  sellerId: Id;
+  tax: TaxStatus;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "OfferPreview".
+ */
+export interface OfferPreview {
+  lines: OfferPreviewLine[];
+  sellerNotes?: SellerTaxNote[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "OfferPreviewLine".
+ */
+export interface OfferPreviewLine {
+  id: Id;
+  includedInParent: boolean;
+  minimumPacks: number | null;
+  offerId: Id | null;
+  packPrice: MoneyKrw | null;
+  packQuantity: number | null;
+  physicalNeeded: number | null;
+  replacementOfferId: Id | null;
+  reused: number | null;
+  role: QuoteRole;
+  sellerId: Id | null;
+  shipping: PreviewShipping;
+  stock: StockStatus;
+  variantId: Id | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "RequestMeta".
  */
 export interface RequestMeta {
@@ -3986,6 +4115,72 @@ export interface RowDiagnosis {
   duplicateOf: number | null;
   rowIndex: number;
   unknownScopes: SourceScope[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "OfferQuoteReply".
+ */
+export interface OfferQuoteReply {
+  boundRevision: Digest | null;
+  grandTotal: QuotedMoney;
+  knownProduct: QuotedMoney;
+  knownShipping: QuotedMoney;
+  lines: OfferQuoteLine[];
+  replacements: SoldOutReplacement[];
+  sellers: SellerQuote[];
+  unconfirmed: UnconfirmedAmount[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "OfferQuoteLine".
+ */
+export interface OfferQuoteLine {
+  id: Id;
+  includedInParent: boolean;
+  minimumUnits: QuotedCount;
+  newUnits: QuotedCount;
+  offerId: Id | null;
+  packQuantity: QuotedCount;
+  packsToOrder: QuotedCount;
+  physicalNeeded: QuotedCount;
+  productSubtotal: QuotedMoney;
+  reused: QuotedCount;
+  role: QuoteRole;
+  sellerId: Id | null;
+  supplied: QuotedCount;
+  surplus: QuotedCount;
+  variantId: Id | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SoldOutReplacement".
+ */
+export interface SoldOutReplacement {
+  boundRevision: Digest | null;
+  fromOfferId: Id;
+  toOfferId: Id;
+  variantId: Id;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SellerQuote".
+ */
+export interface SellerQuote {
+  offerIds: Id[];
+  sellerId: Id;
+  shipping: QuotedMoney;
+  shippingStatus: ShippingStatus;
+  stock: StockStatus;
+  tax: TaxStatus;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "UnconfirmedAmount".
+ */
+export interface UnconfirmedAmount {
+  code: string;
+  lineId: Id | null;
+  sellerId: Id | null;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

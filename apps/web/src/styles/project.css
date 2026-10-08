@@ -779,8 +779,23 @@
   }
 }
 
+.offer-quote {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.offer-quote form,
+.offer-quote label {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
 .inventory-panel input,
-.inventory-panel select {
+.inventory-panel select,
+.offer-quote input,
+.offer-quote select {
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: var(--zari-control-min-height);
   padding: var(--zari-space-2);
   border: var(--zari-border-width) solid var(--zari-border-control);
@@ -789,13 +804,17 @@
   color: var(--zari-text-primary);
   font-size: var(--zari-text-base);
 }
-.inventory-panel .button {
+.inventory-panel .button,
+.offer-quote .button {
   margin-top: var(--zari-space-2);
 }
 @media (pointer: coarse) {
   .inventory-panel input,
   .inventory-panel select,
-  .inventory-panel .button {
+  .inventory-panel .button,
+  .offer-quote input,
+  .offer-quote select,
+  .offer-quote .button {
     min-height: var(--zari-touch-min-height);
   }
 }
@@ -807,6 +826,10 @@
   .inventory-panel input,
   .inventory-panel select,
   .inventory-panel .button,
+  .offer-quote,
+  .offer-quote input,
+  .offer-quote select,
+  .offer-quote .button,
   .next-facts,
   .next-fact-row,
   .next-facts-stale,

@@ -69,6 +69,7 @@ fn capability_subset_is_honest() {
             "queryActionEligibility",
             "applyInventoryLedger",
             "reviewCatalogImport",
+            "quoteOfferBundle",
             "disposeProject"
         ])
     );
@@ -463,6 +464,7 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             "queryActionEligibility",
             "applyInventoryLedger",
             "reviewCatalogImport",
+            "quoteOfferBundle",
             "disposeProject",
             "proposeStrategies",
             "startSearch",

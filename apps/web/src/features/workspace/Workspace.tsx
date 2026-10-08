@@ -443,7 +443,12 @@ export function PlanWorkspace({
               </SpatialBoundary>
             </div>
           )}
-          <div className="plan-diagrams" hidden={spatialShowing}>
+          <div
+            className="plan-diagrams"
+            hidden={spatialShowing}
+            data-testid="plan-drawings"
+            data-revision={binding.planSnapshotId}
+          >
             <PlanDiagram
               content={content}
               projection={projection}

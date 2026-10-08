@@ -1517,6 +1517,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Stateless seller quote. Does not write a PlanSnapshot. Unknown\nshipping stays unknown and is not a free total.",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/OfferQuoteAction"
+            },
+            "kind": {
+              "const": "quoteOfferBundle",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -3058,6 +3076,24 @@
             },
             "reply": {
               "$ref": "#/definitions/CatalogProvenanceReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `quoteOfferBundle`. `boundRevision` is the snapshot id, or\nnull for a preview that does not change drawing, BOM, or the guide.",
+          "properties": {
+            "kind": {
+              "const": "offerBundleQuoted",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/OfferQuoteReply"
             }
           },
           "required": [
@@ -6970,6 +7006,352 @@
       "title": "Offer",
       "type": "object"
     },
+    "OfferPreview": {
+      "additionalProperties": false,
+      "properties": {
+        "lines": {
+          "items": {
+            "$ref": "#/definitions/OfferPreviewLine"
+          },
+          "type": "array"
+        },
+        "sellerNotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/SellerTaxNote"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "lines"
+      ],
+      "title": "OfferPreview",
+      "type": "object"
+    },
+    "OfferPreviewLine": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "includedInParent": {
+          "type": "boolean"
+        },
+        "minimumPacks": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "offerId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packPrice": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MoneyKrw"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packQuantity": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "physicalNeeded": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "replacementOfferId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reused": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "role": {
+          "$ref": "#/definitions/QuoteRole"
+        },
+        "sellerId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shipping": {
+          "$ref": "#/definitions/PreviewShipping"
+        },
+        "stock": {
+          "$ref": "#/definitions/StockStatus"
+        },
+        "variantId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "sellerId",
+        "variantId",
+        "offerId",
+        "physicalNeeded",
+        "reused",
+        "packQuantity",
+        "packPrice",
+        "stock",
+        "shipping",
+        "includedInParent",
+        "minimumPacks",
+        "replacementOfferId"
+      ],
+      "title": "OfferPreviewLine",
+      "type": "object"
+    },
+    "OfferQuoteAction": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "alternates": {
+              "default": [],
+              "items": {
+                "$ref": "#/definitions/Offer"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "snapshot",
+              "type": "string"
+            },
+            "sellerNotes": {
+              "default": [],
+              "items": {
+                "$ref": "#/definitions/SellerTaxNote"
+              },
+              "type": "array"
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "preview",
+              "type": "string"
+            },
+            "preview": {
+              "$ref": "#/definitions/OfferPreview"
+            }
+          },
+          "required": [
+            "kind",
+            "preview"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "OfferQuoteAction"
+    },
+    "OfferQuoteLine": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "includedInParent": {
+          "type": "boolean"
+        },
+        "minimumUnits": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "newUnits": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "offerId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packQuantity": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "packsToOrder": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "physicalNeeded": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "productSubtotal": {
+          "$ref": "#/definitions/QuotedMoney"
+        },
+        "reused": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "role": {
+          "$ref": "#/definitions/QuoteRole"
+        },
+        "sellerId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "supplied": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "surplus": {
+          "$ref": "#/definitions/QuotedCount"
+        },
+        "variantId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "sellerId",
+        "variantId",
+        "offerId",
+        "physicalNeeded",
+        "reused",
+        "newUnits",
+        "packQuantity",
+        "packsToOrder",
+        "supplied",
+        "surplus",
+        "minimumUnits",
+        "productSubtotal",
+        "includedInParent"
+      ],
+      "title": "OfferQuoteLine",
+      "type": "object"
+    },
+    "OfferQuoteReply": {
+      "additionalProperties": false,
+      "properties": {
+        "boundRevision": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "grandTotal": {
+          "$ref": "#/definitions/QuotedMoney"
+        },
+        "knownProduct": {
+          "$ref": "#/definitions/QuotedMoney"
+        },
+        "knownShipping": {
+          "$ref": "#/definitions/QuotedMoney"
+        },
+        "lines": {
+          "items": {
+            "$ref": "#/definitions/OfferQuoteLine"
+          },
+          "type": "array"
+        },
+        "replacements": {
+          "items": {
+            "$ref": "#/definitions/SoldOutReplacement"
+          },
+          "type": "array"
+        },
+        "sellers": {
+          "items": {
+            "$ref": "#/definitions/SellerQuote"
+          },
+          "type": "array"
+        },
+        "unconfirmed": {
+          "items": {
+            "$ref": "#/definitions/UnconfirmedAmount"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "boundRevision",
+        "lines",
+        "sellers",
+        "knownProduct",
+        "knownShipping",
+        "grandTotal",
+        "unconfirmed",
+        "replacements"
+      ],
+      "title": "OfferQuoteReply",
+      "type": "object"
+    },
     "OfferSelection": {
       "oneOf": [
         {
@@ -7392,6 +7774,67 @@
       ],
       "title": "Preferences",
       "type": "object"
+    },
+    "PreviewShipping": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "free",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "fee": {
+              "$ref": "#/definitions/MoneyKrw"
+            },
+            "kind": {
+              "const": "fixed",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "fee"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "complex",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "PreviewShipping"
     },
     "Product": {
       "additionalProperties": false,
@@ -8002,6 +8445,121 @@
         "count"
       ],
       "title": "QuantityLabelCode",
+      "type": "string"
+    },
+    "QuotedCount": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "QuotedCount"
+    },
+    "QuotedMoney": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "$ref": "#/definitions/MoneyKrw"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "amount"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "QuotedMoney"
+    },
+    "QuoteRole": {
+      "enum": [
+        "container",
+        "requiredPart",
+        "ownedReuse"
+      ],
+      "title": "QuoteRole",
       "type": "string"
     },
     "RawCatalogFieldDto": {
@@ -10311,6 +10869,59 @@
       "title": "SearchTermination",
       "type": "string"
     },
+    "SellerQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "offerIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "sellerId": {
+          "$ref": "#/definitions/Id"
+        },
+        "shipping": {
+          "$ref": "#/definitions/QuotedMoney"
+        },
+        "shippingStatus": {
+          "$ref": "#/definitions/ShippingStatus"
+        },
+        "stock": {
+          "$ref": "#/definitions/StockStatus"
+        },
+        "tax": {
+          "$ref": "#/definitions/TaxStatus"
+        }
+      },
+      "required": [
+        "sellerId",
+        "stock",
+        "shipping",
+        "shippingStatus",
+        "tax",
+        "offerIds"
+      ],
+      "title": "SellerQuote",
+      "type": "object"
+    },
+    "SellerTaxNote": {
+      "additionalProperties": false,
+      "properties": {
+        "sellerId": {
+          "$ref": "#/definitions/Id"
+        },
+        "tax": {
+          "$ref": "#/definitions/TaxStatus"
+        }
+      },
+      "required": [
+        "sellerId",
+        "tax"
+      ],
+      "title": "SellerTaxNote",
+      "type": "object"
+    },
     "ShippingRule": {
       "description": "v1 supports a known fixed fee per seller order or free; anything else is an\nexplicit unknown/complex policy fact, never a zero-price default.",
       "oneOf": [
@@ -10359,6 +10970,17 @@
         }
       ],
       "title": "ShippingRule"
+    },
+    "ShippingStatus": {
+      "enum": [
+        "free",
+        "fixed",
+        "unknown",
+        "complex",
+        "notApplicable"
+      ],
+      "title": "ShippingStatus",
+      "type": "string"
     },
     "SnapshotBinding": {
       "additionalProperties": false,
@@ -10462,6 +11084,38 @@
         "scope"
       ],
       "title": "SnapshotContent",
+      "type": "object"
+    },
+    "SoldOutReplacement": {
+      "additionalProperties": false,
+      "properties": {
+        "boundRevision": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fromOfferId": {
+          "$ref": "#/definitions/Id"
+        },
+        "toOfferId": {
+          "$ref": "#/definitions/Id"
+        },
+        "variantId": {
+          "$ref": "#/definitions/Id"
+        }
+      },
+      "required": [
+        "fromOfferId",
+        "toOfferId",
+        "variantId",
+        "boundRevision"
+      ],
+      "title": "SoldOutReplacement",
       "type": "object"
     },
     "SourceObservation": {
@@ -11207,6 +11861,15 @@
       "title": "StockRole",
       "type": "string"
     },
+    "StockStatus": {
+      "enum": [
+        "inStock",
+        "outOfStock",
+        "unknown"
+      ],
+      "title": "StockStatus",
+      "type": "string"
+    },
     "StoragePrimitive": {
       "enum": [
         "directPlacement",
@@ -11370,6 +12033,15 @@
       "title": "SupportSurface",
       "type": "object"
     },
+    "TaxStatus": {
+      "enum": [
+        "included",
+        "excluded",
+        "unknown"
+      ],
+      "title": "TaxStatus",
+      "type": "string"
+    },
     "Unassigned": {
       "additionalProperties": false,
       "properties": {
@@ -11467,6 +12139,41 @@
         }
       ],
       "title": "Uncertainty"
+    },
+    "UnconfirmedAmount": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "lineId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sellerId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "sellerId",
+        "lineId"
+      ],
+      "title": "UnconfirmedAmount",
+      "type": "object"
     },
     "Unit": {
       "enum": [

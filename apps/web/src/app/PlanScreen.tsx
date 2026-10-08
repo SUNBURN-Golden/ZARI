@@ -54,6 +54,7 @@ import {
   type MoveInputError,
 } from '../features/plan/view';
 import { bomCsvRows, toCsv } from '../features/plan/csv';
+import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import { Shell } from './ProjectScreen';
 import { navigate } from './router';
@@ -711,7 +712,7 @@ function PlanDetail({
             </Button>
           </div>
           <div className="table-scroll">
-          <table className="bom-table" data-testid="bom-table">
+          <table className="bom-table" data-testid="bom-table" data-revision={snapshot.planSnapshotId}>
             <thead>
               <tr>
                 <th>품목</th>
@@ -799,6 +800,11 @@ function PlanDetail({
           </div>
           </>
         )}
+        <OfferQuotePanel
+          snapshot={snapshot}
+          canReplace={editable && edit.pending === null && edit.persist?.kind !== 'saving'}
+          onReplace={(command) => session.requestLayoutEdit(command, snapshot.planSnapshotId)}
+        />
       </section>
 
       <section aria-labelledby="guide-title">

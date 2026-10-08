@@ -1,3 +1,35 @@
+# 2026-10-09 — ZARI-z-offer-bundles 판매 묶음·필수 부품·배송비의 정직한 BOM
+
+정본은 GitHub issue #84, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-offer-bundles`이다. 관찰한 base SHA는 `53816da2a4aa3028a6c6c48131966d32ee018e2f`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-offer-bundles만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-offer-bundles.md`와 `design/DECISIONS.md` Dz-offer-bundles. 제품 완성 후보 문서에는 z-offer-bundles 노트만 추가했다.
+- Rust `quote_offer_bundle`이 필요 개수와 주문 묶음을 나눈다. 필요 3·묶음 2는 주문 2와 잔여 1이다. 배송 미확인은 0이 아니다. 확인된 무료만 금액 0과 상태 `free`다. 판매처 배송비는 한 번만 더한다. 세트 포함 부품은 다시 청구하지 않는다. 세금 메모가 없으면 총액은 미확인이다.
+- 명령 `quoteOfferBundle`는 `reviewCatalogImport` 다음, `disposeProject` 바로 앞 capability다. `BUILD_ID`는 `zari-domain-7`이다. 생성 계약은 Rust에서 다시 만들었다. 응답은 PlanSnapshot 해시 밖이다. 미리보기는 revision을 발행하지 않는다.
+- 품절 교체 적용은 기존 `selectOffer`다. 도면 스탬프, BOM, 가이드가 그 새 스냅샷 하나를 쓴다.
+- 계획 화면에 판매처 비교가 있다. 프로젝트 Worker 하나다. 같은 스냅샷 id는 한 번만 견적하고, 실패를 자동으로 다시 보내지 않는다. 미확인 금액은 `미확인`이고 `₩0`이나 `무료`로 그리지 않는다.
+- 기존 124 fixture 기대 바이트는 바꾸지 않았다. 발행 BOM의 `CostSummary`도 바꾸지 않았다. 새 검사는 `crates/core/tests/offer_bundles.rs`에 있다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, Chromium 스위트 4 workers):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 160 passed, 1 ignored (offer_bundles 8)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 23 files / 164), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `c860105624f2120f`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12): exit 0
+- `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium`: 91 passed, 4 workers (Playwright 4.2m). `worker-state` flake는 없었다. 타임아웃을 올리지 않았다. `spatial3d` `context-lost-console: none`
+- `offer-bundles.spec.ts` Firefox 1, WebKit 1: exit 0. `npx vite build --mode test` 산출물에서 실행했다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (31.4s)
+
+하지 않은 것: 다음 z-노드, 결제·실시간 재고·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `Offer`에 세금 칸 추가, `CostSummary`의 줄별 배송 합계 변경, exportVersion 1 변경. 상세는 `docs/evidence/ZARI-z-offer-bundles.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-08 — ZARI-SPATIAL-audit-01-fix 전체 작업 감사 01의 7건
 
 정본은 GitHub issue #82, 브랜치 `astra/zari-spatial-audit-01-fix`이다. 관찰한 base SHA는 `2252e929bd18677de2a93c11c350bf415ebb77db`이다. 계획 커밋 `0847d1b065627938acfad3a941de79e357570e43`은 그 조상이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

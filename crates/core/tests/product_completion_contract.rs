@@ -163,7 +163,8 @@ fn current_engine_identity_registers_the_sp013_rule() {
     assert_eq!(capabilities[next + 1], "queryActionEligibility");
     assert_eq!(capabilities[next + 2], "applyInventoryLedger");
     assert_eq!(capabilities[next + 3], "reviewCatalogImport");
-    assert_eq!(capabilities[next + 4], "disposeProject");
+    assert_eq!(capabilities[next + 4], "quoteOfferBundle");
+    assert_eq!(capabilities[next + 5], "disposeProject");
     let denied = send(
         &mut runtime,
         "eligibility",
