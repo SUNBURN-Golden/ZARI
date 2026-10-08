@@ -9,5 +9,6 @@ describe('draft baseline index', () => {
     expect(output).toContain('approved 0');
     expect(output).toMatch(/zari007 47/);
     expect(output).toMatch(/zari011 26/);
+    expect(output).toMatch(/zari016 21/);
   });
 });

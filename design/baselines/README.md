@@ -1,6 +1,6 @@
 # 시각적 기준 관리
 
-실제 앱 화면 **78개를 draft로 캡처했으며 승인된 화면은 0개**다. Task001 5개, ZARI-SPATIAL-007 47개, ZARI-SPATIAL-011 26개다. `manifest.json`에 PNG 경로, SHA-256, 정확한 소스 commit과 캡처 환경을 기록했다. React → Worker → Rust/WASM 계산이 실제 동작하는 화면이며 생성 이미지나 Figma 목업이 아니다. 파일 등록은 화면 승인을 뜻하지 않는다.
+실제 앱 화면 **99개를 draft로 캡처했으며 승인된 화면은 0개**다. Task001 5개, ZARI-SPATIAL-007 47개, ZARI-SPATIAL-011 26개, ZARI-SPATIAL-016 21개다. `manifest.json`에 PNG 경로, SHA-256, 정확한 소스 commit과 캡처 환경을 기록했다. React → Worker → Rust/WASM 계산이 실제 동작하는 화면이며 생성 이미지나 Figma 목업이 아니다. 파일 등록은 화면 승인을 뜻하지 않는다.
 
 ## Task001 실제 화면
 
@@ -41,6 +41,14 @@ Viewport는 1440×1000과 390×844, `deviceScaleFactor` 1, full-page가 아니�
 26개 viewport 캡처는 `draft/zari011/`에 있고 상태는 모두 `draft`다. 승인 수는 0이다. `spatialDraft011.proposedApprovalSet`은 사용자 검토용 제안이며 승인이 아니다. SP-007 승인 수를 이 화면의 승인으로 쓰지 않는다. 픽셀은 물리 검증 증거가 아니다.
 
 캡처 소스 제품 트리는 `6f1c5c696d964487f8b52cdec428ae6cd0aba596`의 `apps/web/src`와 같다. 시나리오 파일 해시는 `spatialDraft011.scenarioFiles`에 있다. 작업 트리는 캡처 시점의 테스트·문서 변경 때문에 `sourceDirty`다. Fixture는 `fresh-ordinary-project`다. 개인 데이터와 외부 업로드는 없다. 메모의 충돌처럼 보이는 문장은 사람 글이고, Worker의 `conflictingEvidence` 행을 만들지 않는다.
+
+Viewport는 1440×1000과 390×844, `deviceScaleFactor` 1, full-page가 아니다. Chromium headless, locale `ko-KR`, theme light, `prefers-reduced-motion: reduce`(`--zari-duration-fast` 0s). GPU는 SwiftShader software GL이다. 실제 전화와 외장 GPU는 찍지 않았다.
+
+## ZARI-SPATIAL-016 실제 화면
+
+21개 viewport 캡처는 `draft/zari016/`에 있고 상태는 모두 `draft`다. 승인 수는 0이다. `spatialDraft016.proposedApprovalSet`은 사용자 검토용 제안이며 승인이 아니다. SP-007과 SP-011 승인 수를 이 화면의 승인으로 쓰지 않는다. 픽셀은 물리 검증 증거가 아니다.
+
+캡처 소스 제품 트리는 `37d2831bbcf696e01d72fb66398b68a4bad14c46`의 `apps/web/src`와 같다. 시나리오 파일 해시는 `spatialDraft016.scenarioFiles`에 있다. 작업 트리는 캡처 시점의 테스트·문서 변경 때문에 `sourceDirty`다. Fixture는 `sample-plus-reuse-bin`이다. 직접 배치, 보유 수납함 재사용, 보유 수납함과 구매를 함께 쓰는 계획, 미확인으로 막힌 실행 안내, 이전 규칙, 저장 충돌, 오래된 입력, 계산 중단을 포함한다. 개인 데이터와 외부 업로드는 없다.
 
 Viewport는 1440×1000과 390×844, `deviceScaleFactor` 1, full-page가 아니다. Chromium headless, locale `ko-KR`, theme light, `prefers-reduced-motion: reduce`(`--zari-duration-fast` 0s). GPU는 SwiftShader software GL이다. 실제 전화와 외장 GPU는 찍지 않았다.
 

@@ -152,3 +152,5 @@ G4 spatial after SP-005: same source geometry/selection in all views, WebGL fall
 G5 integrated quality after SP-006: full regression, actual WASM parity, cross-browser, measured stage timings, offline lazy assets, adversarial strings and import bounds. Old flaky CI must be investigated with logs and artifacts; CI absence is BLOCKED, not waived by this document. Physical devices unverified remain an explicit hardware readiness condition.
 
 G6 capture handoff after SP-007: actual exact-HEAD draft screenshots, fixture/env/source manifest, missing states, review findings and independent Fable milestone. User alone approves the capture set; readiness/merge/approval are separate. Approved manifest requires a later durable user decision. Release/production activation remains out of this program.
+
+SP-016 capture is a separate draft set for the guide, evaluator, and recovery screens delivered after SP-007 and SP-011. It does not inherit those capture approvals. User acceptance of the new set and release remain separate. A merged development node does not qualify a phone or a discrete GPU.

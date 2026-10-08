@@ -9,6 +9,7 @@ const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const MANIFEST_PATH = join(ROOT, 'design/baselines/manifest.json');
 const BASE = '29370e23a082c49aa4d8d7943b0e6e71c7884b4c';
 const ZARI011_BASE = '6f1c5c696d964487f8b52cdec428ae6cd0aba596';
+const ZARI016_BASE = '37d2831bbcf696e01d72fb66398b68a4bad14c46';
 
 const ZARI001 = {
   'zari001-desktop-pass': {
@@ -85,6 +86,25 @@ const MC_REQUIRED = [
   'zari011-a11y-forced-colors-1440',
   'zari011-a11y-forced-colors-390',
   'zari011-a11y-zoom-200-1440',
+];
+
+const PC_BOTH = [
+  'blocked-unknown',
+  'no-purchase',
+  'reuse',
+  'mixed-purchase',
+  'stale',
+  'historical',
+  'save-cas',
+  'interrupted',
+];
+const PC_REQUIRED = [
+  ...PC_BOTH.flatMap((state) => [`zari016-${state}-1440`, `zari016-${state}-390`]),
+  'zari016-a11y-keyboard-1440',
+  'zari016-a11y-ime-1440',
+  'zari016-a11y-zoom-200-1440',
+  'zari016-a11y-forced-colors-1440',
+  'zari016-a11y-forced-colors-390',
 ];
 
 const REQUIRED_FIELDS = [
@@ -248,8 +268,66 @@ function main() {
   if (!snapshot011?.file || !snapshot011.sha256) fail('missing 011 a11y snapshot');
   const snapshot011Path = join(ROOT, 'design/baselines', snapshot011.file);
   if (sha256(snapshot011Path) !== snapshot011.sha256) fail('011 a11y snapshot hash');
+  const zari016 = manifest.baselines.filter((entry) => entry.id.startsWith('zari016-'));
+  const pcIds = new Set(zari016.map((entry) => entry.id));
+  for (const id of PC_REQUIRED) {
+    if (!pcIds.has(id)) fail(`missing required capture ${id}`);
+  }
+  for (const entry of zari016) {
+    for (const field of REQUIRED_FIELDS) {
+      if (entry[field] == null || entry[field] === '') fail(`${entry.id} missing ${field}`);
+    }
+    if (entry.gpu == null || typeof entry.gpu.note !== 'string' || !entry.gpu.note.includes('Not a discrete GPU')) {
+      fail(`${entry.id} missing GPU note`);
+    }
+    if (entry.sourceCommit !== ZARI016_BASE) fail(`${entry.id} sourceCommit ${entry.sourceCommit}`);
+    if (entry.fixtureId !== 'sample-plus-reuse-bin') fail(`${entry.id} fixture`);
+    if (entry.locale !== 'ko-KR' || entry.theme !== 'light' || entry.reducedMotion !== 'reduce') {
+      fail(`${entry.id} environment`);
+    }
+    if (entry.fullPage !== false) fail(`${entry.id} is not a viewport capture`);
+    if (entry.deviceScaleFactor !== 1) fail(`${entry.id} deviceScaleFactor`);
+    if (!String(entry.browserAndVersion).startsWith('Chromium ')) fail(`${entry.id} browser`);
+    if (!String(entry.productTree).includes('apps/web/src')) fail(`${entry.id} product tree note`);
+    if (!Array.isArray(entry.scenarioFiles) || entry.scenarioFiles.length < 3) fail(`${entry.id} scenario files`);
+    if (!/^0(ms|s)$/.test(entry.durationFast ?? '')) fail(`${entry.id} durationFast`);
+    const width = entry.id.endsWith('-390') ? 390 : entry.id.includes('1440') ? 1440 : null;
+    if (width != null && entry.viewport?.width !== width) fail(`${entry.id} viewport width`);
+    if (entry.viewport?.height == null) fail(`${entry.id} viewport height`);
+    if (entry.status !== 'draft') fail(`${entry.id} is not draft`);
+  }
+  const draft016 = manifest.spatialDraft016;
+  if (!draft016) fail('missing spatialDraft016');
+  if (draft016.approved !== false || draft016.notPhysicalValidation !== true) fail('spatialDraft016 approval flags');
+  if (!Array.isArray(draft016.doesNotInheritAcceptance) || draft016.doesNotInheritAcceptance.join(',') !== 'zari007,zari011') {
+    fail('spatialDraft016 inherits an older capture set');
+  }
+  if (draft016.sourceCommit !== ZARI016_BASE) fail('spatialDraft016 sourceCommit');
+  if (draft016.acceptanceState !== 'PENDING' || draft016.releaseState !== 'NOT_AUTHORIZED') {
+    fail('spatialDraft016 state axes');
+  }
+  if (draft016.nodeState === 'DONE') fail('spatialDraft016 cannot be DONE before merge');
+  if (draft016.qualificationState !== 'PARTIAL') fail('spatialDraft016 qualification');
+  if (!Array.isArray(draft016.missingOrUnverified) || draft016.missingOrUnverified.length === 0) {
+    fail('missing 016 limitations');
+  }
+  const limits016 = draft016.missingOrUnverified.join('\n');
+  if (!limits016.includes('phone') || !limits016.toLowerCase().includes('gpu')) fail('016 hardware limits not named');
+  const proposed016 = new Set(draft016.proposedApprovalSet ?? []);
+  for (const entry of zari016) {
+    if (!proposed016.has(entry.id)) fail(`016 proposed set missing ${entry.id}`);
+  }
+  if (proposed016.size !== zari016.length) fail('016 proposed set does not match zari016 entries');
+  for (const file of draft016.scenarioFiles ?? []) {
+    const digest = sha256(join(ROOT, file.path));
+    if (digest !== file.sha256) fail(`scenario ${file.path} hash drift`);
+  }
+  const snapshot016 = draft016.a11ySnapshot;
+  if (!snapshot016?.file || !snapshot016.sha256) fail('missing 016 a11y snapshot');
+  const snapshot016Path = join(ROOT, 'design/baselines', snapshot016.file);
+  if (sha256(snapshot016Path) !== snapshot016.sha256) fail('016 a11y snapshot hash');
   console.log(
-    `approved 0; drafts ${draftCount}; zari007 ${zari007.length}; zari011 ${zari011.length}; bytes ${draftBytes}; required ${REQUIRED.length + MC_REQUIRED.length}`,
+    `approved 0; drafts ${draftCount}; zari007 ${zari007.length}; zari011 ${zari011.length}; zari016 ${zari016.length}; bytes ${draftBytes}; required ${REQUIRED.length + MC_REQUIRED.length + PC_REQUIRED.length}`,
   );
 }
 

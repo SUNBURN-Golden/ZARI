@@ -1,3 +1,34 @@
+# 2026-10-08 — ZARI-SPATIAL-016 전체 16단계 제품 qualification·새 화면·완료 인계
+
+정본은 GitHub issue #73, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-016`이다. 관찰한 base SHA는 `37d2831bbcf696e01d72fb66398b68a4bad14c46`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 SP-016만 구현한다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-016-qualification.md`와 `design/DECISIONS.md` D016. 제품 완성 후보 문서에는 SP-016 노트만 추가했다.
+- 분모 16=7+4+5는 `docs/qualification/denominator.json` 인계 문서다. 런타임 API가 아니다. 001–015는 `MERGED`이고 `DONE`이 아니다. 016은 `IN_PROGRESS`다. 자격은 `PARTIAL`, 수용은 `PENDING`, 출시는 `NOT_AUTHORIZED`다. 검토·감사 포인터는 null이다.
+- 새 경로는 없다. 샘플을 세 번 커밋해 직접 배치, 보유 수납함 재사용, 보유 수납함과 구매를 함께 쓰는 계획을 Rust가 내게 한다. 이어서 수정, 오래된 채택 거절, 저장, 다시 열기, 한도 초과, 계산 중단을 본다.
+- Chromium draft 21장은 `design/baselines/draft/zari016/`다. 승인 수는 0이다. SP-007·011 승인을 잇지 않는다. 미확인으로 막힌 안내, 이전 규칙, 저장 충돌, 오래된 입력, 중단, 키보드, IME, 200%, forced colors를 포함한다.
+- `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, DB version 2, Command, capability는 그대로다. 생성 계약과 fixture 바이트는 바꾸지 않았다. 새 색 토큰은 없다. `apps/web/src`와 Rust는 바꾸지 않았다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 134 passed, 1 ignored
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 19 files / 145), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `4f78ff9f83b36d6b`), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39): exit 0
+- `node scripts/check-baseline-manifest.mjs`: approved 0, drafts 99, zari016 21. `node scripts/check-qualification.mjs`: 분모 16=7+4+5, merged 15, in-progress 1, runtime hits 0
+- `npm run test:browser -- --project=chromium --workers=1`: 84 passed (11.1m). Firefox와 WebKit에서 `product-completion.spec.ts` 각 1 passed. `worker-state` flake는 없었다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (22.8s)
+- `npm run bench:browser -- --project=chromium --workers=1`: 15 passed (5.9m). cold 20 / warm 50. `messagingResidual` p95 33.40ms는 기록된 10ms 목표보다 컸고, 임계값은 바꾸지 않았다. 전화와 전용 GPU는 확인하지 않았다
+
+하지 않은 것: 스키마 마이그레이션, 런타임 qualification API, 화면 승인, 출시 허가, 전화, 전용 GPU, 독립 검토 2회. 상세는 `docs/evidence/ZARI-SPATIAL-016.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `contract_change=NO`. 캡처 수용과 출시는 그 뒤의 별도 결정이다.
+
 # 2026-10-07 — ZARI-SPATIAL-015 실측·offer·보유품·역사 계획·저장 복구 lifecycle
 
 정본은 GitHub issue #71, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-015`이다. 관찰한 base SHA는 `d2de86d5c0ebf1df6e3db382049142c30df76a59`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
