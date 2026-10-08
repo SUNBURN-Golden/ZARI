@@ -1,5 +1,6 @@
 import Dexie from 'dexie';
 import type {
+  InventoryLedger,
   OwnedContainer,
   PlanSnapshot,
   ProjectInput,
@@ -16,6 +17,7 @@ import {
   readCatalogRow,
   readDraftRow,
   readInputRow,
+  readInventoryLedgerRow,
   readOwnedContainerRow,
   readProjectRow,
   readSnapshotRow,
@@ -25,6 +27,7 @@ import {
   type DraftRow,
   type EditChain,
   type InputRow,
+  type InventoryLedgerRow,
   type OwnedContainerRow,
   type ProjectRow,
   type QuarantinePayload,
@@ -900,6 +903,54 @@ export class ProjectRepository {
     });
   }
   /**
+   * The project life ledger. Absent until the first recorded event.
+   * A malformed row is corrupt; it is not rewritten into an empty ledger.
+   */
+  async getInventoryLedger(projectId: string): Promise<InventoryLedgerRow | null> {
+    try {
+      const raw = await this.db.inventoryLedgers.get(projectId);
+      if (raw === undefined) return null;
+      return readInventoryLedgerRow(raw);
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /**
+   * CAS write of a ledger Rust already accepted. `expectedRevision` is `'0'`
+   * for the first save. The transaction does not call the worker and does
+   * not touch snapshots, inputs, or the owned-container library.
+   */
+  saveInventoryLedger(
+    projectId: string,
+    ledger: InventoryLedger,
+    expectedRevision: string,
+  ): Promise<OwnedSaveResult> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.inventoryLedgers,
+          async (): Promise<OwnedSaveResult> => {
+            const raw = await this.db.inventoryLedgers.get(projectId);
+            const current = raw === undefined ? '0' : readInventoryLedgerRow(raw).revision;
+            if (current !== expectedRevision) return { status: 'conflict', revision: current };
+            const revision = current === '0' ? '1' : nextRevision(current);
+            await this.db.inventoryLedgers.put({
+              schemaVersion: SCHEMA_VERSION,
+              ledgerId: projectId,
+              revision,
+              ledger,
+              updatedAt: this.now(),
+            });
+            return { status: 'saved', revision };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
    * One action-step toggle bound to the project's accepted immutable
    * snapshot. The transaction also requires that binding to still be the
    * current input revision and digest. Completion requires every declared
@@ -1112,6 +1163,7 @@ export class ProjectRepository {
             this.db.snapshots,
             this.db.actionProgress,
             this.db.attachments,
+            this.db.inventoryLedgers,
           ],
           async () => {
             await this.db.projects.delete(projectId);
@@ -1122,6 +1174,7 @@ export class ProjectRepository {
             // Attachment rows hold their own bytes — deleting the project's
             // rows removes the orphan bytes with them.
             await this.db.attachments.where('projectId').equals(projectId).delete();
+            await this.db.inventoryLedgers.delete(projectId);
           },
         );
       } catch (error) {

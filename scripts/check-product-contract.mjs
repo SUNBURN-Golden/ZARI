@@ -168,7 +168,7 @@ function main() {
   if (oracle.currentBuildId !== 'zari-domain-6' || oracle.assertedFutureBuildId !== null) fail('oracle build');
 
   const db = readFileSync(join(ROOT, 'apps/web/src/persistence/db.ts'), 'utf8');
-  if (!db.includes('export const DB_VERSION = 2')) fail('db version');
+  if (!db.includes('export const DB_VERSION = 3')) fail('db version');
   if (contract.chain.traceFixture !== 'fixtures/domain/search-scope-complete.json') fail('trace fixture');
   if (contract.chain.separateDocuments !== false) fail('chain split');
   if (!existsSync(join(ROOT, contract.chain.traceFixture))) fail('trace missing');

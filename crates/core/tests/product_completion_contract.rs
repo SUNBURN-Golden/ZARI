@@ -161,7 +161,8 @@ fn current_engine_identity_registers_the_sp013_rule() {
         .position(|item| item == "queryNextFacts")
         .unwrap();
     assert_eq!(capabilities[next + 1], "queryActionEligibility");
-    assert_eq!(capabilities[next + 2], "disposeProject");
+    assert_eq!(capabilities[next + 2], "applyInventoryLedger");
+    assert_eq!(capabilities[next + 3], "disposeProject");
     let denied = send(
         &mut runtime,
         "eligibility",

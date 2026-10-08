@@ -24,6 +24,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-product-contract 채택 (2026-10-07).** 이 노트는 z-product-contract만 다룬다. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 기록은 [Dz-product-contract](../design/DECISIONS.md)와 [docs/adr/SP-z-product-contract.md](adr/SP-z-product-contract.md)이다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 001–016의 ID와 증거는 유지한다. 보유품·실상품·전략 비교·내보내기·재정리의 빈칸은 이후 z-노드가 구현한다. 입력에서 Rust `evaluate_candidate`로 만든 한 PlanSnapshot이 도면·BOM·가이드의 정본이다. 계약·DB 스키마·`BUILD_ID`는 바꾸지 않는다. 이 노트는 z-inventory-lifecycle 이후 노드의 구현이 아니다.
 
+**z-inventory-lifecycle 채택 (2026-10-07).** 이 노트는 z-inventory-lifecycle만 다룬다. 같은 원문이다. 기록은 [Dz-inventory-lifecycle](../design/DECISIONS.md)와 [docs/adr/SP-z-inventory-lifecycle.md](adr/SP-z-inventory-lifecycle.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 보유 이력은 스냅샷 밖의 Rust 원장이다. 수량 미상과 0은 다르고, 한 용기의 같은 단위를 두 번 쓰지 않으며, 과거 계획을 열어도 현재 원장을 저장하지 않는다. 이 노트는 z-catalog-provenance 이후 노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

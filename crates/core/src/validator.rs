@@ -1518,10 +1518,14 @@ pub fn validate_candidate(
         if used.is_empty() {
             continue;
         }
-        let verdict = match container.quantity_available.value() {
-            Some(available) if used.iter().all(|o| *o < available.get()) => Pass,
-            Some(_) => Fail("owned_overuse"),
-            None => VUnknown("owned_availability_unknown"),
+        let verdict = match crate::inventory::owned_use(
+            container.quantity_available.value().map(|qty| qty.get()),
+            &used,
+        ) {
+            crate::inventory::OwnedUse::Skip => continue,
+            crate::inventory::OwnedUse::Pass => Pass,
+            crate::inventory::OwnedUse::Fail(reason) => Fail(reason),
+            crate::inventory::OwnedUse::Unknown(reason) => VUnknown(reason),
         };
         checks.emit(
             format!("qc:owned:{owned_id}"),

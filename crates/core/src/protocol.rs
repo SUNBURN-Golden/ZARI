@@ -31,7 +31,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-7";
-const CAPABILITIES: [&str; 14] = [
+const CAPABILITIES: [&str; 15] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -45,6 +45,7 @@ const CAPABILITIES: [&str; 14] = [
     "projectSpatialView",
     "queryNextFacts",
     "queryActionEligibility",
+    "applyInventoryLedger",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -54,7 +55,7 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 17] = [
+const COMMAND_KINDS: [&str; 18] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -67,6 +68,7 @@ const COMMAND_KINDS: [&str; 17] = [
     "projectSpatialView",
     "queryNextFacts",
     "queryActionEligibility",
+    "applyInventoryLedger",
     "disposeProject",
     "proposeStrategies",
     "startSearch",
@@ -270,6 +272,12 @@ pub enum Command {
         progress: Option<Vec<ActionProgressInput>>,
         stamp: ActionEligibilityStamp,
     },
+    /// Stateless life-ledger step. Does not read or write a PlanSnapshot.
+    /// `openHistorical` returns the same ledger.
+    ApplyInventoryLedger {
+        ledger: crate::inventory::InventoryLedger,
+        action: crate::inventory::InventoryAction,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -404,6 +412,10 @@ pub enum Event {
     /// Result of `queryActionEligibility`. `eligible: false` is not a pass.
     ActionEligibilityQueried {
         reply: ActionEligibilityReply,
+    },
+    /// Result of `applyInventoryLedger`. `changed: false` is a read.
+    InventoryLedgerApplied {
+        reply: crate::inventory::InventoryReply,
     },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
@@ -2181,6 +2193,7 @@ impl Runtime {
                     | Command::ProjectSpatialView { .. }
                     | Command::QueryNextFacts { .. }
                     | Command::QueryActionEligibility { .. }
+                    | Command::ApplyInventoryLedger { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -2367,7 +2380,8 @@ impl Runtime {
             | Command::ValidateCatalog { .. }
             | Command::ProjectSpatialView { .. }
             | Command::QueryNextFacts { .. }
-            | Command::QueryActionEligibility { .. } => self.execute_stateless(&request.command),
+            | Command::QueryActionEligibility { .. }
+            | Command::ApplyInventoryLedger { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2647,6 +2661,12 @@ impl Runtime {
                     Ok(reply) => Event::ActionEligibilityQueried { reply },
                     Err(EligibilityError::ProgressLimit) => failure("action_progress_limit"),
                     Err(EligibilityError::InvalidProgress) => failure("invalid_input"),
+                }
+            }
+            Command::ApplyInventoryLedger { ledger, action } => {
+                match crate::inventory::apply_inventory(ledger, action) {
+                    Ok(reply) => Event::InventoryLedgerApplied { reply },
+                    Err(error) => failure(error.code),
                 }
             }
             Command::ProjectSpatialView { source } => {

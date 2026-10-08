@@ -763,9 +763,34 @@
   }
 }
 
+.inventory-panel input,
+.inventory-panel select {
+  min-height: var(--zari-control-min-height);
+  padding: var(--zari-space-2);
+  border: var(--zari-border-width) solid var(--zari-border-control);
+  border-radius: var(--zari-radius-control);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-base);
+}
+.inventory-panel .button {
+  margin-top: var(--zari-space-2);
+}
+@media (pointer: coarse) {
+  .inventory-panel input,
+  .inventory-panel select,
+  .inventory-panel .button {
+    min-height: var(--zari-touch-min-height);
+  }
+}
+
 @media (forced-colors: active) {
   .detail-panel,
   .detail-sheet,
+  .inventory-panel,
+  .inventory-panel input,
+  .inventory-panel select,
+  .inventory-panel .button,
   .next-facts,
   .next-fact-row,
   .next-facts-stale,

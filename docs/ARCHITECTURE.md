@@ -40,6 +40,8 @@ Rust owns dimensions, decimal normalization, deterministic organization rules, g
 
 z-product-contract ([Dz-product-contract](../design/DECISIONS.md)) names that chain as one `PlanSnapshot`: normalized input, `evaluate_candidate`, then BOM and guide on that content, with the drawing stamped from the same snapshot. It does not add a second calculation path. Nodes 001–016 keep their evidence paths. Later product nodes implement the named gaps. They do not relabel those sixteen ids.
 
+z-inventory-lifecycle ([Dz-inventory-lifecycle](../design/DECISIONS.md)) keeps that chain. Quantity history is a Rust ledger beside the snapshot. The page stores it only when Rust reports a change. Drawing, BOM, and guide still come from the same PlanSnapshot.
+
 Rust/WASM is justified by a portable single computational authority and controlled integer arithmetic, not by an unmeasured speed claim. WebAssembly toolchain and JSON overhead are costs. Task 001 retires the build/browser boundary risk before the full solver. No rewrite to TS or server engine is necessary from the current evidence.
 
 ## 2. Minimum runtime composition
