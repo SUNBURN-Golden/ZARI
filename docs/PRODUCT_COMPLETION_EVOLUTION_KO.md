@@ -20,6 +20,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **SP-015 채택 (2026-10-07).** 같은 원문으로 SP-015만 구현한다. 기록은 [D015](../design/DECISIONS.md)와 [docs/adr/SP-015-lifecycle.md](adr/SP-015-lifecycle.md)이다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 사실·증빙 변경은 완료를 막고, 잘못된 초안은 좋은 정규 입력을 바꾸지 않는다. 옛 판매 항목과 진행은 그 스냅샷에 남고, 복제는 Rust 확인 뒤에 진행을 비우며 사진을 빠졌다고 말한다. 계약·DB 스키마·`BUILD_ID`는 바꾸지 않는다. 이 노트는 SP-016의 구현이 아니다.
 
+**SP-016 채택 (2026-10-07).** 같은 원문으로 SP-016만 구현한다. 기록은 [D016](../design/DECISIONS.md)와 [docs/adr/SP-016-qualification.md](adr/SP-016-qualification.md)이다. Fable MILESTONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 새 가이드·평가·복구 화면의 draft는 `design/baselines/draft/zari016/`이고 SP-007·011 승인을 빌리지 않는다. 분모 16 = 7+4+5는 [docs/qualification/denominator.json](qualification/denominator.json)의 별도 투영이다. 머지는 `DONE`·기기 자격·화면 수용·출시가 아니다. 캡처 수용은 PENDING, 출시는 NOT_AUTHORIZED다. 계약·DB 스키마·`BUILD_ID`는 바꾸지 않는다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.
