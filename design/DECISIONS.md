@@ -159,6 +159,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 후보 채택이다. `zari016` 이미지의 exact-set 화면 승인은 아니다.
 - 되돌리기: draft 항목과 이 결정, 분모 문서를 걷어 내면 된다. 승인 수와 SP-007·011 이미지, 저장된 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-product-contract — 정리→구매→실행→재정리의 확장 계약 / 채택
+
+- ID: Dz-product-contract
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-product-contract만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 16단계 뒤의 보유품·실상품·전략 비교·내보내기·재정리는 일부만 현재 스냅샷에 있다. 그 경로를 새 ID로 다시 적거나, 선행 계약 없이 DTO와 migration을 넣으면 001–016의 증거와 권위가 갈라진다.
+- 변경 대상: [docs/adr/SP-z-product-contract.md](../docs/adr/SP-z-product-contract.md), `docs/product-expansion/contract.json`, DOMAIN_MODEL·SOLVER·WASM_PROTOCOL·PERSISTENCE·FRONTEND·TEST_STRATEGY·ARCHITECTURE의 z-product-contract 절. `BUILD_ID` `zari-domain-7`, capability, 생성 schema, persisted `schemaVersion` 1, DB version 2, exportVersion 1, 기존 fixture 기대값, 분모 16은 그대로다.
+- 검토한 대안: (A) 차이·정본·버전·fixture 영향을 계약으로 고정하고 생산 구현은 이후 노드에 둔다. (B) 이 노드에서 보유 이력, 카탈로그 작업대, Pareto, 이식 묶음을 바로 만든다. (C) 001–016의 제목과 증거 경로를 확장 단계로 다시 붙인다.
+- 선택: A. 현재 DTO가 역사 스냅샷과 수량을 표현하므로 마이그레이션은 없다. B는 소유 노드의 범위다. C는 완료 증거를 다른 작업으로 보이게 한다.
+- 조건: unknown을 통과나 0으로 바꾸지 않는다. 도면·BOM·가이드는 한 PlanSnapshot이다. 사용자 결정(계정·결제·클라우드·사진 동의·화면 수용·출시·실시간 재고·안전 인증·전화·전용 GPU)은 열려 있다. 내부 선택(정본 재사용, 버전 유지, 빈칸의 소유 노드)은 이 기록에서 채택한다. 두 목록의 id는 겹치지 않는다. Fable ARCHITECTURE와 비작성자 A3는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다. `contract_change=NO`.
+- 접근성·성능: 새 화면과 새 색 토큰은 없다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 계약 채택이다. 결제·출시·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정과 계약 JSON, 문서 절을 걷어 내면 된다. 저장된 schemaVersion 1 레코드와 기존 fixture는 이 결정으로 다시 쓰지 않는다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

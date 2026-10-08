@@ -242,3 +242,7 @@ Adopted by [D015](../design/DECISIONS.md). No `dbVersion` change and no migratio
 `duplicateVerifiedProject` calls `verifyRecord` for the input, accepted snapshot, and pinned catalog, then `commitDuplicate` inserts the new project in one transaction. The insert does not call the worker, does not copy action progress, and does not copy photo bytes. The caller lists the excluded attachment ids. Import already verified before its transaction; that order is unchanged.
 
 The same catalog digest with a different body is refused. An empty catalogue is stored as origin `empty-real` without a new source-kind value. A hard cancel or a stalled search drops the activation lease. The next search waits for a fresh activation. A cooperative cancel keeps the lease.
+
+## 11. z-product-contract migration and export
+
+Adopted by [Dz-product-contract](../design/DECISIONS.md). No `dbVersion` change and no migration. dbVersion stays 2. exportVersion stays 1. The JSON envelope in `apps/web/src/persistence/export.ts` remains the export canonical. Photo bytes stay excluded and named. A later portable bundle is `z-portable-project`, not a silent rewrite of this envelope. Owned-library edits still do not rewrite snapshot bytes. An inventory event log, if added, is a later node's adopted migration and does not run here.

@@ -38,6 +38,8 @@ flowchart TD
 
 Rust owns dimensions, decimal normalization, deterministic organization rules, geometry, search, quantities, packs, costs, validation, normalized digests and snapshot creation. TS owns raw form strings, transient selection/ghosts, screen transforms, routing, I/O scheduling and storage transactions. It may format a Rust amount but cannot recompute BOM totals, fit or pack arithmetic. The browser is not a trusted authority for future server commerce; that future service must revalidate.
 
+z-product-contract ([Dz-product-contract](../design/DECISIONS.md)) names that chain as one `PlanSnapshot`: normalized input, `evaluate_candidate`, then BOM and guide on that content, with the drawing stamped from the same snapshot. It does not add a second calculation path. Nodes 001–016 keep their evidence paths. Later product nodes implement the named gaps. They do not relabel those sixteen ids.
+
 Rust/WASM is justified by a portable single computational authority and controlled integer arithmetic, not by an unmeasured speed claim. WebAssembly toolchain and JSON overhead are costs. Task 001 retires the build/browser boundary risk before the full solver. No rewrite to TS or server engine is necessary from the current evidence.
 
 ## 2. Minimum runtime composition

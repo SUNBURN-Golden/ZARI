@@ -326,3 +326,7 @@ SP-014 shows search `interrupted` with the existing session note. That state is 
 SP-015 keeps the same notes and recovery panel. A copy says progress was cleared, photos were not copied, and owned stock is not reserved. A save failure offers retry, copy, and export, and says the on-screen input and the previous done rows stayed. Offer choices are the offers recorded on that plan. After a cancel timeout, a stall, or a required new activation, the note says the previous plan and input remain and the next calculation starts only after the calculator connects again. An empty catalogue is labeled as a catalogue with no products. No new color token.
 
 SP-016 does not add a route or a qualification API. The guide condition, the interrupted search note, and the save/recovery panels stay the screens delivered in SP-013–015. Their new draft capture does not inherit SP-007 or SP-011 acceptance. No new color token.
+
+## 13. z-product-contract presentation
+
+Adopted by [Dz-product-contract](../design/DECISIONS.md). This delivery adds no screen, no route, and no color token. Diagram, BOM, and guide keep reading one snapshot. The page does not recompute pack counts or turn an unknown quantity into zero. Account, checkout, cloud, and photo-consent choices stay open and are not drawn as completed settings.
