@@ -554,7 +554,7 @@ Adopted by [D013](../design/DECISIONS.md). Normative detail is [docs/adr/SP-013-
 
 `zari-domain-v1` snapshots stay readable. Their hashes and action bytes are not rewritten. Completion is refused and stored done rows stay on that binding. `reasonIds` on a v2 guide reference `ConstraintCheck.id` values in the same snapshot. Empty `reasonIds` on a v1 snapshot remain valid. `requiredConfirmations` stay empty; prerequisite edges are `prerequisiteStepIds`. A checkbox does not change check status, fact state, or provenance.
 
-Persistent additions to `ActionStep`, new action or check kinds, and schema migration are held. The ephemeral instance reference used by a future eligibility read is specified in the ADR and is not a generated schema in this delivery.
+Persistent additions to `ActionStep`, new action or check kinds, and schema migration are held. Superseded by SP-013: the ephemeral instance reference is the generated `ActionEligibilityReply` schema (`queryActionEligibility` / `actionEligibilityQueried`).
 
 ## 11. SP-014 evaluation continuation
 

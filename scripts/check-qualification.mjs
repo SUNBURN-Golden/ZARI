@@ -9,6 +9,22 @@ const LEDGER = join(ROOT, 'docs/qualification/denominator.json');
 const HANDOFF = join(ROOT, 'docs/qualification/SP-016-HANDOFF.md');
 const PLAN = '0847d1b065627938acfad3a941de79e357570e43';
 const HEX = /^[0-9a-f]{40}$/;
+const REVIEW_COMMENT = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/pull\/\d+#issuecomment-\d+$/;
+
+/** Null, or a pull-request comment URL. Other strings are not review receipts. */
+export function reviewPointerAllowed(value) {
+  return value === null || (typeof value === 'string' && REVIEW_COMMENT.test(value));
+}
+
+/** DONE and QUALIFIED stay forbidden. A comment URL is not an audit receipt. */
+export function assertNodeClaim(node) {
+  if (node.node_state === 'DONE' || node.qualification_state === 'QUALIFIED') {
+    throw new Error(`${node.id} overclaims`);
+  }
+  if (!reviewPointerAllowed(node.reviewPointer) || node.auditPointer !== null) {
+    throw new Error(`${node.id} invented pointer`);
+  }
+}
 
 function fail(message) {
   throw new Error(message);
@@ -64,17 +80,16 @@ function main() {
   ledger.nodes.forEach((node, index) => {
     const id = String(index + 1).padStart(3, '0');
     if (node.id !== id) fail(`node order ${node.id}`);
-    if (node.node_state === 'DONE' || node.qualification_state === 'QUALIFIED') fail(`${id} overclaims`);
+    assertNodeClaim(node);
     if (node.acceptance_state !== 'PENDING' || node.release_state !== 'NOT_AUTHORIZED') fail(`${id} axes`);
     if (node.qualification_state !== 'PARTIAL') fail(`${id} qualification`);
-    if (node.reviewPointer !== null || node.auditPointer !== null) fail(`${id} invented pointer`);
     if (!existsSync(join(ROOT, node.deliveryEvidence))) fail(`${id} evidence missing`);
     groups[node.group] = (groups[node.group] ?? 0) + 1;
     if (id === '016') {
-      if (node.node_state !== 'IN_PROGRESS') fail('016 state');
-      if (node.deliveryCommit !== null || node.mergeCommit !== null || node.pullRequest !== null) {
-        fail('016 pointers are not assigned yet');
-      }
+      if (node.node_state !== 'MERGED') fail('016 state');
+      if (node.deliveryCommit !== '71ecffc1ba35e636c237ac94ce5bb265e41fe729') fail('016 delivery');
+      if (node.mergeCommit !== '1bd3fde5bd9a625d02735d4de8609e97736db49d') fail('016 merge');
+      if (node.pullRequest !== 74) fail('016 pull request');
       if (node.issue !== 73) fail('016 issue');
       return;
     }
@@ -95,7 +110,7 @@ function main() {
   walk(join(ROOT, 'crates'), hits);
   if (hits.length > 0) fail(`runtime projection in ${hits.join(', ')}`);
   console.log(
-    `denominator 16=7+4+5; merged 15; in-progress 1; capture PENDING; release NOT_AUTHORIZED; runtime hits 0`,
+    `denominator 16=7+4+5; merged 16; in-progress 0; capture PENDING; release NOT_AUTHORIZED; runtime hits 0`,
   );
 }
 

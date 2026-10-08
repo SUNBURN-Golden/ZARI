@@ -48,7 +48,8 @@ import {
   qtyText,
   readMovePosition,
   subjectLabel,
-  unassignedCount,
+  unassignedPlacement,
+  unassignedPlacementText,
   type MoveAxis,
   type MoveInputError,
 } from '../features/plan/view';
@@ -1015,7 +1016,12 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           )}
         </div>
 
-        <p className="session-note" data-testid="search-status" data-search={plan.search}>
+        <p
+          className="session-note"
+          role="status"
+          data-testid="search-status"
+          data-search={plan.search}
+        >
           {plan.search === 'running' || plan.search === 'cancelling'
             ? `계산 중 — 작업 ${plan.progress ? BigInt(plan.progress.workUnits).toLocaleString('ko-KR') : '0'} / 노드 ${plan.progress?.nodes ?? 0}`
             : plan.search === 'done'
@@ -1044,7 +1050,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           </p>
           <ul className="plan-list" data-testid="alternatives-list">
             {plan.alternatives.map((alt, i) => {
-              const un = unassignedCount(alt);
+              const unassigned = unassignedPlacementText(unassignedPlacement(alt));
               const id = alt.planSnapshotId;
               return (
                 <li key={id}>
@@ -1066,7 +1072,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                       #{i + 1} {isNoPurchase(alt) ? '구매 없음' : '구매 포함'}
                     </span>
                     <span className="session-note">
-                      배치 {alt.content.placements.length} · 미배치 {un} ·{' '}
+                      배치 {alt.content.placements.length} · {unassigned} ·{' '}
                       {moneyText(alt.content.costSummary.grandTotal)}
                     </span>
                   </button>

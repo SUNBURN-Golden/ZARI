@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
+import { interruptRunningSearch } from './product-setup';
 
 /**
  * ZARI-010 accessibility evidence on the real app: axe-core scans of the
@@ -74,6 +75,7 @@ test('axe scan: critical screens carry no violations', async ({ page }) => {
 test('keyboard-only: create, edit, commit, plan, cancel', async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto('/');
+  await expect(page.getByTestId('create-project')).toHaveAttribute('data-list-settled', 'true');
   // Tab from the document start: the create-project control must be reached
   // and activatable with Enter, with a visible focus indicator.
   await page.keyboard.press('Tab');
@@ -145,4 +147,123 @@ test('keyboard-only: create, edit, commit, plan, cancel', async ({ page }) => {
   } else {
     expect(state).toBe('done');
   }
+});
+
+test('axe scan: detail, next facts, guide, recovery, interrupted search, empty catalog', async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  await page.addInitScript(() => {
+    const Original = window.Worker;
+    const captured: Worker[] = [];
+    Object.assign(window, { __testWorkers: captured });
+    window.Worker = class extends Original {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options);
+        captured.push(this);
+      }
+    };
+  });
+
+  const findings: { label: string; violations: ReturnType<typeof violations> }[] = [];
+  async function scanModes(label: string) {
+    for (const viewport of [
+      { width: 1440, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      findings.push(await scan(page, `${label}-${viewport.width}`));
+    }
+    await page.emulateMedia({ forcedColors: 'active' });
+    findings.push(await scan(page, `${label}-forced-colors`));
+    await page.emulateMedia({ forcedColors: 'none' });
+    await page.setViewportSize({ width: 1440, height: 900 });
+  }
+
+  await page.goto('/');
+  await page.getByTestId('create-project').click();
+  await expect(page.getByTestId('worker-state')).toHaveText('ready');
+  await page.getByTestId('fill-sample').click();
+  await page.getByTestId('commit-input').click();
+  await expect(page.getByTestId('save-state')).toHaveAttribute('data-save-state', 'saved');
+
+  await page.getByTestId('open-detail').click();
+  await expect(page.getByTestId('detail-panel')).toBeVisible();
+  await scanModes('detail-panel');
+
+  const facts = page.getByTestId('next-facts');
+  await page.getByTestId('recompile-next-facts').click();
+  await expect(facts).toHaveAttribute('data-next-facts-status', 'ready');
+  await expect(page.getByTestId('next-facts-list')).toHaveJSProperty('tagName', 'UL');
+  await expect(page.getByTestId('next-facts-list').locator('li').first()).toBeVisible();
+  await scanModes('next-facts');
+
+  await page.evaluate(() => {
+    (window as unknown as { __testWorkers: Worker[] }).__testWorkers
+      .at(-1)!
+      .dispatchEvent(new ErrorEvent('error', { message: 'test transport failure' }));
+  });
+  await expect(page.getByTestId('worker-failed')).toBeVisible();
+  await scanModes('recovery-panel');
+  await page.getByTestId('worker-retry').click();
+  await expect(page.getByTestId('worker-state')).toHaveText('ready');
+
+  await page.getByTestId('goto-plan').click();
+  await expect(page.getByTestId('plan-context')).toHaveAttribute('data-context', 'installed');
+  await expect(page.getByTestId('search-status')).toHaveAttribute('role', 'status');
+  await page.getByTestId('compute-plan').click();
+  await expect(page.getByTestId('search-status')).toHaveAttribute('data-search', 'done', {
+    timeout: 60_000,
+  });
+  await page.locator('[data-testid^="plan-card-"]').first().click();
+  await page.getByTestId('accept-plan').click();
+  await expect(page.locator('#accepted-guide')).toBeVisible();
+  const enabled = page.locator('#accepted-guide input[type="checkbox"]:not([disabled])');
+  await expect.poll(async () => enabled.count()).toBeGreaterThan(0);
+  await enabled.first().click();
+  await expect(enabled.first()).toBeChecked();
+  const locks = page.locator('#accepted-guide [data-testid^="step-lock-"]');
+  const lockCount = await locks.count();
+  expect(lockCount).toBeGreaterThan(0);
+  for (let i = 0; i < lockCount; i += 1) {
+    const id = await locks.nth(i).getAttribute('id');
+    expect(id).toBeTruthy();
+    const box = locks.nth(i).locator('xpath=ancestor::li[1]//input[@type="checkbox"]');
+    const described = await box.getAttribute('aria-describedby');
+    expect(described?.split(/\s+/)).toContain(id);
+    await expect(locks.nth(i)).toBeVisible();
+  }
+  await scanModes('accepted-guide');
+
+  await page.getByText('← 치수로 돌아가기').click();
+  await page.getByRole('textbox', { name: '공간 안쪽 폭', exact: true }).fill('610');
+  await page.getByTestId('commit-input').click();
+  await expect(page.getByTestId('save-state')).toHaveAttribute('data-save-state', 'saved');
+  await page.getByTestId('goto-plan').click();
+  await expect(page.getByTestId('plan-context')).toHaveAttribute('data-context', 'installed');
+  const done = page.locator('[data-testid^="step-done-"]');
+  await expect(done.first()).toContainText('완료');
+  await expect(page.locator('#accepted-guide')).toHaveAttribute('data-write', 'stale');
+
+  await interruptRunningSearch(page);
+  await expect(page.getByTestId('search-status')).toHaveAttribute('role', 'status');
+  await scanModes('interrupted-status');
+
+  await page.goto('/#/catalog');
+  await page.getByTestId('save-empty-catalog').click();
+  await expect(page.getByTestId('catalog-list')).toContainText('상품 없는 카탈로그', {
+    timeout: 30_000,
+  });
+  await scanModes('empty-real-catalog');
+
+  const all = findings.flatMap((f) =>
+    f.violations.map((v) => `${f.label}: ${v.id} ${v.impact} -> ${v.nodes.join(', ')}`),
+  );
+  expect(all).toEqual([]);
+  expect(errors).toEqual([]);
 });

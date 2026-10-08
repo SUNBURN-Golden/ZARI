@@ -109,6 +109,13 @@ function ImportReview({
  */
 export function ProjectsScreen() {
   const [projects, setProjects] = useState<ProjectRow[] | null>(null);
+  /**
+   * The empty-list row is inserted when the catalog read finishes. A press
+   * that starts before that paint moves the button under the pointer, and
+   * React Aria cancels it — the page stays on the list and `worker-state`
+   * never mounts. The create control stays disabled until that paint.
+   */
+  const [listSettled, setListSettled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<{
@@ -128,9 +135,13 @@ export function ProjectsScreen() {
       try {
         await ensureBundledCatalog();
         const rows = await repository.listProjects();
-        if (alive) setProjects(rows);
+        if (!alive) return;
+        setProjects(rows);
+        setListSettled(true);
       } catch (e) {
-        if (alive) setError(e instanceof Error ? e.message : String(e));
+        if (!alive) return;
+        setError(e instanceof Error ? e.message : String(e));
+        setListSettled(true);
       }
     })();
     return () => {
@@ -245,7 +256,11 @@ export function ProjectsScreen() {
             </p>
           </div>
         </div>
-        <section className="project-list-panel" aria-labelledby="projects-title">
+        <section
+          className="project-list-panel"
+          aria-labelledby="projects-title"
+          aria-busy={listSettled ? undefined : true}
+        >
           <h2 id="projects-title" className="visually-hidden">
             프로젝트 목록
           </h2>
@@ -350,8 +365,9 @@ export function ProjectsScreen() {
             <Button
               className="button button-primary"
               onPress={() => void create()}
-              isDisabled={busy}
+              isDisabled={busy || !listSettled}
               data-testid="create-project"
+              data-list-settled={listSettled ? 'true' : 'false'}
             >
               새 프로젝트
             </Button>

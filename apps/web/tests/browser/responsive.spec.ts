@@ -161,7 +161,7 @@ test('forced-colors active keeps controls legible and focus visible', async ({
     () => matchMedia('(forced-colors: active)').matches,
   );
   expect(emulated).toBe(true);
-  await expect(page.getByTestId('create-project')).toBeVisible();
+  await expect(page.getByTestId('create-project')).toHaveAttribute('data-list-settled', 'true');
   // Keyboard focus must remain visible in forced-colors (Highlight outline).
   await page.getByTestId('create-project').focus();
   const outline = await page.evaluate(() => {

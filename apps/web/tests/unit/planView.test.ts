@@ -1,8 +1,19 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { CatalogSnapshot } from '../../src/contracts/generated/dto';
+import type {
+  BOMLine,
+  CatalogSnapshot,
+  CostSummary,
+  FactFor_MoneyKrw,
+  PlanSnapshot,
+  Placement,
+} from '../../src/contracts/generated/dto';
 import {
   catalogSourceText,
+  isNoPurchase,
   readMovePosition,
+  unassignedPlacement,
+  unassignedPlacementText,
   type MoveFieldText,
 } from '../../src/features/plan/view';
 
@@ -63,5 +74,121 @@ describe('catalogSourceText — snapshot catalog origin', () => {
   it('never defaults an unloaded or different catalog to "imported"', () => {
     expect(catalogSourceText(null, 'd1')).toBe('출처 확인 불가');
     expect(catalogSourceText(catalog('synthetic', 'd2'), 'd1')).toBe('출처 확인 불가');
+  });
+});
+
+const money = (reasonCode: string): FactFor_MoneyKrw => ({
+  state: 'notApplicable',
+  reasonCode,
+});
+
+const noPurchaseCost = (): CostSummary => ({
+  grandTotal: money('no_purchases'),
+  productSubtotal: money('no_purchases'),
+  shippingTotal: money('no_purchases'),
+});
+
+function plan(content: Partial<PlanSnapshot['content']>): PlanSnapshot {
+  return { content } as PlanSnapshot;
+}
+
+describe('unassigned placement — unknown quantity is not zero', () => {
+  it('reads project-unknown-quantity-pass as unknown and renders 미확인', () => {
+    const fixture = JSON.parse(
+      readFileSync('fixtures/domain/project-unknown-quantity-pass.json', 'utf8'),
+    ) as {
+      input: { items: Array<{ id: string; quantity: { state: string; value?: unknown } }> };
+    };
+    const item = fixture.input.items.find((entry) => entry.id === 'item-a');
+    expect(item?.quantity.state).toBe('unknown');
+    expect(item?.quantity.value).toBeUndefined();
+    const summary = unassignedPlacement(
+      plan({
+        unassigned: [{ itemId: 'item-a', reasonCode: 'quantity_unknown', instances: { kind: 'unknownQuantity' } }],
+      }),
+    );
+    expect(summary).toEqual({ known: 0, unknownRows: 1 });
+    expect(unassignedPlacementText(summary)).toBe('미확인');
+    expect(unassignedPlacementText(summary)).not.toContain('0');
+  });
+
+  it('keeps a known count beside unknown rows', () => {
+    const summary = unassignedPlacement(
+      plan({
+        unassigned: [
+          {
+            itemId: 'item-a',
+            reasonCode: 'no_slot',
+            instances: { kind: 'known', ranges: [{ start: 0, endExclusive: 2 }] },
+          },
+          { itemId: 'item-b', reasonCode: 'quantity_unknown', instances: { kind: 'unknownQuantity' } },
+        ],
+      }),
+    );
+    expect(unassignedPlacementText(summary)).toBe('미배치 2 · 수량 미확인 1');
+  });
+
+  it('counts only known ranges when every row has a quantity', () => {
+    expect(
+      unassignedPlacementText(
+        unassignedPlacement(
+          plan({
+            unassigned: [
+              {
+                itemId: 'item-a',
+                reasonCode: 'no_slot',
+                instances: { kind: 'known', ranges: [{ start: 0, endExclusive: 0 }] },
+              },
+            ],
+          }),
+        ),
+      ),
+    ).toBe('미배치 0');
+  });
+});
+
+describe('isNoPurchase — Rust BOM and cost summary', () => {
+  const ownedLine = { ownedId: 'owned-1', id: 'line-owned' } as BOMLine;
+  const purchaseLine = { ownedId: null, id: 'line-buy' } as BOMLine;
+  const newContainer = { subject: { kind: 'newContainer' } } as Placement;
+
+  it('is no-purchase when Rust says no_purchases and the BOM has no purchase line', () => {
+    expect(
+      isNoPurchase(
+        plan({
+          bom: [ownedLine],
+          costSummary: noPurchaseCost(),
+          placements: [newContainer],
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('is not no-purchase when a purchase line exists, even with no new-container placement', () => {
+    expect(
+      isNoPurchase(
+        plan({
+          bom: [purchaseLine],
+          costSummary: noPurchaseCost(),
+          placements: [],
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it('does not treat an unknown total as no purchase', () => {
+    expect(
+      isNoPurchase(
+        plan({
+          bom: [],
+          costSummary: {
+            grandTotal: { state: 'unknown', reason: 'notProvided' },
+            productSubtotal: money('no_purchases'),
+            shippingTotal: money('no_purchases'),
+          },
+          placements: [],
+        }),
+      ),
+    ).toBe(false);
   });
 });

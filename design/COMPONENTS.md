@@ -1,6 +1,6 @@
-# ZARI 컴포넌트 계약 — 구현 전
+# ZARI 컴포넌트 계약
 
-아래 명칭은 구현할 책임을 설명한다. 현재 React 파일·Storybook story가 생성되었다는 뜻이 아니다. 기본 HTML로 충분한 곳에는 복잡한 라이브러리를 도입하지 않는다. 공통 동작 기반의 우선 후보는 React Aria Components이며 설치 전 현재 API·호환성을 검토한다.
+아래 명칭은 구현 책임이다. 앞 표의 일부는 아직 초안이고, 이어서 적는 다섯 항목은 로컬 앱에 있는 초안 컴포넌트다. Storybook story는 없다. 기본 HTML로 충분한 곳에는 복잡한 라이브러리를 도입하지 않는다. React Aria Components 1.21.1이 버튼과 입력의 공통 동작에 쓰인다.
 
 | 컴포넌트 | 책임 | 반드시 구현할 상태 |
 | --- | --- | --- |
@@ -15,6 +15,11 @@
 | ActionChecklist | 정리 단계·관련 대상·저장 | pending, complete, unavailable, save error |
 | Modal / MobileInspector | 정보의 문맥·초점·닫기 | open, scroll, keyboard, focus return |
 | EmptyState / InlineError | 다음 행동과 복구 | no input, no solution, retry, unsupported |
+| NextFactsList (초안) | Rust가 고른 다음 사실. 행은 `ul`/`li` | ready, stale, limited, failed, input only |
+| DetailFactPanel (초안) | 값·오차·출처. 빈 수량은 0이 아님 | empty, editing, unknown, read-only |
+| StepEligibilityGuide (초안) | 채택 스냅샷의 단계 자격. 막힌 이유는 글자 | waiting, blocked, done, read-only done |
+| RecoveryPanel (초안) | 저장·충돌·손상·워커 실패에서 입력 유지 | save failed, conflict, corrupt, worker failed |
+| InterruptedSearchNote (초안) | 계산 상태. `role="status"` | idle, running, done, cancelled, interrupted, failed |
 
 ## 접근성과 입력 규칙
 

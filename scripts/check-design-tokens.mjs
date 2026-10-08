@@ -2,7 +2,8 @@
 // Dependency-free checks for ZARI's intentionally simple token declaration format.
 // Not a general CSS parser, browser test, or complete accessibility audit.
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 export function parseTokens(css) {
   const clean = css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -29,6 +30,26 @@ export function parseTokens(css) {
     }
   }
   return tokens;
+}
+
+/** Custom properties referenced by component CSS must be declared in tokens.css. */
+export function undeclaredCustomProperties(css, declared) {
+  const clean = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const missing = [];
+  for (const match of clean.matchAll(/var\(\s*(--[A-Za-z0-9-]+)/g)) {
+    if (!declared.has(match[1]) && !missing.includes(match[1])) missing.push(match[1]);
+  }
+  return missing;
+}
+
+async function componentStyles(dir) {
+  const found = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) found.push(...await componentStyles(path));
+    else if (entry.name.endsWith('.css') && entry.name !== 'tokens.css') found.push(path);
+  }
+  return found;
 }
 
 export function resolveColor(tokens, name, seen = new Set()) {
@@ -65,6 +86,11 @@ function selfTest() {
     () => assert.throws(() => parseTokens(':root { --zari-a: #000000; --zari-a: #FFFFFF; }'), /Duplicate/),
     () => assert.throws(() => parseTokens(':root { --zari-a: var(--zari-missing); }'), /Undefined/),
     () => assert.throws(() => parseTokens(':root { --zari-a: #FFFFFF; } @media print { :root { --zari-a: #000000; } }'), /Review/),
+    () => assert.deepEqual(undeclaredCustomProperties('.a { color: var(--zari-text-primary); }', new Set(['--zari-text-primary'])), []),
+    () => assert.deepEqual(
+      undeclaredCustomProperties('.a { color: var(--surface, #fff); background: var(--zari-danger); }', new Set(['--zari-danger'])),
+      ['--surface'],
+    ),
   ];
   for (const test of tests) test();
   console.log(`PASS: ${tests.length} checker self-tests`);
@@ -79,6 +105,12 @@ async function main() {
   assert.equal(data.schemaVersion, 1);
   assert.ok(Array.isArray(data.cases) && data.cases.length > 0, 'Missing contrast cases');
   const tokens = parseTokens(css), ids = new Set();
+  const stylesDir = new URL('apps/web/src/', root);
+  const componentCss = await componentStyles(stylesDir.pathname);
+  for (const path of componentCss) {
+    const missing = undeclaredCustomProperties(await readFile(path, 'utf8'), new Set(tokens.keys()));
+    assert.deepEqual(missing, [], `${path} references undeclared custom properties: ${missing.join(', ')}`);
+  }
   let failures = 0;
   for (const item of data.cases) {
     assert.ok(typeof item.id === 'string' && item.id.length > 0 && !ids.has(item.id), 'Missing/duplicate case ID');

@@ -4,7 +4,7 @@
 
 사용자가 정한 방향은 **Apple식 정교함, 흔한 AI 템플릿 느낌 최소화**다. IKEA·Elfa는 수납 설계·구매 흐름의 참고 대상으로 유지한다. 여기서 Apple식은 Apple의 로고·에셋·UI를 복제한다는 뜻이 아니다.
 
-이 문서는 개발 기준이며, CSS 값과 화면 명세는 **첫 구현을 위한 초안**이다. 승인된 화면 이미지, Figma 원본, 실행 가능한 UI, 사용자 검증 결과는 아직 없다. GitHub에 등록되었다고 화면이 승인된 것은 아니다.
+이 문서는 개발 기준이다. SP-001 이전의 CSS 값과 화면 명세는 초안이고, 로컬 앱에는 SP-001–016과 z-product-contract, z-inventory-lifecycle, z-catalog-provenance의 실행 가능한 UI가 있다. 승인된 화면 이미지와 Figma 원본은 아직 없고, 사용자 검증으로 승격된 baseline은 0개다. GitHub에 등록되었다고 화면이 승인된 것은 아니다.
 
 우선순위는 다음과 같다.
 1. 사용자의 명시적 결정, 제품의 사실성·안전·접근성 요구사항.
@@ -57,7 +57,7 @@ ZARI는 홍보용 랜딩페이지나 일반 관리자 대시보드가 아니라,
 - 선: 장식용 divider와 식별에 필요한 control border를 구분한다. 희미한 divider를 입력 경계나 중요한 도면 선에 재사용하지 않는다.
 - 모든 스타일은 semantic token을 사용한다. 상품 자체의 실제 색상은 콘텐츠 데이터이며 상태 토큰으로 해석하지 않는다.
 
-CSS에는 토큰과 작은 opt-in 유틸리티만 있다. 앱에서 import되거나 React 컴포넌트가 구현된 상태는 아니다. 앱 전체 reset·레이아웃을 몰래 적용하지 않는다.
+공통 값은 `apps/web/src/styles/tokens.css`의 semantic token이다. `app.css`와 `project.css`가 그 토큰을 앱에서 import하고, React 화면이 그 스타일을 쓴다. 앱 전체 reset을 토큰 파일에 넣지 않는다.
 
 ## 4. 반응형과 입력 방식
 
@@ -100,10 +100,10 @@ CSS에는 토큰과 작은 opt-in 유틸리티만 있다. 앱에서 import되거
 
 ## 8. 구현 도구 및 변경 관리
 
-React Aria Components는 UI 기본 동작을 위한 우선 검토 대상이다. Motion은 필요한 전환이 확인될 때만 사용한다. Impeccable은 디자인 비평·정리 보조 후보이며 UI Skills와 Vercel 지침은 선택적 검토 자료다. **현재 어떤 패키지·스킬도 설치하지 않았다.**
+React Aria Components 1.21.1은 버튼·입력의 기본 동작에 쓰인다. three 0.186.1은 읽기 전용 3D 절개 뷰에 쓰인다. Motion은 필요한 전환이 확인될 때만 사용한다. Impeccable은 디자인 비평·정리 보조 후보이며 UI Skills와 Vercel 지침은 선택적 검토 자료다. Motion·Impeccable·외부 스킬은 설치하지 않았다.
 
 외부 스킬은 이 계약을 덮어쓰지 않는다. ‘글꼴 금지’나 ‘무조건 애니메이션’ 같은 취향을 무비판적으로 적용하지 않는다. 설치 스크립트·훅·전역 설정·업데이트 정책과 라이선스를 확인하고 버전 또는 commit을 고정한다. 출처 문서의 명령을 승인 없이 실행하지 않는다.
 
-화면 제작 시 `design/SCREENS.md` → 핵심 컴포넌트 → 실제 상태 구현 → 코드 기반 캡처 → 검토의 순서로 진행한다. Storybook과 Playwright는 후속 검증 경로이며 이번 변경에서 실행 환경을 생성하지 않는다.
+화면 제작 시 `design/SCREENS.md` → 핵심 컴포넌트 → 실제 상태 구현 → 코드 기반 캡처 → 검토의 순서로 진행한다. Playwright Chromium이 브라우저 검증을 실행한다. Storybook은 아직 없다.
 
 승인 없는 캡처를 baseline으로 승격하지 않는다. 토큰·화면 구조 변경은 [DECISIONS.md](design/DECISIONS.md), [REVIEW_CHECKLIST.md](design/REVIEW_CHECKLIST.md), [baseline 규칙](design/baselines/README.md)에 따라 남긴다.

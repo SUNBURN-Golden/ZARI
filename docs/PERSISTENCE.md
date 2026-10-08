@@ -56,7 +56,7 @@ A raw save, project rename, plan acceptance, or action completion increments `pr
 
 ## 2. Object stores
 
-Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, not by documentation or Task 001. All rows include `schemaVersion`; generic metadata keys have their own tagged payload version. Use explicit key and index declarations, not indexes on arbitrary content.
+Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, not by documentation or Task 001. `dbVersion` 2 (ZARI-009) adds the `attachments` store for optional local photo derivatives. The upgrade writes a migration journal and does not rewrite snapshot bytes. `dbVersion` 3 (z-inventory-lifecycle) adds `inventoryLedgers`. The current `DB_VERSION` is 3. All rows include `schemaVersion`; generic metadata keys have their own tagged payload version. Use explicit key and index declarations, not indexes on arbitrary content.
 
 | Store | Primary key / indexes | Stored content | Decision |
 |---|---|---|---|
