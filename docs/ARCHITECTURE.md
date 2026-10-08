@@ -42,6 +42,8 @@ z-product-contract ([Dz-product-contract](../design/DECISIONS.md)) names that ch
 
 z-inventory-lifecycle ([Dz-inventory-lifecycle](../design/DECISIONS.md)) keeps that chain. Quantity history is a Rust ledger beside the snapshot. The page stores it only when Rust reports a change. Drawing, BOM, and guide still come from the same PlanSnapshot.
 
+z-catalog-provenance ([Dz-catalog-provenance](../design/DECISIONS.md)) keeps that chain. Catalog review is a Rust reply beside the snapshot. The page stores a catalog only when that reply includes a snapshot. An existing digest is not patched. Drawing, BOM, and guide still come from the same PlanSnapshot.
+
 Rust/WASM is justified by a portable single computational authority and controlled integer arithmetic, not by an unmeasured speed claim. WebAssembly toolchain and JSON overhead are costs. Task 001 retires the build/browser boundary risk before the full solver. No rewrite to TS or server engine is necessary from the current evidence.
 
 ## 2. Minimum runtime composition

@@ -839,6 +839,129 @@
       "title": "CatalogPin",
       "type": "object"
     },
+    "CatalogProvenanceBatch": {
+      "additionalProperties": false,
+      "properties": {
+        "catalogVersion": {
+          "type": "string"
+        },
+        "existingDigest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ingestionVersion": {
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/definitions/ProvenanceRow"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "catalogVersion",
+        "ingestionVersion",
+        "rows",
+        "existingDigest"
+      ],
+      "title": "CatalogProvenanceBatch",
+      "type": "object"
+    },
+    "CatalogProvenanceReply": {
+      "additionalProperties": false,
+      "properties": {
+        "batchCodes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "bundle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SampleBundleKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "diagnoses": {
+          "items": {
+            "$ref": "#/definitions/RowDiagnosis"
+          },
+          "type": "array"
+        },
+        "existingUntouched": {
+          "type": "boolean"
+        },
+        "quarantined": {
+          "type": "boolean"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CatalogSnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "bundle",
+        "diagnoses",
+        "batchCodes",
+        "quarantined",
+        "existingUntouched",
+        "snapshot"
+      ],
+      "title": "CatalogProvenanceReply",
+      "type": "object"
+    },
+    "CatalogReviewAction": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "batch": {
+              "$ref": "#/definitions/CatalogProvenanceBatch"
+            },
+            "kind": {
+              "const": "review",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "batch"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bundle": {
+              "$ref": "#/definitions/SampleBundleKind"
+            },
+            "kind": {
+              "const": "sample",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "bundle"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "CatalogReviewAction"
+    },
     "CatalogSnapshot": {
       "additionalProperties": false,
       "properties": {
@@ -1370,6 +1493,24 @@
           "required": [
             "kind",
             "ledger",
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Stateless catalog import review. Does not read or write a stored\ncatalog. `snapshot` is present only when every row is ready.",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/CatalogReviewAction"
+            },
+            "kind": {
+              "const": "reviewCatalogImport",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
             "action"
           ],
           "type": "object"
@@ -2899,6 +3040,24 @@
             },
             "reply": {
               "$ref": "#/definitions/InventoryReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `reviewCatalogImport`. `snapshot: null` publishes nothing.",
+          "properties": {
+            "kind": {
+              "const": "catalogImportReviewed",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/CatalogProvenanceReply"
             }
           },
           "required": [
@@ -5131,6 +5290,48 @@
         "fieldPath"
       ],
       "title": "FieldRef",
+      "type": "object"
+    },
+    "FieldSource": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "photoRef": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scope": {
+          "$ref": "#/definitions/SourceScope"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "verificationScope": {
+          "$ref": "#/definitions/VerificationScope"
+        }
+      },
+      "required": [
+        "scope",
+        "url",
+        "confirmedAt",
+        "photoRef",
+        "verificationScope",
+        "note"
+      ],
+      "title": "FieldSource",
       "type": "object"
     },
     "FixtureExpected": {
@@ -7661,6 +7862,86 @@
       "title": "Provenance",
       "type": "object"
     },
+    "ProvenanceRow": {
+      "additionalProperties": false,
+      "properties": {
+        "brand": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "innerDepthMm": {
+          "type": "string"
+        },
+        "innerHeightMm": {
+          "type": "string"
+        },
+        "innerWidthMm": {
+          "type": "string"
+        },
+        "loadGrams": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "optionId": {
+          "type": "string"
+        },
+        "optionLabel": {
+          "type": "string"
+        },
+        "outerDepthMm": {
+          "type": "string"
+        },
+        "outerHeightMm": {
+          "type": "string"
+        },
+        "outerWidthMm": {
+          "type": "string"
+        },
+        "primitive": {
+          "type": "string"
+        },
+        "productId": {
+          "type": "string"
+        },
+        "protrusionMm": {
+          "type": "string"
+        },
+        "sellerId": {
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/definitions/FieldSource"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "productId",
+        "model",
+        "brand",
+        "category",
+        "optionId",
+        "optionLabel",
+        "sellerId",
+        "primitive",
+        "outerWidthMm",
+        "outerDepthMm",
+        "outerHeightMm",
+        "innerWidthMm",
+        "innerDepthMm",
+        "innerHeightMm",
+        "protrusionMm",
+        "loadGrams",
+        "sources"
+      ],
+      "title": "ProvenanceRow",
+      "type": "object"
+    },
     "PurchaseSelection": {
       "additionalProperties": false,
       "properties": {
@@ -9733,6 +10014,56 @@
       ],
       "title": "RoutedEntity"
     },
+    "RowDiagnosis": {
+      "additionalProperties": false,
+      "properties": {
+        "codes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "disposition": {
+          "$ref": "#/definitions/RowDisposition"
+        },
+        "duplicateOf": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "rowIndex": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unknownScopes": {
+          "items": {
+            "$ref": "#/definitions/SourceScope"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "rowIndex",
+        "disposition",
+        "codes",
+        "duplicateOf",
+        "unknownScopes"
+      ],
+      "title": "RowDiagnosis",
+      "type": "object"
+    },
+    "RowDisposition": {
+      "enum": [
+        "ready",
+        "quarantine"
+      ],
+      "title": "RowDisposition",
+      "type": "string"
+    },
     "RowObject": {
       "additionalProperties": false,
       "properties": {
@@ -9763,6 +10094,15 @@
         "childSafety"
       ],
       "title": "SafetyRestriction",
+      "type": "string"
+    },
+    "SampleBundleKind": {
+      "enum": [
+        "synthetic",
+        "verified",
+        "unverified"
+      ],
+      "title": "SampleBundleKind",
       "type": "string"
     },
     "ScopeRestriction": {
@@ -10147,6 +10487,20 @@
       ],
       "title": "SourceObservation",
       "type": "object"
+    },
+    "SourceScope": {
+      "enum": [
+        "brand",
+        "model",
+        "option",
+        "seller",
+        "outer",
+        "inner",
+        "protrusion",
+        "load"
+      ],
+      "title": "SourceScope",
+      "type": "string"
     },
     "Space": {
       "additionalProperties": false,
@@ -11345,6 +11699,15 @@
         }
       ],
       "title": "VerifiableRecordDto"
+    },
+    "VerificationScope": {
+      "enum": [
+        "unknown",
+        "unverified",
+        "verified"
+      ],
+      "title": "VerificationScope",
+      "type": "string"
     },
     "VerificationStatus": {
       "enum": [

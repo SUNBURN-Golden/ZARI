@@ -334,3 +334,7 @@ Adopted by [Dz-product-contract](../design/DECISIONS.md). This delivery adds no 
 ## 14. z-inventory-lifecycle ledger panel
 
 Adopted by [Dz-inventory-lifecycle](../design/DECISIONS.md). The project screen gains one ledger panel. It sends `applyInventoryLedger` through the project Worker's system identity, the same path as other stateless reads, so the panel does not start a second Worker or replace the project activation. Quantity text is a text field: empty stays unknown and `0` stays zero. Phrases come from Rust label codes. Pending, empty, saved, read, and error are visible. Recording submits with the keyboard. A conservation failure and a historical digest leave the stored ledger unchanged. Colors reuse the panel tokens. No new route and no approved baseline.
+
+## 15. z-catalog-provenance review
+
+Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). The catalog screen gains one review panel on the existing `#/catalog` route. It uses the library Worker already used by catalog import. Manual rows, CSV, and JSON go to `reviewCatalogImport`. Three sample buttons load the Rust bundles. A quarantine hides the save control. Saving adds a new catalog row and leaves the previous digest's bytes in place. Pending, ready, quarantine, and save are visible. The review control is a form submit, so Enter reviews. Colors reuse the panel, notice, and error tokens. No new route and no approved baseline.

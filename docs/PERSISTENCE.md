@@ -251,3 +251,7 @@ Adopted by [Dz-product-contract](../design/DECISIONS.md). No `dbVersion` change 
 ## 12. z-inventory-lifecycle ledger store
 
 Adopted by [Dz-inventory-lifecycle](../design/DECISIONS.md). Live `DB_VERSION` is 3. The new store is `inventoryLedgers`, keyed by the project id. Row `schemaVersion` stays 1. The v2 to v3 upgrade writes `migration:2->3` and does not read or rewrite snapshots, inputs, or owned containers. A fresh database still records the earlier journal. Saves use the same revision CAS as the owned library. The worker call stays outside the transaction. `deleteProject` removes that project's ledger row in the project transaction and leaves the shared owned library. exportVersion 1 does not include the ledger. Opening a stored plan does not write this store.
+
+## 13. z-catalog-provenance catalog rows
+
+Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). There is no new store and no dbVersion change. A reviewed snapshot is inserted with `putCatalog` only when Rust returns one. The same digest with a different body is still refused. A quarantine does not call `putCatalog`. Photo bytes are not stored. exportVersion 1 is unchanged. The review reply itself is not a row.
