@@ -172,6 +172,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 계약 채택이다. 결제·출시·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정과 계약 JSON, 문서 절을 걷어 내면 된다. 저장된 schemaVersion 1 레코드와 기존 fixture는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-inventory-lifecycle — 보유 물건·용기·수량의 생활 이력 / 채택
+
+- ID: Dz-inventory-lifecycle
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-inventory-lifecycle만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 보유 용기의 수량 Fact는 있으나, 개별·묶음 물건, 수량 미상과 0, 빈 용기와 사용 중, 구매·반품·이동·수량 수정의 이력이 없다. 과거 계획을 열 때 현재 재고가 바뀌면 안 된다.
+- 변경 대상: [docs/adr/SP-z-inventory-lifecycle.md](../docs/adr/SP-z-inventory-lifecycle.md), Rust `apply_inventory`, 명령 `applyInventoryLedger`, 프로젝트 화면의 보유 이력, Dexie `inventoryLedgers`(dbVersion 3). `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, exportVersion 1, 기존 124 fixture 기대 바이트는 그대로다.
+- 검토한 대안: (A) 원장을 스냅샷 밖의 프로젝트 행으로 두고 Rust만 수량과 중복 소비를 판정한다. (B) `ProjectInput`에 사건 필드를 넣어 모든 스냅샷을 다시 만든다. (C) 화면이 빈 수량을 0으로 저장하고 과거 계획을 열면 원장을 고친다.
+- 선택: A. B는 기존 fixture와 역사 스냅샷을 바꾼다. C는 미상을 0으로, 읽기를 쓰기로 만든다.
+- 조건: unknown을 통과나 0으로 바꾸지 않는다. 같은 단위 번호를 두 배치가 쓰지 못한다. 과거 계획 다이제스트는 참조만이다. 저장은 `changed: true`일 때만 한다. 새 색 쌍은 없고 기존 패널 토큰을 쓴다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 수량 칸은 텍스트다. 키보드로 기록을 제출한다. 확인 중·빈 기록·저장·오류를 상태에 남긴다. forced-colors는 기존 Canvas/CanvasText다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 명령, 화면, dbVersion 3 저장소를 걷어 낸다. 이미 저장된 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

@@ -357,7 +357,7 @@ it('v1 databases upgrade to v2 and the journal records the transition', async ()
     recovery: null,
   });
   v1.close();
-  // The v2 build upgrades in place — data survives and the journal lands.
+  // The current build upgrades in place — v1 data survives and both journals land.
   const repo = new ProjectRepository(new ZariDb(name));
   await repo.open();
   expect((await repo.listProjects()).map((p) => p.projectId)).toEqual(['p1']);
@@ -368,7 +368,14 @@ it('v1 databases upgrade to v2 and the journal records the transition', async ()
     toVersion: 2,
     state: 'applied',
   });
-  expect((await repo.db.metadata.get('db:verno'))?.payload).toEqual({ version: 2 });
+  const ledgerJournal = await repo.db.metadata.get('migration:2->3');
+  expect(ledgerJournal?.payload).toMatchObject({
+    kind: 'migration',
+    fromVersion: 2,
+    toVersion: 3,
+    state: 'applied',
+  });
+  expect((await repo.db.metadata.get('db:verno'))?.payload).toEqual({ version: 3 });
 });
 
 // ---------- export / import / duplicate ----------

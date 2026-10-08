@@ -1354,6 +1354,28 @@
         },
         {
           "additionalProperties": false,
+          "description": "Stateless life-ledger step. Does not read or write a PlanSnapshot.\n`openHistorical` returns the same ledger.",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/InventoryAction"
+            },
+            "kind": {
+              "const": "applyInventoryLedger",
+              "type": "string"
+            },
+            "ledger": {
+              "$ref": "#/definitions/InventoryLedger"
+            }
+          },
+          "required": [
+            "kind",
+            "ledger",
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -1568,6 +1590,23 @@
       "title": "Condition",
       "type": "object"
     },
+    "ConservationVerdict": {
+      "additionalProperties": false,
+      "properties": {
+        "reasonCode": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/CheckStatus"
+        }
+      },
+      "required": [
+        "status",
+        "reasonCode"
+      ],
+      "title": "ConservationVerdict",
+      "type": "object"
+    },
     "ConstraintCheck": {
       "additionalProperties": false,
       "properties": {
@@ -1628,6 +1667,14 @@
       ],
       "title": "ConstraintCheck",
       "type": "object"
+    },
+    "ContainerUse": {
+      "enum": [
+        "empty",
+        "inUse"
+      ],
+      "title": "ContainerUse",
+      "type": "string"
     },
     "CostSummary": {
       "additionalProperties": false,
@@ -2844,6 +2891,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Result of `applyInventoryLedger`. `changed: false` is a read.",
+          "properties": {
+            "kind": {
+              "const": "inventoryLedgerApplied",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/InventoryReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "`startSearch` acknowledged; the handle must be echoed verbatim by\n`stepSearch`/`cancelSearch`.",
           "properties": {
             "kind": {
@@ -2987,6 +3052,16 @@
         }
       ],
       "title": "Event"
+    },
+    "EventKind": {
+      "enum": [
+        "purchase",
+        "return",
+        "move",
+        "quantityEdit"
+      ],
+      "title": "EventKind",
+      "type": "string"
     },
     "Evidence": {
       "additionalProperties": false,
@@ -5347,6 +5422,14 @@
       "title": "HandlingClearance",
       "type": "object"
     },
+    "HoldingKind": {
+      "enum": [
+        "individual",
+        "bundle"
+      ],
+      "title": "HoldingKind",
+      "type": "string"
+    },
     "Id": {
       "pattern": "^[A-Za-z0-9_:-]{1,96}(?![\\s\\S])",
       "title": "Id",
@@ -5524,6 +5607,196 @@
         }
       ],
       "title": "InstanceRef"
+    },
+    "InventoryAction": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "event": {
+              "$ref": "#/definitions/InventoryEvent"
+            },
+            "kind": {
+              "const": "record",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "event"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "claims": {
+              "items": {
+                "$ref": "#/definitions/OwnedClaim"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "conserve",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "claims"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "openHistorical",
+              "type": "string"
+            },
+            "planSnapshotId": {
+              "$ref": "#/definitions/Digest"
+            }
+          },
+          "required": [
+            "kind",
+            "planSnapshotId"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "InventoryAction"
+    },
+    "InventoryEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "holding": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HoldingKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "kind": {
+          "$ref": "#/definitions/EventKind"
+        },
+        "label": {
+          "type": "string"
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quantityText": {
+          "type": "string"
+        },
+        "subjectId": {
+          "$ref": "#/definitions/Id"
+        },
+        "subjectKind": {
+          "$ref": "#/definitions/SubjectKind"
+        },
+        "usage": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContainerUse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "subjectKind",
+        "subjectId",
+        "kind",
+        "quantityText",
+        "label",
+        "location",
+        "holding",
+        "usage"
+      ],
+      "title": "InventoryEvent",
+      "type": "object"
+    },
+    "InventoryLedger": {
+      "additionalProperties": false,
+      "properties": {
+        "containers": {
+          "items": {
+            "$ref": "#/definitions/LedgerContainer"
+          },
+          "type": "array"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/definitions/InventoryEvent"
+          },
+          "type": "array"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/definitions/LedgerItem"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "items",
+        "containers",
+        "events"
+      ],
+      "title": "InventoryLedger",
+      "type": "object"
+    },
+    "InventoryReply": {
+      "additionalProperties": false,
+      "properties": {
+        "changed": {
+          "type": "boolean"
+        },
+        "conservation": {
+          "$ref": "#/definitions/ConservationVerdict"
+        },
+        "historicalPlanId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/definitions/QuantityLabel"
+          },
+          "type": "array"
+        },
+        "ledger": {
+          "$ref": "#/definitions/InventoryLedger"
+        }
+      },
+      "required": [
+        "ledger",
+        "changed",
+        "historicalPlanId",
+        "labels",
+        "conservation"
+      ],
+      "title": "InventoryReply",
+      "type": "object"
     },
     "InventoryState": {
       "enum": [
@@ -5854,6 +6127,74 @@
         }
       ],
       "title": "LayoutEditCommand"
+    },
+    "LedgerContainer": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quantityAvailable": {
+          "$ref": "#/definitions/FactFor_Quantity"
+        },
+        "quantityOwned": {
+          "$ref": "#/definitions/FactFor_Quantity"
+        },
+        "usage": {
+          "$ref": "#/definitions/ContainerUse"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "usage",
+        "quantityOwned",
+        "quantityAvailable",
+        "location"
+      ],
+      "title": "LedgerContainer",
+      "type": "object"
+    },
+    "LedgerItem": {
+      "additionalProperties": false,
+      "properties": {
+        "holding": {
+          "$ref": "#/definitions/HoldingKind"
+        },
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quantity": {
+          "$ref": "#/definitions/FactFor_Quantity"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "holding",
+        "quantity",
+        "location"
+      ],
+      "title": "LedgerItem",
+      "type": "object"
     },
     "LengthMm": {
       "maximum": 10000,
@@ -6523,6 +6864,25 @@
       ],
       "title": "Orientation",
       "type": "string"
+    },
+    "OwnedClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "containerId": {
+          "$ref": "#/definitions/Id"
+        },
+        "unitOrdinal": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "containerId",
+        "unitOrdinal"
+      ],
+      "title": "OwnedClaim",
+      "type": "object"
     },
     "OwnedContainer": {
       "additionalProperties": false,
@@ -7323,6 +7683,45 @@
       "minimum": 0,
       "title": "Quantity",
       "type": "integer"
+    },
+    "QuantityLabel": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/QuantityLabelCode"
+        },
+        "count": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "role": {
+          "$ref": "#/definitions/SubjectKind"
+        },
+        "subjectId": {
+          "$ref": "#/definitions/Id"
+        }
+      },
+      "required": [
+        "subjectId",
+        "role",
+        "code",
+        "count"
+      ],
+      "title": "QuantityLabel",
+      "type": "object"
+    },
+    "QuantityLabelCode": {
+      "enum": [
+        "unknown",
+        "zero",
+        "count"
+      ],
+      "title": "QuantityLabelCode",
+      "type": "string"
     },
     "RawCatalogFieldDto": {
       "additionalProperties": false,
@@ -10571,6 +10970,14 @@
       ],
       "title": "StrategyDecision",
       "type": "object"
+    },
+    "SubjectKind": {
+      "enum": [
+        "item",
+        "container"
+      ],
+      "title": "SubjectKind",
+      "type": "string"
     },
     "SupportKind": {
       "enum": [

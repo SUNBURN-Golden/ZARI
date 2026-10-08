@@ -330,3 +330,7 @@ SP-016 does not add a route or a qualification API. The guide condition, the int
 ## 13. z-product-contract presentation
 
 Adopted by [Dz-product-contract](../design/DECISIONS.md). This delivery adds no screen, no route, and no color token. Diagram, BOM, and guide keep reading one snapshot. The page does not recompute pack counts or turn an unknown quantity into zero. Account, checkout, cloud, and photo-consent choices stay open and are not drawn as completed settings.
+
+## 14. z-inventory-lifecycle ledger panel
+
+Adopted by [Dz-inventory-lifecycle](../design/DECISIONS.md). The project screen gains one ledger panel. It sends `applyInventoryLedger` through the project Worker's system identity, the same path as other stateless reads, so the panel does not start a second Worker or replace the project activation. Quantity text is a text field: empty stays unknown and `0` stays zero. Phrases come from Rust label codes. Pending, empty, saved, read, and error are visible. Recording submits with the keyboard. A conservation failure and a historical digest leave the stored ledger unchanged. Colors reuse the panel tokens. No new route and no approved baseline.

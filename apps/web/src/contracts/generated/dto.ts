@@ -1443,6 +1443,11 @@ export type Command =
       stamp: ActionEligibilityStamp;
     }
   | {
+      action: InventoryAction;
+      kind: 'applyInventoryLedger';
+      ledger: InventoryLedger;
+    }
+  | {
       kind: 'proposeStrategies';
     }
   | {
@@ -1800,6 +1805,43 @@ export type SpatialViewSource =
  */
 export type ProgressMark = 'done' | 'todo';
 /**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "InventoryAction".
+ */
+export type InventoryAction =
+  | {
+      event: InventoryEvent;
+      kind: 'record';
+    }
+  | {
+      claims: OwnedClaim[];
+      kind: 'conserve';
+    }
+  | {
+      kind: 'openHistorical';
+      planSnapshotId: Digest;
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "HoldingKind".
+ */
+export type HoldingKind = 'individual' | 'bundle';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "EventKind".
+ */
+export type EventKind = 'purchase' | 'return' | 'move' | 'quantityEdit';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SubjectKind".
+ */
+export type SubjectKind = 'item' | 'container';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ContainerUse".
+ */
+export type ContainerUse = 'empty' | 'inUse';
+/**
  * Search drive mode recorded at `startSearch`. The single-threaded runtime
  * only ever advances on explicit `stepSearch` requests, so `continuous` is a
  * scheduling hint for the host — never an autonomous loop inside WASM.
@@ -1883,6 +1925,10 @@ export type Event =
   | {
       kind: 'actionEligibilityQueried';
       reply: ActionEligibilityReply;
+    }
+  | {
+      kind: 'inventoryLedgerApplied';
+      reply: InventoryReply;
     }
   | {
       kind: 'searchStarted';
@@ -2038,6 +2084,11 @@ export type SpatialSourceStamp =
       kind: 'plan';
       planSnapshotId: Digest;
     };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "QuantityLabelCode".
+ */
+export type QuantityLabelCode = 'unknown' | 'zero' | 'count';
 
 export interface ZariContractBundle {
   BootstrapFixture: BootstrapFixture;
@@ -3563,6 +3614,61 @@ export interface ActionProgressInput {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "InventoryEvent".
+ */
+export interface InventoryEvent {
+  holding: HoldingKind | null;
+  id: Id;
+  kind: EventKind;
+  label: string;
+  location: string | null;
+  quantityText: string;
+  subjectId: Id;
+  subjectKind: SubjectKind;
+  usage: ContainerUse | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "OwnedClaim".
+ */
+export interface OwnedClaim {
+  containerId: Id;
+  unitOrdinal: number;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "InventoryLedger".
+ */
+export interface InventoryLedger {
+  containers: LedgerContainer[];
+  events: InventoryEvent[];
+  items: LedgerItem[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LedgerContainer".
+ */
+export interface LedgerContainer {
+  id: Id;
+  label: string;
+  location: string | null;
+  quantityAvailable: FactFor_Quantity;
+  quantityOwned: FactFor_Quantity;
+  usage: ContainerUse;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LedgerItem".
+ */
+export interface LedgerItem {
+  holding: HoldingKind;
+  id: Id;
+  label: string;
+  location: string | null;
+  quantity: FactFor_Quantity;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "RequestMeta".
  */
 export interface RequestMeta {
@@ -3741,6 +3847,35 @@ export interface SpatialOverlay {
   overlayId: Id;
   role: SpatialOverlayRole;
   target: SpatialTarget;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "InventoryReply".
+ */
+export interface InventoryReply {
+  changed: boolean;
+  conservation: ConservationVerdict;
+  historicalPlanId: Digest | null;
+  labels: QuantityLabel[];
+  ledger: InventoryLedger;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ConservationVerdict".
+ */
+export interface ConservationVerdict {
+  reasonCode: string;
+  status: CheckStatus;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "QuantityLabel".
+ */
+export interface QuantityLabel {
+  code: QuantityLabelCode;
+  count: number | null;
+  role: SubjectKind;
+  subjectId: Id;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

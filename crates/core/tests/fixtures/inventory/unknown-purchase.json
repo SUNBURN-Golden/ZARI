@@ -1,0 +1,21 @@
+{
+  "caseId": "unknown-purchase",
+  "ledger": { "items": [], "containers": [], "events": [] },
+  "action": {
+    "kind": "record",
+    "event": {
+      "id": "evt-unknown",
+      "subjectKind": "item",
+      "subjectId": "towel",
+      "kind": "purchase",
+      "quantityText": "",
+      "label": "수건",
+      "location": null,
+      "holding": "individual",
+      "usage": null
+    }
+  },
+  "expectChanged": true,
+  "expectCode": "unknown",
+  "expectCount": null
+}

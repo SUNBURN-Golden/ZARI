@@ -68,6 +68,7 @@ Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, 
 | `catalogs` | `catalogDigest`; indexes `catalogVersion`, `origin` | immutable normalized catalog DTO, ingestion metadata, field evidence, synthetic flag, observation metadata | Atomic snapshot; never mutate in place |
 | `actionProgress` | `[projectId+inputRevision+planSnapshotId+stepId]`; index `projectId` | user status, required arrival/verification acknowledgments, updated timestamp | Outside snapshot; progress is user state, not solver output |
 | `metadata` | `key` | active storage generation, migration journal, app preferences, quarantined-record envelopes | Bounded operational state; never secrets or user transcript logs |
+| `inventoryLedgers` | `ledgerId`; index `updatedAt` | project life ledger returned by Rust | z-inventory-lifecycle. Not a PlanSnapshot and not part of exportVersion 1 |
 
 A binding is `{projectId, inputRevision, planSnapshotId}`. Include `inputRevision` in action-progress keys because an identical content hash can recur after intervening edits. Completing steps on an old binding must not silently complete steps on a later binding. Same-binding accept again retains progress. Carrying progress across different bindings requires an explicit user operation with displayed matching steps; v1 does not offer automatic carry-forward.
 
@@ -204,7 +205,7 @@ Create a fresh project ID with revision counters starting at `1`, copied current
 
 ### Deletion
 
-Project deletion removes its project, draft, inputs, snapshot bindings, and action progress in one transaction. Shared catalogs and library owned containers remain unless separately selected for deletion. Cleanup removes unreferenced catalogs only after computing live references. Attachment deletion removes bytes when no remaining local reference exists. Confirm irreversible project deletion at the UI action, not every ordinary save. Do not claim deletion from exported files or OS/browser storage backups.
+Project deletion removes its project, draft, inputs, snapshot bindings, action progress, and life ledger in one transaction. Shared catalogs and library owned containers remain unless separately selected for deletion. Cleanup removes unreferenced catalogs only after computing live references. Attachment deletion removes bytes when no remaining local reference exists. Confirm irreversible project deletion at the UI action, not every ordinary save. Do not claim deletion from exported files or OS/browser storage backups.
 
 ## 8. Failure semantics and gate
 
@@ -245,4 +246,8 @@ The same catalog digest with a different body is refused. An empty catalogue is 
 
 ## 11. z-product-contract migration and export
 
-Adopted by [Dz-product-contract](../design/DECISIONS.md). No `dbVersion` change and no migration. dbVersion stays 2. exportVersion stays 1. The JSON envelope in `apps/web/src/persistence/export.ts` remains the export canonical. Photo bytes stay excluded and named. A later portable bundle is `z-portable-project`, not a silent rewrite of this envelope. Owned-library edits still do not rewrite snapshot bytes. An inventory event log, if added, is a later node's adopted migration and does not run here.
+Adopted by [Dz-product-contract](../design/DECISIONS.md). No `dbVersion` change and no migration in that delivery. That node's recorded dbVersion is 2. exportVersion stays 1. The JSON envelope in `apps/web/src/persistence/export.ts` remains the export canonical. Photo bytes stay excluded and named. A later portable bundle is `z-portable-project`, not a silent rewrite of this envelope. Owned-library edits still do not rewrite snapshot bytes. The inventory event log is the next section, not a rewrite of this paragraph's export.
+
+## 12. z-inventory-lifecycle ledger store
+
+Adopted by [Dz-inventory-lifecycle](../design/DECISIONS.md). Live `DB_VERSION` is 3. The new store is `inventoryLedgers`, keyed by the project id. Row `schemaVersion` stays 1. The v2 to v3 upgrade writes `migration:2->3` and does not read or rewrite snapshots, inputs, or owned containers. A fresh database still records the earlier journal. Saves use the same revision CAS as the owned library. The worker call stays outside the transaction. `deleteProject` removes that project's ledger row in the project transaction and leaves the shared owned library. exportVersion 1 does not include the ledger. Opening a stored plan does not write this store.

@@ -1,0 +1,49 @@
+{
+  "caseId": "double-consume",
+  "ledger": {
+    "items": [],
+    "containers": [
+      {
+        "id": "bin-a",
+        "label": "서랍",
+        "usage": "inUse",
+        "quantityOwned": {
+          "state": "known",
+          "value": 2,
+          "provenance": {
+            "origin": "userDeclared",
+            "verification": "unverified",
+            "evidenceIds": [],
+            "ruleIds": [],
+            "inputRefs": [],
+            "observedAt": null
+          }
+        },
+        "quantityAvailable": {
+          "state": "known",
+          "value": 2,
+          "provenance": {
+            "origin": "userDeclared",
+            "verification": "unverified",
+            "evidenceIds": [],
+            "ruleIds": [],
+            "inputRefs": [],
+            "observedAt": null
+          }
+        },
+        "location": "shelf"
+      }
+    ],
+    "events": []
+  },
+  "action": {
+    "kind": "conserve",
+    "claims": [
+      { "containerId": "bin-a", "unitOrdinal": 0 },
+      { "containerId": "bin-a", "unitOrdinal": 0 }
+    ]
+  },
+  "expectChanged": false,
+  "expectStatus": "fail",
+  "expectReason": "owned_double_consume"
+}

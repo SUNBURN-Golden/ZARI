@@ -1,3 +1,34 @@
+# 2026-10-08 — ZARI-z-inventory-lifecycle 보유 물건·용기·수량의 생활 이력
+
+정본은 GitHub issue #77, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-inventory-lifecycle`이다. 관찰한 base SHA는 `c4dce99c2d61d0b5d33ded4ca61c1120ea7a89a3`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-inventory-lifecycle만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-inventory-lifecycle.md`와 `design/DECISIONS.md` Dz-inventory-lifecycle. 제품 완성 후보 문서에는 z-inventory-lifecycle 노트만 추가했다.
+- Rust `apply_inventory`가 물건(개별/묶음), 용기(빈 용기/사용 중), 수량 미상과 0, 구매·반품·이동·수량 수정을 판정한다. 같은 단위 번호의 중복 소비는 실패다. 과거 계획 다이제스트는 원장을 바꾸지 않는다.
+- 명령 `applyInventoryLedger`는 `disposeProject` 바로 앞 capability다. `BUILD_ID`는 `zari-domain-7`이다. 생성 계약은 Rust에서 다시 만들었다.
+- 프로젝트 화면에 보유 이력 패널이 있다. 수량은 텍스트다. 저장은 Rust가 `changed: true`라고 한 뒤의 CAS다. Dexie dbVersion은 3이고, v2에서 올라올 때 스냅샷 바이트는 그대로다. exportVersion 1에는 원장이 없다.
+- 기존 124 fixture 기대 바이트는 바꾸지 않았다. 새 fixture는 `crates/core/tests/fixtures/inventory/`에 있다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked -- --test-threads=8`: exit 0, 145 passed, 1 ignored (inventory_lifecycle 7)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 21 files / 151), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `f4b5a1930de4372d`), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39): exit 0
+- `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium --workers=1`: 최종 86 passed (12.0m). 그 전 한 실행은 3 failed / 83 passed였다. 원장 패널이 두 번째 Worker를 만들어 기존 충돌 테스트가 마지막 Worker를 끊었다. 패널을 프로젝트 Worker의 system identity로 옮긴 뒤 전체를 다시 실행했다. 타임아웃을 올리지 않았다. `worker-state` flake는 없었다. `spatial3d` `context-lost-console: none`
+- `inventory.spec.ts` Firefox 2, WebKit 2: exit 0 (12.5s)
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (25.7s)
+
+하지 않은 것: 이후 z-노드, 결제·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, exportVersion 1에 원장 포함. 상세는 `docs/evidence/ZARI-z-inventory-lifecycle.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. z-catalog-provenance는 이 작업에서 시작하지 않았다.
+
 # 2026-10-08 — ZARI-z-product-contract 정리→구매→실행→재정리의 확장 계약
 
 정본은 GitHub issue #75, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-product-contract`이다. 관찰한 base SHA는 `1bd3fde5bd9a625d02735d4de8609e97736db49d`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

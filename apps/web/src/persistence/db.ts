@@ -4,6 +4,7 @@ import type {
   Diagnostic,
   LayoutEditCommand,
   OwnedContainer,
+  InventoryLedger,
   PlanSnapshot,
   ProjectInput,
   RawProjectInputDto,
@@ -19,11 +20,13 @@ import {
 export const DB_NAME = 'zari-local';
 /**
  * v1: Task 005 stores. v2: Task 009 adds the `attachments` Blob store for
- * optional local photos. Historical declarations stay so a v1 database
- * upgrades in place; a v2 database opened by a v1 build is refused by
- * IndexedDB itself (downgrade protection).
+ * optional local photos. v3: z-inventory-lifecycle adds `inventoryLedgers`.
+ * Historical declarations stay so an older database upgrades in place; a
+ * newer database opened by an older build is refused by IndexedDB itself
+ * (downgrade protection). The upgrade writes a journal row and does not
+ * read or rewrite snapshot, input, or owned-container bytes.
  */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 export const SCHEMA_VERSION = 1;
 const MAX_REVISION = 18446744073709551615n;
 
@@ -103,6 +106,14 @@ export interface SnapshotRow {
   acceptedAt: string;
   engineBuildId: string;
 }
+/** Project-scoped life ledger. Not a PlanSnapshot and not exportVersion 1. */
+export interface InventoryLedgerRow {
+  schemaVersion: number;
+  ledgerId: string;
+  revision: string;
+  ledger: InventoryLedger;
+  updatedAt: string;
+}
 export interface OwnedContainerRow {
   schemaVersion: number;
   ownedContainerId: string;
@@ -179,6 +190,7 @@ export class ZariDb extends Dexie {
   drafts!: Table<DraftRow, string>;
   snapshots!: Table<SnapshotRow, [string, string, string]>;
   ownedContainers!: Table<OwnedContainerRow, string>;
+  inventoryLedgers!: Table<InventoryLedgerRow, string>;
   catalogs!: Table<CatalogRow, string>;
   actionProgress!: Table<ActionProgressRow, [string, string, string, string]>;
   attachments!: Table<AttachmentRow, string>;
@@ -221,6 +233,33 @@ export class ZariDb extends Dexie {
         await tx.table('metadata').put({
           schemaVersion: SCHEMA_VERSION,
           key: 'migration:1->2',
+          payload: journal,
+        });
+      });
+    this.version(3)
+      .stores({
+        projects: 'projectId, updatedAt, status',
+        inputs: '[projectId+inputRevision], projectId',
+        drafts: 'projectId',
+        snapshots: '[projectId+inputRevision+planSnapshotId], projectId, planSnapshotId',
+        ownedContainers: 'ownedContainerId, updatedAt',
+        catalogs: 'catalogDigest, catalogVersion, origin',
+        actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
+        attachments: 'attachmentId, projectId',
+        inventoryLedgers: 'ledgerId, updatedAt',
+        metadata: 'key',
+      })
+      .upgrade(async (tx) => {
+        const journal: MigrationJournal = {
+          kind: 'migration',
+          fromVersion: 2,
+          toVersion: 3,
+          state: 'applied',
+          recordedAt: new Date().toISOString(),
+        };
+        await tx.table('metadata').put({
+          schemaVersion: SCHEMA_VERSION,
+          key: 'migration:2->3',
           payload: journal,
         });
       });
@@ -451,6 +490,30 @@ export function readAttachmentRow(value: unknown): AttachmentRow {
     !(row.bytes instanceof ArrayBuffer) ||
     row.bytes.byteLength !== row.byteSize ||
     !text(row.createdAt)
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+function isInventoryLedger(value: unknown): value is InventoryLedger {
+  if (!value || typeof value !== 'object') return false;
+  const ledger = value as InventoryLedger;
+  return (
+    Array.isArray(ledger.items) &&
+    Array.isArray(ledger.containers) &&
+    Array.isArray(ledger.events)
+  );
+}
+export function readInventoryLedgerRow(value: unknown): InventoryLedgerRow {
+  const row = value as InventoryLedgerRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.ledgerId) ||
+    !isCanonicalRevision(row.revision) ||
+    !text(row.updatedAt) ||
+    !isInventoryLedger(row.ledger)
   )
     throw new Error('record_corrupt');
   return row;

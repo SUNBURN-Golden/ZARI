@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import Dexie from 'dexie';
 import { expect, it } from 'vitest';
 import type { RawProjectInputDto } from '../../src/contracts/generated/dto';
 import { validateProjectInput } from '../../src/contracts/generated/validators.mjs';
@@ -207,4 +208,73 @@ it('conflict resolution: saveAsCopy preserves the dirty draft verbatim', async (
   // Original project is untouched.
   const original = await r.loadBundle(project.projectId);
   expect(original.draft?.form.items[0]?.label).not.toBe('충돌 전 로컬 라벨');
+});
+
+const V1_STORES = {
+  projects: 'projectId, updatedAt, status',
+  inputs: '[projectId+inputRevision], projectId',
+  drafts: 'projectId',
+  snapshots: '[projectId+inputRevision+planSnapshotId], projectId, planSnapshotId',
+  ownedContainers: 'ownedContainerId, updatedAt',
+  catalogs: 'catalogDigest, catalogVersion, origin',
+  actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
+  metadata: 'key',
+};
+const V2_STORES = {
+  ...V1_STORES,
+  attachments: 'attachmentId, projectId',
+};
+
+it('opens a v2 database, journals 2 to 3, and leaves snapshot bytes', async () => {
+  const name = `test-${crypto.randomUUID()}`;
+  const legacy = new Dexie(name);
+  legacy.version(1).stores(V1_STORES);
+  legacy.version(2).stores(V2_STORES);
+  await legacy.open();
+  const snapshot = {
+    schemaVersion: SCHEMA_VERSION,
+    projectId: 'p-keep',
+    inputRevision: '1',
+    planSnapshotId: 'ab'.repeat(32),
+    snapshot: { marker: 'historical-bytes' },
+    acceptedAt: '2020-01-01T00:00:00.000Z',
+    engineBuildId: 'old',
+  };
+  await legacy.table('snapshots').add(snapshot);
+  await legacy.table('metadata').put({
+    schemaVersion: SCHEMA_VERSION,
+    key: 'sentinel',
+    payload: { keep: true },
+  });
+  legacy.close();
+
+  const db = new ZariDb(name);
+  await db.open();
+  const journal = await db.metadata.get('migration:2->3');
+  expect(journal?.payload).toMatchObject({
+    kind: 'migration',
+    fromVersion: 2,
+    toVersion: 3,
+    state: 'applied',
+  });
+  const stored = await db.snapshots.toArray();
+  expect(stored).toHaveLength(1);
+  expect(stored[0]?.snapshot).toEqual({ marker: 'historical-bytes' });
+  expect((await db.metadata.get('sentinel'))?.payload).toEqual({ keep: true });
+  db.close();
+});
+
+it('saves a ledger with compare-and-swap and drops it when the project is deleted', async () => {
+  const r = repo();
+  const project = await seedProject(r);
+  const ledger = { items: [], containers: [], events: [] };
+  const saved = await r.saveInventoryLedger(project.projectId, ledger, '0');
+  expect(saved).toEqual({ status: 'saved', revision: '1' });
+  const conflict = await r.saveInventoryLedger(project.projectId, ledger, '0');
+  expect(conflict.status).toBe('conflict');
+  const row = await r.getInventoryLedger(project.projectId);
+  expect(row?.revision).toBe('1');
+  expect(row?.ledger).toEqual(ledger);
+  await r.deleteProject(project.projectId);
+  expect(await r.getInventoryLedger(project.projectId)).toBeNull();
 });

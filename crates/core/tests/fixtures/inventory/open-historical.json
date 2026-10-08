@@ -1,0 +1,34 @@
+{
+  "caseId": "open-historical",
+  "ledger": {
+    "items": [
+      {
+        "id": "towel",
+        "label": "수건",
+        "holding": "individual",
+        "quantity": {
+          "state": "known",
+          "value": 0,
+          "provenance": {
+            "origin": "userDeclared",
+            "verification": "unverified",
+            "evidenceIds": [],
+            "ruleIds": [],
+            "inputRefs": [],
+            "observedAt": null
+          }
+        },
+        "location": null
+      }
+    ],
+    "containers": [],
+    "events": []
+  },
+  "action": {
+    "kind": "openHistorical",
+    "planSnapshotId": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "expectChanged": false,
+  "expectCode": "zero",
+  "expectCount": 0
+}

@@ -19,6 +19,7 @@ import {
 } from '../features/project/draft';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import type { AttachmentRow, CatalogRow, OwnedContainerRow } from '../persistence/db';
+import { InventoryPanel } from '../features/inventory/InventoryPanel';
 import { ownedToRaw } from '../features/owned/model';
 import { DimensionField } from '../ui/DimensionField';
 import {
@@ -725,6 +726,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
       </section>
       <CatalogAndOwned session={session} state={state} />
+      <InventoryPanel projectId={projectId} />
       <PhotosPanel projectId={projectId} />
       <aside className="inspector" aria-labelledby="state-title">
         <div className="section-kicker">정규화 상태</div>

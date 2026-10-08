@@ -41,6 +41,7 @@
     "projectSpatialView",
     "queryNextFacts",
     "queryActionEligibility",
+    "applyInventoryLedger",
     "disposeProject"
   ],
   "searchCapabilities": [

@@ -8,6 +8,7 @@ pub mod facts;
 pub mod finalize;
 pub mod geometry;
 pub mod input;
+pub mod inventory;
 pub mod measurement;
 pub mod next_facts;
 pub mod normalize;
