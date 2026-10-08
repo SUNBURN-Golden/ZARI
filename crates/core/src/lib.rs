@@ -1,5 +1,6 @@
 pub mod canonical;
 pub mod catalog;
+pub mod catalog_provenance;
 pub mod completion;
 pub mod edit;
 pub mod eligibility;

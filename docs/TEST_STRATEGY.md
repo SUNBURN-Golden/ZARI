@@ -332,3 +332,7 @@ Adopted by [Dz-product-contract](../design/DECISIONS.md). `docs/product-expansio
 ## 15. z-inventory-lifecycle ledger
 
 Adopted by [Dz-inventory-lifecycle](../design/DECISIONS.md). New cases live in `crates/core/tests/fixtures/inventory/` and `crates/core/tests/inventory_lifecycle.rs`, outside `fixtures/`, so the 124-row manifest stays. They cover duplicate ordinals, unknown versus zero, an unchanged historical open, an empty container, and purchase/return/move/quantity-edit order. `apps/web/tests/unit/inventory.test.ts` counts worker calls and saves. `apps/web/tests/browser/inventory.spec.ts` runs the same distinctions on a real Worker and IndexedDB, including an invalid id, reload, the plan route, keyboard submit, 390 and 1280, and forced-colors. A v2 database upgrade must keep snapshot bytes. The hand oracle files are not rewritten.
+
+## 16. z-catalog-provenance review
+
+Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). Cases live in `crates/core/tests/catalog_provenance.rs`, outside `fixtures/`, so the 124-row manifest stays. They cover two sizes of one product, a conflicting option id, a blank inner, an incomplete batch that publishes nothing, source separation, and refused photo bytes. `apps/web/tests/unit/catalogProvenance.test.ts` counts worker calls and refuses a quarantined save. `apps/web/tests/browser/catalog-provenance.spec.ts` runs the catalog route on a real Worker, including CSV quarantine, the three samples, keyboard submit, 390, and forced-colors. Existing catalog fixture expectations are not rewritten.

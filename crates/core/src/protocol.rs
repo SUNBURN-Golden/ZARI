@@ -31,7 +31,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-7";
-const CAPABILITIES: [&str; 15] = [
+const CAPABILITIES: [&str; 16] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -46,6 +46,7 @@ const CAPABILITIES: [&str; 15] = [
     "queryNextFacts",
     "queryActionEligibility",
     "applyInventoryLedger",
+    "reviewCatalogImport",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -55,7 +56,7 @@ const SEARCH_CAPABILITIES: [&str; 4] = [
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 18] = [
+const COMMAND_KINDS: [&str; 19] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -69,6 +70,7 @@ const COMMAND_KINDS: [&str; 18] = [
     "queryNextFacts",
     "queryActionEligibility",
     "applyInventoryLedger",
+    "reviewCatalogImport",
     "disposeProject",
     "proposeStrategies",
     "startSearch",
@@ -278,6 +280,11 @@ pub enum Command {
         ledger: crate::inventory::InventoryLedger,
         action: crate::inventory::InventoryAction,
     },
+    /// Stateless catalog import review. Does not read or write a stored
+    /// catalog. `snapshot` is present only when every row is ready.
+    ReviewCatalogImport {
+        action: crate::catalog_provenance::CatalogReviewAction,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -416,6 +423,10 @@ pub enum Event {
     /// Result of `applyInventoryLedger`. `changed: false` is a read.
     InventoryLedgerApplied {
         reply: crate::inventory::InventoryReply,
+    },
+    /// Result of `reviewCatalogImport`. `snapshot: null` publishes nothing.
+    CatalogImportReviewed {
+        reply: crate::catalog_provenance::CatalogProvenanceReply,
     },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
@@ -2194,6 +2205,7 @@ impl Runtime {
                     | Command::QueryNextFacts { .. }
                     | Command::QueryActionEligibility { .. }
                     | Command::ApplyInventoryLedger { .. }
+                    | Command::ReviewCatalogImport { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -2381,7 +2393,8 @@ impl Runtime {
             | Command::ProjectSpatialView { .. }
             | Command::QueryNextFacts { .. }
             | Command::QueryActionEligibility { .. }
-            | Command::ApplyInventoryLedger { .. } => self.execute_stateless(&request.command),
+            | Command::ApplyInventoryLedger { .. }
+            | Command::ReviewCatalogImport { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2666,6 +2679,12 @@ impl Runtime {
             Command::ApplyInventoryLedger { ledger, action } => {
                 match crate::inventory::apply_inventory(ledger, action) {
                     Ok(reply) => Event::InventoryLedgerApplied { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::ReviewCatalogImport { action } => {
+                match crate::catalog_provenance::review_catalog_import(action) {
+                    Ok(reply) => Event::CatalogImportReviewed { reply },
                     Err(error) => failure(error.code),
                 }
             }

@@ -1,8 +1,11 @@
 import type {
   CatalogImportDto,
+  CatalogProvenanceReply,
+  CatalogReviewAction,
   CatalogSnapshot,
   Diagnostic,
   NormalizedCatalogField,
+  SampleBundleKind,
 } from '../../contracts/generated/dto';
 import { validateCatalogImportDto } from '../../contracts/generated/validators.mjs';
 import type { ProjectRepository } from '../../persistence/repository';
@@ -206,6 +209,44 @@ export class CatalogManager {
     };
     return this.validateDto(catalog, []);
   }
+  /**
+   * Provenance review. Rust decides row diagnosis, duplicate quarantine, and
+   * whether a snapshot exists. This method does not write.
+   */
+  async review(action: CatalogReviewAction): Promise<
+    | { status: 'reviewed'; reply: CatalogProvenanceReply }
+    | { status: 'unavailable'; error: string }
+  > {
+    let client: ProbeClient;
+    try {
+      client = await this.controller.ensure();
+    } catch (error) {
+      return {
+        status: 'unavailable',
+        error: String(error instanceof Error ? error.message : error),
+      };
+    }
+    try {
+      const reply = await client.systemRequest({ kind: 'reviewCatalogImport', action });
+      if (reply.kind !== 'catalogImportReviewed')
+        return { status: 'unavailable', error: 'unexpected_worker_event' };
+      return { status: 'reviewed', reply: reply.reply };
+    } catch (error) {
+      return {
+        status: 'unavailable',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+  /**
+   * Store a reviewed snapshot only when Rust published one. A quarantine,
+   * including a batch that has some ready rows, does not write.
+   */
+  async commitReviewed(reply: CatalogProvenanceReply): Promise<'saved' | 'blocked'> {
+    if (reply.quarantined || reply.snapshot === null) return 'blocked';
+    await this.commit(reply.snapshot, provenanceOrigin(reply.bundle));
+    return 'saved';
+  }
   /** Persist only a Rust-validated snapshot; the digest is the row key. */
   async commit(snapshot: CatalogSnapshot, origin = 'imported'): Promise<void> {
     await this.repo.open();
@@ -214,6 +255,13 @@ export class CatalogManager {
   list(): ReturnType<ProjectRepository['listCatalogs']> {
     return this.repo.listCatalogs();
   }
+}
+
+export function provenanceOrigin(bundle: SampleBundleKind | null): string {
+  if (bundle === 'synthetic') return 'provenance-synthetic';
+  if (bundle === 'verified') return 'provenance-verified';
+  if (bundle === 'unverified') return 'provenance-unverified';
+  return 'provenance-import';
 }
 
 export { isIdText, isLocatorText, isUtcTimestamp };

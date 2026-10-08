@@ -15,6 +15,7 @@ import {
   type OwnedFormFields,
 } from '../features/owned/model';
 import type { ImportEntry, ImportIssue } from '../features/catalog/import';
+import { ProvenancePanel } from '../features/catalog/ProvenancePanel';
 import { isIdText, type StageResult } from '../features/catalog/manager';
 import { navigate } from './router';
 import { Shell } from './ProjectScreen';
@@ -60,9 +61,19 @@ function diagnosticText(d: Diagnostic): string {
 
 /** Demo/imported label: the stored origin decides — never inferred. */
 function catalogBadge(row: CatalogRow): { text: string; demo: boolean } {
+  if (row.origin === 'provenance-verified')
+    return { text: '검증 범위 기록 · 사실은 미확인', demo: false };
+  if (row.origin === 'provenance-unverified')
+    return { text: '미확인 실상품', demo: false };
+  if (row.origin === 'provenance-import')
+    return { text: '검토된 가져오기', demo: false };
   if (row.origin === 'empty-real')
     return { text: '상품 없는 카탈로그', demo: false };
-  if (row.origin === 'synthetic-bundled' || row.catalog.sourceKind === 'synthetic')
+  if (
+    row.origin === 'synthetic-bundled' ||
+    row.origin === 'provenance-synthetic' ||
+    row.catalog.sourceKind === 'synthetic'
+  )
     return { text: '데모 · 합성 데이터', demo: true };
   return { text: `가져온 카탈로그 · ${row.origin}`, demo: false };
 }
@@ -743,6 +754,7 @@ export function CatalogScreen() {
         </p>
       </section>
       <CatalogImport onCommitted={() => void refresh()} />
+      <ProvenancePanel catalogs={catalogs ?? []} onCommitted={() => void refresh()} />
       {owned !== null && catalogs !== null && (
         <OwnedLibrary catalogs={catalogs} owned={owned} onChanged={() => void refresh()} />
       )}

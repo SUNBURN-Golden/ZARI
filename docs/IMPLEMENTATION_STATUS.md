@@ -1,3 +1,34 @@
+# 2026-10-08 — ZARI-z-catalog-provenance 실상품 출처·옵션·치수 검증 작업대
+
+정본은 GitHub issue #80, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-catalog-provenance`이다. 관찰한 base SHA는 `8e065203a0c078451667d6f120b99ded4db61ea7`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-catalog-provenance만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-catalog-provenance.md`와 `design/DECISIONS.md` Dz-catalog-provenance. 제품 완성 후보 문서에는 z-catalog-provenance 노트만 추가했다.
+- Rust `review_catalog_import`가 브랜드·모델·옵션·판매처와 외경·내경·돌출·하중 출처를 나누고, 행별 진단·중복·격리를 판정한다. 다른 옵션 ID의 다른 크기는 두 변형으로 남고, 같은 옵션 ID의 다른 크기는 합치지 않고 격리한다. 빈 내경은 unknown이다. 한 행이라도 격리되면 snapshot은 null이라 기존 카탈로그를 고치지 않는다. `verified` 범위는 기록이되 `Confirmed`가 되지 않는다. 사진 바이트는 거절한다.
+- 명령 `reviewCatalogImport`는 `applyInventoryLedger` 다음, `disposeProject` 바로 앞 capability다. `BUILD_ID`는 `zari-domain-7`이다. 생성 계약은 Rust에서 다시 만들었다. 저장 `sourceKind`는 `synthetic`과 `imported`다. 샘플 묶음 `synthetic` / `verified` / `unverified`는 검토 응답에만 있다.
+- `#/catalog`에 검토 패널이 있다. 직접 입력·CSV·JSON과 샘플 세 묶음을 같은 라이브러리 Worker로 검토한다. 저장은 Rust가 snapshot을 돌려준 뒤의 기존 `putCatalog`다. 새 Dexie store는 없다. exportVersion 1은 그대로다.
+- 기존 124 fixture 기대 바이트는 바꾸지 않았다. 새 검사는 `crates/core/tests/catalog_provenance.rs`에 있다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked -- --test-threads=8`: exit 0, 152 passed, 1 ignored (catalog_provenance 7)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 22 files / 154), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `713eb834c1c369f9`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 10): exit 0
+- `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium --workers=1`: 88 passed (Playwright 12.3m). `worker-state` flake는 없었다. 타임아웃을 올리지 않았다. `spatial3d` `context-lost-console: none`
+- `catalog-provenance.spec.ts` Firefox 2, WebKit 2: exit 0 (11.7s). 직전 Chromium 스위트의 `vite build --mode test` 산출물을 사용했다
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (26.1s)
+
+하지 않은 것: 다음 z-노드, 결제·클라우드·계정·사진 동의, 화면 승인, 출시, 전화, 전용 GPU, `CatalogSourceKind`에 verified를 추가, exportVersion 1 변경. 상세는 `docs/evidence/ZARI-z-catalog-provenance.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-08 — ZARI-z-inventory-lifecycle 보유 물건·용기·수량의 생활 이력
 
 정본은 GitHub issue #77, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-inventory-lifecycle`이다. 관찰한 base SHA는 `c4dce99c2d61d0b5d33ded4ca61c1120ea7a89a3`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

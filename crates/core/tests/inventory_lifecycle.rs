@@ -302,7 +302,8 @@ fn the_ledger_command_is_stateless_and_a_bare_payload_is_invalid() {
         .iter()
         .position(|name| *name == "disposeProject")
         .unwrap();
-    assert_eq!(names[dispose - 1], "applyInventoryLedger");
+    assert_eq!(names[dispose - 2], "applyInventoryLedger");
+    assert_eq!(names[dispose - 1], "reviewCatalogImport");
     let bare = send(
         &mut runtime,
         "bare",

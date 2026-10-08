@@ -1448,6 +1448,10 @@ export type Command =
       ledger: InventoryLedger;
     }
   | {
+      action: CatalogReviewAction;
+      kind: 'reviewCatalogImport';
+    }
+  | {
       kind: 'proposeStrategies';
     }
   | {
@@ -1842,6 +1846,35 @@ export type SubjectKind = 'item' | 'container';
  */
 export type ContainerUse = 'empty' | 'inUse';
 /**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogReviewAction".
+ */
+export type CatalogReviewAction =
+  | {
+      batch: CatalogProvenanceBatch;
+      kind: 'review';
+    }
+  | {
+      bundle: SampleBundleKind;
+      kind: 'sample';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SourceScope".
+ */
+export type SourceScope =
+  'brand' | 'model' | 'option' | 'seller' | 'outer' | 'inner' | 'protrusion' | 'load';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "VerificationScope".
+ */
+export type VerificationScope = 'unknown' | 'unverified' | 'verified';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SampleBundleKind".
+ */
+export type SampleBundleKind = 'synthetic' | 'verified' | 'unverified';
+/**
  * Search drive mode recorded at `startSearch`. The single-threaded runtime
  * only ever advances on explicit `stepSearch` requests, so `continuous` is a
  * scheduling hint for the host — never an autonomous loop inside WASM.
@@ -1929,6 +1962,10 @@ export type Event =
   | {
       kind: 'inventoryLedgerApplied';
       reply: InventoryReply;
+    }
+  | {
+      kind: 'catalogImportReviewed';
+      reply: CatalogProvenanceReply;
     }
   | {
       kind: 'searchStarted';
@@ -2089,6 +2126,11 @@ export type SpatialSourceStamp =
  * via the `definition` "QuantityLabelCode".
  */
 export type QuantityLabelCode = 'unknown' | 'zero' | 'count';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "RowDisposition".
+ */
+export type RowDisposition = 'ready' | 'quarantine';
 
 export interface ZariContractBundle {
   BootstrapFixture: BootstrapFixture;
@@ -3669,6 +3711,51 @@ export interface LedgerItem {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogProvenanceBatch".
+ */
+export interface CatalogProvenanceBatch {
+  catalogVersion: string;
+  existingDigest: string | null;
+  ingestionVersion: string;
+  rows: ProvenanceRow[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProvenanceRow".
+ */
+export interface ProvenanceRow {
+  brand: string;
+  category: string;
+  innerDepthMm: string;
+  innerHeightMm: string;
+  innerWidthMm: string;
+  loadGrams: string;
+  model: string;
+  optionId: string;
+  optionLabel: string;
+  outerDepthMm: string;
+  outerHeightMm: string;
+  outerWidthMm: string;
+  primitive: string;
+  productId: string;
+  protrusionMm: string;
+  sellerId: string;
+  sources: FieldSource[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FieldSource".
+ */
+export interface FieldSource {
+  confirmedAt: string | null;
+  note: string;
+  photoRef: string | null;
+  scope: SourceScope;
+  url: string | null;
+  verificationScope: VerificationScope;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "RequestMeta".
  */
 export interface RequestMeta {
@@ -3876,6 +3963,29 @@ export interface QuantityLabel {
   count: number | null;
   role: SubjectKind;
   subjectId: Id;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogProvenanceReply".
+ */
+export interface CatalogProvenanceReply {
+  batchCodes: string[];
+  bundle: SampleBundleKind | null;
+  diagnoses: RowDiagnosis[];
+  existingUntouched: boolean;
+  quarantined: boolean;
+  snapshot: CatalogSnapshot | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "RowDiagnosis".
+ */
+export interface RowDiagnosis {
+  codes: string[];
+  disposition: RowDisposition;
+  duplicateOf: number | null;
+  rowIndex: number;
+  unknownScopes: SourceScope[];
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

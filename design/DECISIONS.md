@@ -185,6 +185,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 명령, 화면, dbVersion 3 저장소를 걷어 낸다. 이미 저장된 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-catalog-provenance — 실상품 출처·옵션·치수 검증 작업대 / 채택
+
+- ID: Dz-catalog-provenance
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-catalog-provenance만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 브랜드·모델·옵션·판매처와 외경·내경·돌출·하중의 출처가 갈라져 있지 않다. 다른 크기 옵션이 한 변형으로 합쳐질 수 있고, 내경이 없으면 외경으로 채워질 수 있으며, 일부 행만 맞은 가져오기가 기존 카탈로그를 고칠 수 있다.
+- 변경 대상: [docs/adr/SP-z-catalog-provenance.md](../docs/adr/SP-z-catalog-provenance.md), Rust `review_catalog_import`, 명령 `reviewCatalogImport`, `#/catalog`의 검토 패널. `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, exportVersion 1, dbVersion 3, `catalogSourceKinds` `synthetic`/`imported`, 기존 124 fixture 기대 바이트는 그대로다.
+- 검토한 대안: (A) 검토 배치를 스냅샷 밖에 두고, 격리가 있으면 snapshot을 비운다. 검증 범위는 기록이되 `Confirmed`로 올리지 않는다. (B) `CatalogSourceKind`에 `verified`를 넣어 저장 schema를 바꾼다. (C) 맞는 행만 기존 카탈로그 digest에 합친다.
+- 선택: A. B는 상품 계약이 잠근 source kind와 기존 fixture 경로를 건드린다. C는 불완전 가져오기가 검증된 카탈로그를 부분적으로 덮는다.
+- 조건: unknown을 통과나 0으로 바꾸지 않는다. 빈 내경은 unknown이다. 같은 옵션의 다른 크기는 합치지 않는다. 사진 바이트는 거절한다. 새 색 쌍은 없고 기존 패널 토큰을 쓴다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 검토는 폼 제출이다. 키보드로 샘플과 검토를 실행한다. 검토 중·준비·격리·저장을 상태에 남긴다. forced-colors는 기존 Canvas/CanvasText다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 명령, 검토 패널을 걷어 낸다. 이미 저장된 카탈로그 바이트는 이 결정으로 다시 쓰지 않는다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.
