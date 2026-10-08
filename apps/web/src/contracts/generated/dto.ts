@@ -1459,6 +1459,9 @@ export type Command =
       kind: 'proposeStrategies';
     }
   | {
+      kind: 'evaluateStrategyLibrary';
+    }
+  | {
       kind: 'startSearch';
       mode: SearchMode;
     }
@@ -2000,6 +2003,10 @@ export type Event =
       kind: 'strategiesProposed';
     }
   | {
+      kind: 'strategyLibraryEvaluated';
+      reply: StrategyLibraryReply;
+    }
+  | {
       kind: 'spatialViewProjected';
       projection: SpatialProjection;
     }
@@ -2070,6 +2077,23 @@ export type NormalizedInput =
   | {
       input: ProjectInput;
       kind: 'project';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LibraryQuantity".
+ */
+export type LibraryQuantity =
+  | {
+      count: number;
+      state: 'known';
+    }
+  | {
+      reason: UnknownReason;
+      state: 'unknown';
+    }
+  | {
+      reasonCode: string;
+      state: 'notApplicable';
     };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -3929,6 +3953,71 @@ export interface NormalizedBootstrapInput {
   rightGapMm: FactFor_ClearanceMm;
   unitCount: FactFor_Quantity;
   unitWidth: FactFor_MeasuredLength;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "StrategyLibraryReply".
+ */
+export interface StrategyLibraryReply {
+  alternatives: LibraryAlternative[];
+  assumptions: Condition[];
+  candidateItemIds: Id[];
+  droppedWordingDuplicates: number;
+  hardConstraints: LibraryStatement[];
+  libraryVersion: string;
+  pinnedStrategy: Strategy;
+  recipes: LibraryRecipe[];
+  strategyChanged: boolean;
+  unassigned: LibraryUnassigned[];
+  visualPreferences: LibraryStatement[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LibraryAlternative".
+ */
+export interface LibraryAlternative {
+  accessCode: string;
+  factRefs: FieldRef[];
+  messageKeys: string[];
+  ruleIds: string[];
+  strategy: Strategy;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LibraryStatement".
+ */
+export interface LibraryStatement {
+  code: string;
+  factRefs: FieldRef[];
+  parameters: {
+    [k: string]: string;
+  };
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LibraryRecipe".
+ */
+export interface LibraryRecipe {
+  accessCode: string;
+  factRefs: FieldRef[];
+  groupIds: Id[];
+  id: Id;
+  primitives: StoragePrimitive[];
+  retrievals: RetrievalMode[];
+  ruleIds: string[];
+  selected: boolean;
+  strategy: Strategy;
+  version: number;
+  zoneIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LibraryUnassigned".
+ */
+export interface LibraryUnassigned {
+  itemId: Id;
+  quantity: LibraryQuantity;
+  reasonCode: string;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

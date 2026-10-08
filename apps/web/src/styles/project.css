@@ -455,6 +455,56 @@
   align-items: center;
 }
 
+.strategy-library {
+  border: 1px solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.strategy-library h3,
+.strategy-library h4 {
+  margin: 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+
+.strategy-library p,
+.strategy-library li {
+  margin: 0;
+  color: var(--zari-text-secondary);
+}
+
+.strategy-library .strategy-library-pin {
+  color: var(--zari-text-primary);
+}
+
+.strategy-library .strategy-library-held {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--zari-warning);
+  background: var(--zari-warning-soft);
+  border-left: 2px solid var(--zari-warning);
+  padding: 0.5rem 0.75rem;
+}
+
+.strategy-library .strategy-library-held p {
+  color: var(--zari-warning);
+  background: transparent;
+  padding: 0;
+}
+
+.strategy-recipes {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
 /* ZARI-007 trustworthy editing. */
 
 .diagram-container[data-selected='true'],

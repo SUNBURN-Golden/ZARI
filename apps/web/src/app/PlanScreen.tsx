@@ -55,6 +55,7 @@ import {
 } from '../features/plan/view';
 import { bomCsvRows, toCsv } from '../features/plan/csv';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
+import { StrategyLibraryPanel } from '../features/strategy/StrategyLibraryPanel';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import { Shell } from './ProjectScreen';
 import { navigate } from './router';
@@ -991,6 +992,16 @@ export function PlanScreen({ projectId }: { projectId: string }) {
             ))}
           </fieldset>
         )}
+
+        <StrategyLibraryPanel
+          state={plan.strategyLibraryState}
+          reply={plan.strategyLibrary}
+          error={plan.strategyLibraryError}
+          draftStrategy={state.form?.strategyChoice ?? null}
+          labels={new Map((state.form?.items ?? []).map((item) => [item.id, item.label]))}
+          onRetry={() => session.retryStrategyLibrary()}
+          onCommit={() => session.commit()}
+        />
 
         <div className="form-actions">
           <Button

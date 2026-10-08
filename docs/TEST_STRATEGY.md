@@ -340,3 +340,7 @@ Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). Cases live in `crate
 ## 17. z-offer-bundles quote
 
 Adopted by [Dz-offer-bundles](../design/DECISIONS.md). Cases live in `crates/core/tests/offer_bundles.rs`, outside `fixtures/`, so the 124-row manifest stays. They cover need 3 with a pack of 2, unknown shipping, one fee per seller, included parts, owned reuse, a purchase minimum, a published plan whose unknown shipping is not free, and one new revision shared by the drawing stamp, BOM, and guide after `selectOffer`. `apps/web/tests/unit/offerBundles.test.ts` counts worker calls. `apps/web/tests/browser/offer-bundles.spec.ts` runs the plan route on a real Worker, including the preview, unknown shipping, a shared revision after an edit, keyboard submit, 390, and forced-colors. Existing fixture expectations are not rewritten.
+
+## 18. z-strategy-library comparison
+
+Adopted by [Dz-strategy-library](../design/DECISIONS.md). Cases live in `crates/core/tests/strategy_library.rs`, outside `fixtures/`, so the 124-row manifest stays. They cover a wording-only duplicate, an unchanged pinned strategy, separate unassigned quantities, unknown quantity without a count, and hard constraints that stay apart from color. `apps/web/tests/unit/strategyLibrary.test.ts` counts library reads. `apps/web/tests/browser/strategy-library.spec.ts` runs the plan route on a real Worker, including the saved pin, a draft radio, a pull-only item that keeps count 1, keyboard expand, 390, and forced-colors. Existing fixture expectations are not rewritten.

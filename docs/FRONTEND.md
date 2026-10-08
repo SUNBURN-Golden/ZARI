@@ -342,3 +342,7 @@ Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). The catalog screen g
 ## 16. z-offer-bundles quote
 
 Adopted by [Dz-offer-bundles](../design/DECISIONS.md). The plan screen gains one seller-quote panel on the existing plan route. It uses the project Worker. One snapshot id is quoted once. The preview form does not publish a revision. Unknown money is the word 미확인, never ₩0 and never 무료. Confirmed free shipping is 무료. Pending, ready, empty, and error stay visible. Enter submits the preview. Drawing, BOM, and guide carry the same `data-revision`. Colors reuse the panel, table, and error tokens. No new route and no approved baseline.
+
+## 17. z-strategy-library comparison
+
+Adopted by [Dz-strategy-library](../design/DECISIONS.md). The plan screen gains one comparison panel under the existing strategy radios. It uses the project Worker. One saved input digest and strategy sends `evaluateStrategyLibrary` once. A radio change is a draft until `이 선택 저장` commits that input and activates it again. Unknown quantity is the word 미확인, never 0. Pending, ready, empty, and error stay visible. Enter expands and collapses a recipe's rule ids. Colors reuse the panel text and warning tokens. No new route and no approved baseline.

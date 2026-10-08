@@ -24,6 +24,13 @@ impl SearchEngine for SolverEngine {
         decision::propose(input)
     }
 
+    fn evaluate_strategy_library(
+        &self,
+        input: &ProjectInput,
+    ) -> zari_core::strategy_library::StrategyLibraryReply {
+        zari_core::strategy_library::evaluate(input, &decision::propose(input))
+    }
+
     fn start(&self, input: &ProjectInput, catalog: &CatalogContent) -> Box<dyn SearchSession> {
         Box::new(Session::new(input.clone(), catalog.clone()))
     }

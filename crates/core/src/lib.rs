@@ -21,6 +21,7 @@ pub mod raw;
 pub mod scalars;
 pub mod spatial_view;
 pub mod strategy;
+pub mod strategy_library;
 pub mod validate;
 pub mod validator;
 pub use canonical::*;

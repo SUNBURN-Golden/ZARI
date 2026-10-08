@@ -1,3 +1,34 @@
+# 2026-10-09 — ZARI-z-strategy-library 생활습관 기반 전략과 Recipe 라이브러리
+
+정본은 GitHub issue #86, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-strategy-library`이다. 관찰한 base SHA는 `de8e4f6f89282f62ad7202d3d72dae8e73771023`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-strategy-library만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-strategy-library.md`와 `design/DECISIONS.md` Dz-strategy-library. 제품 완성 후보 문서에는 z-strategy-library 노트만 추가했다.
+- Rust `strategy_library::evaluate`가 다섯 Recipe를 평가한다. 라이브러리 버전은 `zari-strategy-library-1`이다. 규칙 id는 기존 `propose`를 복사한다. 문장만 같은 최소 구매 별칭은 빠진다. 접근 가정이 다르면 남는다. `strategy_changed`는 false다. 미배정은 물건의 수량을 유지하고, unknown 수량에는 count가 없다. 강제 제약과 시각적 취향은 다른 목록이다.
+- 명령 `evaluateStrategyLibrary`는 검색 엔진이 있을 때 `proposeStrategies` 다음, `startSearch` 바로 앞 capability다. `BUILD_ID`는 `zari-domain-7`이다. 생성 계약은 Rust에서 다시 만들었다. 응답은 PlanSnapshot 해시 밖이다.
+- 계획 화면의 기존 라디오 아래에 비교가 있다. 라디오는 초안이다. `이 선택 저장`이 기존 입력 확정을 호출하기 전에는 핀이 움직이지 않는다. 같은 저장 입력과 전략은 명령을 한 번만 보내고, 실패를 자동으로 다시 보내지 않는다.
+- 기존 124 fixture 기대 바이트는 바꾸지 않았다. `decision.rs`와 탐색 순위도 바꾸지 않았다. 새 검사는 `crates/core/tests/strategy_library.rs`에 있다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, Chromium 스위트 4 workers, 미리보기 포트 4175):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 166 passed, 1 ignored (strategy_library 6)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 24 files / 167), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `f47e581374fdae0e`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12): exit 0
+- `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium`: 92 passed, 4 workers (Playwright 3.7m). 4173·4174가 다른 앱에 잡혀 있어 미리보기는 4175였다. `worker-state` flake는 없었다. 타임아웃을 올리지 않았다. `spatial3d` `context-lost-console: none`
+- `strategy-library.spec.ts` Firefox 1 (2.8s), WebKit 1 (2.3s): exit 0
+- `npm run test:parity`: 2 passed (26.2s), 124 fixture
+
+하지 않은 것: 다음 z-노드, 파레토 점수, 결제·실시간 재고·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `BUILD_ID` 변경, 탐색 순위 변경. 상세는 `docs/evidence/ZARI-z-strategy-library.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-09 — ZARI-z-offer-bundles 판매 묶음·필수 부품·배송비의 정직한 BOM
 
 정본은 GitHub issue #84, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-offer-bundles`이다. 관찰한 base SHA는 `53816da2a4aa3028a6c6c48131966d32ee018e2f`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

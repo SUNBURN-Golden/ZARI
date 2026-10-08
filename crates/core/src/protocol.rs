@@ -51,13 +51,14 @@ const CAPABILITIES: [&str; 17] = [
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
-const SEARCH_CAPABILITIES: [&str; 4] = [
+const SEARCH_CAPABILITIES: [&str; 5] = [
     "proposeStrategies",
+    "evaluateStrategyLibrary",
     "startSearch",
     "stepSearch",
     "cancelSearch",
 ];
-const COMMAND_KINDS: [&str; 20] = [
+const COMMAND_KINDS: [&str; 21] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -75,6 +76,7 @@ const COMMAND_KINDS: [&str; 20] = [
     "quoteOfferBundle",
     "disposeProject",
     "proposeStrategies",
+    "evaluateStrategyLibrary",
     "startSearch",
     "stepSearch",
     "cancelSearch",
@@ -178,6 +180,12 @@ pub trait SearchSession {
 pub trait SearchEngine {
     /// Deterministic strategy catalogue: one decision per supported strategy.
     fn propose_strategies(&self, input: &ProjectInput) -> Vec<StrategyDecision>;
+    /// Versioned recipe catalogue over the same decisions. Does not search
+    /// and does not rewrite `strategy_choice`.
+    fn evaluate_strategy_library(
+        &self,
+        input: &ProjectInput,
+    ) -> crate::strategy_library::StrategyLibraryReply;
     /// Allocate a fresh resumable search over the immutable context.
     fn start(&self, input: &ProjectInput, catalog: &CatalogContent) -> Box<dyn SearchSession>;
 }
@@ -295,6 +303,9 @@ pub enum Command {
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
+    /// Versioned strategy and recipe comparison for the activated project.
+    /// Does not start a search and does not publish a snapshot.
+    EvaluateStrategyLibrary {},
     /// Start one resumable bounded search over the activated immutable
     /// context. Any existing search handle is disposed first; the returned id
     /// is `search-1`, `search-2`, … monotonically per runtime.
@@ -411,6 +422,11 @@ pub enum Event {
     /// supported strategy, in supported-strategy order.
     StrategiesProposed {
         decisions: Vec<StrategyDecision>,
+    },
+    /// Result of `evaluateStrategyLibrary`. Not part of a PlanSnapshot hash.
+    /// `strategyChanged` is false: the pinned strategy is the input's choice.
+    StrategyLibraryEvaluated {
+        reply: crate::strategy_library::StrategyLibraryReply,
     },
     /// Result of `projectSpatialView`: the additive ephemeral read model over
     /// the validated source. ProjectionVersion=1 versions this DTO
@@ -2494,6 +2510,17 @@ impl Runtime {
                 };
                 Event::StrategiesProposed {
                     decisions: engine.propose_strategies(input),
+                }
+            }
+            Command::EvaluateStrategyLibrary { .. } => {
+                let (Some(input), Some(_)) = (&self.active_input, &self.active_catalog) else {
+                    return failure("invalid_state");
+                };
+                let Some(engine) = &self.engine else {
+                    return failure("operation_not_supported");
+                };
+                Event::StrategyLibraryEvaluated {
+                    reply: engine.evaluate_strategy_library(input),
                 }
             }
             Command::StartSearch { mode } => {

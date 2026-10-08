@@ -164,4 +164,8 @@ Profile `default` version 1 keeps `RunEval` priced `64+p²+4a` around one `evalu
 
 ## 8. z-product-contract strategy comparison
 
-Adopted by [Dz-product-contract](../design/DECISIONS.md). The five `Strategy` values and `proposeStrategies` stay the strategy canonical. Ranked alternatives remain `PlanSnapshot` values from one input and budget. This node does not add a Pareto score, a recipe library, or a solver version. Those gaps belong to `z-strategy-library` and `z-pareto-comparison`. A ranking change that moves snapshot digests must name the affected `runSearch` fixtures. The eight current search fixtures stay byte-identical.
+Adopted by [Dz-product-contract](../design/DECISIONS.md). The five `Strategy` values and `proposeStrategies` stay the strategy canonical. Ranked alternatives remain `PlanSnapshot` values from one input and budget. This section does not add a Pareto score or a solver version. A ranking change that moves snapshot digests must name the affected `runSearch` fixtures. The eight current search fixtures stay byte-identical.
+
+## 9. z-strategy-library recipes
+
+Adopted by [Dz-strategy-library](../design/DECISIONS.md). The recipe catalogue is a read model beside search. `evaluateStrategyLibrary` asks the solver for the existing `propose` decisions, then `strategy_library::evaluate` attaches primitives, retrievals, access codes, and the unassigned partition. It does not change `decision.rs`, physical dedup, or snapshot ranking. A wording-only alias is dropped. A different access code stays. The pinned strategy is the saved `strategy_choice`. Pareto scoring remains `z-pareto-comparison`.

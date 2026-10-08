@@ -43,6 +43,7 @@ const expected = {
   reviewCatalogImport: 'catalogImportReviewed',
   quoteOfferBundle: 'offerBundleQuoted',
   proposeStrategies: 'strategiesProposed',
+  evaluateStrategyLibrary: 'strategyLibraryEvaluated',
   startSearch: 'searchStarted',
   disposeProject: 'projectDisposed',
 } as const;
@@ -76,6 +77,7 @@ export const WORKER_CAPABILITIES = [
   'quoteOfferBundle',
   'disposeProject',
   'proposeStrategies',
+  'evaluateStrategyLibrary',
   'startSearch',
   'stepSearch',
   'cancelSearch',
