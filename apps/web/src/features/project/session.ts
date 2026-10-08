@@ -16,6 +16,7 @@ import type {
   SearchTermination,
   Strategy,
   StrategyDecision,
+  StrategyLibraryReply,
   Unit,
   ValidationReport,
   VerifiableRecordDto,
@@ -33,6 +34,11 @@ import {
   type ProjectRepository,
 } from '../../persistence/repository';
 import { StaleRequest, WORKER_BUILD_ID, WORKER_RULE_VERSION, type ProbeClient } from '../../worker/client';
+import {
+  evaluateLibraryOnce,
+  forgetLibraryEvaluation,
+  libraryKey,
+} from '../strategy/controller';
 import {
   SearchPump,
   WorkerController,
@@ -133,6 +139,10 @@ export interface EditState {
 export interface PlanState {
   strategies: StrategyDecision[] | null;
   strategiesError: string | null;
+  /** Rust recipe comparison for the saved input. Not a snapshot field. */
+  strategyLibrary: StrategyLibraryReply | null;
+  strategyLibraryError: string | null;
+  strategyLibraryState: 'idle' | 'pending' | 'ready' | 'empty' | 'error';
   search: SearchState;
   progress: SearchCounters | null;
   searchError: string | null;
@@ -294,6 +304,9 @@ export class ProjectSession {
       plan: {
         strategies: null,
         strategiesError: null,
+        strategyLibrary: null,
+        strategyLibraryError: null,
+        strategyLibraryState: 'idle',
         search: 'idle',
         progress: null,
         searchError: null,
@@ -1006,6 +1019,8 @@ export class ProjectSession {
 
   /** Rust strategy proposals for the activated input; display only. */
   private async refreshStrategies(client: ProbeClient): Promise<void> {
+    const digest = this.state.inputDigest;
+    const strategy = this.state.normalizedInput?.strategyChoice ?? null;
     try {
       const reply = await client.request({ kind: 'proposeStrategies' });
       if (this.closed || reply.kind !== 'strategiesProposed') return;
@@ -1015,8 +1030,58 @@ export class ProjectSession {
       this.patchPlan({
         strategies: null,
         strategiesError: error instanceof Error ? error.message : String(error),
+        strategyLibrary: null,
+        strategyLibraryError: error instanceof Error ? error.message : String(error),
+        strategyLibraryState: 'error',
+      });
+      return;
+    }
+    if (!digest || !strategy) {
+      this.patchPlan({
+        strategyLibrary: null,
+        strategyLibraryError: null,
+        strategyLibraryState: 'empty',
+      });
+      return;
+    }
+    const key = libraryKey(digest, strategy);
+    this.patchPlan({ strategyLibraryState: 'pending', strategyLibraryError: null });
+    try {
+      const library = await evaluateLibraryOnce(key, async () => {
+        const event = await client.request({ kind: 'evaluateStrategyLibrary' });
+        if (event.kind !== 'strategyLibraryEvaluated') throw new Error('unexpected_worker_event');
+        return event.reply;
+      });
+      if (this.closed) return;
+      if (this.state.inputDigest !== digest || this.state.normalizedInput?.strategyChoice !== strategy) {
+        return;
+      }
+      this.patchPlan({
+        strategyLibrary: library,
+        strategyLibraryError: null,
+        strategyLibraryState: library.recipes.length === 0 ? 'empty' : 'ready',
+      });
+    } catch (error) {
+      if (this.closed || error instanceof StaleRequest) return;
+      if (this.state.inputDigest !== digest || this.state.normalizedInput?.strategyChoice !== strategy) {
+        return;
+      }
+      this.patchPlan({
+        strategyLibrary: null,
+        strategyLibraryError: error instanceof Error ? error.message : String(error),
+        strategyLibraryState: 'error',
       });
     }
+  }
+  /** One new comparison after a person asks. Does not retry by itself. */
+  retryStrategyLibrary(): void {
+    const digest = this.state.inputDigest;
+    const strategy = this.state.normalizedInput?.strategyChoice;
+    const client = this.controller.current;
+    if (!digest || !strategy || !client || this.closed) return;
+    forgetLibraryEvaluation(libraryKey(digest, strategy));
+    this.patchPlan({ strategyLibraryState: 'pending', strategyLibraryError: null });
+    void this.refreshStrategies(client);
   }
   /** Change the strategy on the raw draft; the input commit re-evaluates. */
   setStrategy(strategy: Strategy): void {

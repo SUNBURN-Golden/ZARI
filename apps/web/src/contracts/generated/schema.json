@@ -1549,6 +1549,20 @@
         },
         {
           "additionalProperties": false,
+          "description": "Versioned strategy and recipe comparison for the activated project.\nDoes not start a search and does not publish a snapshot.",
+          "properties": {
+            "kind": {
+              "const": "evaluateStrategyLibrary",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Start one resumable bounded search over the activated immutable\ncontext. Any existing search handle is disposed first; the returned id\nis `search-1`, `search-2`, … monotonically per runtime.",
           "properties": {
             "kind": {
@@ -2991,6 +3005,24 @@
           "required": [
             "kind",
             "decisions"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `evaluateStrategyLibrary`. Not part of a PlanSnapshot hash.\n`strategyChanged` is false: the pinned strategy is the input's choice.",
+          "properties": {
+            "kind": {
+              "const": "strategyLibraryEvaluated",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/StrategyLibraryReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
           ],
           "type": "object"
         },
@@ -6438,6 +6470,223 @@
       "minimum": 1,
       "title": "LengthMm",
       "type": "integer"
+    },
+    "LibraryAlternative": {
+      "additionalProperties": false,
+      "properties": {
+        "accessCode": {
+          "type": "string"
+        },
+        "factRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "messageKeys": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ruleIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "strategy": {
+          "$ref": "#/definitions/Strategy"
+        }
+      },
+      "required": [
+        "strategy",
+        "ruleIds",
+        "factRefs",
+        "messageKeys",
+        "accessCode"
+      ],
+      "title": "LibraryAlternative",
+      "type": "object"
+    },
+    "LibraryQuantity": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "count": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "count"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/UnknownReason"
+            },
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reasonCode": {
+              "type": "string"
+            },
+            "state": {
+              "const": "notApplicable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "reasonCode"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "LibraryQuantity"
+    },
+    "LibraryRecipe": {
+      "additionalProperties": false,
+      "properties": {
+        "accessCode": {
+          "type": "string"
+        },
+        "factRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "groupIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "primitives": {
+          "items": {
+            "$ref": "#/definitions/StoragePrimitive"
+          },
+          "type": "array"
+        },
+        "retrievals": {
+          "items": {
+            "$ref": "#/definitions/RetrievalMode"
+          },
+          "type": "array"
+        },
+        "ruleIds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "selected": {
+          "type": "boolean"
+        },
+        "strategy": {
+          "$ref": "#/definitions/Strategy"
+        },
+        "version": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "zoneIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "strategy",
+        "primitives",
+        "retrievals",
+        "groupIds",
+        "zoneIds",
+        "accessCode",
+        "ruleIds",
+        "factRefs",
+        "selected"
+      ],
+      "title": "LibraryRecipe",
+      "type": "object"
+    },
+    "LibraryStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "factRefs": {
+          "items": {
+            "$ref": "#/definitions/FieldRef"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "factRefs",
+        "parameters"
+      ],
+      "title": "LibraryStatement",
+      "type": "object"
+    },
+    "LibraryUnassigned": {
+      "additionalProperties": false,
+      "properties": {
+        "itemId": {
+          "$ref": "#/definitions/Id"
+        },
+        "quantity": {
+          "$ref": "#/definitions/LibraryQuantity"
+        },
+        "reasonCode": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "itemId",
+        "quantity",
+        "reasonCode"
+      ],
+      "title": "LibraryUnassigned",
+      "type": "object"
     },
     "LidState": {
       "enum": [
@@ -11986,6 +12235,82 @@
         "assumptions"
       ],
       "title": "StrategyDecision",
+      "type": "object"
+    },
+    "StrategyLibraryReply": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "items": {
+            "$ref": "#/definitions/LibraryAlternative"
+          },
+          "type": "array"
+        },
+        "assumptions": {
+          "items": {
+            "$ref": "#/definitions/Condition"
+          },
+          "type": "array"
+        },
+        "candidateItemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "droppedWordingDuplicates": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hardConstraints": {
+          "items": {
+            "$ref": "#/definitions/LibraryStatement"
+          },
+          "type": "array"
+        },
+        "libraryVersion": {
+          "type": "string"
+        },
+        "pinnedStrategy": {
+          "$ref": "#/definitions/Strategy"
+        },
+        "recipes": {
+          "items": {
+            "$ref": "#/definitions/LibraryRecipe"
+          },
+          "type": "array"
+        },
+        "strategyChanged": {
+          "type": "boolean"
+        },
+        "unassigned": {
+          "items": {
+            "$ref": "#/definitions/LibraryUnassigned"
+          },
+          "type": "array"
+        },
+        "visualPreferences": {
+          "items": {
+            "$ref": "#/definitions/LibraryStatement"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "libraryVersion",
+        "pinnedStrategy",
+        "strategyChanged",
+        "recipes",
+        "alternatives",
+        "droppedWordingDuplicates",
+        "hardConstraints",
+        "visualPreferences",
+        "assumptions",
+        "candidateItemIds",
+        "unassigned"
+      ],
+      "title": "StrategyLibraryReply",
       "type": "object"
     },
     "SubjectKind": {

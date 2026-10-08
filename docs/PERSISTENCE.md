@@ -259,3 +259,7 @@ Adopted by [Dz-catalog-provenance](../design/DECISIONS.md). There is no new stor
 ## 14. z-offer-bundles quote
 
 Adopted by [Dz-offer-bundles](../design/DECISIONS.md). There is no new store and no dbVersion change. The quote reply is not a row, not an export field, and not part of a PlanSnapshot hash. A preview writes nothing. Applying a sold-out replacement persists only through the existing layout-edit snapshot. exportVersion 1 is unchanged.
+
+## 15. z-strategy-library comparison
+
+Adopted by [Dz-strategy-library](../design/DECISIONS.md). There is no new store and no dbVersion change. The library reply is not a row, not an export field, and not part of a PlanSnapshot hash. The catalogue is built-in data. Saving a strategy still persists only through the existing project input. exportVersion 1 is unchanged.

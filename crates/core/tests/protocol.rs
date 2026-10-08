@@ -467,6 +467,7 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             "quoteOfferBundle",
             "disposeProject",
             "proposeStrategies",
+            "evaluateStrategyLibrary",
             "startSearch",
             "stepSearch",
             "cancelSearch"
