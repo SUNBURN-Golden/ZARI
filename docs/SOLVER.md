@@ -168,4 +168,8 @@ Adopted by [Dz-product-contract](../design/DECISIONS.md). The five `Strategy` va
 
 ## 9. z-strategy-library recipes
 
-Adopted by [Dz-strategy-library](../design/DECISIONS.md). The recipe catalogue is a read model beside search. `evaluateStrategyLibrary` asks the solver for the existing `propose` decisions, then `strategy_library::evaluate` attaches primitives, retrievals, access codes, and the unassigned partition. It does not change `decision.rs`, physical dedup, or snapshot ranking. A wording-only alias is dropped. A different access code stays. The pinned strategy is the saved `strategy_choice`. Pareto scoring remains `z-pareto-comparison`.
+Adopted by [Dz-strategy-library](../design/DECISIONS.md). The recipe catalogue is a read model beside search. `evaluateStrategyLibrary` asks the solver for the existing `propose` decisions, then `strategy_library::evaluate` attaches primitives, retrievals, access codes, and the unassigned partition. It does not change `decision.rs`, physical dedup, or snapshot ranking. A wording-only alias is dropped. A different access code stays. The pinned strategy is the saved `strategy_choice`. The Pareto read model is §10 and does not change this recipe catalogue.
+
+## 10. z-pareto-comparison read model
+
+Adopted by [Dz-pareto-comparison](../design/DECISIONS.md). `pareto::compare` reads snapshots that already exist. It does not change `rank_key`, `decision.rs`, or the bytes of a published snapshot. A hard failure is excluded before dominance, including when its purchase cost is lower. Unknown money, unknown preceding moves, and unknown quantities do not compare as zero. Ties stay on the front. Display order is deterministic. `global_optimum` is false. `budgetExhausted` is `budgetLimited`. A goal, seed, budget, or input digest that does not match the saved input returns an empty front and `recalculation_required`.

@@ -1563,6 +1563,31 @@
         },
         {
           "additionalProperties": false,
+          "description": "Pareto read model over snapshots from the same input, budget, and seed.\nDoes not search, rank, or publish a PlanSnapshot.",
+          "properties": {
+            "alternatives": {
+              "items": {
+                "$ref": "#/definitions/PlanSnapshot"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "comparePareto",
+              "type": "string"
+            },
+            "termination": {
+              "$ref": "#/definitions/SearchTermination"
+            }
+          },
+          "required": [
+            "kind",
+            "termination",
+            "alternatives"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Start one resumable bounded search over the activated immutable\ncontext. Any existing search handle is disposed first; the returned id\nis `search-1`, `search-2`, … monotonically per runtime.",
           "properties": {
             "kind": {
@@ -3018,6 +3043,24 @@
             },
             "reply": {
               "$ref": "#/definitions/StrategyLibraryReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `comparePareto`. Not part of a PlanSnapshot hash.\n`globalOptimum` is false, including when the budget is exhausted.",
+          "properties": {
+            "kind": {
+              "const": "paretoCompared",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/ParetoReply"
             }
           },
           "required": [
@@ -7808,6 +7851,376 @@
         }
       ],
       "title": "ParentRef"
+    },
+    "ParetoCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "status",
+        "reasonCode"
+      ],
+      "title": "ParetoCondition",
+      "type": "object"
+    },
+    "ParetoCount": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "value": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ParetoCount"
+    },
+    "ParetoDifference": {
+      "additionalProperties": false,
+      "properties": {
+        "precedingMoves": {
+          "type": "boolean"
+        },
+        "purchase": {
+          "type": "boolean"
+        },
+        "reuse": {
+          "type": "boolean"
+        },
+        "unassigned": {
+          "type": "boolean"
+        },
+        "unknownConditions": {
+          "type": "boolean"
+        },
+        "unknownQuantity": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "purchase",
+        "reuse",
+        "precedingMoves",
+        "unassigned",
+        "unknownQuantity",
+        "unknownConditions"
+      ],
+      "title": "ParetoDifference",
+      "type": "object"
+    },
+    "ParetoExclusion": {
+      "additionalProperties": false,
+      "properties": {
+        "candidateId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/definitions/ParetoCondition"
+          },
+          "type": "array"
+        },
+        "purchase": {
+          "$ref": "#/definitions/ParetoMoney"
+        },
+        "reasonCode": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidateId",
+        "reasonCode",
+        "purchase",
+        "conditions"
+      ],
+      "title": "ParetoExclusion",
+      "type": "object"
+    },
+    "ParetoItem": {
+      "additionalProperties": false,
+      "properties": {
+        "itemId": {
+          "$ref": "#/definitions/Id"
+        },
+        "quantity": {
+          "$ref": "#/definitions/ParetoItemQuantity"
+        }
+      },
+      "required": [
+        "itemId",
+        "quantity"
+      ],
+      "title": "ParetoItem",
+      "type": "object"
+    },
+    "ParetoItemQuantity": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "count": {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "known",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "count"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "unknownQuantity",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ParetoItemQuantity"
+    },
+    "ParetoMoney": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "$ref": "#/definitions/MoneyKrw"
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "amount"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "noPurchase",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ParetoMoney"
+    },
+    "ParetoOptimality": {
+      "enum": [
+        "budgetLimited",
+        "scopeCompared",
+        "cancelled",
+        "interrupted"
+      ],
+      "title": "ParetoOptimality",
+      "type": "string"
+    },
+    "ParetoReply": {
+      "additionalProperties": false,
+      "properties": {
+        "budget": {
+          "$ref": "#/definitions/SearchBudget"
+        },
+        "contextMatch": {
+          "type": "boolean"
+        },
+        "dominated": {
+          "items": {
+            "$ref": "#/definitions/ParetoRow"
+          },
+          "type": "array"
+        },
+        "excluded": {
+          "items": {
+            "$ref": "#/definitions/ParetoExclusion"
+          },
+          "type": "array"
+        },
+        "front": {
+          "items": {
+            "$ref": "#/definitions/ParetoRow"
+          },
+          "type": "array"
+        },
+        "globalOptimum": {
+          "description": "Always false. A finished budget is not a global optimum.",
+          "type": "boolean"
+        },
+        "goal": {
+          "$ref": "#/definitions/Strategy"
+        },
+        "inputDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "optimality": {
+          "$ref": "#/definitions/ParetoOptimality"
+        },
+        "readModelVersion": {
+          "type": "string"
+        },
+        "recalculationRequired": {
+          "type": "boolean"
+        },
+        "seed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "termination": {
+          "$ref": "#/definitions/SearchTermination"
+        }
+      },
+      "required": [
+        "readModelVersion",
+        "goal",
+        "inputDigest",
+        "seed",
+        "budget",
+        "termination",
+        "optimality",
+        "globalOptimum",
+        "contextMatch",
+        "recalculationRequired",
+        "front",
+        "dominated",
+        "excluded"
+      ],
+      "title": "ParetoReply",
+      "type": "object"
+    },
+    "ParetoRow": {
+      "additionalProperties": false,
+      "properties": {
+        "candidateId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/definitions/ParetoCondition"
+          },
+          "type": "array"
+        },
+        "difference": {
+          "$ref": "#/definitions/ParetoDifference"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/definitions/ParetoItem"
+          },
+          "type": "array"
+        },
+        "precedingMoves": {
+          "$ref": "#/definitions/ParetoCount"
+        },
+        "purchase": {
+          "$ref": "#/definitions/ParetoMoney"
+        },
+        "reuse": {
+          "$ref": "#/definitions/ParetoCount"
+        },
+        "unassignedInstances": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unknownConditions": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unknownQuantityItems": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "candidateId",
+        "purchase",
+        "reuse",
+        "precedingMoves",
+        "unassignedInstances",
+        "unknownQuantityItems",
+        "unknownConditions",
+        "items",
+        "conditions",
+        "difference"
+      ],
+      "title": "ParetoRow",
+      "type": "object"
     },
     "PhysicalAssurance": {
       "enum": [

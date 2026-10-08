@@ -346,3 +346,7 @@ Adopted by [Dz-offer-bundles](../design/DECISIONS.md). The plan screen gains one
 ## 17. z-strategy-library comparison
 
 Adopted by [Dz-strategy-library](../design/DECISIONS.md). The plan screen gains one comparison panel under the existing strategy radios. It uses the project Worker. One saved input digest and strategy sends `evaluateStrategyLibrary` once. A radio change is a draft until `이 선택 저장` commits that input and activates it again. Unknown quantity is the word 미확인, never 0. Pending, ready, empty, and error stay visible. Enter expands and collapses a recipe's rule ids. Colors reuse the panel text and warning tokens. No new route and no approved baseline.
+
+## 18. z-pareto-comparison
+
+Adopted by [Dz-pareto-comparison](../design/DECISIONS.md). The plan screen gains one comparison after the alternative cards. It uses the project Worker. One saved input, goal, termination, and snapshot list sends `comparePareto` once. A radio change is a draft until `이 목표로 다시 계산` commits that goal and starts the existing search. Purchase, reuse, preceding moves, unassigned, and unknown are the Rust values. Unknown money is 미확인, never ₩0. No-purchase is 구매 없음. A difference cell says 다름. Pending, ready, empty, and error stay visible. Enter expands condition detail. The table scrolls inside the page at 390px. Colors reuse `primary-on-subtle` and `warning-on-soft`. No new route and no approved baseline.

@@ -44,6 +44,7 @@ const expected = {
   quoteOfferBundle: 'offerBundleQuoted',
   proposeStrategies: 'strategiesProposed',
   evaluateStrategyLibrary: 'strategyLibraryEvaluated',
+  comparePareto: 'paretoCompared',
   startSearch: 'searchStarted',
   disposeProject: 'projectDisposed',
 } as const;
@@ -81,6 +82,7 @@ export const WORKER_CAPABILITIES = [
   'startSearch',
   'stepSearch',
   'cancelSearch',
+  'comparePareto',
 ] as const;
 function capabilitiesMatch(actual: readonly string[]): boolean {
   return (

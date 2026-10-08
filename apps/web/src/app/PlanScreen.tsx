@@ -55,6 +55,7 @@ import {
 } from '../features/plan/view';
 import { bomCsvRows, toCsv } from '../features/plan/csv';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
+import { ParetoPanel } from '../features/pareto/ParetoPanel';
 import { StrategyLibraryPanel } from '../features/strategy/StrategyLibraryPanel';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import { Shell } from './ProjectScreen';
@@ -1112,6 +1113,19 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           )}
         </section>
       )}
+
+      <ParetoPanel
+        state={plan.paretoState}
+        reply={plan.pareto}
+        error={plan.paretoError}
+        draftStrategy={state.form?.strategyChoice ?? null}
+        savedStrategy={state.normalizedInput?.strategyChoice ?? null}
+        labels={new Map((state.form?.items ?? []).map((item) => [item.id, item.label]))}
+        selectedId={plan.selectedId}
+        onSelect={(id) => session.selectAlternative(id)}
+        onRecalculate={() => session.recalculatePareto()}
+        onRetry={() => session.retryPareto()}
+      />
 
       {plan.edit.head && (
         <section

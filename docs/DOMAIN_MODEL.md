@@ -581,3 +581,7 @@ Adopted by [Dz-offer-bundles](../design/DECISIONS.md). Normative detail is [docs
 ## 16. z-strategy-library recipes
 
 Adopted by [Dz-strategy-library](../design/DECISIONS.md). Normative detail is [docs/adr/SP-z-strategy-library.md](adr/SP-z-strategy-library.md). `Strategy` and `StrategyDecision` stay the canonical rules. The library reply is not a snapshot field. Catalogue version `zari-strategy-library-1` and recipe version 1 name the built-in rows. Each recipe carries primitives, the groups and zones copied from that strategy's decision, and one access code. Hard constraints and visual preferences are separate lists. Unknown quantity has no count. An item is either a candidate or unassigned, not both. Candidates are not placements. Color and material do not change unassigned quantities.
+
+## 17. z-pareto-comparison read model
+
+Adopted by [Dz-pareto-comparison](../design/DECISIONS.md). Normative detail is [docs/adr/SP-z-pareto-comparison.md](adr/SP-z-pareto-comparison.md). `PlanSnapshot` stays the published plan. The Pareto reply is not a snapshot field. Version `zari-pareto-1` names the read model. Axes are unassigned instances, unknown-quantity items, unknown checks, preceding moves, purchase, and reuse. Unknown does not become zero. No-purchase is distinct from unknown and from a known zero. A hard failure is excluded before dominance. `global_optimum` is false.

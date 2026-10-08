@@ -32,6 +32,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-strategy-library 채택 (2026-10-07).** 이 노트는 z-strategy-library만 다룬다. 같은 원문이다. 기록은 [Dz-strategy-library](../design/DECISIONS.md)와 [docs/adr/SP-z-strategy-library.md](adr/SP-z-strategy-library.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 문장만 같은 대안은 하나고, 저장하지 않은 전략은 핀이 아니며, 배치할 수 없는 물건은 수량과 함께 미배정에 남는다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-pareto-comparison 채택 (2026-10-07).** 이 노트는 z-pareto-comparison만 다룬다. 같은 원문이다. 기록은 [Dz-pareto-comparison](../design/DECISIONS.md)와 [docs/adr/SP-z-pareto-comparison.md](adr/SP-z-pareto-comparison.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 같은 입력과 예산의 차이는 Rust 응답이고, 미확인은 0이 아니며, 다 쓴 탐색 예산은 전역 최적해가 아니다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

@@ -470,7 +470,8 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             "evaluateStrategyLibrary",
             "startSearch",
             "stepSearch",
-            "cancelSearch"
+            "cancelSearch",
+            "comparePareto"
         ])
     );
     assert!(

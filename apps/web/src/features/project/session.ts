@@ -14,6 +14,7 @@ import type {
   RejectedCandidate,
   SearchCounters,
   SearchTermination,
+  ParetoReply,
   Strategy,
   StrategyDecision,
   StrategyLibraryReply,
@@ -39,6 +40,11 @@ import {
   forgetLibraryEvaluation,
   libraryKey,
 } from '../strategy/controller';
+import {
+  compareParetoOnce,
+  forgetParetoComparison,
+  paretoKey,
+} from '../pareto/controller';
 import {
   SearchPump,
   WorkerController,
@@ -143,6 +149,10 @@ export interface PlanState {
   strategyLibrary: StrategyLibraryReply | null;
   strategyLibraryError: string | null;
   strategyLibraryState: 'idle' | 'pending' | 'ready' | 'empty' | 'error';
+  /** Rust Pareto reply for the last completed search. Not a snapshot field. */
+  pareto: ParetoReply | null;
+  paretoError: string | null;
+  paretoState: 'idle' | 'pending' | 'ready' | 'empty' | 'error';
   search: SearchState;
   progress: SearchCounters | null;
   searchError: string | null;
@@ -266,6 +276,13 @@ export class ProjectSession {
   private nextFactsCache = new Map<string, NextFactsReply>();
   private nextFactsPrimed = false;
   private nextFactsAwaitingRecovery = false;
+  /** Drops a Pareto reply that belongs to an older search or input revision. */
+  private paretoEpoch = 0;
+  /**
+   * Set only by the explicit goal recalculation. Consumed by the next
+   * non-autosave reconcile. A search starts only after that commit installs.
+   */
+  private paretoFollowCommit = false;
   /**
    * Bumped when the accepted binding is replaced or the session reloads.
    * An in-flight progress reply captured against an older epoch is dropped.
@@ -307,6 +324,9 @@ export class ProjectSession {
         strategyLibrary: null,
         strategyLibraryError: null,
         strategyLibraryState: 'idle',
+        pareto: null,
+        paretoError: null,
+        paretoState: 'idle',
         search: 'idle',
         progress: null,
         searchError: null,
@@ -900,6 +920,8 @@ export class ProjectSession {
     this.reconcileQueue = this.reconcileQueue.then(() => this.reconcile(opts));
   }
   private async reconcile(opts: { skipWriteIfSame: boolean }): Promise<void> {
+    const followPareto = opts.skipWriteIfSame ? false : this.paretoFollowCommit;
+    if (!opts.skipWriteIfSame) this.paretoFollowCommit = false;
     if (!this.form || this.closed || this.state.status !== 'ready') return;
     if (this.autosaveTimer) {
       clearTimeout(this.autosaveTimer);
@@ -1010,8 +1032,18 @@ export class ProjectSession {
       // A committed input change ends the layout-edit chain too — the chain
       // is bound to the old input digest and can never ride across.
       this.clearEditChain();
+      this.paretoEpoch += 1;
+      this.patchPlan({ pareto: null, paretoError: null, paretoState: 'idle' });
       const catalog = await this.repo.getCatalog(normalized.catalogPin.catalogDigest).catch(() => null);
       await this.installContext(client, normalized, catalog);
+    }
+    if (
+      followPareto &&
+      diagnostics.length === 0 &&
+      this.state.context === 'installed' &&
+      !this.closed
+    ) {
+      this.startSearch();
     }
   }
 
@@ -1082,6 +1114,83 @@ export class ProjectSession {
     forgetLibraryEvaluation(libraryKey(digest, strategy));
     this.patchPlan({ strategyLibraryState: 'pending', strategyLibraryError: null });
     void this.refreshStrategies(client);
+  }
+  private paretoCacheKey(): string | null {
+    const digest = this.state.plan.resultInputDigest;
+    const strategy = this.state.normalizedInput?.strategyChoice ?? null;
+    const termination = this.state.plan.termination;
+    if (!digest || !strategy || !termination) return null;
+    return paretoKey(
+      digest,
+      strategy,
+      termination,
+      this.state.plan.alternatives.map((snapshot) => snapshot.planSnapshotId),
+    );
+  }
+  /** One Pareto read for the search that just finished. Does not publish a snapshot. */
+  private async refreshPareto(client: ProbeClient): Promise<void> {
+    const digest = this.state.plan.resultInputDigest;
+    const strategy = this.state.normalizedInput?.strategyChoice ?? null;
+    const termination = this.state.plan.termination;
+    const alternatives = this.state.plan.alternatives;
+    const epoch = this.paretoEpoch;
+    if (!digest || !strategy || !termination || this.state.plan.search !== 'done') {
+      return;
+    }
+    const key = paretoKey(
+      digest,
+      strategy,
+      termination,
+      alternatives.map((snapshot) => snapshot.planSnapshotId),
+    );
+    this.patchPlan({ paretoState: 'pending', paretoError: null });
+    try {
+      const reply = await compareParetoOnce(key, async () => {
+        const event = await client.request({
+          kind: 'comparePareto',
+          termination,
+          alternatives,
+        });
+        if (event.kind !== 'paretoCompared') throw new Error('unexpected_worker_event');
+        return event.reply;
+      });
+      if (this.closed || epoch !== this.paretoEpoch) return;
+      if (this.state.plan.search !== 'done' || this.state.plan.resultInputDigest !== digest) return;
+      if (this.state.plan.termination !== termination) return;
+      this.patchPlan({ pareto: reply, paretoError: null, paretoState: 'ready' });
+    } catch (error) {
+      if (this.closed || error instanceof StaleRequest || epoch !== this.paretoEpoch) return;
+      if (this.state.plan.search !== 'done' || this.state.plan.resultInputDigest !== digest) return;
+      this.patchPlan({
+        pareto: null,
+        paretoError: error instanceof Error ? error.message : String(error),
+        paretoState: 'error',
+      });
+    }
+  }
+  /** One new comparison after a person asks. Does not retry by itself. */
+  retryPareto(): void {
+    const client = this.controller.current;
+    const key = this.paretoCacheKey();
+    if (!client || !key || this.closed || this.state.plan.search !== 'done') return;
+    forgetParetoComparison(key);
+    this.patchPlan({ paretoState: 'pending', paretoError: null });
+    void this.refreshPareto(client);
+  }
+  /**
+   * Recompute for a supported goal. A draft that is not the saved strategy
+   * is committed first. An ordinary commit does not start a search.
+   */
+  recalculatePareto(): void {
+    if (this.editLocked() || this.state.status !== 'ready' || this.closed) return;
+    const saved = this.state.normalizedInput?.strategyChoice ?? null;
+    const draft = this.form?.strategyChoice ?? null;
+    if (draft !== null && saved !== null && draft !== saved) {
+      this.paretoFollowCommit = true;
+      this.commit();
+      return;
+    }
+    this.startSearch();
   }
   /** Change the strategy on the raw draft; the input commit re-evaluates. */
   setStrategy(strategy: Strategy): void {
@@ -1538,12 +1647,16 @@ export class ProjectSession {
       this.state.inputDigest !== resultInputDigest ||
       (this.state.normalizedInput?.catalogPin.catalogDigest ?? '') !==
         resultCatalogDigest;
+    this.paretoEpoch += 1;
     this.patchPlan({
       search: 'running',
       progress: null,
       searchError: null,
       termination: null,
       diagnostics: [],
+      pareto: null,
+      paretoError: null,
+      paretoState: 'idle',
     });
     const interrupt = (reason: string) => {
       this.pump?.dispose();
@@ -1581,6 +1694,7 @@ export class ProjectSession {
             selectedId: alternatives[0]?.planSnapshotId ?? null,
             resultInputDigest,
           });
+          void this.refreshPareto(client);
         },
         onCancelled: (event) => {
           if (!this.searchLeaseHolds(capturedLease, client)) return;
