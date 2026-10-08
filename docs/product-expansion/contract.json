@@ -1,0 +1,499 @@
+{
+  "contract": "zari-z-product-contract-1",
+  "task": "ZARI-z-product-contract",
+  "issue": 75,
+  "planCommit": "0847d1b065627938acfad3a941de79e357570e43",
+  "observedBase": "1bd3fde5bd9a625d02735d4de8609e97736db49d",
+  "engineOutput": false,
+  "contractChange": "NO",
+  "productionCodeChanged": false,
+  "fixtureBytesChanged": false,
+  "relabelsExistingIds": false,
+  "assertedFutureBuildId": null,
+  "reviewPassClaimed": false,
+  "stageSource": "docs/qualification/denominator.json",
+  "evidencePattern": "docs/evidence/ZARI-SPATIAL-{id}.md",
+  "versions": {
+    "buildId": "zari-domain-7",
+    "ruleVersion": "zari-domain-v2",
+    "solverVersionProfile1": "zari-solver-v1",
+    "solverVersionProfile2": "zari-solver-v2",
+    "readySolverVersion": "zari-solver-v2",
+    "schemaVersion": 1,
+    "canonicalVersion": 1,
+    "protocolVersion": 1,
+    "dbVersion": 2,
+    "exportVersion": 1,
+    "catalogSourceKinds": ["synthetic", "imported"],
+    "searchProfileDefaultForNewProject": { "id": "default", "version": 2 }
+  },
+  "baseCapabilities": [
+    "initialize",
+    "activateProject",
+    "normalizeInput(bootstrap)",
+    "normalizeInput(project)",
+    "evaluateProbe",
+    "verifyRecord",
+    "normalizeCatalogFields",
+    "validateCatalog",
+    "validateCandidate",
+    "evaluateLayoutEdit",
+    "projectSpatialView",
+    "queryNextFacts",
+    "queryActionEligibility",
+    "disposeProject"
+  ],
+  "searchCapabilities": [
+    "proposeStrategies",
+    "startSearch",
+    "stepSearch",
+    "cancelSearch"
+  ],
+  "chain": {
+    "input": "Rust normalizeInput produces ProjectInput and inputDigest",
+    "authority": "crates/core/src/finalize.rs evaluate_candidate",
+    "snapshot": "PlanSnapshot.planSnapshotId is snapshot_digest of SnapshotContent",
+    "bom": "SnapshotContent.bom",
+    "guide": "SnapshotContent.actions",
+    "drawing": "project_spatial_view on SpatialViewSource::Plan stamps the same planSnapshotId and inputDigest",
+    "traceFixture": "fixtures/domain/search-scope-complete.json",
+    "separateDocuments": false
+  },
+  "stages": [
+    {
+      "id": "001",
+      "group": "spatial",
+      "title": "공통 Rust 공간 투영과 기존 도면 좌표 정합",
+      "evidence": "docs/evidence/ZARI-SPATIAL-001.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "002",
+      "group": "spatial",
+      "title": "측정·선택·검사 작업대",
+      "evidence": "docs/evidence/ZARI-SPATIAL-002.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "003",
+      "group": "spatial",
+      "title": "평면 드래그와 동등한 숫자·키보드 편집",
+      "evidence": "docs/evidence/ZARI-SPATIAL-003.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "004",
+      "group": "spatial",
+      "title": "실행 단계 focus와 accepted-progress 정합",
+      "evidence": "docs/evidence/ZARI-SPATIAL-004.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "005",
+      "group": "spatial",
+      "title": "읽기 전용 구획 3D와 모든 뷰 선택 연동",
+      "evidence": "docs/evidence/ZARI-SPATIAL-005.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "006",
+      "group": "spatial",
+      "title": "다섯 기능의 통합 품질·오프라인·성능 측정",
+      "evidence": "docs/evidence/ZARI-SPATIAL-006.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "007",
+      "group": "spatial",
+      "title": "실제 화면 draft evidence와 승인 인계",
+      "evidence": "docs/evidence/ZARI-SPATIAL-007.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "008",
+      "group": "measurement",
+      "title": "측정 완성 ADR와 typed 입력·Worker 계약",
+      "evidence": "docs/evidence/ZARI-SPATIAL-008.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "009",
+      "group": "measurement",
+      "title": "오차·근거·v1 상세 사실 입력과 저장",
+      "evidence": "docs/evidence/ZARI-SPATIAL-009.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "010",
+      "group": "measurement",
+      "title": "Rust 다음 확인 사실 query와 입력 안내",
+      "evidence": "docs/evidence/ZARI-SPATIAL-010.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "011",
+      "group": "measurement",
+      "title": "후속 측정 통합 검증과 새 draft capture",
+      "evidence": "docs/evidence/ZARI-SPATIAL-011.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "012",
+      "group": "product",
+      "title": "행동·조건·버전·평가 계약",
+      "evidence": "docs/evidence/ZARI-SPATIAL-012.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "013",
+      "group": "product",
+      "title": "실행 가이드 DAG와 unknown 조건·진행 guard",
+      "evidence": "docs/evidence/ZARI-SPATIAL-013.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "014",
+      "group": "product",
+      "title": "취소 가능한 독립 평가와 원자적 발행",
+      "evidence": "docs/evidence/ZARI-SPATIAL-014.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "015",
+      "group": "product",
+      "title": "실측·offer·보유품·역사 계획·저장 복구 lifecycle",
+      "evidence": "docs/evidence/ZARI-SPATIAL-015.md",
+      "expansionOwns": false
+    },
+    {
+      "id": "016",
+      "group": "product",
+      "title": "전체 16단계 제품 qualification·새 화면·완료 인계",
+      "evidence": "docs/evidence/ZARI-SPATIAL-016.md",
+      "expansionOwns": false
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "owned",
+      "canonical": "OwnedContainer on ProjectInput, copied by value into the snapshot",
+      "sourceFile": "crates/core/src/catalog.rs",
+      "sourceMarker": "struct OwnedContainer",
+      "overlap": "quantity_owned and quantity_available are Fact values. Unknown is not zero. A library edit does not rewrite an old snapshot. Explicit apply copies into the project. Owned units are consumed once.",
+      "gap": "No purchase, return, move, or quantity-edit event log. Items are not owned-container lifecycle rows. Empty and in-use are not a separate state from quantity facts.",
+      "owner": "z-inventory-lifecycle",
+      "implementsNow": false
+    },
+    {
+      "id": "realProduct",
+      "canonical": "CatalogSnapshot digest, sourceKind synthetic or imported",
+      "sourceFile": "crates/core/src/catalog.rs",
+      "sourceMarker": "enum CatalogSourceKind",
+      "overlap": "Product, variant, and offer keep separate outer and inner facts and provenance. validateCatalog is the import boundary. Synthetic ids stay synthetic. An empty catalogue is origin empty-real and invents no product.",
+      "gap": "No verified source kind, no CSV row diagnostic workbench, and no photo byte as catalog truth.",
+      "owner": "z-catalog-provenance",
+      "implementsNow": false
+    },
+    {
+      "id": "strategyComparison",
+      "canonical": "Strategy and StrategyDecision from proposeStrategies, then ranked PlanSnapshot alternatives",
+      "sourceFile": "crates/core/src/strategy.rs",
+      "sourceMarker": "enum Strategy",
+      "overlap": "Five strategies carry rule ids and fact refs. Search publishes ranked alternatives from one input and budget. Layout equivalence is not a prose duplicate.",
+      "gap": "No Pareto read model of cost, reuse, prior moves, unassigned count, and unknown count. No user recipe library beyond the Recipe struct.",
+      "owner": "z-strategy-library",
+      "laterOwner": "z-pareto-comparison",
+      "implementsNow": false
+    },
+    {
+      "id": "export",
+      "canonical": "exportVersion 1 JSON envelope, Rust verifyRecord before an atomic import",
+      "sourceFile": "apps/web/src/persistence/export.ts",
+      "sourceMarker": "EXPORT_VERSION = 1",
+      "overlap": "Standard export names excluded photo bytes. Duplicate resets progress and does not reserve owned stock. Recovery export is labeled unvalidated.",
+      "gap": "No selectable attachment bundle, no zip, and no path-escape or compression-bomb rejection beyond the JSON bounds.",
+      "owner": "z-portable-project",
+      "implementsNow": false
+    },
+    {
+      "id": "reorganize",
+      "canonical": "A new PlanSnapshot only from evaluate_candidate after an explicit input or layout change",
+      "sourceFile": "crates/core/src/finalize.rs",
+      "sourceMarker": "fn evaluate_candidate",
+      "overlap": "Recompute allocates a new snapshot id. Progress does not move to that binding. Locked zones are already input constraints. A checkbox does not rewrite the old plan.",
+      "gap": "No pinned-placement incremental replan and no feedback loop that keeps the current plan while drafting the next one.",
+      "owner": "z-incremental-replan",
+      "laterOwner": "z-feedback-reorganize",
+      "implementsNow": false
+    }
+  ],
+  "authorities": {
+    "newDto": "This node adds no DTO. A later node adds a serialized field only as a Rust declaration, then generates the contract. Hand-edited generated files stay forbidden.",
+    "migration": "This node runs no schema migration and no dbVersion migration. schemaVersion stays 1 and dbVersion stays 2. A later shape change needs that node's own adopted record before the migration runs.",
+    "supportScope": "Storage primitives stay directPlacement, openBin, tray, and verticalFile. closedBin, stacking execution, checkout, and remote fetch stay unsupported.",
+    "measurement": "A user measurement is a Rust Fact. Unknown, known zero, and notApplicable stay distinct. VerificationStatus is not inferred from a checkbox or an import.",
+    "external": "Offer URL, price, inventory, shipping, and observedAt are observations. They do not set check status or Confirmed. Photo bytes stay out of the JSON export until a separate consent decision."
+  },
+  "userDecisions": [
+    {
+      "id": "account",
+      "status": "open",
+      "owner": "user",
+      "statement": "계정 로그인을 만들지 않는다."
+    },
+    {
+      "id": "checkout",
+      "status": "open",
+      "owner": "user",
+      "statement": "결제, 주문, 제휴를 적합성 판정에 연결하지 않는다."
+    },
+    {
+      "id": "cloud",
+      "status": "open",
+      "owner": "user",
+      "statement": "클라우드 동기화와 원격 카탈로그 fetch를 만들지 않는다."
+    },
+    {
+      "id": "photo-consent",
+      "status": "open",
+      "owner": "user",
+      "statement": "사진 바이트의 포함과 위치정보 삭제는 사용자의 별도 동의다. 이 노드는 JSON에서 사진을 빼 둔 기존 고지를 유지한다."
+    },
+    {
+      "id": "capture-acceptance",
+      "status": "open",
+      "owner": "user",
+      "statement": "화면 수용은 PENDING이다. 이 노드는 캡처를 만들지 않는다."
+    },
+    {
+      "id": "release",
+      "status": "open",
+      "owner": "user",
+      "statement": "출시는 NOT_AUTHORIZED다."
+    },
+    {
+      "id": "live-stock",
+      "status": "open",
+      "owner": "user",
+      "statement": "판매처의 현재 재고를 관측값 대신 쓰지 않는다."
+    },
+    {
+      "id": "safety-certification",
+      "status": "open",
+      "owner": "user",
+      "statement": "하중과 가구의 안전 인증을 하지 않는다."
+    },
+    {
+      "id": "physical-phone",
+      "status": "open",
+      "owner": "user",
+      "statement": "전화 실측은 UNQUALIFIED다."
+    },
+    {
+      "id": "discrete-gpu",
+      "status": "open",
+      "owner": "user",
+      "statement": "전용 GPU는 UNQUALIFIED다."
+    }
+  ],
+  "internalChoices": [
+    {
+      "id": "keep-sixteen-ids",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "001부터 016의 ID, 제목, 증거 경로를 유지한다."
+    },
+    {
+      "id": "no-version-bump",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "BUILD_ID, rule, solver, schema, canonical, protocol, db, export를 올리지 않는다."
+    },
+    {
+      "id": "reuse-owned-container",
+      "status": "adopted",
+      "owner": "z-inventory-lifecycle",
+      "statement": "보유 용기의 정본은 OwnedContainer다. 생활 이력은 그 노드가 추가한다."
+    },
+    {
+      "id": "reuse-catalog-snapshot",
+      "status": "adopted",
+      "owner": "z-catalog-provenance",
+      "statement": "실상품의 정본은 CatalogSnapshot이다. sourceKind는 synthetic과 imported다."
+    },
+    {
+      "id": "reuse-strategy-enum",
+      "status": "adopted",
+      "owner": "z-strategy-library",
+      "statement": "전략 정본은 Strategy와 StrategyDecision이다. Pareto 읽기 모델은 아직 없다."
+    },
+    {
+      "id": "reuse-export-v1",
+      "status": "adopted",
+      "owner": "z-portable-project",
+      "statement": "내보내기 정본은 exportVersion 1 JSON이다."
+    },
+    {
+      "id": "same-snapshot-chain",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "도면, BOM, 가이드는 한 PlanSnapshot이다."
+    },
+    {
+      "id": "unknown-stays-unknown",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "unknown을 pass나 0으로 올리지 않는다."
+    },
+    {
+      "id": "no-new-command",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "이 노드는 Command와 capability를 더하지 않는다."
+    },
+    {
+      "id": "no-migration",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "이 노드는 schema와 db 마이그레이션을 실행하지 않는다."
+    },
+    {
+      "id": "gaps-stay-with-later-nodes",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "빈칸의 생산 구현은 이름 붙은 z-노드에 둔다."
+    },
+    {
+      "id": "fixture-bytes-unchanged",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "기존 fixture 기대 바이트를 다시 쓰지 않는다."
+    },
+    {
+      "id": "oracles-unchanged",
+      "status": "adopted",
+      "owner": "z-product-contract",
+      "statement": "PC 오라클과 분모 문서를 다시 쓰지 않는다."
+    },
+    {
+      "id": "purchase-link-is-not-checkout",
+      "status": "adopted",
+      "owner": "z-purchase-handoff",
+      "statement": "링크 클릭을 결제로 기록하지 않는다. 그 화면은 이후 노드다."
+    }
+  ],
+  "fixtureImpact": [
+    {
+      "caseKind": "bootstrapProbe",
+      "count": 28,
+      "representative": "fixtures/bootstrap/unknown-pack.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": null,
+      "note": "Probe output is not a PlanSnapshot. Unknown pack stays null, not zero."
+    },
+    {
+      "caseKind": "layoutEdit",
+      "count": 6,
+      "representative": "fixtures/domain/edit-move-permitted.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-incremental-replan",
+      "note": "A pin that changes snapshot digests belongs to the replan node."
+    },
+    {
+      "caseKind": "catalogFields",
+      "count": 4,
+      "representative": "fixtures/domain/catalog-fields-unknown.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-catalog-provenance",
+      "note": "Unknown catalog fields stay unknown."
+    },
+    {
+      "caseKind": "catalogImport",
+      "count": 4,
+      "representative": "fixtures/domain/catalog-import-valid.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-catalog-provenance",
+      "note": "Import validation stays validateCatalog."
+    },
+    {
+      "caseKind": "projectNormalize",
+      "count": 30,
+      "representative": "fixtures/domain/project-unknown-quantity-pass.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-inventory-lifecycle",
+      "note": "Item quantity unknown stays notMeasured, not zero."
+    },
+    {
+      "caseKind": "recordVerify",
+      "count": 9,
+      "representative": "fixtures/domain/record-snapshot-verified.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-portable-project",
+      "note": "Historical snapshot bytes stay verifiable and are not rewritten."
+    },
+    {
+      "caseKind": "candidateValidate",
+      "count": 22,
+      "representative": "fixtures/domain/candidate-owned-overuse.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-inventory-lifecycle",
+      "note": "Owned overuse stays a failed candidate."
+    },
+    {
+      "caseKind": "proposeStrategies",
+      "count": 1,
+      "representative": "fixtures/domain/strategies-proposed.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-strategy-library",
+      "note": "Strategy order stays the supported-strategy order."
+    },
+    {
+      "caseKind": "runSearch",
+      "count": 8,
+      "representative": "fixtures/domain/search-scope-complete.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": "z-pareto-comparison",
+      "note": "Ranked snapshot digests stay the chain trace. A new ranking rule must name its digest delta."
+    },
+    {
+      "caseKind": "projectSpatialView",
+      "count": 5,
+      "representative": "fixtures/spatial/spatial-yaw-offset.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": null,
+      "note": "The embedded zari-domain-v1 guide edge stays historical."
+    },
+    {
+      "caseKind": "queryNextFacts",
+      "count": 7,
+      "representative": "fixtures/domain/mc-10-stale-binding.json",
+      "bytesChangedByThisNode": false,
+      "futureOwnerIfMeaningChanges": null,
+      "note": "Measurement query fixtures stay on their recorded stamps."
+    }
+  ],
+  "preservedRecords": [
+    {
+      "path": "docs/oracles/product-completion/index.json",
+      "field": "currentBuildId",
+      "value": "zari-domain-6"
+    },
+    {
+      "path": "docs/qualification/denominator.json",
+      "field": "denominator",
+      "value": 16
+    }
+  ],
+  "heldUntilOwningNode": [
+    "inventory event log",
+    "schema migration",
+    "dbVersion migration",
+    "verified catalog source kind",
+    "pareto read model",
+    "portable zip bundle",
+    "pinned incremental replan",
+    "checkout",
+    "BUILD_ID bump",
+    "new command"
+  ]
+}

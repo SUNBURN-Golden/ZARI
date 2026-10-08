@@ -559,3 +559,9 @@ Persistent additions to `ActionStep`, new action or check kinds, and schema migr
 ## 11. SP-014 evaluation continuation
 
 Adopted by [D014](../design/DECISIONS.md). Normative detail is [docs/adr/SP-014-evaluation-continuation.md](adr/SP-014-evaluation-continuation.md). Profile `default` version 1 still stamps `zari-solver-v1` and prices `RunEval` as one lump. Profile `default` version 2 stamps `zari-solver-v2` and counts the SP-012 quanta. `BUILD_ID` stays `zari-domain-7`. No schema migration and no new command. A snapshot is published only after revalidation. `budgetExhausted`, `cancelled`, and `interrupted` stay distinct.
+
+## 12. z-product-contract expansion authority
+
+Adopted by [Dz-product-contract](../design/DECISIONS.md). Normative detail is [docs/adr/SP-z-product-contract.md](adr/SP-z-product-contract.md). The machine-readable tables are [docs/product-expansion/contract.json](product-expansion/contract.json). This section adds no serialized field.
+
+`OwnedContainer`, `CatalogSnapshot` (`synthetic` or `imported`), `Strategy` / `StrategyDecision`, exportVersion 1, and `evaluate_candidate` stay the canonical paths for owned stock, real products, strategy comparison, export, and reorganization. Gaps listed in the contract stay with their named later nodes. schemaVersion 1, canonical version 1, `ruleVersion` `zari-domain-v2`, and `BUILD_ID` `zari-domain-7` stay. Unknown quantity is not zero. A measurement fact and an offer observation do not share authority. Nodes 001–016 keep their ids, titles, and evidence paths.

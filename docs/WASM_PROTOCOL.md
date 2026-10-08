@@ -188,3 +188,5 @@ The read takes one immutable snapshot and at most 4096 progress rows. It does no
 
 SP-014 ([D014](../design/DECISIONS.md)) does not add a command or a capability. `stepSearch` stays the host step. The evaluation continuation is private to the solver. `ready.solverVersion` is `zari-solver-v2`, the current engine. A snapshot still stamps `solver_version_for` of its own profile, so profile `default` version 1 remains `zari-solver-v1`. A digest mismatch discards the in-progress candidate and does not apply a late reply.
 
+z-product-contract ([Dz-product-contract](../design/DECISIONS.md), [docs/adr/SP-z-product-contract.md](adr/SP-z-product-contract.md)) adds no command and no capability. The base list still ends with `queryActionEligibility` then `disposeProject`. Search capabilities stay the four names appended only when an engine is installed. `BUILD_ID` stays `zari-domain-7`. Unknown command kinds stay `operation_not_supported`.
+

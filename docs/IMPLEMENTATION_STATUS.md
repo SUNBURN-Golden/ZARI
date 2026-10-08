@@ -1,3 +1,35 @@
+# 2026-10-08 — ZARI-z-product-contract 정리→구매→실행→재정리의 확장 계약
+
+정본은 GitHub issue #75, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-product-contract`이다. 관찰한 base SHA는 `1bd3fde5bd9a625d02735d4de8609e97736db49d`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-product-contract만 구현한다. Fable ARCHITECTURE와 비작성자 A3는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-product-contract.md`와 `design/DECISIONS.md` Dz-product-contract. 제품 완성 후보 문서에는 z-product-contract 노트만 추가했다.
+- 001–016의 ID, 제목, 증거 경로, 분모 16은 유지한다. 확장 단계가 그 16개의 새 라벨이 아니다.
+- 보유품은 `OwnedContainer`, 실상품은 `CatalogSnapshot`(`synthetic`/`imported`), 전략 비교는 `Strategy`와 순위 있는 `PlanSnapshot`, 내보내기는 exportVersion 1, 재정리는 `evaluate_candidate`의 새 스냅샷이다. 사건 이력, verified 출처, Pareto, zip 묶음, 고정 배치 재계획은 이후 노드다.
+- 사용자 결정(계정, 결제, 클라우드, 사진 동의, 화면 수용, 출시, 실시간 재고, 안전 인증, 전화, 전용 GPU)은 열려 있다. 내부 선택(정본 재사용, 버전 유지, 빈칸의 소유)은 이 기록에서 채택한다.
+- 추적 fixture `fixtures/domain/search-scope-complete.json`은 한 스냅샷에 입력 digest, BOM, 가이드, 도면 스탬프를 둔다. 수량 unknown과 묶음 null, 역사 가이드 간선, PC 오라클 `zari-domain-6`은 그대로다.
+- `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, DB version 2, exportVersion 1, Command, capability는 그대로다. 생성 계약과 fixture 바이트는 바꾸지 않았다. 새 화면과 새 색 토큰은 없다. `apps/web/src`와 Rust 생산 코드는 바꾸지 않았다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, 브라우저 `--workers=1`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked -- --test-threads=8`: exit 0, 138 passed, 1 ignored (core lib 37, product expansion contract 4)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 20 files / 147), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `4f78ff9f83b36d6b`), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39): exit 0
+- `node scripts/check-qualification.mjs`: 분모 16=7+4+5, merged 15, in-progress 1, runtime hits 0. `node scripts/check-product-contract.mjs`: 16 ids unchanged, fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium --workers=1`: 84 passed (11.4m). `worker-state` flake는 없었다. `spatial3d` `context-lost-console: none`
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (23.8s)
+- 새 브라우저 spec이 없어 Firefox와 WebKit은 다시 실행하지 않았다. 전화와 전용 GPU는 확인하지 않았다
+
+하지 않은 것: 이후 z-노드의 생산 구현, 스키마 마이그레이션, 새 명령, 화면, 결제·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU. 상세는 `docs/evidence/ZARI-z-product-contract.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `contract_change=NO`. z-inventory-lifecycle은 이 작업에서 시작하지 않았다.
+
 # 2026-10-08 — ZARI-SPATIAL-016 전체 16단계 제품 qualification·새 화면·완료 인계
 
 정본은 GitHub issue #73, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-016`이다. 관찰한 base SHA는 `37d2831bbcf696e01d72fb66398b68a4bad14c46`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
