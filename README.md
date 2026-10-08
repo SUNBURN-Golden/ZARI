@@ -4,18 +4,21 @@ Rust-first organization compiler. 공간·물건·생활습관을 정리 전략,
 
 ## 현재 구현 범위
 
-main에는 계획된 Task 001–010이 모두 병합되어 있습니다. Task 001–009는 독립 감사(조건부 통과) 후 병합했습니다. Task 010(성능·접근성·브라우저 매트릭스 측정)과 유지보수 PR #30은 GitHub Actions 사용량 한도 기간에 사용자 지시로 CI와 독립 감사 없이 병합했습니다. 병합은 제품 적합성·베타 출시·배포를 뜻하지 않으며, 배포된 서비스는 없습니다.
+main에는 Task 001–010, SP-001–016, z-product-contract, z-inventory-lifecycle, z-catalog-provenance가 병합되어 있습니다. Task 001–009는 독립 감사(조건부 통과) 후 병합했습니다. Task 010(성능·접근성·브라우저 매트릭스 측정)과 유지보수 PR #30은 GitHub Actions 사용량 한도 기간에 사용자 지시로 CI와 독립 감사 없이 병합했습니다. 그 뒤 공간·측정·제품 노드와 상품 계약은 각 evidence에 적힌 검증으로 병합했습니다. 병합은 제품 적합성·베타 출시·배포를 뜻하지 않으며, 배포된 서비스는 없습니다.
 
 단일 직사각형 수납 공간을 대상으로 아래 흐름이 로컬 브라우저에서 동작합니다. 단위 정규화·배치 탐색·적합성 검증·BOM 계산은 Rust(WebAssembly, Web Worker)가 담당하고, React는 Rust 결과를 그대로 표시합니다.
 
 - **측정과 저장** (`#/projects`, `#/project/<id>`): 한국어 원문 입력을 보존하고 Rust가 정규화합니다. 이 기기 브라우저의 IndexedDB에 저장하며, 두 탭의 동시 수정은 충돌로 표시하고 조용히 덮어쓰지 않습니다.
 - **계획 생성** (`#/project/<id>/plan`): 정리 전략 → 취소 가능한 단계형 탐색 → 독립 검증을 통과한 후보만 PlanSnapshot으로 확정합니다. 같은 스냅샷에서 평면·정면 도면, 검사 결과, 미배치 물건, BOM, 실행 순서를 함께 보여주며, 채택한 계획은 새로고침 후에도 복원됩니다.
-- **편집**: 좌표 입력, 허용된 방향 회전, 수납함 옵션·판매처 교체를 Rust가 다시 검증하고 거절 사유를 설명합니다. 되돌리기/다시 실행을 지원하며 드래그 편집은 없습니다.
+- **편집**: 좌표 입력, 허용된 방향 회전, 수납함 옵션·판매처 교체, 도면 위 드래그를 Rust가 다시 검증하고 거절 사유를 설명합니다. 되돌리기/다시 실행을 지원합니다.
 - **카탈로그와 보유 수납함** (`#/catalog`): 수동 입력·CSV·JSON 가져오기는 Rust 검증을 통과한 뒤에만 저장합니다. 번들 카탈로그는 **합성 데모 데이터**이며 실제 상품·가격·재고가 아닙니다. 판매처 연동·실시간 재고·주문 기능은 없습니다.
-- **복구와 이식**: 프로젝트 내보내기·가져오기·복제, 손상 레코드 격리와 복구용 내보내기, 수식 실행을 막는 BOM CSV, 이 기기에만 저장되는 사진 첨부(위치정보를 제거한 표시용 사본이며 내보내기 파일에는 포함되지 않음), 한 번 방문한 빌드의 오프라인 재방문.
+- **복구와 이식**: 프로젝트 내보내기·가져오기·복제, 손상 레코드 격리와 복구용 내보내기, 수식 실행을 막는 BOM CSV, 이 기기에만 저장되는 사진 첨부(위치정보를 제거한 표시용 사본이며 내보내기 파일에는 포함되지 않음), 한 번 방문한 빌드의 오프라인 재방문. 저장 실패·충돌·손상·워커 실패에서는 입력을 유지하는 복구 패널을 보여 줍니다.
+- **다음 사실과 상세**: 비어 있는 측정은 다음 사실 목록으로 열고, 상세 패널에서 값·오차·출처를 고칩니다. 수량 미확인은 0으로 세지 않습니다.
+- **실행 가이드**: 채택한 같은 PlanSnapshot의 단계 자격을 Rust가 판정합니다. 읽기 전용 가이드는 완료를 글로 보여 줍니다. 계산이 중단되면 이전 계획과 입력을 유지한다고 알립니다.
+- **도면**: 평면·정면과 함께 구획의 읽기 전용 3D 절개 뷰가 있습니다.
 - **초기 연결 확인 화면** (`#/probe`): Task 001의 폭 검사·묶음 계산 예제입니다. `600mm` 공간에 `190mm` 물체 3개와 합성 여유 `5mm`를 적용하면 필요한 폭은 `590mm`, 물체가 `195mm`이면 `605mm`로 초과입니다. `5mm`는 예제값이며 설치 권장치가 아닙니다.
 
-미확인(unknown) 값은 0·통과·재고 있음으로 바꾸지 않습니다. 구획 내부 3D 적재, 방 전체 3D, 계정·클라우드 동기화, 외부 AI 분석은 범위 밖입니다. 브라우저 저장소는 백업이 아니므로 중요한 프로젝트는 내보내기 파일로 보관합니다. 화면 캡처는 승인 근거가 기록되기 전까지 draft이며 현재 승인된 화면은 0개입니다.
+미확인(unknown) 값은 0·통과·재고 있음으로 바꾸지 않습니다. 방 전체 3D, 계정·클라우드 동기화, 외부 AI 분석은 범위 밖입니다. 브라우저 저장소는 백업이 아니므로 중요한 프로젝트는 내보내기 파일로 보관합니다. 화면 캡처는 승인 근거가 기록되기 전까지 draft이며 현재 승인된 화면은 0개입니다.
 
 구현·검증 결과와 미완료 항목은 [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)를 확인합니다. 문서에 적힌 전체 제품 기능과 성능 목표는 달성 결과를 뜻하지 않습니다.
 
@@ -62,7 +65,7 @@ node scripts/check-design-tokens.mjs --self-test
 
 ## 제품 설계와 다음 단계
 
-후속 공간 작업대 확장 다섯 기능의 **설계 후보**는 [SPATIAL_INTERACTION_PLAN](docs/SPATIAL_INTERACTION_PLAN.md)에서 시작합니다. [공통 공간 투영·선택 계약](docs/SPATIAL_VIEW_CONTRACT.md), [화면·드래그·절개 뷰](design/SPATIAL_WORKSPACE.md), [검증 기준](docs/SPATIAL_VERIFICATION.md), [AIOPS 일곱 작업 계획](docs/AIOPS_SPATIAL_EXECUTION_PLAN.md), [AIOPS 인계문](docs/AIOPS_SPATIAL_HANDOFF.md)을 제공합니다. 이 문서 추가는 신규 기능 구현·독립 감사·화면 승인·AIOPS 실행을 뜻하지 않습니다. program 후보는 `docs/aiops/`의 비활성 자료이며 `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`과 런타임을 변경하지 않습니다.
+SP-001–007에서 병합된 공간 작업대(선택, 드래그, 투영, 읽기 전용 3D 절개)의 설계 기록은 [SPATIAL_INTERACTION_PLAN](docs/SPATIAL_INTERACTION_PLAN.md)에 있습니다. [공통 공간 투영·선택 계약](docs/SPATIAL_VIEW_CONTRACT.md), [화면·드래그·절개 뷰](design/SPATIAL_WORKSPACE.md), [검증 기준](docs/SPATIAL_VERIFICATION.md), [AIOPS 일곱 작업 계획](docs/AIOPS_SPATIAL_EXECUTION_PLAN.md), [AIOPS 인계문](docs/AIOPS_SPATIAL_HANDOFF.md)을 제공합니다. 이 문서 추가는 신규 기능 구현·독립 감사·화면 승인·AIOPS 실행을 뜻하지 않습니다. program 후보는 `docs/aiops/`의 비활성 자료이며 `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`과 런타임을 변경하지 않습니다.
 
 상세 설계의 시작점은 [구현 설계도](docs/BLUEPRINT.md)입니다. [전체 계산 예제](docs/COMPILER_WALKTHROUGH.md), [화면별 작업대 설계](design/WORKSPACE_BLUEPRINT.md), [Task 001–010 위임 계약](docs/DEVIN_PROGRAM.md), [Devin 전달문](docs/DEVIN_PROGRAM_PROMPT.md)을 함께 제공합니다.
 
@@ -90,4 +93,4 @@ Motion·Storybook·Impeccable·일반 DnD 기반은 도입하지 않았습니다
 
 ### 전체 제품 완성 후속 후보 — 2026-10-01 KST
 
-[측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`가 비실행 전체 후보 정본이며, 최초 7단계 sidecar는 역사 checkpoint입니다. 구현·승인·실제 기기 qualification·새 화면 채택·런타임 활성화·배포를 완료한 것은 아닙니다.
+[측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. 그 16단계와 z-product-contract, z-inventory-lifecycle, z-catalog-provenance는 main에 병합되어 있습니다. `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`가 비실행 전체 후보 정본이며, 최초 7단계 sidecar는 역사 checkpoint입니다. 화면 승인, 실제 기기 qualification, 런타임 활성화, 배포는 완료가 아닙니다.

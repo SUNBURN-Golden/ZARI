@@ -39,7 +39,7 @@ export function NextFactsList({ view, onRecompile, onField, onCatalog }: NextFac
     if (destination.kind === 'field') onField(destination.path);
     else if (destination.kind === 'catalog') onCatalog(destination.path);
   };
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
     if (view.rows.length === 0) return;
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
@@ -97,36 +97,37 @@ export function NextFactsList({ view, onRecompile, onField, onCatalog }: NextFac
           아직 계산된 계획이 없습니다. 입력에서 비어 있는 값만 보여 줍니다.
         </p>
       )}
-      <div data-testid="next-facts-list" onKeyDown={onKeyDown}>
+      <ul className="next-facts-list" data-testid="next-facts-list" onKeyDown={onKeyDown}>
         {view.rows.map((row, index) => {
           const destination = nextFactDestination(row);
           const label = `${PRIORITY_LABEL[row.priorityClass]}. ${NEED_LABEL[row.needKind]}. ${row.fieldRefs[0]?.fieldPath ?? row.factKey}`;
           return (
-            <button
-              key={row.factKey}
-              type="button"
-              className="next-fact-row"
-              data-testid={`next-fact-${row.factKey}`}
-              data-field-path={row.fieldRefs[0]?.fieldPath ?? ''}
-              data-need={row.needKind}
-              data-priority={row.priorityClass}
-              data-destination={destination.kind}
-              tabIndex={index === active ? 0 : -1}
-              ref={(node) => {
-                buttons.current[index] = node;
-              }}
-              onClick={() => activate(row)}
-            >
-              <span>{label}</span>
-              {row.relatedCheckCount > 0 && <span>검사 {row.relatedCheckCount}</span>}
-              {destination.kind === 'unsupported' && (
-                <span>이 항목은 측정 칸으로 열리지 않습니다.</span>
-              )}
-              {destination.kind === 'catalog' && <span>자료 화면에서 봅니다.</span>}
-            </button>
+            <li key={row.factKey}>
+              <button
+                type="button"
+                className="next-fact-row"
+                data-testid={`next-fact-${row.factKey}`}
+                data-field-path={row.fieldRefs[0]?.fieldPath ?? ''}
+                data-need={row.needKind}
+                data-priority={row.priorityClass}
+                data-destination={destination.kind}
+                tabIndex={index === active ? 0 : -1}
+                ref={(node) => {
+                  buttons.current[index] = node;
+                }}
+                onClick={() => activate(row)}
+              >
+                <span>{label}</span>
+                {row.relatedCheckCount > 0 && <span>검사 {row.relatedCheckCount}</span>}
+                {destination.kind === 'unsupported' && (
+                  <span>이 항목은 측정 칸으로 열리지 않습니다.</span>
+                )}
+                {destination.kind === 'catalog' && <span>자료 화면에서 봅니다.</span>}
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
       <Button className="button button-secondary" data-testid="recompile-next-facts" onPress={onRecompile}>
         다시 확인
       </Button>

@@ -51,20 +51,54 @@ export function qtyText(
   return '미확인';
 }
 
-export function unassignedCount(snapshot: PlanSnapshot): number {
-  let count = 0;
-  for (const u of snapshot.content.unassigned) {
-    if (u.instances.kind === 'known') {
-      for (const r of u.instances.ranges) count += r.endExclusive - r.start;
-    }
-  }
-  return count;
+export interface UnassignedPlacement {
+  known: number;
+  unknownRows: number;
 }
 
-/** The plan needs a purchase only when a new-container placement exists. */
+/**
+ * Known instance counts and rows whose quantity Rust left unknown.
+ * Unknown rows are not added as zero.
+ */
+export function unassignedPlacement(snapshot: PlanSnapshot): UnassignedPlacement {
+  let known = 0;
+  let unknownRows = 0;
+  for (const row of snapshot.content.unassigned) {
+    if (row.instances.kind === 'known') {
+      for (const range of row.instances.ranges) known += range.endExclusive - range.start;
+    } else {
+      unknownRows += 1;
+    }
+  }
+  return { known, unknownRows };
+}
+
+/** Unknown quantity is never rendered as a zero unassigned count. */
+export function unassignedPlacementText(summary: UnassignedPlacement): string {
+  if (summary.unknownRows > 0 && summary.known === 0) return '미확인';
+  if (summary.unknownRows > 0) {
+    return `미배치 ${summary.known} · 수량 미확인 ${summary.unknownRows}`;
+  }
+  return `미배치 ${summary.known}`;
+}
+
+function rustNoPurchases(fact: FactFor_MoneyKrw): boolean {
+  return fact.state === 'notApplicable' && fact.reasonCode === 'no_purchases';
+}
+
+/**
+ * No purchase only when Rust's cost summary says `no_purchases` and the BOM
+ * has no purchase line. Owned-reuse lines are not purchases. Placement kinds
+ * are not consulted.
+ */
 export function isNoPurchase(snapshot: PlanSnapshot): boolean {
-  return !snapshot.content.placements.some(
-    (p) => p.subject.kind === 'newContainer',
+  const { bom, costSummary } = snapshot.content;
+  const purchaseLines = bom.filter((line) => line.ownedId === null);
+  return (
+    purchaseLines.length === 0 &&
+    rustNoPurchases(costSummary.grandTotal) &&
+    rustNoPurchases(costSummary.productSubtotal) &&
+    rustNoPurchases(costSummary.shippingTotal)
   );
 }
 

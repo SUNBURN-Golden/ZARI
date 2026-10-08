@@ -287,6 +287,21 @@ export function StepFocus({
           const conditionBlocked = !waiting && row?.executable !== true;
           const lockCheck = missing.length > 0 || needsConfirmation || (mark !== 'done' && (waiting || conditionBlocked));
           const lockClear = dependents.length > 0;
+          const checkboxShown = access.writable && mark !== 'unknown';
+          const lockReasonId = `step-lock-${step.id}`;
+          const lockReason = !checkboxShown
+            ? null
+            : waiting
+              ? '진행 조건을 아직 확인하지 못했습니다.'
+              : conditionBlocked
+                ? '이 단계는 조건이 막혀 완료로 표시할 수 없습니다.'
+                : null;
+          const describedBy = [
+            lockReason ? lockReasonId : null,
+            missing.length > 0 ? `step-prereq-${step.id}` : null,
+          ]
+            .filter((id): id is string => id !== null)
+            .join(' ');
           return (
             <li
               key={step.id}
@@ -302,12 +317,21 @@ export function StepFocus({
                       checked={mark === 'done'}
                       disabled={(mark !== 'done' && lockCheck) || (mark === 'done' && lockClear)}
                       data-testid={`action-${step.id}`}
+                      aria-describedby={describedBy || undefined}
                       onChange={(event) => onToggle(step.id, event.target.checked)}
                     />{' '}
                     {stepTitle(step)}
                   </label>
                 ) : (
-                  <span>{stepTitle(step)}</span>
+                  <span>
+                    {stepTitle(step)}
+                    {mark === 'done' ? (
+                      <span className="session-note" data-testid={`step-done-${step.id}`}>
+                        {' '}
+                        완료
+                      </span>
+                    ) : null}
+                  </span>
                 )}
                 <button
                   type="button"
@@ -321,8 +345,13 @@ export function StepFocus({
               </div>
               <StepTargetLine step={step} projection={projection} content={content} />
               {mark === 'unknown' && <span className="session-note">알 수 없음</span>}
+              {lockReason && (
+                <span className="session-note" id={lockReasonId} data-testid={`step-lock-${step.id}`}>
+                  {lockReason}
+                </span>
+              )}
               {missing.length > 0 && (
-                <span className="session-note" data-testid={`step-prereq-${step.id}`}>
+                <span className="session-note" id={`step-prereq-${step.id}`} data-testid={`step-prereq-${step.id}`}>
                   {prerequisiteText(actions, missing)}
                 </span>
               )}

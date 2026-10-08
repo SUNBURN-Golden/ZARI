@@ -198,6 +198,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 명령, 검토 패널을 걷어 낸다. 이미 저장된 카탈로그 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
+
+- ID: D-audit-01
+- 상태: 채택. full-work audit 01의 F6. 화면 승인이 아니다.
+- 문제: `project.css`가 `--surface`, `--line`, `--muted`, `--accent`, `--wash`, `--ink`를 참조하고, 그 속성은 `tokens.css`에 없다. 폴백 hex와 `.session-status`의 `#fdecec`/`#8a1f1f`, `#eef6ee`/`#1f5c28`은 토큰 팔레트 밖이다.
+- 변경 대상: `apps/web/src/styles/project.css`, `scripts/check-design-tokens.mjs`. 새 색 토큰은 없다.
+- 검토한 대안: (A) 폴백 hex를 새 토큰과 contrast case로 등록한다. (B) 이미 contrast case가 있는 semantic token으로 바꾼다.
+- 선택: B. 표면은 `--zari-surface-panel`, 선은 `--zari-border-subtle`, 보조 글자는 `--zari-text-secondary`, 본문 글자는 `--zari-text-primary`, 옅은 바탕은 `--zari-surface-subtle`, 강조는 `--zari-accent`, 초점은 `--zari-focus-ring`이다. 저장 실패·충돌·미지원은 `--zari-danger` / `--zari-danger-soft`, 저장됨은 `--zari-success` / `--zari-success-soft`다. 그 쌍은 이미 `danger-on-soft`, `success-on-soft`다.
+- 조건: 컴포넌트 CSS가 `tokens.css`에 없는 custom property를 참조하면 `check-design-tokens.mjs`가 실패한다. 팔레트 밖 hex를 다시 넣지 않는다.
+- 접근성·성능: 상태 색은 글자와 함께 쓴다. 토큰 파일의 forced-colors 재지정은 그대로다.
+- 사용자 승인 근거: 없음. 기존 토큰으로 계약을 맞춘 수정이다.
+- 되돌리기: 이 결정과 검사 확장을 걷어 낸다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

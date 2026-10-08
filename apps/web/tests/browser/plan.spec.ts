@@ -188,3 +188,32 @@ test('cancel during a real search then a fresh search completes', async ({
   await expect(page.locator('[data-testid^="plan-card-"]').first()).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('unknown item quantity is not rendered as 미배치 0', async ({ page }) => {
+  test.setTimeout(90_000);
+  const errors: string[] = [];
+  collectErrors(page, errors);
+  await seededProject(page);
+  await page.getByText('← 치수로 돌아가기').click();
+  await page.getByTestId('open-detail').click();
+  for (const id of ['item-a', 'item-b']) {
+    await page.getByTestId(`detail-group-item-${id}`).click();
+    await page.getByTestId(`detail-pick-items.${id}.quantity`).click();
+    await page.getByTestId('detail-nominal').fill('');
+  }
+  await page.getByTestId('commit-input').click();
+  await expect(page.getByTestId('save-state')).toHaveAttribute('data-save-state', 'saved');
+  await page.getByTestId('goto-plan').click();
+  await expect(page.getByTestId('plan-context')).toHaveAttribute('data-context', 'installed');
+  await computeDone(page);
+  const cards = page.locator('[data-testid^="plan-card-"]');
+  await expect(cards.first()).toBeVisible();
+  const count = await cards.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i += 1) {
+    const text = await cards.nth(i).innerText();
+    expect(text).not.toContain('미배치 0');
+    expect(text).toMatch(/미확인|수량 미확인/);
+  }
+  expect(errors).toEqual([]);
+});

@@ -1,3 +1,35 @@
+# 2026-10-08 — ZARI-SPATIAL-audit-01-fix 전체 작업 감사 01의 7건
+
+정본은 GitHub issue #82, 브랜치 `astra/zari-spatial-audit-01-fix`이다. 관찰한 base SHA는 `2252e929bd18677de2a93c11c350bf415ebb77db`이다. 계획 커밋 `0847d1b065627938acfad3a941de79e357570e43`은 그 조상이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+감사 파일의 F1, F4, F5, F6, F7, F9, F10을 현재 main에서 다시 확인했고, 일곱 모두 아직 있었다. F2, F3, F8, F11, F12, F13은 범위 밖이다.
+
+구현:
+
+- F1. 프로젝트 목록의 빈 행이 클릭 도중에 그려지면 React Aria가 프레스를 취소하고 `worker-state`가 생기지 않는다. `create-project`는 그 목록 갱신과 같은 렌더까지 비활성이다. 타임아웃, 재시도, `--workers=1`은 넣지 않았다.
+- F4. 분모 016은 `MERGED`다. delivery `71ecffc1ba35e636c237ac94ce5bb265e41fe729`, pull request 74, merge `1bd3fde5bd9a625d02735d4de8609e97736db49d`. `reviewPointer`는 null이거나 pull request 댓글 URL만 허용한다. `DONE`은 금지다. #74와 #76의 사후 기록은 아래 해당 절에 붙였다.
+- F5. README, DESIGN, SCREENS, COMPONENTS, REVIEW_CHECKLIST를 SP-001–016과 그 뒤 상품 계약의 현재 구현에 맞췄다. S04–S08과 다섯 컴포넌트는 초안이다. 승인 baseline은 0이다.
+- F6. `project.css`의 정의되지 않은 속성과 세션 상태 hex를 기존 `--zari-*` 토큰으로 바꿨다. 새 색은 없다. 컴포넌트 CSS가 토큰에 없는 custom property를 쓰면 검사가 실패한다. 기록은 `design/DECISIONS.md` D-audit-01.
+- F7. 미배치 표시는 `{known, unknownRows}`다. 수량 미확인만 있으면 `미확인`이고, 0으로 세지 않는다. 구매 없음은 Rust `costSummary`의 `no_purchases`와 구매 BOM 행으로만 판정한다.
+- F9. 프로토콜 표의 행은 `evaluateLayoutEdit`다. `validateCandidate`와 `candidateValidated`를 적었다. PERSISTENCE는 dbVersion 2와 현재 3을 적는다. DOMAIN_MODEL의 자격 문장은 SP-013이 대체했다.
+- F10. 상세, 다음 사실, 채택 가이드, 복구, 중단, 빈 실카탈로그를 1440, 390, forced-colors에서 axe로 본다. 막힌 확인란은 이유를 `aria-describedby`로 잇는다. 읽기 전용 완료는 글자다. 다음 사실은 `ul`/`li`다. 계산 상태는 `role="status"`다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, Playwright 기본 4 workers, `nproc` 8):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 152 passed, 1 ignored
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, 계약 diff 없음, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 22 files / 160), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `f5945a3fb3dde536`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (12 self-tests, 대비 39/39): exit 0
+- `node scripts/check-qualification.mjs`: merged 16, in-progress 0, runtime hits 0. `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium`: 최종 90 passed (4.0m). 그 전 한 실행은 새 a11y 검사가 저장 직후 `next-facts`를 ready로 기다려 1 failed / 89 passed였다. 다시 확인을 누른 뒤 전체를 다시 실행했다. 타임아웃을 올리지 않았고 `--workers=1`을 쓰지 않았다. `worker-state` flake는 두 실행 모두 없었다. `spatial3d` `context-lost-console: none`
+- `npm run test:parity`: native↔Chromium 124 fixture, parity 2 passed (26.8s)
+
+하지 않은 것: F2·F3·F8·F11·F12·F13, 프로그램 노드, `.aiops/**`, `docs/aiops/**`, 워크플로 변경, 전화, 전용 GPU, Firefox·WebKit 재실행, 화면 승인. 상세는 `docs/evidence/ZARI-SPATIAL-audit-01-fix.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. `contract_change=NO`.
+
 # 2026-10-08 — ZARI-z-catalog-provenance 실상품 출처·옵션·치수 검증 작업대
 
 정본은 GitHub issue #80, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-catalog-provenance`이다. 관찰한 base SHA는 `8e065203a0c078451667d6f120b99ded4db61ea7`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
@@ -92,6 +124,8 @@
 
 다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `contract_change=NO`. z-inventory-lifecycle은 이 작업에서 시작하지 않았다.
 
+사후 기록 (audit-01-fix): pull request #76은 `c4dce99c2d61d0b5d33ded4ca61c1120ea7a89a3`에 병합되었다.
+
 # 2026-10-08 — ZARI-SPATIAL-016 전체 16단계 제품 qualification·새 화면·완료 인계
 
 정본은 GitHub issue #73, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-spatial-016`이다. 관찰한 base SHA는 `37d2831bbcf696e01d72fb66398b68a4bad14c46`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
@@ -122,6 +156,8 @@
 하지 않은 것: 스키마 마이그레이션, 런타임 qualification API, 화면 승인, 출시 허가, 전화, 전용 GPU, 독립 검토 2회. 상세는 `docs/evidence/ZARI-SPATIAL-016.md`.
 
 다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `contract_change=NO`. 캡처 수용과 출시는 그 뒤의 별도 결정이다.
+
+사후 기록 (audit-01-fix): pull request #74는 `1bd3fde5bd9a625d02735d4de8609e97736db49d`에 병합되었다. delivery 커밋은 `71ecffc1ba35e636c237ac94ce5bb265e41fe729`다. 분모의 016은 `MERGED`다. `DONE`은 아니다.
 
 # 2026-10-07 — ZARI-SPATIAL-015 실측·offer·보유품·역사 계획·저장 복구 lifecycle
 
