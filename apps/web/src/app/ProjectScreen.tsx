@@ -8,6 +8,7 @@ import { fieldCaption, preferredMeasureView } from '../features/workspace/projec
 import { AttachmentManager } from '../features/attachments/model';
 import { reencodeImage } from '../features/attachments/image';
 import { DetailMeasure } from '../features/project/DetailPanel';
+import { PortablePanel } from '../features/project/PortablePanel';
 import { NextFactsList } from '../features/project/NextFactsList';
 import { diagnosticText, uncertaintyLabel } from '../features/project/detailFacts';
 import {
@@ -743,6 +744,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           </Button>
         </div>
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
+        <PortablePanel projectId={projectId} />
       </section>
       <CatalogAndOwned session={session} state={state} />
       <InventoryPanel projectId={projectId} />

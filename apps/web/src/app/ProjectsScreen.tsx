@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'react-aria-components';
 import { emptyProjectForm } from '../features/project/draft';
+import { isZipMagic, stagePortableBundle } from '../features/project/portable';
 import {
   commitProjectImport,
   duplicateVerifiedProject,
@@ -27,6 +28,18 @@ const IMPORT_ISSUE_TEXT: Record<string, string> = {
   duplicate_id: '같은 식별자의 기록이 두 번 들어 있습니다.',
   dangling_reference: '참조하는 기록이 파일에 없습니다.',
   digest_mismatch: '기록의 다이제스트가 내용과 다릅니다.',
+  path_escape: '경로가 묶음 밖으로 나갑니다.',
+  compression_bomb: '압축 폭탄으로 보여 거절했습니다. 내용은 풀지 않았습니다.',
+  unsupported_version: '지원하지 않는 묶음 버전입니다.',
+  unsupported_compression: '이 묶음의 압축 방식은 지원하지 않습니다.',
+  bundle_corrupt: '묶음이 손상되었습니다.',
+  photo_bytes_forbidden: '사진 바이트는 넣을 수 없습니다.',
+  location_present: '위치정보가 있어 거절했습니다.',
+  personal_data_present: '개인정보 항목이 있어 거절했습니다.',
+  policy_rejected: '사진·위치·개인정보 정책이 이 앱과 다릅니다.',
+  missing_member: '필요한 항목이 묶음에 없습니다.',
+  unexpected_member: '허용되지 않은 항목이 묶음에 있습니다.',
+  project_required: '프로젝트를 포함한 묶음만 가져올 수 있습니다.',
 };
 
 /**
@@ -54,6 +67,7 @@ function ImportReview({
     catalogCount: number;
     attachmentCount: number;
     acceptedBound: boolean;
+    portable?: boolean;
   };
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +79,9 @@ function ImportReview({
         {s.progressCount}건 · 카탈로그 {s.catalogCount}건
         {s.attachmentCount > 0
           ? ` · 사진 ${s.attachmentCount}건은 파일에 바이트가 없어 가져오지 않습니다`
+          : ''}
+        {s.portable
+          ? ' · 이식 묶음: 사진 바이트 제외, 위치정보 제거, 개인정보 항목 제외'
           : ''}
         {s.acceptedBound ? ' · 채택 계획 포함' : ''}
       </p>
@@ -164,9 +181,11 @@ export function ProjectsScreen() {
     setError(null);
     setRejections(null);
     try {
-      const text = await file.text();
+      const bytes = new Uint8Array(await file.arrayBuffer());
       const client = await libraryController.ensure();
-      const result = await stageProjectImport(text, repository, client);
+      const result = isZipMagic(bytes)
+        ? await stagePortableBundle(bytes, repository, client)
+        : await stageProjectImport(new TextDecoder().decode(bytes), repository, client);
       if (result.status === 'staged') {
         setPending({
           staged: result.staged,
@@ -267,6 +286,11 @@ export function ProjectsScreen() {
           {error && (
             <p role="alert" className="notice notice-error" data-testid="projects-error">
               {error}
+            </p>
+          )}
+          {busy && (
+            <p role="status" data-testid="transfer-busy">
+              파일을 확인하고 있습니다. 기존 프로젝트는 아직 그대로입니다.
             </p>
           )}
           {rejections !== null && (
@@ -382,7 +406,7 @@ export function ProjectsScreen() {
             <input
               ref={fileRef}
               type="file"
-              accept=".json,application/json"
+              accept=".json,.zip,application/json,application/zip"
               data-testid="import-file"
               hidden
               onChange={(e) => {

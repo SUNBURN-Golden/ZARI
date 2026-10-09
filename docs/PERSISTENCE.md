@@ -267,3 +267,13 @@ Adopted by [Dz-strategy-library](../design/DECISIONS.md). There is no new store 
 ## 16. z-pareto-comparison
 
 Adopted by [Dz-pareto-comparison](../design/DECISIONS.md). There is no new store and no dbVersion change. The Pareto reply is not a row, not an export field, and not part of a PlanSnapshot hash. Changing a goal still persists only through the existing project input. exportVersion 1 is unchanged.
+
+## 17. z-portable-project bundle
+
+Adopted by [Dz-portable-project](../design/DECISIONS.md). There is no new store and no dbVersion change. exportVersion 1 in `apps/web/src/persistence/export.ts` stays the JSON envelope. Photo bytes stay out of that JSON and out of the zip. The portable file is a separate STORE zip (`portableBundleVersion` 1) beside that envelope.
+
+The zip may contain `manifest.json` plus any of `project.json`, `observations.json`, `catalog.json`, `snapshots.json`, and `attachments.json`. The user chooses those members. `observations.json` may carry the life ledger. The ledger is not an exportVersion 1 field. Quotes, strategy replies, and Pareto replies stay out of both formats. The shared owned-container library is not a member and import does not write it.
+
+Rust checks version, sha256, declared size, duplicate ids, path names, and zip structure before the host keeps member text. A declared uncompressed size or ratio past the cap is refused without inflate. Deflate that is under the cap is `unsupported_compression` and is not inflated. Attachment metadata with photo bytes, GPS/EXIF keys, or personal-data keys is refused. The policy is fixed: photo bytes excluded, location stripped, personal data omitted. Local originals are not deleted.
+
+A rejected inspect does not call `stageProjectImport` and writes nothing. An accepted zip with a project member is rebuilt as an exportVersion 1 envelope and committed under a fresh project id in the existing import transaction. When a ledger is present it is inserted in that same transaction with `ledgerId` equal to the new project id and `revision` `1`. The source project and source ledger stay. A failure inserts no half-project. Worker calls stay outside the transaction. The canonical snapshot id is the content id and is unchanged by the new project id.

@@ -17,6 +17,7 @@ pub mod normalize;
 pub mod offer_bundles;
 pub mod pareto;
 pub mod plan;
+pub mod portable;
 pub mod probe;
 pub mod protocol;
 pub mod raw;

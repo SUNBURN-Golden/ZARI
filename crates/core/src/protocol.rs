@@ -31,7 +31,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-7";
-const CAPABILITIES: [&str; 17] = [
+const CAPABILITIES: [&str; 19] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -48,6 +48,8 @@ const CAPABILITIES: [&str; 17] = [
     "applyInventoryLedger",
     "reviewCatalogImport",
     "quoteOfferBundle",
+    "buildPortableBundle",
+    "inspectPortableBundle",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -61,7 +63,7 @@ const SEARCH_CAPABILITIES: [&str; 8] = [
     "replanIncremental",
     "diagnoseSearch",
 ];
-const COMMAND_KINDS: [&str; 24] = [
+const COMMAND_KINDS: [&str; 26] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -77,6 +79,8 @@ const COMMAND_KINDS: [&str; 24] = [
     "applyInventoryLedger",
     "reviewCatalogImport",
     "quoteOfferBundle",
+    "buildPortableBundle",
+    "inspectPortableBundle",
     "disposeProject",
     "proposeStrategies",
     "evaluateStrategyLibrary",
@@ -306,6 +310,22 @@ pub enum Command {
     QuoteOfferBundle {
         action: crate::offer_bundles::OfferQuoteAction,
     },
+    /// Build a portable zip from caller-selected JSON members. Does not write
+    /// a store or a PlanSnapshot. Photo bytes are refused.
+    BuildPortableBundle {
+        exported_at: String,
+        inclusion: crate::portable::PortableInclusion,
+        project_json: String,
+        observations_json: String,
+        catalog_json: String,
+        snapshots_json: String,
+        attachments_json: String,
+    },
+    /// Read a portable zip. A rejection returns no member bodies and writes
+    /// nothing. Path escape, bombs, and unknown versions fail closed.
+    InspectPortableBundle {
+        zip_base64: String,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -499,6 +519,14 @@ pub enum Event {
     /// null for a preview that does not change drawing, BOM, or the guide.
     OfferBundleQuoted {
         reply: crate::offer_bundles::OfferQuoteReply,
+    },
+    /// Result of `buildPortableBundle`. `accepted: false` has an empty zip.
+    PortableBundleBuilt {
+        reply: crate::portable::PortableBuildReply,
+    },
+    /// Result of `inspectPortableBundle`. Rejected replies omit member text.
+    PortableBundleInspected {
+        reply: crate::portable::PortableInspectReply,
     },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
@@ -2279,6 +2307,8 @@ impl Runtime {
                     | Command::ApplyInventoryLedger { .. }
                     | Command::ReviewCatalogImport { .. }
                     | Command::QuoteOfferBundle { .. }
+                    | Command::BuildPortableBundle { .. }
+                    | Command::InspectPortableBundle { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -2468,7 +2498,9 @@ impl Runtime {
             | Command::QueryActionEligibility { .. }
             | Command::ApplyInventoryLedger { .. }
             | Command::ReviewCatalogImport { .. }
-            | Command::QuoteOfferBundle { .. } => self.execute_stateless(&request.command),
+            | Command::QuoteOfferBundle { .. }
+            | Command::BuildPortableBundle { .. }
+            | Command::InspectPortableBundle { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2867,6 +2899,30 @@ impl Runtime {
                     Err(error) => failure(error.code),
                 }
             }
+            Command::BuildPortableBundle {
+                exported_at,
+                inclusion,
+                project_json,
+                observations_json,
+                catalog_json,
+                snapshots_json,
+                attachments_json,
+            } => Event::PortableBundleBuilt {
+                reply: crate::portable::build_portable_bundle(
+                    &crate::portable::PortableBuildRequest {
+                        exported_at: exported_at.clone(),
+                        inclusion: inclusion.clone(),
+                        project_json: project_json.clone(),
+                        observations_json: observations_json.clone(),
+                        catalog_json: catalog_json.clone(),
+                        snapshots_json: snapshots_json.clone(),
+                        attachments_json: attachments_json.clone(),
+                    },
+                ),
+            },
+            Command::InspectPortableBundle { zip_base64 } => Event::PortableBundleInspected {
+                reply: crate::portable::inspect_portable_bundle(zip_base64),
+            },
             Command::ProjectSpatialView { source } => {
                 match crate::spatial_view::project_spatial_view(source) {
                     Ok(projection) => Event::SpatialViewProjected { projection },

@@ -245,6 +245,39 @@
   min-width: 0;
 }
 
+.portable-panel {
+  display: grid;
+  gap: var(--zari-space-3);
+  min-width: 0;
+  margin-top: var(--zari-space-4);
+  padding: var(--zari-space-3);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+}
+
+.portable-panel legend {
+  padding: 0 var(--zari-space-2);
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+}
+
+.portable-choices {
+  display: grid;
+  gap: var(--zari-space-2);
+}
+
+.portable-choices label {
+  display: flex;
+  gap: var(--zari-space-2);
+  align-items: center;
+  min-height: var(--zari-touch-min-height);
+  min-width: 0;
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-sm);
+}
+
 .detail-editor input,
 .detail-editor select,
 .detail-editor textarea {

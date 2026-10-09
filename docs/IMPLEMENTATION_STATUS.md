@@ -1,3 +1,35 @@
+# 2026-10-09 — ZARI-z-portable-project 프로젝트 이식·검증된 가져오기
+
+정본은 GitHub issue #96, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-portable-project`이다. 관찰한 base SHA는 `f67ce9d2b0eabcce27645ef47ac338127e94283e`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-portable-project만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-portable-project.md`와 `design/DECISIONS.md` Dz-portable-project. 제품 완성 후보 문서에는 이 노드 노트만 추가했다.
+- 이식 파일은 exportVersion 1 JSON 옆의 STORE zip이다. Rust `buildPortableBundle`과 `inspectPortableBundle`이 버전, sha256, 선언 크기, 중복 ID, 경로, zip 구조를 검사한다. 선언된 압축 폭탄은 풀지 않고 거절한다. 한도 안의 deflate는 `unsupported_compression`이고 해제하지 않는다.
+- 포함 범위는 프로젝트, 관측(측정 입력과 보유 이력), 카탈로그, 스냅샷 첨부다. 사진 바이트는 항상 제외다. 첨부 메타데이터의 위치정보와 개인정보 키가 있으면 거절한다. 이 기기의 원본은 지우지 않는다. 공유 보유 수납함은 묶음에 없다.
+- 거절된 검사는 `stageProjectImport`를 호출하지 않고 아무것도 쓰지 않는다. 통과한 묶음은 기존 가져오기 트랜잭션으로 새 프로젝트 id에만 넣는다. 원장이 있으면 그 트랜잭션에서 새 id와 revision `1`로 복사한다. 원본 프로젝트와 원본 원장은 남는다. exportVersion 1 JSON에는 원장을 넣지 않는다.
+- 프로젝트 화면은 체크박스와 정책 문장으로 zip을 받고, 목록은 `.zip`도 연다. 새 색 토큰은 없다.
+- `BUILD_ID`는 `zari-domain-7`이다. fixture 기대 바이트는 바꾸지 않았다. `docs/product-expansion/contract.json`의 `implementsNow`, `contractChange`, 문서 `dbVersion` 2, export gap 문장은 그대로 두었다. 살아있는 `baseCapabilities`에만 두 명령을 `disposeProject` 앞에 넣었다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 191 passed, 1 ignored
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`. zip crate는 없다
+- `npm run wasm:build`, `npm run contracts:generate`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128. 생성 파일은 손으로 고치지 않았다
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 28 files / 184), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, manifest `buildId` `c8f331b5450f477e`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12): exit 0. 매니페스트 해시는 묶음이 바뀌어 달라졌다. 엔진 `BUILD_ID`는 `zari-domain-7`이다
+- `npm run test:browser -- --project=chromium`: 100 passed (4.7m), worker 4. 미리보기 `http://127.0.0.1:4173`. `spatial3d` `context-lost-console: none`. `worker-state` flake는 없었다. 설정 타임아웃은 올리지 않았다
+- `portable-bundle.spec.ts` Firefox 2 passed (10.0s). 같은 파일의 WebKit은 호스트에 `libgtk-4.so.1` 등이 없어 브라우저가 뜨지 않았다. UNVERIFIED
+- `npm run test:parity`: 2 passed (28.8s), 124 fixture
+- 이 세션은 push하지 않았다. 고친 트리는 GitHub Actions가 아직 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 사진 바이트 포함, 원본 삭제, 결제·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `BUILD_ID` 변경. 390px·1440px·forced-colors는 데스크톱 에뮬레이션이다. zip 한도는 1,572,864바이트다. 상세는 `docs/evidence/ZARI-z-portable-project.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-09 — ZARI-z-accessibility-workspace 측정부터 실행까지 키보드·모바일 접근성
 
 정본은 GitHub issue #94, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-accessibility-workspace`이다. 관찰한 base SHA는 `346558c1b04d846b122dd4581cb88898b416aedd`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
