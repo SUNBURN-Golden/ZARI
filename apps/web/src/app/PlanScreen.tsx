@@ -979,6 +979,38 @@ function PlanDetail({
   );
 }
 
+function SearchStatus({ session }: { session: ProjectSession }) {
+  const plan = useSyncExternalStore(
+    (listener) => session.subscribeSearchStatus(listener),
+    () => session.snapshot.plan,
+  );
+  return (
+    <p
+      className="session-note"
+      role="status"
+      data-testid="search-status"
+      data-search={plan.search}
+    >
+      {plan.search === 'running' || plan.search === 'cancelling'
+        ? `계산 중 — 작업 ${plan.progress ? BigInt(plan.progress.workUnits).toLocaleString('ko-KR') : '0'} / 노드 ${plan.progress?.nodes ?? 0}`
+        : plan.search === 'done'
+          ? `완료 — ${TERMINATION_TEXT[plan.termination ?? ''] ?? plan.termination}`
+          : plan.search === 'cancelled'
+            ? '취소되었습니다. 다시 계산할 수 있습니다.'
+            : plan.search === 'interrupted'
+              ? plan.searchError === 'activation_required' ||
+                plan.searchError === 'cancel_timeout' ||
+                plan.searchError === 'search_stalled'
+                ? '중단되었습니다. 이전 계획과 입력은 그대로입니다. 다시 계산하려면 계산기가 새로 연결된 뒤 시작하세요.'
+                : '중단되었습니다. 이전 계획과 입력은 그대로입니다.'
+              : plan.search === 'failed'
+                ? `계산에 실패했습니다: ${plan.searchError ?? ''}`
+                : '아직 계산하지 않았습니다.'}
+      {plan.searchError && plan.search === 'done' ? ` (${plan.searchError})` : ''}
+    </p>
+  );
+}
+
 export function PlanScreen({ projectId }: { projectId: string }) {
   const sessionRef = useRef<ProjectSession | null>(null);
   if (!sessionRef.current || sessionRef.current.snapshot.projectId !== projectId) {
@@ -1183,29 +1215,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           )}
         </div>
 
-        <p
-          className="session-note"
-          role="status"
-          data-testid="search-status"
-          data-search={plan.search}
-        >
-          {plan.search === 'running' || plan.search === 'cancelling'
-            ? `계산 중 — 작업 ${plan.progress ? BigInt(plan.progress.workUnits).toLocaleString('ko-KR') : '0'} / 노드 ${plan.progress?.nodes ?? 0}`
-            : plan.search === 'done'
-              ? `완료 — ${TERMINATION_TEXT[plan.termination ?? ''] ?? plan.termination}`
-                : plan.search === 'cancelled'
-                  ? '취소되었습니다. 다시 계산할 수 있습니다.'
-                  : plan.search === 'interrupted'
-                    ? plan.searchError === 'activation_required' ||
-                      plan.searchError === 'cancel_timeout' ||
-                      plan.searchError === 'search_stalled'
-                      ? '중단되었습니다. 이전 계획과 입력은 그대로입니다. 다시 계산하려면 계산기가 새로 연결된 뒤 시작하세요.'
-                      : '중단되었습니다. 이전 계획과 입력은 그대로입니다.'
-                    : plan.search === 'failed'
-                      ? `계산에 실패했습니다: ${plan.searchError ?? ''}`
-                      : '아직 계산하지 않았습니다.'}
-          {plan.searchError && plan.search === 'done' ? ` (${plan.searchError})` : ''}
-        </p>
+        <SearchStatus session={session} />
       </section>
 
       <SearchDiagnosticPanel

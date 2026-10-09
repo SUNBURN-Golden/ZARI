@@ -275,6 +275,8 @@ type TabMessage = { kind: 'projectWritten'; projectId: string; projectRevision: 
  */
 export class ProjectSession {
   private listeners = new Set<(state: SessionSnapshot) => void>();
+  /** Search counters update this set without redrawing the rest of the plan. */
+  private searchStatusListeners = new Set<() => void>();
   private state: SessionSnapshot;
   private form: RawProjectInputDto | null = null;
   private generation = 0;
@@ -285,6 +287,13 @@ export class ProjectSession {
   private closed = false;
   private reconcileQueue: Promise<unknown> = Promise.resolve();
   private pump: SearchPump | null = null;
+  /**
+   * Search steps stay on the worker. Painting every counter into the plan
+   * screen blocks the next step on a full render, and the status live region
+   * would announce each one. Counters flush on this interval instead.
+   */
+  private searchProgressTimer: ReturnType<typeof setTimeout> | null = null;
+  private searchProgressPending: SearchCounters | null = null;
   /**
    * Set only by a successful activate on the current worker. A trap, hard
    * cancel, or crash clears it. The next search waits for a new activation.
@@ -449,12 +458,26 @@ export class ProjectSession {
     listener(this.state);
     return () => this.listeners.delete(listener);
   }
+  /**
+   * The search status line. Counter-only updates stay here so a solver step
+   * does not wait for the plan screen to render.
+   */
+  subscribeSearchStatus(listener: () => void): () => void {
+    this.searchStatusListeners.add(listener);
+    return () => this.searchStatusListeners.delete(listener);
+  }
   private patch(part: Partial<SessionSnapshot>): void {
     this.state = { ...this.state, ...part };
     for (const listener of this.listeners) listener(this.state);
   }
   private patchPlan(part: Partial<PlanState>): void {
-    this.patch({ plan: { ...this.state.plan, ...part } });
+    const counterOnly =
+      Object.keys(part).length === 1 && Object.prototype.hasOwnProperty.call(part, 'progress');
+    this.state = { ...this.state, plan: { ...this.state.plan, ...part } };
+    if (!counterOnly) {
+      for (const listener of this.listeners) listener(this.state);
+    }
+    for (const listener of this.searchStatusListeners) listener();
   }
   get snapshot(): SessionSnapshot {
     return this.state;
@@ -1869,6 +1892,29 @@ export class ProjectSession {
     }
     this.patchPlan({ actionError: result.status, actionRetry: null });
   }
+  private clearSearchProgressPaint(): void {
+    if (this.searchProgressTimer !== null) {
+      clearTimeout(this.searchProgressTimer);
+      this.searchProgressTimer = null;
+    }
+    this.searchProgressPending = null;
+  }
+
+  /** Coalesce solver counters so a step is not stuck behind a plan-screen render. */
+  private noteSearchProgress(consumed: SearchCounters): void {
+    this.searchProgressPending = consumed;
+    if (this.searchProgressTimer !== null) return;
+    this.searchProgressTimer = setTimeout(() => {
+      this.searchProgressTimer = null;
+      const pending = this.searchProgressPending;
+      this.searchProgressPending = null;
+      if (!pending || this.closed) return;
+      const search = this.state.plan.search;
+      if (search !== 'running' && search !== 'cancelling') return;
+      this.patchPlan({ progress: pending });
+    }, 250);
+  }
+
   /**
    * One continuous search on the activated context. Steps are bounded WASM
    * calls on macrotasks so a cancel request is always serviced between them.
@@ -1912,6 +1958,7 @@ export class ProjectSession {
     }
     const capturedLease = { ...leaseNow };
     this.pump?.dispose();
+    this.clearSearchProgressPaint();
     const pump = new SearchPump(client, {
       stepAllowance: options?.stepAllowance,
       cancelTimeoutMs: options?.cancelTimeoutMs,
@@ -1952,6 +1999,7 @@ export class ProjectSession {
     });
     const interrupt = (reason: string) => {
       this.pump?.dispose();
+      this.clearSearchProgressPaint();
       this.patchPlan({
         search: 'interrupted',
         termination: 'interrupted',
@@ -1968,7 +2016,7 @@ export class ProjectSession {
             interrupt('source_changed');
             return;
           }
-          this.patchPlan({ progress: event.consumed });
+          this.noteSearchProgress(event.consumed);
         },
         onCompleted: (event) => {
           if (!this.searchLeaseHolds(capturedLease, client)) return;
@@ -1976,6 +2024,7 @@ export class ProjectSession {
             interrupt('source_changed');
             return;
           }
+          this.clearSearchProgressPaint();
           const alternatives = event.result.alternatives;
           for (const alt of alternatives)
             this.snapshotIndex.set(alt.planSnapshotId, alt);
@@ -1994,6 +2043,7 @@ export class ProjectSession {
         },
         onCancelled: (event) => {
           if (!this.searchLeaseHolds(capturedLease, client)) return;
+          this.clearSearchProgressPaint();
           this.patchPlan({
             search: 'cancelled',
             progress: event.consumed,
@@ -2004,6 +2054,7 @@ export class ProjectSession {
         },
         onFailed: (error) => {
           this.pump?.dispose();
+          this.clearSearchProgressPaint();
           if (this.controller.state === 'failed') this.searchLease = null;
           this.patchPlan({
             search: 'interrupted',
@@ -2962,6 +3013,7 @@ export class ProjectSession {
       return false;
     }
     this.closed = true;
+    this.clearSearchProgressPaint();
     this.projectionMounted += 1;
     this.nextFactsMounted += 1;
     this.nextFactsFlight = null;
