@@ -1472,6 +1472,14 @@ export type Command =
       pins: IncrementalPins;
     }
   | {
+      alternatives: PlanSnapshot[];
+      consumed: SearchCounters;
+      diagnosticCandidates: RejectedCandidate[];
+      kind: 'diagnoseSearch';
+      scope: SearchScope;
+      termination: SearchTermination;
+    }
+  | {
       kind: 'startSearch';
       mode: SearchMode;
     }
@@ -2025,6 +2033,10 @@ export type Event =
       reply: IncrementalReply;
     }
   | {
+      kind: 'searchDiagnosed';
+      reply: SearchDiagnosticReply;
+    }
+  | {
       kind: 'spatialViewProjected';
       projection: SpatialProjection;
     }
@@ -2179,6 +2191,18 @@ export type PinKind = 'placement' | 'item' | 'strategy';
  * via the `definition` "PinSource".
  */
 export type PinSource = 'explicit' | 'itemPin';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DiagnosticClass".
+ */
+export type DiagnosticClass =
+  'noProduct' | 'geometryOutOfRange' | 'undetermined' | 'budgetExhausted' | 'searchNotFinished';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SupportStatus".
+ */
+export type SupportStatus =
+  'finiteNotComplete' | 'outsideModel' | 'inScope' | 'notClaimed' | 'exhausted';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "DimensionFrame".
@@ -4002,6 +4026,14 @@ export interface IncrementalPins {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "RejectedCandidate".
+ */
+export interface RejectedCandidate {
+  reasonCode: string;
+  subjectIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "RequestMeta".
  */
 export interface RequestMeta {
@@ -4297,6 +4329,144 @@ export interface VerificationSubject {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SearchDiagnosticReply".
+ */
+export interface SearchDiagnosticReply {
+  budgetAccount: BudgetAccount;
+  /**
+   * Always false. Suggesting a larger budget is not that proof.
+   */
+  budgetSuggestionIsProof: boolean;
+  classes: ClassFinding[];
+  largerBudgetSuggested: boolean;
+  nextChecks: NextCheckLink[];
+  nextChecksTruncated: boolean;
+  /**
+   * Always false. This read model does not prove that no arrangement exists.
+   */
+  provesImpossible: boolean;
+  readModelVersion: string;
+  reproduction: SearchReproduction;
+  support: SupportRangeRow[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "BudgetAccount".
+ */
+export interface BudgetAccount {
+  consumedNodes: number;
+  consumedWorkUnits: WorkCount;
+  /**
+   * True only when the search stopped for `budgetExhausted`.
+   */
+  exhausted: boolean;
+  maxNodes: number;
+  maxWorkUnits: WorkCount;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ClassFinding".
+ */
+export interface ClassFinding {
+  class: DiagnosticClass;
+  present: boolean;
+  reasonCodes: string[];
+  subjectIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "NextCheckLink".
+ */
+export interface NextCheckLink {
+  class: DiagnosticClass;
+  factKeys: string[];
+  fieldPaths: string[];
+  reasonCode: string;
+  subjectIds: Id[];
+}
+/**
+ * The bytes needed to classify the same case again.
+ * Worker sessions, request ids, durations, photos, and logs are absent.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SearchReproduction".
+ */
+export interface SearchReproduction {
+  budget: SearchBudget;
+  canonicalVersion: number;
+  catalog: CatalogContent;
+  catalogDigest: Digest;
+  consumed: SearchCounters;
+  diagnosticCandidates: RejectedCandidate[];
+  input: ProjectInput;
+  inputDigest: Digest;
+  observations: LayoutObservation[];
+  profile: SearchProfile;
+  readModelVersion: string;
+  ruleVersion: string;
+  schemaVersion: number;
+  scope: SearchScope;
+  seed: string | null;
+  solverVersion: string;
+  termination: SearchTermination;
+}
+/**
+ * The digestable catalog content: every field except the digest itself.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogContent".
+ */
+export interface CatalogContent {
+  catalogVersion: string;
+  evidence: Evidence[];
+  ingestionVersion: string;
+  offers: Offer[];
+  products: Product[];
+  schemaVersion: number;
+  sourceKind: CatalogSourceKind;
+  sourceObservations: SourceObservation[];
+  variants: ProductVariant[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LayoutObservation".
+ */
+export interface LayoutObservation {
+  checks: CheckNote[];
+  snapshotId: Digest;
+  unassigned: UnassignedNote[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CheckNote".
+ */
+export interface CheckNote {
+  blocking: boolean;
+  fieldPaths: string[];
+  kind: CheckKind;
+  reasonCode: string;
+  status: CheckStatus;
+  subjectIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "UnassignedNote".
+ */
+export interface UnassignedNote {
+  itemId: Id;
+  reasonCode: string;
+  unknownQuantity: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SupportRangeRow".
+ */
+export interface SupportRangeRow {
+  code: string;
+  status: SupportStatus;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "SpatialProjection".
  */
 export interface SpatialProjection {
@@ -4557,14 +4727,6 @@ export interface SearchResult {
   diagnosticCandidates: RejectedCandidate[];
   scope: SearchScope;
   termination: SearchTermination;
-}
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "RejectedCandidate".
- */
-export interface RejectedCandidate {
-  reasonCode: string;
-  subjectIds: Id[];
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

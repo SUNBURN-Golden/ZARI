@@ -13,7 +13,9 @@ import type {
   RawUncertaintyDto,
   RejectedCandidate,
   SearchCounters,
+  SearchScope,
   SearchTermination,
+  SearchDiagnosticReply,
   IncrementalPins,
   IncrementalReply,
   ParetoReply,
@@ -55,6 +57,13 @@ import {
   replanReplyApplies,
   type IncrementalPanelState,
 } from '../incremental/controller';
+import {
+  diagnoseOnce,
+  diagnosisReplyApplies,
+  diagnosticKey,
+  forgetDiagnosis,
+  type DiagnosticPanelState,
+} from '../diagnostics/controller';
 import {
   SearchPump,
   WorkerController,
@@ -169,6 +178,14 @@ export interface PlanState {
   incrementalState: IncrementalPanelState;
   /** Late replies noticed after cancel. They do not change `selectedId`. */
   incrementalIgnored: number;
+  /** Rust separation of no product, geometry, unknown, and budget. Not a snapshot field. */
+  diagnostic: SearchDiagnosticReply | null;
+  diagnosticError: string | null;
+  diagnosticState: DiagnosticPanelState;
+  /** Late diagnosis replies noticed after cancel. They do not change `selectedId`. */
+  diagnosticIgnored: number;
+  /** Scope from the search that just finished. Absent for cancel and interrupt. */
+  searchScope: SearchScope | null;
   search: SearchState;
   progress: SearchCounters | null;
   searchError: string | null;
@@ -299,6 +316,9 @@ export class ProjectSession {
   /** Epoch of the reply currently held. Adopt requires this to match. */
   private incrementalReplyEpoch = 0;
   private incrementalKey: string | null = null;
+  /** Drops a diagnosis reply after cancel, a new search, or an input commit. */
+  private diagnosticEpoch = 0;
+  private diagnosticKey: string | null = null;
   /**
    * Set only by the explicit goal recalculation. Consumed by the next
    * non-autosave reconcile. A search starts only after that commit installs.
@@ -352,6 +372,11 @@ export class ProjectSession {
         incrementalError: null,
         incrementalState: 'idle',
         incrementalIgnored: 0,
+        diagnostic: null,
+        diagnosticError: null,
+        diagnosticState: 'idle',
+        diagnosticIgnored: 0,
+        searchScope: null,
         search: 'idle',
         progress: null,
         searchError: null,
@@ -1060,6 +1085,8 @@ export class ProjectSession {
       this.paretoEpoch += 1;
       this.incrementalEpoch += 1;
       this.incrementalKey = null;
+      this.diagnosticEpoch += 1;
+      this.diagnosticKey = null;
       this.patchPlan({
         pareto: null,
         paretoError: null,
@@ -1068,6 +1095,11 @@ export class ProjectSession {
         incrementalError: null,
         incrementalState: 'idle',
         incrementalIgnored: 0,
+        diagnostic: null,
+        diagnosticError: null,
+        diagnosticState: 'idle',
+        diagnosticIgnored: 0,
+        searchScope: null,
       });
       const catalog = await this.repo.getCatalog(normalized.catalogPin.catalogDigest).catch(() => null);
       await this.installContext(client, normalized, catalog);
@@ -1308,6 +1340,112 @@ export class ProjectSession {
       : [...this.state.plan.alternatives, snapshot];
     this.snapshotIndex.set(snapshot.planSnapshotId, snapshot);
     this.patchPlan({ alternatives, selectedId: snapshot.planSnapshotId });
+  }
+  private async refreshDiagnostics(client: ProbeClient): Promise<void> {
+    const input = this.state.normalizedInput;
+    const digest = this.state.inputDigest;
+    const termination = this.state.plan.termination;
+    const search = this.state.plan.search;
+    if (
+      !input ||
+      !digest ||
+      !termination ||
+      this.state.context !== 'installed' ||
+      (search !== 'done' && search !== 'cancelled' && search !== 'interrupted')
+    ) {
+      return;
+    }
+    const scope = this.state.plan.searchScope ?? {
+      profile: input.search.profile,
+      budget: input.search.budget,
+      groupIds: input.groups.map((group) => group.id),
+      restrictions: [],
+    };
+    const useResult = search === 'done';
+    const alternatives = useResult ? this.state.plan.alternatives : [];
+    const candidates = useResult ? this.state.plan.diagnostics : [];
+    const consumed = this.state.plan.progress ?? {
+      workUnits: '0',
+      nodes: 0,
+      validatedCandidates: 0,
+    };
+    const key = diagnosticKey({
+      inputDigest: digest,
+      catalogDigest: input.catalogPin.catalogDigest,
+      termination,
+      workUnits: consumed.workUnits,
+      nodes: consumed.nodes,
+      reasons: candidates.map((row) => row.reasonCode),
+      snapshotIds: alternatives.map((snapshot) => snapshot.planSnapshotId),
+      restrictions: scope.restrictions.map(
+        (row) => `${row.code}:${[...row.subjectIds].sort().join('+')}`,
+      ),
+    });
+    const epoch = this.diagnosticEpoch;
+    this.diagnosticKey = key;
+    this.patchPlan({ diagnosticState: 'pending', diagnosticError: null });
+    try {
+      const reply = await diagnoseOnce(key, async () => {
+        const event = await client.request({
+          kind: 'diagnoseSearch',
+          termination,
+          scope,
+          consumed,
+          alternatives,
+          diagnosticCandidates: candidates,
+        });
+        if (event.kind !== 'searchDiagnosed') throw new Error('unexpected_worker_event');
+        return event.reply;
+      });
+      if (this.closed || !diagnosisReplyApplies(epoch, this.diagnosticEpoch)) {
+        this.noteIgnoredDiagnosis(epoch);
+        return;
+      }
+      if (this.state.inputDigest !== digest || this.state.plan.termination !== termination) return;
+      this.patchPlan({ diagnostic: reply, diagnosticError: null, diagnosticState: 'ready' });
+    } catch (error) {
+      if (
+        this.closed ||
+        error instanceof StaleRequest ||
+        !diagnosisReplyApplies(epoch, this.diagnosticEpoch)
+      ) {
+        this.noteIgnoredDiagnosis(epoch);
+        return;
+      }
+      if (this.state.inputDigest !== digest) return;
+      forgetDiagnosis(key);
+      this.patchPlan({
+        diagnostic: null,
+        diagnosticError: error instanceof Error ? error.message : String(error),
+        diagnosticState: 'error',
+      });
+    }
+  }
+  private noteIgnoredDiagnosis(epoch: number): void {
+    if (this.closed || diagnosisReplyApplies(epoch, this.diagnosticEpoch)) return;
+    if (this.state.plan.diagnosticState !== 'cancelled') return;
+    this.patchPlan({ diagnosticIgnored: this.state.plan.diagnosticIgnored + 1 });
+  }
+  /** Drops the in-flight diagnosis. Does not change the selected plan. */
+  cancelDiagnosis(): void {
+    if (this.state.plan.diagnosticState !== 'pending') return;
+    this.diagnosticEpoch += 1;
+    if (this.diagnosticKey) forgetDiagnosis(this.diagnosticKey);
+    this.diagnosticKey = null;
+    this.patchPlan({
+      diagnostic: null,
+      diagnosticError: null,
+      diagnosticState: 'cancelled',
+    });
+  }
+  /** One new diagnosis of the search already on screen. Does not retry by itself. */
+  retryDiagnosis(): void {
+    const client = this.controller.current;
+    if (!client || this.closed || this.state.context !== 'installed') return;
+    if (this.diagnosticKey) forgetDiagnosis(this.diagnosticKey);
+    this.diagnosticEpoch += 1;
+    this.patchPlan({ diagnosticIgnored: 0 });
+    void this.refreshDiagnostics(client);
   }
   /** One new comparison after a person asks. Does not retry by itself. */
   retryPareto(): void {
@@ -1791,6 +1929,8 @@ export class ProjectSession {
     this.paretoEpoch += 1;
     this.incrementalEpoch += 1;
     this.incrementalKey = null;
+    this.diagnosticEpoch += 1;
+    this.diagnosticKey = null;
     this.patchPlan({
       search: 'running',
       progress: null,
@@ -1804,6 +1944,11 @@ export class ProjectSession {
       incrementalError: null,
       incrementalState: 'idle',
       incrementalIgnored: 0,
+      diagnostic: null,
+      diagnosticError: null,
+      diagnosticState: 'idle',
+      diagnosticIgnored: 0,
+      searchScope: null,
     });
     const interrupt = (reason: string) => {
       this.pump?.dispose();
@@ -1811,7 +1956,9 @@ export class ProjectSession {
         search: 'interrupted',
         termination: 'interrupted',
         searchError: reason,
+        searchScope: null,
       });
+      void this.refreshDiagnostics(client);
     };
     void pump
       .start('continuous', {
@@ -1838,14 +1985,22 @@ export class ProjectSession {
             alternatives,
             termination: event.result.termination,
             diagnostics: event.result.diagnosticCandidates,
+            searchScope: event.result.scope,
             selectedId: alternatives[0]?.planSnapshotId ?? null,
             resultInputDigest,
           });
           void this.refreshPareto(client);
+          void this.refreshDiagnostics(client);
         },
         onCancelled: (event) => {
           if (!this.searchLeaseHolds(capturedLease, client)) return;
-          this.patchPlan({ search: 'cancelled', progress: event.consumed });
+          this.patchPlan({
+            search: 'cancelled',
+            progress: event.consumed,
+            termination: 'cancelled',
+            searchScope: null,
+          });
+          void this.refreshDiagnostics(client);
         },
         onFailed: (error) => {
           this.pump?.dispose();
@@ -1854,7 +2009,9 @@ export class ProjectSession {
             search: 'interrupted',
             termination: 'interrupted',
             searchError: error.message,
+            searchScope: null,
           });
+          void this.refreshDiagnostics(client);
         },
         onCancelTimeout: () => {
           this.retireSearch('cancel_timeout');

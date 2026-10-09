@@ -472,7 +472,8 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             "stepSearch",
             "cancelSearch",
             "comparePareto",
-            "replanIncremental"
+            "replanIncremental",
+            "diagnoseSearch"
         ])
     );
     assert!(

@@ -46,6 +46,7 @@ const expected = {
   evaluateStrategyLibrary: 'strategyLibraryEvaluated',
   comparePareto: 'paretoCompared',
   replanIncremental: 'incrementalReplanned',
+  diagnoseSearch: 'searchDiagnosed',
   startSearch: 'searchStarted',
   disposeProject: 'projectDisposed',
 } as const;
@@ -85,6 +86,7 @@ export const WORKER_CAPABILITIES = [
   'cancelSearch',
   'comparePareto',
   'replanIncremental',
+  'diagnoseSearch',
 ] as const;
 function capabilitiesMatch(actual: readonly string[]): boolean {
   return (

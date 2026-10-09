@@ -1,3 +1,36 @@
+# 2026-10-09 — ZARI-z-search-diagnostics 해 없음·측정 부족·탐색 미완료의 구분
+
+정본은 GitHub issue #92, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-search-diagnostics`이다. 관찰한 base SHA는 `ccd05227d4f8f7f4d8f6cfbecbe0ac902a734df8`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-search-diagnostics만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-search-diagnostics.md`와 `design/DECISIONS.md` Dz-search-diagnostics. 제품 완성 후보 문서에는 z-search-diagnostics 노트만 추가했다.
+- Rust `search_diagnostics::diagnose_search`가 제품 없음, 범위 밖 기하, 확정 불가능, 예산 소진, 탐색 미완료를 나눈다. 읽기 모형 버전은 `zari-search-diagnostics-1`이다. 알 수 없는 측정은 제품 없음이 아니다. `provesImpossible`과 `budgetSuggestionIsProof`는 false다. 더 큰 예산은 예산이 소진되고 관찰된 대안이 없을 때만 제안한다. 재현 자료는 입력·규칙·카탈로그·예산이고 로그는 없다.
+- 명령 `diagnoseSearch`는 검색 엔진이 있을 때 `replanIncremental` 다음 capability다. `replanIncremental`은 `comparePareto` 바로 뒤에 그대로다. `BUILD_ID`는 `zari-domain-7`이다. 생성 계약은 Rust에서 다시 만들었다. 응답은 PlanSnapshot 해시 밖이다. 명령은 채택하지 않고 탐색을 시작하지 않는다.
+- 계획 화면의 탐색 상태 다음에 실패 구분이 있다. 해당 행과 모델 밖 범위는 기존 `warning-on-soft`, 그 외 지원 범위는 기존 `primary-on-subtle`이다. 취소와 늦은 응답은 고른 계획을 바꾸지 않는다. 내보내기는 명령을 다시 보내지 않는다.
+- 기존 124 fixture 기대 바이트는 바꾸지 않았다. 새 검사는 `crates/core/tests/search_diagnostics.rs`에 있다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 186 passed, 1 ignored (search_diagnostics 7)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 27 files / 179), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, manifest `buildId` `0ac5181e8dff1380`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12): exit 0
+- `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium --workers=2`: 76 passed, 19 failed (Playwright 5.9m). 미리보기가 `[WebServer] Terminated` 된 뒤 19건은 `net::ERR_CONNECTION_REFUSED`였다. 단정 실패가 아니다. `worker-state` flake는 없었다
+- 같은 트리에서 `search-diagnostics.spec.ts` Chromium 1 passed (23.1s, `--workers=1`). `quality`·`responsive`·`spatial-view`·`spatial3d`·`strategy-library`·`workspace` 25 passed (4.4m, `--workers=1`). 그 25건이 나머지 연결 거부 18건을 포함한다. `spatial3d` `context-lost-console: none`. 설정 타임아웃은 올리지 않았다
+- `search-diagnostics.spec.ts` Firefox 1 (24.0s), WebKit 1 (21.7s): exit 0
+- `npm run test:parity`: 2 passed (28.5s), 124 fixture
+- 이 세션은 push하지 않았다. GitHub Actions는 이 작업 트리를 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 접근성 workspace, 결제·실시간 재고·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `BUILD_ID` 변경, 예산 편집기. 브라우저 경로는 예산 소진을 직접 만들지 않고, 그 구분은 Rust 검사가 맡는다. 상세는 `docs/evidence/ZARI-z-search-diagnostics.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-09 — ZARI-z-incremental-replan 고정 배치를 지키는 부분 재정리
 
 정본은 GitHub issue #90, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-incremental-replan`이다. 관찰한 base SHA는 `b718a4813bc0dddfdbde3d51e0ae89fb4a056611`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

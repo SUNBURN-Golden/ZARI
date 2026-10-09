@@ -21,6 +21,7 @@ pub mod probe;
 pub mod protocol;
 pub mod raw;
 pub mod scalars;
+pub mod search_diagnostics;
 pub mod spatial_view;
 pub mod strategy;
 pub mod strategy_library;
