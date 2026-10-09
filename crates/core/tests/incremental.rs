@@ -418,11 +418,9 @@ fn command_keeps_the_pin_and_does_not_adopt() {
         }),
     );
     let names = ready["event"]["capabilities"].as_array().unwrap();
-    assert_eq!(
-        names.last().and_then(Value::as_str),
-        Some("replanIncremental")
-    );
-    assert_eq!(names[names.len() - 2].as_str(), Some("comparePareto"));
+    assert_eq!(names.last().and_then(Value::as_str), Some("diagnoseSearch"));
+    assert_eq!(names[names.len() - 2].as_str(), Some("replanIncremental"));
+    assert_eq!(names[names.len() - 3].as_str(), Some("comparePareto"));
     assert_eq!(
         send(
             &mut runtime,

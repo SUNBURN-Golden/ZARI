@@ -51,7 +51,7 @@ const CAPABILITIES: [&str; 17] = [
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
-const SEARCH_CAPABILITIES: [&str; 7] = [
+const SEARCH_CAPABILITIES: [&str; 8] = [
     "proposeStrategies",
     "evaluateStrategyLibrary",
     "startSearch",
@@ -59,8 +59,9 @@ const SEARCH_CAPABILITIES: [&str; 7] = [
     "cancelSearch",
     "comparePareto",
     "replanIncremental",
+    "diagnoseSearch",
 ];
-const COMMAND_KINDS: [&str; 23] = [
+const COMMAND_KINDS: [&str; 24] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -84,6 +85,7 @@ const COMMAND_KINDS: [&str; 23] = [
     "cancelSearch",
     "comparePareto",
     "replanIncremental",
+    "diagnoseSearch",
 ];
 const MAX_MESSAGE_BYTES: usize = 5 * 1024 * 1024;
 /// Per-step work-unit ceiling from WASM_PROTOCOL §3 (default 256, max 1024).
@@ -323,6 +325,16 @@ pub enum Command {
         base_snapshot: PlanSnapshot,
         pins: crate::incremental::IncrementalPins,
     },
+    /// Classify a finished, cancelled, or interrupted search. Does not search,
+    /// rank, or adopt a plan. Unknown is not reported as an empty catalog.
+    /// A larger budget is not an impossibility proof.
+    DiagnoseSearch {
+        termination: SearchTermination,
+        scope: SearchScope,
+        consumed: SearchCounters,
+        alternatives: Vec<PlanSnapshot>,
+        diagnostic_candidates: Vec<RejectedCandidate>,
+    },
     /// Start one resumable bounded search over the activated immutable
     /// context. Any existing search handle is disposed first; the returned id
     /// is `search-1`, `search-2`, … monotonically per runtime.
@@ -454,6 +466,11 @@ pub enum Event {
     /// is a new plan. The command does not adopt it.
     IncrementalReplanned {
         reply: crate::incremental::IncrementalReply,
+    },
+    /// Result of `diagnoseSearch`. Not part of a PlanSnapshot hash.
+    /// `provesImpossible` and `budgetSuggestionIsProof` are false.
+    SearchDiagnosed {
+        reply: Box<crate::search_diagnostics::SearchDiagnosticReply>,
     },
     /// Result of `projectSpatialView`: the additive ephemeral read model over
     /// the validated source. ProjectionVersion=1 versions this DTO
@@ -2604,6 +2621,37 @@ impl Runtime {
                     strategy: &strategy,
                 }) {
                     Ok(reply) => Event::IncrementalReplanned { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::DiagnoseSearch {
+                termination,
+                scope,
+                consumed,
+                alternatives,
+                diagnostic_candidates,
+            } => {
+                let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
+                else {
+                    return failure("invalid_state");
+                };
+                if self.engine.is_none() {
+                    return failure("operation_not_supported");
+                }
+                match crate::search_diagnostics::diagnose_search(
+                    &crate::search_diagnostics::DiagnoseAction {
+                        input,
+                        catalog,
+                        termination: termination.clone(),
+                        scope,
+                        consumed,
+                        alternatives,
+                        diagnostic_candidates,
+                    },
+                ) {
+                    Ok(reply) => Event::SearchDiagnosed {
+                        reply: Box::new(reply),
+                    },
                     Err(error) => failure(error.code),
                 }
             }

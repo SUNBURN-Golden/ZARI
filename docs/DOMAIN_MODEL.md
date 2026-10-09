@@ -589,3 +589,7 @@ Adopted by [Dz-pareto-comparison](../design/DECISIONS.md). Normative detail is [
 ## 18. z-incremental-replan pins
 
 Adopted by [Dz-incremental-replan](../design/DECISIONS.md). Normative detail is [docs/adr/SP-z-incremental-replan.md](adr/SP-z-incremental-replan.md). A published plan is still a `PlanSnapshot` from `evaluate_candidate`. The replan reply is not a snapshot field. Version `zari-incremental-1` names the read model. Pins are explicit inputs: placement ids, item ids, and the previous strategy. A pinned placement keeps its coordinates. A check status from the previous snapshot is not copied. `reusedPass` is false. A blocked reply names the conflict and the pins that can be released. The command does not adopt the result.
+
+## 19. z-search-diagnostics classes
+
+Adopted by [Dz-search-diagnostics](../design/DECISIONS.md). Normative detail is [docs/adr/SP-z-search-diagnostics.md](adr/SP-z-search-diagnostics.md). A published plan is still a `PlanSnapshot`. The diagnostic reply is not a snapshot field. Version `zari-search-diagnostics-1` names the read model. Classes are no product, geometry out of range, undetermined, budget exhausted, and search not finished. Unknown does not become no product. `provesImpossible` and `budgetSuggestionIsProof` are false. The reproduction carries the input, catalog, rules, and budget, and it does not carry a log. `diagnose_case` classifies that reproduction again.

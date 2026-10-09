@@ -518,6 +518,40 @@
       "title": "BootstrapProbeResult",
       "type": "object"
     },
+    "BudgetAccount": {
+      "additionalProperties": false,
+      "properties": {
+        "consumedNodes": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "consumedWorkUnits": {
+          "$ref": "#/definitions/WorkCount"
+        },
+        "exhausted": {
+          "description": "True only when the search stopped for `budgetExhausted`.",
+          "type": "boolean"
+        },
+        "maxNodes": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "maxWorkUnits": {
+          "$ref": "#/definitions/WorkCount"
+        }
+      },
+      "required": [
+        "maxWorkUnits",
+        "consumedWorkUnits",
+        "maxNodes",
+        "consumedNodes",
+        "exhausted"
+      ],
+      "title": "BudgetAccount",
+      "type": "object"
+    },
     "BundleComponent": {
       "additionalProperties": false,
       "description": "A declared component of a heterogeneous bundle. v1 plans only homogeneous\nvariant packs; a nonempty list marks the offer as an unsupported bundle.",
@@ -594,6 +628,69 @@
         "creation"
       ],
       "title": "CandidateProposal",
+      "type": "object"
+    },
+    "CatalogContent": {
+      "additionalProperties": false,
+      "description": "The digestable catalog content: every field except the digest itself.",
+      "properties": {
+        "catalogVersion": {
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/definitions/Evidence"
+          },
+          "type": "array"
+        },
+        "ingestionVersion": {
+          "type": "string"
+        },
+        "offers": {
+          "items": {
+            "$ref": "#/definitions/Offer"
+          },
+          "type": "array"
+        },
+        "products": {
+          "items": {
+            "$ref": "#/definitions/Product"
+          },
+          "type": "array"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sourceKind": {
+          "$ref": "#/definitions/CatalogSourceKind"
+        },
+        "sourceObservations": {
+          "items": {
+            "$ref": "#/definitions/SourceObservation"
+          },
+          "type": "array"
+        },
+        "variants": {
+          "items": {
+            "$ref": "#/definitions/ProductVariant"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "catalogVersion",
+        "sourceKind",
+        "products",
+        "variants",
+        "offers",
+        "evidence",
+        "ingestionVersion",
+        "sourceObservations"
+      ],
+      "title": "CatalogContent",
       "type": "object"
     },
     "CatalogEvidenceSubset": {
@@ -1176,6 +1273,45 @@
       "title": "CheckMeasurement",
       "type": "object"
     },
+    "CheckNote": {
+      "additionalProperties": false,
+      "properties": {
+        "blocking": {
+          "type": "boolean"
+        },
+        "fieldPaths": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/definitions/CheckKind"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "subjectIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "status",
+        "reasonCode",
+        "blocking",
+        "subjectIds",
+        "fieldPaths"
+      ],
+      "title": "CheckNote",
+      "type": "object"
+    },
     "CheckStatus": {
       "enum": [
         "pass",
@@ -1185,6 +1321,37 @@
       ],
       "title": "CheckStatus",
       "type": "string"
+    },
+    "ClassFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "class": {
+          "$ref": "#/definitions/DiagnosticClass"
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "reasonCodes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "subjectIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "class",
+        "present",
+        "reasonCodes",
+        "subjectIds"
+      ],
+      "title": "ClassFinding",
+      "type": "object"
     },
     "ClearanceMm": {
       "maximum": 10000,
@@ -1663,6 +1830,46 @@
         },
         {
           "additionalProperties": false,
+          "description": "Classify a finished, cancelled, or interrupted search. Does not search,\nrank, or adopt a plan. Unknown is not reported as an empty catalog.\nA larger budget is not an impossibility proof.",
+          "properties": {
+            "alternatives": {
+              "items": {
+                "$ref": "#/definitions/PlanSnapshot"
+              },
+              "type": "array"
+            },
+            "consumed": {
+              "$ref": "#/definitions/SearchCounters"
+            },
+            "diagnosticCandidates": {
+              "items": {
+                "$ref": "#/definitions/RejectedCandidate"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "diagnoseSearch",
+              "type": "string"
+            },
+            "scope": {
+              "$ref": "#/definitions/SearchScope"
+            },
+            "termination": {
+              "$ref": "#/definitions/SearchTermination"
+            }
+          },
+          "required": [
+            "kind",
+            "termination",
+            "scope",
+            "consumed",
+            "alternatives",
+            "diagnosticCandidates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Start one resumable bounded search over the activated immutable\ncontext. Any existing search handle is disposed first; the returned id\nis `search-1`, `search-2`, … monotonically per runtime.",
           "properties": {
             "kind": {
@@ -2007,6 +2214,17 @@
       ],
       "title": "Diagnostic",
       "type": "object"
+    },
+    "DiagnosticClass": {
+      "enum": [
+        "noProduct",
+        "geometryOutOfRange",
+        "undetermined",
+        "budgetExhausted",
+        "searchNotFinished"
+      ],
+      "title": "DiagnosticClass",
+      "type": "string"
     },
     "Digest": {
       "pattern": "^[0-9a-f]{64}(?![\\s\\S])",
@@ -3154,6 +3372,24 @@
             },
             "reply": {
               "$ref": "#/definitions/IncrementalReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `diagnoseSearch`. Not part of a PlanSnapshot hash.\n`provesImpossible` and `budgetSuggestionIsProof` are false.",
+          "properties": {
+            "kind": {
+              "const": "searchDiagnosed",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/SearchDiagnosticReply"
             }
           },
           "required": [
@@ -6727,6 +6963,33 @@
       ],
       "title": "LayoutEditCommand"
     },
+    "LayoutObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "items": {
+            "$ref": "#/definitions/CheckNote"
+          },
+          "type": "array"
+        },
+        "snapshotId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "unassigned": {
+          "items": {
+            "$ref": "#/definitions/UnassignedNote"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "snapshotId",
+        "unassigned",
+        "checks"
+      ],
+      "title": "LayoutObservation",
+      "type": "object"
+    },
     "LedgerContainer": {
       "additionalProperties": false,
       "properties": {
@@ -7202,6 +7465,44 @@
       ],
       "title": "MountingRequirement",
       "type": "string"
+    },
+    "NextCheckLink": {
+      "additionalProperties": false,
+      "properties": {
+        "class": {
+          "$ref": "#/definitions/DiagnosticClass"
+        },
+        "factKeys": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "fieldPaths": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "subjectIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "class",
+        "reasonCode",
+        "subjectIds",
+        "factKeys",
+        "fieldPaths"
+      ],
+      "title": "NextCheckLink",
+      "type": "object"
     },
     "NextFactRow": {
       "additionalProperties": false,
@@ -11854,6 +12155,66 @@
       "title": "SearchCounters",
       "type": "object"
     },
+    "SearchDiagnosticReply": {
+      "additionalProperties": false,
+      "properties": {
+        "budgetAccount": {
+          "$ref": "#/definitions/BudgetAccount"
+        },
+        "budgetSuggestionIsProof": {
+          "description": "Always false. Suggesting a larger budget is not that proof.",
+          "type": "boolean"
+        },
+        "classes": {
+          "items": {
+            "$ref": "#/definitions/ClassFinding"
+          },
+          "type": "array"
+        },
+        "largerBudgetSuggested": {
+          "type": "boolean"
+        },
+        "nextChecks": {
+          "items": {
+            "$ref": "#/definitions/NextCheckLink"
+          },
+          "type": "array"
+        },
+        "nextChecksTruncated": {
+          "type": "boolean"
+        },
+        "provesImpossible": {
+          "description": "Always false. This read model does not prove that no arrangement exists.",
+          "type": "boolean"
+        },
+        "readModelVersion": {
+          "type": "string"
+        },
+        "reproduction": {
+          "$ref": "#/definitions/SearchReproduction"
+        },
+        "support": {
+          "items": {
+            "$ref": "#/definitions/SupportRangeRow"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "readModelVersion",
+        "provesImpossible",
+        "budgetSuggestionIsProof",
+        "largerBudgetSuggested",
+        "classes",
+        "support",
+        "budgetAccount",
+        "nextChecks",
+        "nextChecksTruncated",
+        "reproduction"
+      ],
+      "title": "SearchDiagnosticReply",
+      "type": "object"
+    },
     "SearchMode": {
       "description": "Search drive mode recorded at `startSearch`. The single-threaded runtime\nonly ever advances on explicit `stepSearch` requests, so `continuous` is a\nscheduling hint for the host — never an autonomous loop inside WASM.",
       "enum": [
@@ -11880,6 +12241,97 @@
         "version"
       ],
       "title": "SearchProfile",
+      "type": "object"
+    },
+    "SearchReproduction": {
+      "additionalProperties": false,
+      "description": "The bytes needed to classify the same case again.\nWorker sessions, request ids, durations, photos, and logs are absent.",
+      "properties": {
+        "budget": {
+          "$ref": "#/definitions/SearchBudget"
+        },
+        "canonicalVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "catalog": {
+          "$ref": "#/definitions/CatalogContent"
+        },
+        "catalogDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "consumed": {
+          "$ref": "#/definitions/SearchCounters"
+        },
+        "diagnosticCandidates": {
+          "items": {
+            "$ref": "#/definitions/RejectedCandidate"
+          },
+          "type": "array"
+        },
+        "input": {
+          "$ref": "#/definitions/ProjectInput"
+        },
+        "inputDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "observations": {
+          "items": {
+            "$ref": "#/definitions/LayoutObservation"
+          },
+          "type": "array"
+        },
+        "profile": {
+          "$ref": "#/definitions/SearchProfile"
+        },
+        "readModelVersion": {
+          "type": "string"
+        },
+        "ruleVersion": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "scope": {
+          "$ref": "#/definitions/SearchScope"
+        },
+        "seed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "solverVersion": {
+          "type": "string"
+        },
+        "termination": {
+          "$ref": "#/definitions/SearchTermination"
+        }
+      },
+      "required": [
+        "readModelVersion",
+        "schemaVersion",
+        "canonicalVersion",
+        "ruleVersion",
+        "solverVersion",
+        "inputDigest",
+        "input",
+        "catalogDigest",
+        "catalog",
+        "budget",
+        "profile",
+        "seed",
+        "termination",
+        "scope",
+        "consumed",
+        "diagnosticCandidates",
+        "observations"
+      ],
+      "title": "SearchReproduction",
       "type": "object"
     },
     "SearchResult": {
@@ -13193,6 +13645,34 @@
       "title": "SupportKind",
       "type": "string"
     },
+    "SupportRangeRow": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/SupportStatus"
+        }
+      },
+      "required": [
+        "code",
+        "status"
+      ],
+      "title": "SupportRangeRow",
+      "type": "object"
+    },
+    "SupportStatus": {
+      "enum": [
+        "finiteNotComplete",
+        "outsideModel",
+        "inScope",
+        "notClaimed",
+        "exhausted"
+      ],
+      "title": "SupportStatus",
+      "type": "string"
+    },
     "SupportSurface": {
       "additionalProperties": false,
       "properties": {
@@ -13289,6 +13769,27 @@
         }
       ],
       "title": "UnassignedInstances"
+    },
+    "UnassignedNote": {
+      "additionalProperties": false,
+      "properties": {
+        "itemId": {
+          "$ref": "#/definitions/Id"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "unknownQuantity": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "itemId",
+        "reasonCode",
+        "unknownQuantity"
+      ],
+      "title": "UnassignedNote",
+      "type": "object"
     },
     "Uncertainty": {
       "oneOf": [

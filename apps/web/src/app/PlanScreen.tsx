@@ -56,6 +56,7 @@ import {
 import { bomCsvRows, toCsv } from '../features/plan/csv';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
 import { IncrementalPanel } from '../features/incremental/IncrementalPanel';
+import { SearchDiagnosticPanel } from '../features/diagnostics/SearchDiagnosticPanel';
 import { ParetoPanel } from '../features/pareto/ParetoPanel';
 import { StrategyLibraryPanel } from '../features/strategy/StrategyLibraryPanel';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
@@ -1060,6 +1061,17 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           {plan.searchError && plan.search === 'done' ? ` (${plan.searchError})` : ''}
         </p>
       </section>
+
+      <SearchDiagnosticPanel
+        search={plan.search}
+        selectedId={plan.selectedId}
+        state={plan.diagnosticState}
+        reply={plan.diagnostic}
+        error={plan.diagnosticError}
+        ignored={plan.diagnosticIgnored}
+        onCancel={() => session.cancelDiagnosis()}
+        onRetry={() => session.retryDiagnosis()}
+      />
 
       {plan.alternatives.length > 0 && (
         <section className="measurement-panel" aria-labelledby="alts-title">
