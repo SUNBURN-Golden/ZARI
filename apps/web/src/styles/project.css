@@ -505,6 +505,57 @@
   list-style: none;
 }
 
+.pareto-compare {
+  border: 1px solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.pareto-compare h3,
+.pareto-compare h4 {
+  margin: 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+
+.pareto-compare p,
+.pareto-compare li,
+.pareto-compare td,
+.pareto-compare th {
+  margin: 0;
+  color: var(--zari-text-secondary);
+}
+
+.pareto-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.pareto-diff {
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-subtle);
+}
+
+.pareto-held,
+.pareto-excluded {
+  color: var(--zari-warning);
+  background: var(--zari-warning-soft);
+  border-left: 2px solid var(--zari-warning);
+  padding: 0.5rem 0.75rem;
+}
+
+.pareto-held p,
+.pareto-excluded li {
+  color: var(--zari-warning);
+  background: transparent;
+}
+
 /* ZARI-007 trustworthy editing. */
 
 .diagram-container[data-selected='true'],

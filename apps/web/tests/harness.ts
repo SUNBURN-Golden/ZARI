@@ -195,7 +195,7 @@ const TIMED_WORKER_ENTRY = () => {
   timedWorkers.add(worker);
   return worker;
 };
-window.bench = {
+const benchApi: BenchApi = {
   requestsFor(fixture) {
     const requests = JSON.parse(
       domainFixtureRequests(JSON.stringify(fixture)),
@@ -406,3 +406,14 @@ window.bench = {
     },
   },
 };
+// `requestsFor` and `directRuntime` call wasm-bindgen exports. Publishing
+// `bench` before `init` resolves makes those exports read `__wbindgen_free`
+// off an undefined module. Callers already wait until `window.bench` exists.
+void wasmReady.then(
+  () => {
+    window.bench = benchApi;
+  },
+  (error: unknown) => {
+    console.error(error);
+  },
+);

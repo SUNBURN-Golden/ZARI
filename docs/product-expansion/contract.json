@@ -51,7 +51,8 @@
     "evaluateStrategyLibrary",
     "startSearch",
     "stepSearch",
-    "cancelSearch"
+    "cancelSearch",
+    "comparePareto"
   ],
   "chain": {
     "input": "Rust normalizeInput produces ProjectInput and inputDigest",

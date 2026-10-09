@@ -1462,6 +1462,11 @@ export type Command =
       kind: 'evaluateStrategyLibrary';
     }
   | {
+      alternatives: PlanSnapshot[];
+      kind: 'comparePareto';
+      termination: SearchTermination;
+    }
+  | {
       kind: 'startSearch';
       mode: SearchMode;
     }
@@ -2007,6 +2012,10 @@ export type Event =
       reply: StrategyLibraryReply;
     }
   | {
+      kind: 'paretoCompared';
+      reply: ParetoReply;
+    }
+  | {
       kind: 'spatialViewProjected';
       projection: SpatialProjection;
     }
@@ -2095,6 +2104,50 @@ export type LibraryQuantity =
       reasonCode: string;
       state: 'notApplicable';
     };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoItemQuantity".
+ */
+export type ParetoItemQuantity =
+  | {
+      count: number;
+      kind: 'known';
+    }
+  | {
+      kind: 'unknownQuantity';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoCount".
+ */
+export type ParetoCount =
+  | {
+      state: 'known';
+      value: number;
+    }
+  | {
+      state: 'unknown';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoMoney".
+ */
+export type ParetoMoney =
+  | {
+      amount: MoneyKrw;
+      state: 'known';
+    }
+  | {
+      state: 'noPurchase';
+    }
+  | {
+      state: 'unknown';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoOptimality".
+ */
+export type ParetoOptimality = 'budgetLimited' | 'scopeCompared' | 'cancelled' | 'interrupted';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "DimensionFrame".
@@ -4017,6 +4070,84 @@ export interface LibraryRecipe {
 export interface LibraryUnassigned {
   itemId: Id;
   quantity: LibraryQuantity;
+  reasonCode: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoReply".
+ */
+export interface ParetoReply {
+  budget: SearchBudget;
+  contextMatch: boolean;
+  dominated: ParetoRow[];
+  excluded: ParetoExclusion[];
+  front: ParetoRow[];
+  /**
+   * Always false. A finished budget is not a global optimum.
+   */
+  globalOptimum: boolean;
+  goal: Strategy;
+  inputDigest: Digest;
+  optimality: ParetoOptimality;
+  readModelVersion: string;
+  recalculationRequired: boolean;
+  seed: string | null;
+  termination: SearchTermination;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoRow".
+ */
+export interface ParetoRow {
+  candidateId: Digest;
+  conditions: ParetoCondition[];
+  difference: ParetoDifference;
+  items: ParetoItem[];
+  precedingMoves: ParetoCount;
+  purchase: ParetoMoney;
+  reuse: ParetoCount;
+  unassignedInstances: number;
+  unknownConditions: number;
+  unknownQuantityItems: number;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoCondition".
+ */
+export interface ParetoCondition {
+  id: Id;
+  kind: string;
+  reasonCode: string;
+  status: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoDifference".
+ */
+export interface ParetoDifference {
+  precedingMoves: boolean;
+  purchase: boolean;
+  reuse: boolean;
+  unassigned: boolean;
+  unknownConditions: boolean;
+  unknownQuantity: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoItem".
+ */
+export interface ParetoItem {
+  itemId: Id;
+  quantity: ParetoItemQuantity;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ParetoExclusion".
+ */
+export interface ParetoExclusion {
+  candidateId: Digest;
+  conditions: ParetoCondition[];
+  purchase: ParetoMoney;
   reasonCode: string;
 }
 /**

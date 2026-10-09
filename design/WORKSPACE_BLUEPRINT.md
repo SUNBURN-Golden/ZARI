@@ -179,7 +179,7 @@ Task006은 한두 개의 rigid group과 최소한의 owned open bin 입력을 �
 
 첫 slice에서는 실제로 구현된 minimum-purchase만 노출한다. 다른 family가 구현·검증되기 전에는 설명 카드나 선택 가능한 가짜 옵션으로 채우지 않는다. 후속 beta에서 빈도/활동/active-reserve/one-action-access가 실제 규칙과 이유를 가진 경우에만 추가한다.
 
-z-strategy-library는 그 라디오 아래에 비교를 둔다. 다섯 Recipe의 규칙·primitive·접근 가정은 Rust 응답이고, 화면은 추천 순서를 만들지 않는다. 저장하지 않은 라디오는 핀을 옮기지 않는다.
+z-strategy-library는 그 라디오 아래에 비교를 둔다. 다섯 Recipe의 규칙·primitive·접근 가정은 Rust 응답이고, 화면은 추천 순서를 만들지 않는다. 저장하지 않은 라디오는 핀을 옮기지 않는다. z-pareto-comparison은 후보 카드 다음에 같은 입력의 차이를 표로 둔다. 화면은 지배 관계를 계산하지 않는다. 저장하지 않은 목표는 `이 목표로 다시 계산` 전에는 비교를 다시 부르지 않는다.
 
 주요 행동은 `배치안 계산`이다. 마지막 확인은 입력·미확인·선택 전략의 짧은 요약이며 강제 승인 modal을 반복하지 않는다. 계산 가능 여부와 실패 이유는 Rust의 validation/capability 결과에서 온다.
 

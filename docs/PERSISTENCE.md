@@ -263,3 +263,7 @@ Adopted by [Dz-offer-bundles](../design/DECISIONS.md). There is no new store and
 ## 15. z-strategy-library comparison
 
 Adopted by [Dz-strategy-library](../design/DECISIONS.md). There is no new store and no dbVersion change. The library reply is not a row, not an export field, and not part of a PlanSnapshot hash. The catalogue is built-in data. Saving a strategy still persists only through the existing project input. exportVersion 1 is unchanged.
+
+## 16. z-pareto-comparison
+
+Adopted by [Dz-pareto-comparison](../design/DECISIONS.md). There is no new store and no dbVersion change. The Pareto reply is not a row, not an export field, and not part of a PlanSnapshot hash. Changing a goal still persists only through the existing project input. exportVersion 1 is unchanged.

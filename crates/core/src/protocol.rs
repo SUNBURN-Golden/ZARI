@@ -51,14 +51,15 @@ const CAPABILITIES: [&str; 17] = [
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
-const SEARCH_CAPABILITIES: [&str; 5] = [
+const SEARCH_CAPABILITIES: [&str; 6] = [
     "proposeStrategies",
     "evaluateStrategyLibrary",
     "startSearch",
     "stepSearch",
     "cancelSearch",
+    "comparePareto",
 ];
-const COMMAND_KINDS: [&str; 21] = [
+const COMMAND_KINDS: [&str; 22] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -80,6 +81,7 @@ const COMMAND_KINDS: [&str; 21] = [
     "startSearch",
     "stepSearch",
     "cancelSearch",
+    "comparePareto",
 ];
 const MAX_MESSAGE_BYTES: usize = 5 * 1024 * 1024;
 /// Per-step work-unit ceiling from WASM_PROTOCOL §3 (default 256, max 1024).
@@ -306,6 +308,12 @@ pub enum Command {
     /// Versioned strategy and recipe comparison for the activated project.
     /// Does not start a search and does not publish a snapshot.
     EvaluateStrategyLibrary {},
+    /// Pareto read model over snapshots from the same input, budget, and seed.
+    /// Does not search, rank, or publish a PlanSnapshot.
+    ComparePareto {
+        termination: SearchTermination,
+        alternatives: Vec<PlanSnapshot>,
+    },
     /// Start one resumable bounded search over the activated immutable
     /// context. Any existing search handle is disposed first; the returned id
     /// is `search-1`, `search-2`, … monotonically per runtime.
@@ -427,6 +435,11 @@ pub enum Event {
     /// `strategyChanged` is false: the pinned strategy is the input's choice.
     StrategyLibraryEvaluated {
         reply: crate::strategy_library::StrategyLibraryReply,
+    },
+    /// Result of `comparePareto`. Not part of a PlanSnapshot hash.
+    /// `globalOptimum` is false, including when the budget is exhausted.
+    ParetoCompared {
+        reply: crate::pareto::ParetoReply,
     },
     /// Result of `projectSpatialView`: the additive ephemeral read model over
     /// the validated source. ProjectionVersion=1 versions this DTO
@@ -2521,6 +2534,29 @@ impl Runtime {
                 };
                 Event::StrategyLibraryEvaluated {
                     reply: engine.evaluate_strategy_library(input),
+                }
+            }
+            Command::ComparePareto {
+                termination,
+                alternatives,
+            } => {
+                let (Some(input), Some(_)) = (&self.active_input, &self.active_catalog) else {
+                    return failure("invalid_state");
+                };
+                if self.engine.is_none() {
+                    return failure("operation_not_supported");
+                }
+                let action = crate::pareto::ParetoCompareAction {
+                    termination: termination.clone(),
+                    goal: input.strategy_choice.clone(),
+                    input_digest: canonical::input_digest(input),
+                    budget: input.search.budget.clone(),
+                    seed: input.search.seed.clone(),
+                    alternatives: alternatives.clone(),
+                };
+                match crate::pareto::compare(&action) {
+                    Ok(reply) => Event::ParetoCompared { reply },
+                    Err(error) => failure(error.code),
                 }
             }
             Command::StartSearch { mode } => {

@@ -48,6 +48,8 @@ z-offer-bundles ([Dz-offer-bundles](../design/DECISIONS.md)) keeps that chain. P
 
 z-strategy-library ([Dz-strategy-library](../design/DECISIONS.md)) keeps that chain. Recipe comparison is a Rust reply beside the snapshot. The page does not dedupe alternatives or rewrite the saved strategy. Drawing, BOM, and guide still come from the same PlanSnapshot.
 
+z-pareto-comparison ([Dz-pareto-comparison](../design/DECISIONS.md)) keeps that chain. Alternative comparison is a Rust reply beside the snapshot. The page does not turn unknown into zero or label an exhausted budget as a global optimum. Drawing, BOM, and guide still come from the same PlanSnapshot.
+
 Rust/WASM is justified by a portable single computational authority and controlled integer arithmetic, not by an unmeasured speed claim. WebAssembly toolchain and JSON overhead are costs. Task 001 retires the build/browser boundary risk before the full solver. No rewrite to TS or server engine is necessary from the current evidence.
 
 ## 2. Minimum runtime composition

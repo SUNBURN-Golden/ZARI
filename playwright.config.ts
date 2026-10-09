@@ -8,9 +8,11 @@ import { defineConfig, devices } from '@playwright/test';
 // be listening there. Reusing that server would run ZARI tests against the
 // other app, so reuseExistingServer stays off and the first free port at or
 // above 4173 is used. CI, where 4173 is free, still uses 4173.
-// Playwright loads this file in the runner and again in each worker. The
-// worker must keep the runner's port: once the server is up, a second probe
-// would skip it and point tests at the next port.
+// Playwright loads this file in the runner and again in each worker, including
+// a worker restarted after the suite has been running. Reuse the stamped port
+// while something is still listening there. A dead stamp is probed again.
+// A freshness cutoff must not drop a live server: the replacement worker would
+// bind its baseURL to the next port and every later navigation would be refused.
 function previewOrigin(): string {
   const stamp = join(process.cwd(), 'test-results', 'preview-origin.txt');
   const script = `
@@ -27,8 +29,7 @@ function previewOrigin(): string {
     (async () => {
       let stamped = '';
       try {
-        const stat = fs.statSync(stamp);
-        if (Date.now() - stat.mtimeMs < 60000) stamped = fs.readFileSync(stamp, 'utf8').trim();
+        stamped = fs.readFileSync(stamp, 'utf8').trim();
       } catch {}
       const match = stamped.match(/^http:\\/\\/127\\.0\\.0\\.1:(\\d+)$/);
       if (match && !(await canListen(Number(match[1])))) {
