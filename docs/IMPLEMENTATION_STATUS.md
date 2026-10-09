@@ -1,3 +1,35 @@
+# 2026-10-09 — ZARI-z-incremental-replan 고정 배치를 지키는 부분 재정리
+
+정본은 GitHub issue #90, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-incremental-replan`이다. 관찰한 base SHA는 `b718a4813bc0dddfdbde3d51e0ae89fb4a056611`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-incremental-replan만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-incremental-replan.md`와 `design/DECISIONS.md` Dz-incremental-replan. 제품 완성 후보 문서에는 z-incremental-replan 노트만 추가했다.
+- Rust `incremental::replan`이 고정한 배치·물건·전략을 입력 제약으로 받는다. 읽기 모형 버전은 `zari-incremental-1`이다. 고정 좌표는 유지한다. 맞지 않는 비고정 배치는 빼고 옮기지 않는다. 새 물건은 미배정이다. `reusedPass`는 false다. 막히면 충돌과 풀 수 있는 고정을 낸다. 발행은 기존 `evaluate_candidate`와 `ManualEdit`다.
+- 명령 `replanIncremental`는 검색 엔진이 있을 때 `comparePareto` 다음 capability다. `comparePareto`는 `cancelSearch` 바로 뒤에 그대로다. `BUILD_ID`는 `zari-domain-7`이다. 생성 계약은 Rust에서 다시 만들었다. 응답은 PlanSnapshot 해시 밖이다. 명령은 채택하지 않고 탐색 순위도 바꾸지 않는다.
+- 계획 화면의 대안 비교 다음에 부분 재정리가 있다. 유지 행은 기존 `primary-on-subtle`, 충돌은 기존 `warning-on-soft`다. 취소와 늦은 응답은 고른 계획을 바꾸지 않는다. `이 계획으로 바꾸기`만 발행된 스냅샷을 고른다. 고정 풀기는 체크만 지운다.
+- 기존 124 fixture 기대 바이트는 바꾸지 않았다. 새 검사는 `crates/core/tests/incremental.rs`에 있다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, Chromium 스위트 2 workers, 미리보기 `http://127.0.0.1:4175`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 179 passed, 1 ignored (incremental 7)
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 26 files / 175), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, manifest `buildId` `c31d92de4a925b0e`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12): exit 0
+- `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
+- `npm run test:browser -- --project=chromium --workers=2`: 94 passed (Playwright 7.3m). 미리보기는 4175였다. 부분 재정리 스펙은 18.9s였다. `worker-state` flake는 없었다. `spatial3d` `context-lost-console: none`. 설정 타임아웃은 올리지 않았다
+- `incremental-replan.spec.ts` Firefox 1 (20.0s), WebKit 1 (18.8s): exit 0
+- `npm run test:parity`: 2 passed (27.6s), 124 fixture
+- 이 세션은 push하지 않았다. GitHub Actions는 이 작업 트리를 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 피드백 루프, 결제·실시간 재고·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `BUILD_ID` 변경, 탐색으로 빈자리 채우기. 새 물건은 미배정으로 남는다. 브라우저의 고정 풀기는 체크를 지우고 그 다음 명령을 다시 보내지 않았다. `reorganize`의 `implementsNow`는 false다. 상세는 `docs/evidence/ZARI-z-incremental-replan.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-09 — ZARI-z-pareto-comparison 비용·재사용·접근·불확실성 대안 비교
 
 정본은 GitHub issue #88, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-pareto-comparison`이다. 관찰한 base SHA는 `094367b3d18b799c0a5c7a01a5f3e9f34a0bd907`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

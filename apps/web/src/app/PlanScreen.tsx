@@ -55,6 +55,7 @@ import {
 } from '../features/plan/view';
 import { bomCsvRows, toCsv } from '../features/plan/csv';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
+import { IncrementalPanel } from '../features/incremental/IncrementalPanel';
 import { ParetoPanel } from '../features/pareto/ParetoPanel';
 import { StrategyLibraryPanel } from '../features/strategy/StrategyLibraryPanel';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
@@ -923,6 +924,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
   const plan = state.plan;
   const selected =
     plan.alternatives.find((a) => a.planSnapshotId === plan.selectedId) ?? null;
+  const replanBase = selected ?? plan.edit.head ?? plan.acceptedSnapshot;
   const strategies = plan.strategies ?? [];
   const searching = plan.search === 'running' || plan.search === 'cancelling';
 
@@ -1125,6 +1127,20 @@ export function PlanScreen({ projectId }: { projectId: string }) {
         onSelect={(id) => session.selectAlternative(id)}
         onRecalculate={() => session.recalculatePareto()}
         onRetry={() => session.retryPareto()}
+      />
+
+      <IncrementalPanel
+        base={replanBase}
+        selectedId={plan.selectedId}
+        state={plan.incrementalState}
+        reply={plan.incremental}
+        error={plan.incrementalError}
+        ignored={plan.incrementalIgnored}
+        onRun={(pins) => {
+          if (replanBase) session.replanIncremental(replanBase, pins);
+        }}
+        onCancel={() => session.cancelReplan()}
+        onAdopt={() => session.adoptReplan()}
       />
 
       {plan.edit.head && (

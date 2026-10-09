@@ -8,6 +8,7 @@ pub mod eval_continue;
 pub mod facts;
 pub mod finalize;
 pub mod geometry;
+pub mod incremental;
 pub mod input;
 pub mod inventory;
 pub mod measurement;

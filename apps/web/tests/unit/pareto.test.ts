@@ -100,7 +100,8 @@ it('wasm candidate order matches the native front and an exhausted budget stays 
     expectedProtocolVersion: 1,
     expectedSchemaVersion: 1,
   });
-  expect(ready.event.capabilities?.at(-1)).toBe('comparePareto');
+  expect(ready.event.capabilities?.at(-1)).toBe('replanIncremental');
+  expect(ready.event.capabilities?.at(-2)).toBe('comparePareto');
   const fixture = JSON.parse(
     readFileSync(new URL('../../../../fixtures/domain/candidate-bounded-confirmed.json', import.meta.url), 'utf8'),
   ) as { input: { input: unknown; catalog: unknown } };

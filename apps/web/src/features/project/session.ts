@@ -14,6 +14,8 @@ import type {
   RejectedCandidate,
   SearchCounters,
   SearchTermination,
+  IncrementalPins,
+  IncrementalReply,
   ParetoReply,
   Strategy,
   StrategyDecision,
@@ -45,6 +47,14 @@ import {
   forgetParetoComparison,
   paretoKey,
 } from '../pareto/controller';
+import {
+  forgetReplan,
+  replanAdoptAllowed,
+  replanKey,
+  replanOnce,
+  replanReplyApplies,
+  type IncrementalPanelState,
+} from '../incremental/controller';
 import {
   SearchPump,
   WorkerController,
@@ -153,6 +163,12 @@ export interface PlanState {
   pareto: ParetoReply | null;
   paretoError: string | null;
   paretoState: 'idle' | 'pending' | 'ready' | 'empty' | 'error';
+  /** Rust pin-preserving replan. Not a snapshot field and not an adoption. */
+  incremental: IncrementalReply | null;
+  incrementalError: string | null;
+  incrementalState: IncrementalPanelState;
+  /** Late replies noticed after cancel. They do not change `selectedId`. */
+  incrementalIgnored: number;
   search: SearchState;
   progress: SearchCounters | null;
   searchError: string | null;
@@ -278,6 +294,11 @@ export class ProjectSession {
   private nextFactsAwaitingRecovery = false;
   /** Drops a Pareto reply that belongs to an older search or input revision. */
   private paretoEpoch = 0;
+  /** Drops a replan reply after cancel, a new ask, an input commit, or a search. */
+  private incrementalEpoch = 0;
+  /** Epoch of the reply currently held. Adopt requires this to match. */
+  private incrementalReplyEpoch = 0;
+  private incrementalKey: string | null = null;
   /**
    * Set only by the explicit goal recalculation. Consumed by the next
    * non-autosave reconcile. A search starts only after that commit installs.
@@ -327,6 +348,10 @@ export class ProjectSession {
         pareto: null,
         paretoError: null,
         paretoState: 'idle',
+        incremental: null,
+        incrementalError: null,
+        incrementalState: 'idle',
+        incrementalIgnored: 0,
         search: 'idle',
         progress: null,
         searchError: null,
@@ -1033,7 +1058,17 @@ export class ProjectSession {
       // is bound to the old input digest and can never ride across.
       this.clearEditChain();
       this.paretoEpoch += 1;
-      this.patchPlan({ pareto: null, paretoError: null, paretoState: 'idle' });
+      this.incrementalEpoch += 1;
+      this.incrementalKey = null;
+      this.patchPlan({
+        pareto: null,
+        paretoError: null,
+        paretoState: 'idle',
+        incremental: null,
+        incrementalError: null,
+        incrementalState: 'idle',
+        incrementalIgnored: 0,
+      });
       const catalog = await this.repo.getCatalog(normalized.catalogPin.catalogDigest).catch(() => null);
       await this.installContext(client, normalized, catalog);
     }
@@ -1167,6 +1202,112 @@ export class ProjectSession {
         paretoState: 'error',
       });
     }
+  }
+  /**
+   * One pin-preserving replan of `base` against the activated input.
+   * Does not select, accept, or move a pinned placement.
+   */
+  replanIncremental(base: PlanSnapshot, pins: IncrementalPins): void {
+    const client = this.controller.current;
+    const digest = this.state.inputDigest;
+    if (
+      !client ||
+      !digest ||
+      this.closed ||
+      this.state.status !== 'ready' ||
+      this.state.context !== 'installed'
+    ) {
+      this.patchPlan({
+        incremental: null,
+        incrementalError:
+          this.state.context !== 'installed' ? 'context_not_installed' : 'no_committed_input',
+        incrementalState: 'error',
+      });
+      return;
+    }
+    this.incrementalEpoch += 1;
+    const epoch = this.incrementalEpoch;
+    const key = replanKey(digest, base.planSnapshotId, pins);
+    this.incrementalKey = key;
+    this.patchPlan({
+      incremental: null,
+      incrementalError: null,
+      incrementalState: 'pending',
+      incrementalIgnored: 0,
+    });
+    void this.finishReplan(client, base, pins, key, epoch);
+  }
+  private async finishReplan(
+    client: ProbeClient,
+    base: PlanSnapshot,
+    pins: IncrementalPins,
+    key: string,
+    epoch: number,
+  ): Promise<void> {
+    try {
+      const reply = await replanOnce(key, async () => {
+        const event = await client.request({
+          kind: 'replanIncremental',
+          baseSnapshot: base,
+          pins,
+        });
+        if (event.kind !== 'incrementalReplanned') throw new Error('unexpected_worker_event');
+        return event.reply;
+      });
+      if (this.closed || !replanReplyApplies(epoch, this.incrementalEpoch)) {
+        this.noteIgnoredReplan(epoch);
+        return;
+      }
+      this.incrementalReplyEpoch = epoch;
+      this.patchPlan({
+        incremental: reply,
+        incrementalError: null,
+        incrementalState: reply.outcome.kind === 'blocked' ? 'blocked' : 'ready',
+      });
+    } catch (error) {
+      if (this.closed || error instanceof StaleRequest || !replanReplyApplies(epoch, this.incrementalEpoch)) {
+        this.noteIgnoredReplan(epoch);
+        return;
+      }
+      forgetReplan(key);
+      this.patchPlan({
+        incremental: null,
+        incrementalError: error instanceof Error ? error.message : String(error),
+        incrementalState: 'error',
+      });
+    }
+  }
+  private noteIgnoredReplan(epoch: number): void {
+    if (this.closed || replanReplyApplies(epoch, this.incrementalEpoch)) return;
+    if (this.state.plan.incrementalState !== 'cancelled') return;
+    this.patchPlan({ incrementalIgnored: this.state.plan.incrementalIgnored + 1 });
+  }
+  /** Drops the in-flight reply. Does not change the selected or accepted plan. */
+  cancelReplan(): void {
+    if (this.state.plan.incrementalState !== 'pending') return;
+    this.incrementalEpoch += 1;
+    if (this.incrementalKey) forgetReplan(this.incrementalKey);
+    this.incrementalKey = null;
+    this.patchPlan({
+      incremental: null,
+      incrementalError: null,
+      incrementalState: 'cancelled',
+    });
+  }
+  /** Explicit switch to the published snapshot. A stale epoch does nothing. */
+  adoptReplan(): void {
+    const reply = this.state.plan.incremental;
+    const outcome = reply?.outcome.kind ?? null;
+    if (!replanAdoptAllowed(this.incrementalReplyEpoch, this.incrementalEpoch, outcome)) return;
+    if (!reply || reply.outcome.kind !== 'published') return;
+    const snapshot = reply.outcome.snapshot;
+    const alternatives = this.state.plan.alternatives.some(
+      (item) => item.planSnapshotId === snapshot.planSnapshotId,
+    )
+      ? this.state.plan.alternatives
+      : [...this.state.plan.alternatives, snapshot];
+    this.snapshotIndex.set(snapshot.planSnapshotId, snapshot);
+    this.patchPlan({ alternatives, selectedId: snapshot.planSnapshotId });
   }
   /** One new comparison after a person asks. Does not retry by itself. */
   retryPareto(): void {
@@ -1648,6 +1789,8 @@ export class ProjectSession {
       (this.state.normalizedInput?.catalogPin.catalogDigest ?? '') !==
         resultCatalogDigest;
     this.paretoEpoch += 1;
+    this.incrementalEpoch += 1;
+    this.incrementalKey = null;
     this.patchPlan({
       search: 'running',
       progress: null,
@@ -1657,6 +1800,10 @@ export class ProjectSession {
       pareto: null,
       paretoError: null,
       paretoState: 'idle',
+      incremental: null,
+      incrementalError: null,
+      incrementalState: 'idle',
+      incrementalIgnored: 0,
     });
     const interrupt = (reason: string) => {
       this.pump?.dispose();

@@ -1078,6 +1078,59 @@
       "title": "CavityModel",
       "type": "string"
     },
+    "ChangeImpact": {
+      "additionalProperties": false,
+      "properties": {
+        "addedItemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "catalogChanged": {
+          "type": "boolean"
+        },
+        "dimensionChangedItemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "ownedChanged": {
+          "type": "boolean"
+        },
+        "quantityChangedItemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "removedItemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "spaceChanged": {
+          "type": "boolean"
+        },
+        "strategyChanged": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "addedItemIds",
+        "removedItemIds",
+        "dimensionChangedItemIds",
+        "quantityChangedItemIds",
+        "spaceChanged",
+        "strategyChanged",
+        "catalogChanged",
+        "ownedChanged"
+      ],
+      "title": "ChangeImpact",
+      "type": "object"
+    },
     "CheckBasis": {
       "enum": [
         "nominal",
@@ -1583,6 +1636,28 @@
             "kind",
             "termination",
             "alternatives"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Pinned incremental replan. The activated project is the new input.\nPins are explicit constraints. A historical pass is not copied. The\ncommand does not replace an adopted plan.",
+          "properties": {
+            "baseSnapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            },
+            "kind": {
+              "const": "replanIncremental",
+              "type": "string"
+            },
+            "pins": {
+              "$ref": "#/definitions/IncrementalPins"
+            }
+          },
+          "required": [
+            "kind",
+            "baseSnapshot",
+            "pins"
           ],
           "type": "object"
         },
@@ -3061,6 +3136,24 @@
             },
             "reply": {
               "$ref": "#/definitions/ParetoReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `replanIncremental`. The published snapshot, when present,\nis a new plan. The command does not adopt it.",
+          "properties": {
+            "kind": {
+              "const": "incrementalReplanned",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/IncrementalReply"
             }
           },
           "required": [
@@ -5747,6 +5840,172 @@
       "title": "Id",
       "type": "string"
     },
+    "IncrementalConflict": {
+      "additionalProperties": false,
+      "properties": {
+        "checkIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "code": {
+          "type": "string"
+        },
+        "subjectIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "subjectIds",
+        "checkIds"
+      ],
+      "title": "IncrementalConflict",
+      "type": "object"
+    },
+    "IncrementalOutcome": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "published",
+              "type": "string"
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "blocked",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "IncrementalOutcome"
+    },
+    "IncrementalPins": {
+      "additionalProperties": false,
+      "properties": {
+        "itemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "placementIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "strategy": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "placementIds",
+        "itemIds",
+        "strategy"
+      ],
+      "title": "IncrementalPins",
+      "type": "object"
+    },
+    "IncrementalReply": {
+      "additionalProperties": false,
+      "properties": {
+        "conflicts": {
+          "items": {
+            "$ref": "#/definitions/IncrementalConflict"
+          },
+          "type": "array"
+        },
+        "diff": {
+          "$ref": "#/definitions/PlanDiff"
+        },
+        "freshChecks": {
+          "items": {
+            "$ref": "#/definitions/ConstraintCheck"
+          },
+          "type": "array"
+        },
+        "impact": {
+          "$ref": "#/definitions/ChangeImpact"
+        },
+        "nextInputDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "outcome": {
+          "$ref": "#/definitions/IncrementalOutcome"
+        },
+        "pins": {
+          "items": {
+            "$ref": "#/definitions/PinConstraint"
+          },
+          "type": "array"
+        },
+        "previousInputDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "previousSnapshotId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "readModelVersion": {
+          "type": "string"
+        },
+        "releasable": {
+          "items": {
+            "$ref": "#/definitions/ReleasablePin"
+          },
+          "type": "array"
+        },
+        "reusedPass": {
+          "description": "Always false. A historical pass is not copied onto the new plan.",
+          "type": "boolean"
+        },
+        "verificationScope": {
+          "items": {
+            "$ref": "#/definitions/VerificationSubject"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "readModelVersion",
+        "previousSnapshotId",
+        "previousInputDigest",
+        "nextInputDigest",
+        "reusedPass",
+        "outcome",
+        "pins",
+        "impact",
+        "verificationScope",
+        "diff",
+        "conflicts",
+        "releasable",
+        "freshChecks"
+      ],
+      "title": "IncrementalReply",
+      "type": "object"
+    },
     "InnerOffset": {
       "additionalProperties": false,
       "description": "Cavity floor origin in the original product frame.",
@@ -6321,6 +6580,34 @@
         "supportId"
       ],
       "title": "ItemPlacement",
+      "type": "object"
+    },
+    "KeptPlacement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "x": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "y": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "z": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y",
+        "z"
+      ],
+      "title": "KeptPlacement",
       "type": "object"
     },
     "LayoutEditCommand": {
@@ -8261,6 +8548,51 @@
       "title": "PhysicalContainerModel",
       "type": "object"
     },
+    "PinConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kind": {
+          "$ref": "#/definitions/PinKind"
+        },
+        "source": {
+          "$ref": "#/definitions/PinSource"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "source"
+      ],
+      "title": "PinConstraint",
+      "type": "object"
+    },
+    "PinKind": {
+      "enum": [
+        "placement",
+        "item",
+        "strategy"
+      ],
+      "title": "PinKind",
+      "type": "string"
+    },
+    "PinSource": {
+      "enum": [
+        "explicit",
+        "itemPin"
+      ],
+      "title": "PinSource",
+      "type": "string"
+    },
     "Placement": {
       "additionalProperties": false,
       "properties": {
@@ -8375,6 +8707,69 @@
       ],
       "title": "PlanCreation",
       "type": "string"
+    },
+    "PlanDiff": {
+      "additionalProperties": false,
+      "properties": {
+        "addedPlacementIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "kept": {
+          "items": {
+            "$ref": "#/definitions/KeptPlacement"
+          },
+          "type": "array"
+        },
+        "movedPlacementIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "nextSnapshotId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "previousSnapshotId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "removed": {
+          "items": {
+            "$ref": "#/definitions/RemovedPlacement"
+          },
+          "type": "array"
+        },
+        "strategyChanged": {
+          "type": "boolean"
+        },
+        "unassignedItemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "kept",
+        "removed",
+        "addedPlacementIds",
+        "movedPlacementIds",
+        "unassignedItemIds",
+        "strategyChanged",
+        "previousSnapshotId",
+        "nextSnapshotId"
+      ],
+      "title": "PlanDiff",
+      "type": "object"
     },
     "PlanSnapshot": {
       "additionalProperties": false,
@@ -11008,6 +11403,34 @@
       "title": "RejectedCandidate",
       "type": "object"
     },
+    "ReleasablePin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kind": {
+          "$ref": "#/definitions/PinKind"
+        },
+        "sufficientAlone": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "sufficientAlone"
+      ],
+      "title": "ReleasablePin",
+      "type": "object"
+    },
     "Remediation": {
       "additionalProperties": false,
       "properties": {
@@ -11026,6 +11449,34 @@
         "fieldPaths"
       ],
       "title": "Remediation",
+      "type": "object"
+    },
+    "RemovedPlacement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "x": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "y": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "z": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y",
+        "z"
+      ],
+      "title": "RemovedPlacement",
       "type": "object"
     },
     "RequestMeta": {
@@ -13162,6 +13613,23 @@
       ],
       "title": "VerificationStatus",
       "type": "string"
+    },
+    "VerificationSubject": {
+      "additionalProperties": false,
+      "properties": {
+        "reasonCode": {
+          "type": "string"
+        },
+        "subjectId": {
+          "$ref": "#/definitions/Id"
+        }
+      },
+      "required": [
+        "subjectId",
+        "reasonCode"
+      ],
+      "title": "VerificationSubject",
+      "type": "object"
     },
     "ViewBoxMm": {
       "additionalProperties": false,
