@@ -34,6 +34,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-pareto-comparison 채택 (2026-10-07).** 이 노트는 z-pareto-comparison만 다룬다. 같은 원문이다. 기록은 [Dz-pareto-comparison](../design/DECISIONS.md)와 [docs/adr/SP-z-pareto-comparison.md](adr/SP-z-pareto-comparison.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 같은 입력과 예산의 차이는 Rust 응답이고, 미확인은 0이 아니며, 다 쓴 탐색 예산은 전역 최적해가 아니다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-incremental-replan 채택 (2026-10-07).** 이 노트는 z-incremental-replan만 다룬다. 같은 원문이다. 기록은 [Dz-incremental-replan](../design/DECISIONS.md)와 [docs/adr/SP-z-incremental-replan.md](adr/SP-z-incremental-replan.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 고정한 배치의 좌표는 유지하고, 새 치수로 무효가 된 통과는 재사용하지 않으며, 취소나 늦은 응답은 채택한 계획을 바꾸지 않는다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

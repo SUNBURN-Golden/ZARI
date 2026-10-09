@@ -599,7 +599,7 @@ fn command_matches_the_function_and_does_not_publish() {
     let names = ready["event"]["capabilities"].as_array().unwrap();
     assert_eq!(
         names.last().map(Value::as_str).unwrap(),
-        Some("comparePareto")
+        Some("replanIncremental")
     );
     assert_eq!(
         send(

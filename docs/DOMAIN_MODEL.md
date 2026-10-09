@@ -585,3 +585,7 @@ Adopted by [Dz-strategy-library](../design/DECISIONS.md). Normative detail is [d
 ## 17. z-pareto-comparison read model
 
 Adopted by [Dz-pareto-comparison](../design/DECISIONS.md). Normative detail is [docs/adr/SP-z-pareto-comparison.md](adr/SP-z-pareto-comparison.md). `PlanSnapshot` stays the published plan. The Pareto reply is not a snapshot field. Version `zari-pareto-1` names the read model. Axes are unassigned instances, unknown-quantity items, unknown checks, preceding moves, purchase, and reuse. Unknown does not become zero. No-purchase is distinct from unknown and from a known zero. A hard failure is excluded before dominance. `global_optimum` is false.
+
+## 18. z-incremental-replan pins
+
+Adopted by [Dz-incremental-replan](../design/DECISIONS.md). Normative detail is [docs/adr/SP-z-incremental-replan.md](adr/SP-z-incremental-replan.md). A published plan is still a `PlanSnapshot` from `evaluate_candidate`. The replan reply is not a snapshot field. Version `zari-incremental-1` names the read model. Pins are explicit inputs: placement ids, item ids, and the previous strategy. A pinned placement keeps its coordinates. A check status from the previous snapshot is not copied. `reusedPass` is false. A blocked reply names the conflict and the pins that can be released. The command does not adopt the result.

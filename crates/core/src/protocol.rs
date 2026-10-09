@@ -51,15 +51,16 @@ const CAPABILITIES: [&str; 17] = [
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
-const SEARCH_CAPABILITIES: [&str; 6] = [
+const SEARCH_CAPABILITIES: [&str; 7] = [
     "proposeStrategies",
     "evaluateStrategyLibrary",
     "startSearch",
     "stepSearch",
     "cancelSearch",
     "comparePareto",
+    "replanIncremental",
 ];
-const COMMAND_KINDS: [&str; 22] = [
+const COMMAND_KINDS: [&str; 23] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -82,6 +83,7 @@ const COMMAND_KINDS: [&str; 22] = [
     "stepSearch",
     "cancelSearch",
     "comparePareto",
+    "replanIncremental",
 ];
 const MAX_MESSAGE_BYTES: usize = 5 * 1024 * 1024;
 /// Per-step work-unit ceiling from WASM_PROTOCOL §3 (default 256, max 1024).
@@ -314,6 +316,13 @@ pub enum Command {
         termination: SearchTermination,
         alternatives: Vec<PlanSnapshot>,
     },
+    /// Pinned incremental replan. The activated project is the new input.
+    /// Pins are explicit constraints. A historical pass is not copied. The
+    /// command does not replace an adopted plan.
+    ReplanIncremental {
+        base_snapshot: PlanSnapshot,
+        pins: crate::incremental::IncrementalPins,
+    },
     /// Start one resumable bounded search over the activated immutable
     /// context. Any existing search handle is disposed first; the returned id
     /// is `search-1`, `search-2`, … monotonically per runtime.
@@ -440,6 +449,11 @@ pub enum Event {
     /// `globalOptimum` is false, including when the budget is exhausted.
     ParetoCompared {
         reply: crate::pareto::ParetoReply,
+    },
+    /// Result of `replanIncremental`. The published snapshot, when present,
+    /// is a new plan. The command does not adopt it.
+    IncrementalReplanned {
+        reply: crate::incremental::IncrementalReply,
     },
     /// Result of `projectSpatialView`: the additive ephemeral read model over
     /// the validated source. ProjectionVersion=1 versions this DTO
@@ -2556,6 +2570,40 @@ impl Runtime {
                 };
                 match crate::pareto::compare(&action) {
                     Ok(reply) => Event::ParetoCompared { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::ReplanIncremental {
+                base_snapshot,
+                pins,
+            } => {
+                let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
+                else {
+                    return failure("invalid_state");
+                };
+                let Some(engine) = &self.engine else {
+                    return failure("operation_not_supported");
+                };
+                let wanted = if pins.strategy {
+                    base_snapshot.content.strategy.strategy.clone()
+                } else {
+                    input.strategy_choice.clone()
+                };
+                let Some(strategy) = engine
+                    .propose_strategies(input)
+                    .into_iter()
+                    .find(|decision| decision.strategy == wanted)
+                else {
+                    return failure("strategy_unavailable");
+                };
+                match crate::incremental::replan(&crate::incremental::ReplanAction {
+                    base: base_snapshot,
+                    input,
+                    catalog,
+                    pins,
+                    strategy: &strategy,
+                }) {
+                    Ok(reply) => Event::IncrementalReplanned { reply },
                     Err(error) => failure(error.code),
                 }
             }

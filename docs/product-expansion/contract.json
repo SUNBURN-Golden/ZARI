@@ -52,7 +52,8 @@
     "startSearch",
     "stepSearch",
     "cancelSearch",
-    "comparePareto"
+    "comparePareto",
+    "replanIncremental"
   ],
   "chain": {
     "input": "Rust normalizeInput produces ProjectInput and inputDigest",

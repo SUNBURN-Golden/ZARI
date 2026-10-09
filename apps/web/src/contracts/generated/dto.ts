@@ -1467,6 +1467,11 @@ export type Command =
       termination: SearchTermination;
     }
   | {
+      baseSnapshot: PlanSnapshot;
+      kind: 'replanIncremental';
+      pins: IncrementalPins;
+    }
+  | {
       kind: 'startSearch';
       mode: SearchMode;
     }
@@ -2016,6 +2021,10 @@ export type Event =
       reply: ParetoReply;
     }
   | {
+      kind: 'incrementalReplanned';
+      reply: IncrementalReply;
+    }
+  | {
       kind: 'spatialViewProjected';
       projection: SpatialProjection;
     }
@@ -2148,6 +2157,28 @@ export type ParetoMoney =
  * via the `definition` "ParetoOptimality".
  */
 export type ParetoOptimality = 'budgetLimited' | 'scopeCompared' | 'cancelled' | 'interrupted';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "IncrementalOutcome".
+ */
+export type IncrementalOutcome =
+  | {
+      kind: 'published';
+      snapshot: PlanSnapshot;
+    }
+  | {
+      kind: 'blocked';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PinKind".
+ */
+export type PinKind = 'placement' | 'item' | 'strategy';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PinSource".
+ */
+export type PinSource = 'explicit' | 'itemPin';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "DimensionFrame".
@@ -3962,6 +3993,15 @@ export interface OfferPreviewLine {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "IncrementalPins".
+ */
+export interface IncrementalPins {
+  itemIds: Id[];
+  placementIds: Id[];
+  strategy: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "RequestMeta".
  */
 export interface RequestMeta {
@@ -4149,6 +4189,111 @@ export interface ParetoExclusion {
   conditions: ParetoCondition[];
   purchase: ParetoMoney;
   reasonCode: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "IncrementalReply".
+ */
+export interface IncrementalReply {
+  conflicts: IncrementalConflict[];
+  diff: PlanDiff;
+  freshChecks: ConstraintCheck[];
+  impact: ChangeImpact;
+  nextInputDigest: Digest;
+  outcome: IncrementalOutcome;
+  pins: PinConstraint[];
+  previousInputDigest: Digest;
+  previousSnapshotId: Digest;
+  readModelVersion: string;
+  releasable: ReleasablePin[];
+  /**
+   * Always false. A historical pass is not copied onto the new plan.
+   */
+  reusedPass: boolean;
+  verificationScope: VerificationSubject[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "IncrementalConflict".
+ */
+export interface IncrementalConflict {
+  checkIds: Id[];
+  code: string;
+  subjectIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PlanDiff".
+ */
+export interface PlanDiff {
+  addedPlacementIds: Id[];
+  kept: KeptPlacement[];
+  movedPlacementIds: Id[];
+  nextSnapshotId: Digest | null;
+  previousSnapshotId: Digest;
+  removed: RemovedPlacement[];
+  strategyChanged: boolean;
+  unassignedItemIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "KeptPlacement".
+ */
+export interface KeptPlacement {
+  id: Id;
+  x: number;
+  y: number;
+  z: number;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "RemovedPlacement".
+ */
+export interface RemovedPlacement {
+  id: Id;
+  x: number;
+  y: number;
+  z: number;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ChangeImpact".
+ */
+export interface ChangeImpact {
+  addedItemIds: Id[];
+  catalogChanged: boolean;
+  dimensionChangedItemIds: Id[];
+  ownedChanged: boolean;
+  quantityChangedItemIds: Id[];
+  removedItemIds: Id[];
+  spaceChanged: boolean;
+  strategyChanged: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PinConstraint".
+ */
+export interface PinConstraint {
+  id: Id | null;
+  kind: PinKind;
+  source: PinSource;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ReleasablePin".
+ */
+export interface ReleasablePin {
+  id: Id | null;
+  kind: PinKind;
+  sufficientAlone: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "VerificationSubject".
+ */
+export interface VerificationSubject {
+  reasonCode: string;
+  subjectId: Id;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

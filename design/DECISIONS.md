@@ -237,6 +237,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 명령, 대안 비교를 걷어 낸다. 이미 저장된 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-incremental-replan — 고정 배치를 지키는 부분 재정리 / 채택
+
+- ID: Dz-incremental-replan
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-incremental-replan만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 물건이 늘거나 치수가 바뀌어도 유지할 배치·물건·전략을 고를 수 없다. 고정을 몰래 옮기거나, 무효가 된 통과를 다시 쓰거나, 취소한 응답이 고른 계획을 바꾸면 재정리가 거짓이 된다.
+- 변경 대상: [docs/adr/SP-z-incremental-replan.md](../docs/adr/SP-z-incremental-replan.md), Rust `incremental::replan`, 명령 `replanIncremental`, 계획 화면의 부분 재정리. `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, exportVersion 1, dbVersion 3, 기존 124 fixture 기대 바이트는 그대로다.
+- 검토한 대안: (A) 핀을 명령의 명시 입력으로 두고, 발행은 기존 `evaluate_candidate`와 `ManualEdit`만 쓴다. (B) 핀을 `PlanSnapshot` 필드로 넣어 모든 스냅샷을 다시 만든다. (C) 화면이 좌표를 옮기고, 예전 통과를 새 치수에 남긴다.
+- 선택: A. B는 기존 fixture와 역사 스냅샷을 바꾼다. C는 고정을 몰래 옮기고, 계산 권위를 화면으로 옮긴다.
+- 조건: unknown을 통과나 0으로 바꾸지 않는다. 고정 좌표는 바꾸지 않는다. `reusedPass`는 false다. 취소와 늦은 응답은 고른 계획을 바꾸지 않는다. 새 물건은 미배정으로 남고, 빈자리를 채우는 탐색은 하지 않는다. 새 색 쌍은 없고 기존 `primary-on-subtle`과 `warning-on-soft`를 쓴다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 차이와 충돌은 텍스트다. 핀은 체크박스이고 Space로 토글한다. 고정 풀기·취소·바꾸기는 버튼이고 Enter로 동작한다. 빈 계획·대기·준비·막힘·취소·오류를 상태에 남긴다. 390px에서 페이지를 넓히지 않는다. forced-colors는 기존 Canvas/CanvasText다. 같은 입력·이전 계획·핀은 명령을 한 번만 보낸다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·피드백 루프·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 명령, 부분 재정리 화면을 걷어 낸다. 이미 저장된 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
+
 ## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
 
 - ID: D-audit-01
