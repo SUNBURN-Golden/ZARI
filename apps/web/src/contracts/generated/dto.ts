@@ -1456,6 +1456,20 @@ export type Command =
       kind: 'quoteOfferBundle';
     }
   | {
+      attachmentsJson: string;
+      catalogJson: string;
+      exportedAt: string;
+      inclusion: PortableInclusion;
+      kind: 'buildPortableBundle';
+      observationsJson: string;
+      projectJson: string;
+      snapshotsJson: string;
+    }
+  | {
+      kind: 'inspectPortableBundle';
+      zipBase64: string;
+    }
+  | {
       kind: 'proposeStrategies';
     }
   | {
@@ -2059,6 +2073,14 @@ export type Event =
   | {
       kind: 'offerBundleQuoted';
       reply: OfferQuoteReply;
+    }
+  | {
+      kind: 'portableBundleBuilt';
+      reply: PortableBuildReply;
+    }
+  | {
+      kind: 'portableBundleInspected';
+      reply: PortableInspectReply;
     }
   | {
       kind: 'searchStarted';
@@ -4017,6 +4039,16 @@ export interface OfferPreviewLine {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PortableInclusion".
+ */
+export interface PortableInclusion {
+  catalog: boolean;
+  observations: boolean;
+  project: boolean;
+  snapshotAttachments: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "IncrementalPins".
  */
 export interface IncrementalPins {
@@ -4716,6 +4748,50 @@ export interface UnconfirmedAmount {
   code: string;
   lineId: Id | null;
   sellerId: Id | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PortableBuildReply".
+ */
+export interface PortableBuildReply {
+  accepted: boolean;
+  issues: PortableIssue[];
+  memberCount: number;
+  zipBase64: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PortableIssue".
+ */
+export interface PortableIssue {
+  code: string;
+  fieldPath: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PortableInspectReply".
+ */
+export interface PortableInspectReply {
+  accepted: boolean;
+  attachmentsJson: string;
+  canonicalSnapshotId: string;
+  catalogJson: string;
+  exportedAt: string;
+  inclusion: PortableInclusion;
+  issues: PortableIssue[];
+  observationsJson: string;
+  policy: PortablePolicy;
+  projectJson: string;
+  snapshotsJson: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PortablePolicy".
+ */
+export interface PortablePolicy {
+  location: string;
+  personalData: string;
+  photoBytes: string;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

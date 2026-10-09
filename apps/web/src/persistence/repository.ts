@@ -1380,6 +1380,7 @@ export class ProjectRepository {
     snapshots: SnapshotRow[];
     actionProgress: ActionProgressRow[];
     catalogs: CatalogRow[];
+    ledger: InventoryLedgerRow | null;
   }): Promise<ProjectRow> {
     return this.enqueue(async () => {
       const at = this.now();
@@ -1394,6 +1395,7 @@ export class ProjectRepository {
             this.db.snapshots,
             this.db.catalogs,
             this.db.actionProgress,
+            this.db.inventoryLedgers,
           ],
           async () => {
             await this.db.projects.add({
@@ -1422,6 +1424,15 @@ export class ProjectRepository {
             for (const row of args.catalogs) {
               const existing = await this.db.catalogs.get(row.catalogDigest);
               if (existing === undefined) await this.db.catalogs.add(row);
+            }
+            if (args.ledger !== null) {
+              await this.db.inventoryLedgers.add({
+                schemaVersion: SCHEMA_VERSION,
+                ledgerId: projectId,
+                revision: '1',
+                ledger: args.ledger.ledger,
+                updatedAt: at,
+              });
             }
           },
         );

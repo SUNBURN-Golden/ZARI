@@ -276,6 +276,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·전화·전용 GPU·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정과 포커스·증감·live region 연결을 걷어 낸다. 이미 저장된 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-portable-project — 프로젝트 이식·검증된 가져오기 / 채택
+
+- ID: Dz-portable-project
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-portable-project만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 계획과 출처를 다른 기기로 옮길 때 포함 범위를 고를 수 없고, 손상·구버전·경로 이탈·압축 폭탄이 기존 프로젝트를 덮어쓸 수 있다. 사진 바이트와 위치정보·개인정보를 묶음에 두면 동의 없는 복사가 된다.
+- 변경 대상: [docs/adr/SP-z-portable-project.md](../docs/adr/SP-z-portable-project.md), Rust `build_portable_bundle` / `inspect_portable_bundle`, 명령 `buildPortableBundle`과 `inspectPortableBundle`, 프로젝트 화면의 이식 묶음과 목록의 zip 가져오기. `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, exportVersion 1, live dbVersion 3, 기존 fixture 기대 바이트는 그대로다.
+- 검토한 대안: (A) STORE zip을 exportVersion 1 옆에 두고, Rust가 검사한 뒤에만 기존 가져오기 트랜잭션을 연다. (B) 원장과 사진을 exportVersion 1 JSON에 넣어 모든 기존 보내기 파일을 다시 만든다. (C) 화면이 zip을 풀고, 선언된 크기가 큰 항목도 메모리에 올린다.
+- 선택: A. B는 기존 보내기 계약과 fixture를 바꾼다. C는 계산·검증 권위를 화면으로 옮기고 압축 폭탄을 푼다.
+- 조건: unknown을 통과나 0으로 바꾸지 않는다. 사진 바이트는 항상 제외다. 위치정보와 개인정보 키가 있으면 거절하고, 이 기기의 원본은 지우지 않는다. 실패한 가져오기는 쓰지 않는다. 공유 보유 수납함은 묶음에 없다. 원장은 zip의 관측 항목에만 있고 exportVersion 1에는 없다. 새 색 쌍은 없고 기존 패널 토큰을 쓴다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 포함 범위는 체크박스이고 Space로 토글한다. 사진·위치·개인정보 정책은 글자로 항상 보인다. 확인 중·준비·거절을 상태에 남긴다. 390px에서 페이지를 넓히지 않는다. forced-colors는 기존 Canvas/CanvasText다. 거절된 zip은 `inspectPortableBundle` 한 번이고 `verifyRecord`는 없다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 두 명령, 이식 묶음 화면을 걷어 낸다. 이미 저장된 스냅샷 바이트와 exportVersion 1 파일은 이 결정으로 다시 쓰지 않는다.
+
 ## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
 
 - ID: D-audit-01

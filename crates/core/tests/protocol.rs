@@ -70,6 +70,8 @@ fn capability_subset_is_honest() {
             "applyInventoryLedger",
             "reviewCatalogImport",
             "quoteOfferBundle",
+            "buildPortableBundle",
+            "inspectPortableBundle",
             "disposeProject"
         ])
     );
@@ -465,6 +467,8 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             "applyInventoryLedger",
             "reviewCatalogImport",
             "quoteOfferBundle",
+            "buildPortableBundle",
+            "inspectPortableBundle",
             "disposeProject",
             "proposeStrategies",
             "evaluateStrategyLibrary",

@@ -44,6 +44,8 @@
     "applyInventoryLedger",
     "reviewCatalogImport",
     "quoteOfferBundle",
+    "buildPortableBundle",
+    "inspectPortableBundle",
     "disposeProject"
   ],
   "searchCapabilities": [

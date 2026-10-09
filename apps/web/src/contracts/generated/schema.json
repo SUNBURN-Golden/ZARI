@@ -1755,6 +1755,66 @@
         },
         {
           "additionalProperties": false,
+          "description": "Build a portable zip from caller-selected JSON members. Does not write\na store or a PlanSnapshot. Photo bytes are refused.",
+          "properties": {
+            "attachmentsJson": {
+              "type": "string"
+            },
+            "catalogJson": {
+              "type": "string"
+            },
+            "exportedAt": {
+              "type": "string"
+            },
+            "inclusion": {
+              "$ref": "#/definitions/PortableInclusion"
+            },
+            "kind": {
+              "const": "buildPortableBundle",
+              "type": "string"
+            },
+            "observationsJson": {
+              "type": "string"
+            },
+            "projectJson": {
+              "type": "string"
+            },
+            "snapshotsJson": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "exportedAt",
+            "inclusion",
+            "projectJson",
+            "observationsJson",
+            "catalogJson",
+            "snapshotsJson",
+            "attachmentsJson"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Read a portable zip. A rejection returns no member bodies and writes\nnothing. Path escape, bombs, and unknown versions fail closed.",
+          "properties": {
+            "kind": {
+              "const": "inspectPortableBundle",
+              "type": "string"
+            },
+            "zipBase64": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "zipBase64"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -3498,6 +3558,42 @@
             },
             "reply": {
               "$ref": "#/definitions/OfferQuoteReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `buildPortableBundle`. `accepted: false` has an empty zip.",
+          "properties": {
+            "kind": {
+              "const": "portableBundleBuilt",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/PortableBuildReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `inspectPortableBundle`. Rejected replies omit member text.",
+          "properties": {
+            "kind": {
+              "const": "portableBundleInspected",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/PortableInspectReply"
             }
           },
           "required": [
@@ -9087,6 +9183,155 @@
         "content"
       ],
       "title": "PlanSnapshot",
+      "type": "object"
+    },
+    "PortableBuildReply": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "type": "boolean"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/definitions/PortableIssue"
+          },
+          "type": "array"
+        },
+        "memberCount": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "zipBase64": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "accepted",
+        "issues",
+        "zipBase64",
+        "memberCount"
+      ],
+      "title": "PortableBuildReply",
+      "type": "object"
+    },
+    "PortableInclusion": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog": {
+          "type": "boolean"
+        },
+        "observations": {
+          "type": "boolean"
+        },
+        "project": {
+          "type": "boolean"
+        },
+        "snapshotAttachments": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "project",
+        "observations",
+        "catalog",
+        "snapshotAttachments"
+      ],
+      "title": "PortableInclusion",
+      "type": "object"
+    },
+    "PortableInspectReply": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "type": "boolean"
+        },
+        "attachmentsJson": {
+          "type": "string"
+        },
+        "canonicalSnapshotId": {
+          "type": "string"
+        },
+        "catalogJson": {
+          "type": "string"
+        },
+        "exportedAt": {
+          "type": "string"
+        },
+        "inclusion": {
+          "$ref": "#/definitions/PortableInclusion"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/definitions/PortableIssue"
+          },
+          "type": "array"
+        },
+        "observationsJson": {
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/definitions/PortablePolicy"
+        },
+        "projectJson": {
+          "type": "string"
+        },
+        "snapshotsJson": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "accepted",
+        "issues",
+        "exportedAt",
+        "inclusion",
+        "policy",
+        "projectJson",
+        "observationsJson",
+        "catalogJson",
+        "snapshotsJson",
+        "attachmentsJson",
+        "canonicalSnapshotId"
+      ],
+      "title": "PortableInspectReply",
+      "type": "object"
+    },
+    "PortableIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "fieldPath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "code"
+      ],
+      "title": "PortableIssue",
+      "type": "object"
+    },
+    "PortablePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "type": "string"
+        },
+        "personalData": {
+          "type": "string"
+        },
+        "photoBytes": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "photoBytes",
+        "location",
+        "personalData"
+      ],
+      "title": "PortablePolicy",
       "type": "object"
     },
     "PositionMm": {

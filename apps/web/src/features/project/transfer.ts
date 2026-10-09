@@ -12,6 +12,7 @@ import {
   type CatalogRow,
   type DraftRow,
   type InputRow,
+  type InventoryLedgerRow,
   type ProjectRow,
   type SnapshotRow,
 } from '../../persistence/db';
@@ -58,6 +59,8 @@ export interface StagedImport {
   snapshots: SnapshotRow[];
   actionProgress: ActionProgressRow[];
   catalogs: CatalogRow[];
+  /** Life ledger copied into the new project id. JSON import leaves this null. */
+  ledger: InventoryLedgerRow | null;
 }
 
 export interface ImportSummary {
@@ -73,6 +76,9 @@ export interface ImportSummary {
   attachmentCount: number;
   acceptedBound: boolean;
   draftPresent: boolean;
+  /** Set when the file was a portable zip. JSON import leaves these unset. */
+  portable?: boolean;
+  canonicalSnapshotId?: string;
 }
 
 export type StageImportResult =
@@ -397,6 +403,7 @@ export async function stageProjectImport(
     snapshots,
     actionProgress: progress,
     catalogs,
+    ledger: null,
   };
   return {
     status: 'staged',
@@ -450,6 +457,7 @@ export async function commitProjectImport(
     snapshots: staged.snapshots,
     actionProgress: staged.actionProgress,
     catalogs: staged.catalogs,
+    ledger: staged.ledger,
   });
 }
 
