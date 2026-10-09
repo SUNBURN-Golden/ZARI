@@ -1,3 +1,34 @@
+# 2026-10-09 — ZARI-z-accessibility-workspace 측정부터 실행까지 키보드·모바일 접근성
+
+정본은 GitHub issue #94, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-accessibility-workspace`이다. 관찰한 base SHA는 `346558c1b04d846b122dd4581cb88898b416aedd`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-accessibility-workspace만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-accessibility-workspace.md`와 `design/DECISIONS.md` Dz-accessibility-workspace. 제품 완성 후보 문서와 `design/SPATIAL_WORKSPACE.md` §8에는 이 노드 노트만 추가했다.
+- 좌표 입력, 도면 화살표, 터치 증감은 같은 `movePlacement`다. 빈 좌표는 0mm가 아니고, 증감 0은 명령이 아니다. 키보드로 배치를 고르면 그 상세의 X 좌표로 포커스가 간다. 1mm가 기본이고, Shift와 터치의 10mm는 명시적이다.
+- 선택과 목록 강조는 보이는 표시와 polite live region에 함께 있다. 선택 버튼은 `aria-pressed`다. 미확인 문장은 치수 입력의 `aria-describedby`에 연결된다. 저장 실패·충돌·워커 실패·채택 오류는 복구 컨트롤로 포커스를 옮기고 글자는 남긴다. 계산 취소는 포커스가 떠 있을 때 계산 버튼으로 돌아간다. 채택이 바뀌면 실행 가이드의 사용할 수 있는 컨트롤로 간다.
+- 비교 표는 후보와 채택보다 앞이다. 47.999rem 아래에서 프로젝트 이름과 “이 기기에만 저장”은 다음 줄로 남고, 비교 표는 구역 안에서 가로로 스크롤된다. 새 색 토큰은 없다.
+- Rust 명령, `BUILD_ID`, fixture 기대 바이트는 바꾸지 않았다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 186 passed, 1 ignored. 디스크가 기본 debuginfo 링크 중에 가득 차서, 통과한 실행은 `CARGO_INCREMENTAL=0`과 `CARGO_PROFILE_DEV_DEBUG=0`이었다. 단언은 같다
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git diff -- fixtures`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 직접 의존 `serde_json`, `wasm-bindgen`, `zari-core`, `zari-solver`
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 27 files / 182), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, manifest `buildId` `c8ae2decf5b078b7`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12): exit 0. lint는 마지막 스펙 수정 뒤에 다시 exit 0
+- Chromium 전체 98건은 한 번의 exit 0으로 끝나지 않았다. 같은 최종 트리에서 실패한 항목은 서로 달랐고, 그 항목은 다른 전체 실행에서 통과했다. 접근성 스펙 3건은 마지막 두 전체 실행과 Firefox에서 통과했다. `worker-state` flake는 없었다. 설정 타임아웃은 올리지 않았다. `--workers=1`. 추적 파일이 디스크를 채워 이후 실행은 `--trace off`였다
+- `accessibility-workspace.spec.ts` Firefox 3 passed (16.8s). WebKit은 호스트에 `libgtk-4.so.1` 등이 없어 브라우저가 뜨지 않았다. UNVERIFIED
+- `npm run test:parity`: 2 passed (29.4s), 124 fixture
+- 이 세션은 push하지 않았다. GitHub Actions는 이 작업 트리를 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 결제·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `BUILD_ID` 변경. 320px·200% CSS 확대·forced-colors·reduced motion은 데스크톱 에뮬레이션이다. 상세는 `docs/evidence/ZARI-z-accessibility-workspace.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-09 — ZARI-z-search-diagnostics 해 없음·측정 부족·탐색 미완료의 구분
 
 정본은 GitHub issue #92, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-search-diagnostics`이다. 관찰한 base SHA는 `ccd05227d4f8f7f4d8f6cfbecbe0ac902a734df8`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

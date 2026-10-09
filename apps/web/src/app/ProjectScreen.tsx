@@ -22,6 +22,7 @@ import type { AttachmentRow, CatalogRow, OwnedContainerRow } from '../persistenc
 import { InventoryPanel } from '../features/inventory/InventoryPanel';
 import { ownedToRaw } from '../features/owned/model';
 import { DimensionField } from '../ui/DimensionField';
+import { useReturnFocus } from '../ui/returnFocus';
 import {
   acquireSession,
   discardSession,
@@ -128,11 +129,13 @@ function FieldGroup({
               onFocus={() => setFocused(field)}
               onBlur={() => setFocused(null)}
               error={fieldError(field)}
+              describedBy={`uncertainty-${field}`}
             />
             <span className="normalized-value" data-testid={`normalized-${field}`} data-historical={blocked(field) ? 'true' : undefined}>
               {normalizedText(state.normalizedInput, field)}
             </span>
             <span
+              id={`uncertainty-${field}`}
               className="uncertainty-status"
               data-testid={`uncertainty-${field}`}
               data-uncertainty={measurement.uncertainty.state}
@@ -487,6 +490,17 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     return null;
   };
   useEffect(() => () => releaseSession(projectId), [projectId]);
+  useReturnFocus(state.saveState === 'error', 'save-failed-retry');
+  useReturnFocus(state.conflict !== null, 'conflict-reload');
+  useReturnFocus(state.worker === 'failed', 'worker-retry');
+  useEffect(() => {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || active.getAttribute('data-testid') !== 'commit-input') return;
+    const field = MEASUREMENT_FIELDS.find((item) =>
+      state.diagnostics.some((entry) => fieldPathFor(entry.fieldPath) === item),
+    );
+    if (field) document.getElementById(field)?.focus();
+  }, [state.diagnostics, state.inputRevision, state.saveState]);
   useEffect(() => {
     if (state.status !== 'ready' || state.worker !== 'ready') return;
     const snap = session.snapshot;
@@ -538,7 +552,12 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           </p>
         </div>
       )}
-      <div className="session-status" data-testid="save-state" data-save-state={state.saveState}>
+      <div
+        className="session-status"
+        data-testid="save-state"
+        data-save-state={state.saveState}
+        role="status"
+      >
         {SAVE_TEXT[state.saveState]}
         {state.saveError ? ` · ${state.saveError}` : ''}
       </div>

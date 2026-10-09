@@ -228,6 +228,23 @@ export function readMovePosition(
   return { ok: true, position: { x: values.x!, y: values.y!, z: values.z! } };
 }
 
+/**
+ * Touch and keyboard nudges share the coordinate gate. A blank axis is not
+ * treated as 0mm, and a zero step does not become a command.
+ */
+export function nudgeMovePosition(
+  fields: Record<MoveAxis, MoveFieldText>,
+  axis: MoveAxis,
+  delta: number,
+): MovePositionRead {
+  if (!Number.isInteger(delta) || delta === 0) {
+    return { ok: false, errors: { [axis]: 'position_not_integer_mm' } };
+  }
+  const read = readMovePosition(fields);
+  if (!read.ok) return read;
+  return { ok: true, position: { ...read.position, [axis]: read.position[axis] + delta } };
+}
+
 export const ORIENTATION_TEXT: Record<string, string> = {
   upright0: '정면 0°',
   upright90: '90° 회전',

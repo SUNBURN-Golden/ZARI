@@ -146,6 +146,8 @@ step toggle은 accepted binding과 project/session generation을 capture하고 a
 
 touch target 48px 상당, 기본 control 최소44px. 작은 실물의 hit region 확대는 클릭 검출에서만 적용; 실제 mesh/shape 확대 금지. 겹치는 hit area는 목록 선택 fallback. tooltip만으로 조건을 전달하지 않는다. 선택/실패/저장/worker recovery를 짧은 live region에 발표, hover/pointer frame 발표 0.
 
+**z-accessibility-workspace만 (2026-10-09).** 이 문장은 이 노드의 구현 노트다. 키보드로 배치를 고르면 같은 상세의 좌표 입력으로 포커스가 간다. 터치 증감과 화살표와 좌표 입력은 같은 `movePlacement`다. 1mm가 기본이고 10mm는 명시적이다. 빈 좌표는 0mm가 아니다. 좁은 화면에서도 프로젝트 이름과 이 기기 저장 안내가 남고, 대안 비교 표는 구역 안에서 가로로 스크롤된다. 선택·목록 강조는 시각과 polite live region에 함께 있다. 저장 실패·충돌·워커 실패·채택 오류·계산 취소는 복구 컨트롤로 포커스를 옮기고 입력 글자는 지우지 않는다. 채택 뒤 실행 가이드의 사용 가능한 컨트롤로 포커스가 간다. 데스크톱 320px·확대·forced-colors·reduced motion은 실기기 검증이 아니다. 기록은 [Dz-accessibility-workspace](DECISIONS.md)와 [docs/adr/SP-z-accessibility-workspace.md](../docs/adr/SP-z-accessibility-workspace.md)이다.
+
 ## 9. draft capture 요구
 
 SP-007은 실제 구현 HEAD/fixture/environment와 다음 capture를 등록한다: 측정 focus known/unknown/invalid, 선택 수납함 outer/inner, 접근 unknown, drag 검사 전/거절/검증 후 저장 실패, 3D cutaway와 exact child selection, WebGL fallback, BOM 다중 대상, 현재 step/prerequisite blocked/progress unavailable/stale/타 탭 conflict. wide1440와 compact390, 200% 확대와 reduced-motion/forced-colors 근거 포함. 비동기 state는 test hook으로 고정하되 Rust 평가를 mock하여 통과 화면을 꾸미지 않는다.

@@ -533,8 +533,22 @@
 }
 
 .pareto-scroll {
+  contain: inline-size;
   overflow-x: auto;
   max-width: 100%;
+}
+
+.move-nudge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  align-items: center;
+}
+
+.move-nudge-axis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
 }
 
 .pareto-diff {
@@ -964,6 +978,8 @@
 }
 
 @media (pointer: coarse) {
+  .move-nudge .button,
+  .edit-inspector-field input,
   .detail-editor input,
   .detail-editor select,
   .detail-editor textarea,

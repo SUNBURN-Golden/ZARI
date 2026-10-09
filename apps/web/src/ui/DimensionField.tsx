@@ -1,4 +1,4 @@
-import type { FocusEvent } from 'react';
+import { useLayoutEffect, useRef, type FocusEvent } from 'react';
 import { FieldError, Input, Label, Text, TextField } from 'react-aria-components';
 
 type Unit = 'mm' | 'cm';
@@ -13,6 +13,8 @@ type DimensionFieldProps = {
   onUnitChange: (unit: Unit) => void;
   onFocus: () => void;
   onBlur: () => void;
+  /** Existing status element, such as the uncertainty line, announced with the field. */
+  describedBy?: string;
 };
 
 export function DimensionField({
@@ -26,7 +28,15 @@ export function DimensionField({
   onUnitChange,
   onFocus,
   onBlur,
+  describedBy,
 }: DimensionFieldProps) {
+  const groupRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const input = groupRef.current?.querySelector('input');
+    if (!input || !describedBy) return;
+    const ids = (input.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+    if (!ids.includes(describedBy)) input.setAttribute('aria-describedby', [...ids, describedBy].join(' '));
+  });
   const keepFocus = (event: FocusEvent<HTMLDivElement>) => {
     const next = event.relatedTarget;
     if (next instanceof Node && event.currentTarget.contains(next)) return;
@@ -42,7 +52,7 @@ export function DimensionField({
       validationBehavior="aria"
     >
       <Label className="field-label">{label}</Label>
-      <div className="dimension-input" onFocus={onFocus} onBlur={keepFocus}>
+      <div className="dimension-input" ref={groupRef} onFocus={onFocus} onBlur={keepFocus}>
         <Input
           inputMode="decimal"
           autoComplete="off"

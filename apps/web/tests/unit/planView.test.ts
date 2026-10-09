@@ -11,6 +11,7 @@ import type {
 import {
   catalogSourceText,
   isNoPurchase,
+  nudgeMovePosition,
   readMovePosition,
   unassignedPlacement,
   unassignedPlacementText,
@@ -58,6 +59,28 @@ describe('readMovePosition — inspector coordinate gate', () => {
     expect(readMovePosition({ x: text('19999'), y: text('0'), z: text('999999') })).toEqual({
       ok: true,
       position: { x: 19999, y: 0, z: 999999 },
+    });
+  });
+});
+
+describe('nudgeMovePosition — touch and keyboard share the coordinate gate', () => {
+  it('adds a whole millimetre without turning a blank axis into 0', () => {
+    expect(nudgeMovePosition({ x: text('120'), y: text('40'), z: text('0') }, 'x', 1)).toEqual({
+      ok: true,
+      position: { x: 121, y: 40, z: 0 },
+    });
+    expect(nudgeMovePosition({ x: text('120'), y: text('40'), z: text('0') }, 'y', -10)).toEqual({
+      ok: true,
+      position: { x: 120, y: 30, z: 0 },
+    });
+    const blank = nudgeMovePosition({ x: text(''), y: text('40'), z: text('0') }, 'x', 1);
+    expect(blank).toEqual({ ok: false, errors: { x: 'position_missing' } });
+  });
+
+  it('refuses a zero step so it is not sent as a command', () => {
+    expect(nudgeMovePosition({ x: text('120'), y: text('40'), z: text('0') }, 'x', 0)).toEqual({
+      ok: false,
+      errors: { x: 'position_not_integer_mm' },
     });
   });
 });

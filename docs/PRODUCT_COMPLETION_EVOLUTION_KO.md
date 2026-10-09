@@ -38,6 +38,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-search-diagnostics 채택 (2026-10-07).** 이 노트는 z-search-diagnostics만 다룬다. 같은 원문이다. 기록은 [Dz-search-diagnostics](../design/DECISIONS.md)와 [docs/adr/SP-z-search-diagnostics.md](adr/SP-z-search-diagnostics.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 알 수 없는 측정은 제품 없음이 아니고, 더 큰 예산은 불가능의 증명이 아니며, 같은 사례는 로그 없이 입력·규칙·카탈로그·예산으로 다시 구분한다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-accessibility-workspace 채택 (2026-10-07).** 이 노트는 z-accessibility-workspace만 다룬다. 같은 원문이다. 기록은 [Dz-accessibility-workspace](../design/DECISIONS.md)와 [docs/adr/SP-z-accessibility-workspace.md](adr/SP-z-accessibility-workspace.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 드래그 없이 숫자·키보드·터치로 같은 이동 명령을 보내고, 미확인은 통과로 바뀌지 않으며, 저장 실패와 계산 취소는 입력 글자와 포커스 복귀를 남긴다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.
