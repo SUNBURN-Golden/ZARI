@@ -5,7 +5,7 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. S
 - Task: GitHub issue #88, node z-pareto-comparison, “비용·재사용·접근·불확실성 대안 비교”.
 - Plan commit: `0847d1b065627938acfad3a941de79e357570e43`.
 - Branch: `astra/zari-z-pareto-comparison`.
-- Observed base SHA: `094367b3d18b799c0a5c7a01a5f3e9f34a0bd907` (origin/main at branch creation; the plan commit is an ancestor). The final HEAD is the supervisor's commit of this verified tree.
+- Observed base SHA: `094367b3d18b799c0a5c7a01a5f3e9f34a0bd907` (origin/main at branch creation; the plan commit is an ancestor). CI `bridge` failed on the supervisor commit `5bf44ce43afb5f140321ea33c058c9fddd4a978d`. The fix in this evidence is in the working tree and is not a new commit.
 - Pinned docs used for this node: `AGENTS.md`; `docs/AIOPS_SPATIAL_EXECUTION_PLAN.md` §2; `docs/DOMAIN_MODEL.md`; `docs/WASM_PROTOCOL.md`; `docs/PERSISTENCE.md`; `docs/SOLVER.md`; `docs/FRONTEND.md`; `docs/TEST_STRATEGY.md`; `docs/ARCHITECTURE.md`; `DESIGN.md` token rules via `apps/web/src/styles/tokens.css`; `design/DECISIONS.md`; `design/SCREENS.md`; `design/WORKSPACE_BLUEPRINT.md`; previous node evidence and `docs/adr/SP-z-strategy-library.md`, `docs/adr/SP-z-offer-bundles.md`, `docs/adr/SP-z-product-contract.md`. Candidate files under `docs/aiops/**` and the product-completion drafts were not used as extra scope. `.aiops/**` and `docs/aiops/**` were not edited.
 - Adoption: JunTae Park (준태, repository owner), 2026-10-07 12:42 KST, verbatim: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." Recorded in `design/DECISIONS.md` Dz-pareto-comparison and `docs/adr/SP-z-pareto-comparison.md`. This delivery is z-pareto-comparison only. Fable NONE and the non-author A2 are replaced by two independent read-only reviews. Merge is delegated to the supervisor. The quote does not adopt incremental replan, checkout, cloud, photo consent, capture acceptance, or release.
 
@@ -31,7 +31,8 @@ The plan screen shows the comparison after the alternative cards. Difference cel
 
 - Adoption: `docs/adr/SP-z-pareto-comparison.md`, `design/DECISIONS.md` (Dz-pareto-comparison), a short z-pareto-comparison note in `docs/PRODUCT_COMPLETION_EVOLUTION_KO.md`.
 - Rust: `crates/core/src/pareto.rs`, `crates/core/src/lib.rs`, `crates/core/src/protocol.rs`.
-- Tests: `crates/core/tests/pareto.rs`, `crates/core/tests/protocol.rs`, `apps/web/tests/unit/pareto.test.ts`, `apps/web/tests/browser/pareto-comparison.spec.ts`.
+- Tests: `crates/core/tests/pareto.rs`, `crates/core/tests/protocol.rs`, `apps/web/tests/unit/pareto.test.ts`, `apps/web/tests/browser/pareto-comparison.spec.ts`, `apps/web/tests/harness.ts`.
+- Browser runner: `playwright.config.ts` reuses a stamped preview port while that port is still listening.
 - UI and worker: `apps/web/src/features/pareto/controller.ts`, `phrases.ts`, `ParetoPanel.tsx`, `apps/web/src/features/project/session.ts`, `apps/web/src/app/PlanScreen.tsx`, `apps/web/src/styles/project.css`, `apps/web/src/worker/client.ts`.
 - Generated: `apps/web/src/contracts/generated/dto.ts`, `schema.json`, `validators.mjs`.
 - Contract lock: `docs/product-expansion/contract.json` (`searchCapabilities` only).
@@ -70,9 +71,10 @@ Shell prefix for every command: `PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/b
 | `node scripts/check-release-manifest.mjs` | exit 0. `errors: []`, `buildId` `fdf567c7113bb8e8`, 11 assets |
 | `node scripts/check-design-tokens.mjs --self-test` | exit 0. 12 checker self-tests; 39/39 contrast cases. No new token or contrast case |
 | `node scripts/check-product-contract.mjs` | exit 0. fixture impact 124 unchanged; runtime hits 0 |
-| `npm run test:browser -- --project=chromium` | First run exit 1: 24 failed, 69 passed. The Pareto spec waited for a second search inside the 30s default and the preview then refused connections (`net::ERR_CONNECTION_REFUSED` at `127.0.0.1:4176`). After the spec stopped waiting for that second search, the rerun exit 0: 93 passed, 4 workers (Playwright 3.9m). 4173 and 4174 were already listening. No `worker-state` flake on the passing run. `spatial3d` reported `context-lost-console: none` |
-| `npx playwright test apps/web/tests/browser/pareto-comparison.spec.ts --project=firefox` and `--project=webkit` | exit 0. Firefox 1 passed (18.2s), WebKit 1 passed (16.1s), on the `vite build --mode test` output from the Chromium run |
-| `npm run test:parity` | exit 0. 2 passed. “124 shared fixtures.” |
+| GitHub Actions `bridge` job `113589980316` on `5bf44ce43afb5f140321ea33c058c9fddd4a978d` | conclusion failure. Step `Actual browser flows` ran 93 tests with 2 workers and exited 1 after 33 passed. The first error was `measurement-regression.spec.ts` mc-07: `page.evaluate` threw `Cannot read properties of undefined (reading '__wbindgen_free')` in `requestsFor`. Later tests on the restarted worker were `page.goto: net::ERR_CONNECTION_REFUSED` at `http://127.0.0.1:4174/` while the live preview stayed on 4173. The Node.js 20 actions warning was not the failure. Workflows were not edited |
+| `npm run test:browser -- --project=chromium --workers=2` | exit 0 after the harness and stamp fixes. 93 passed (Playwright 6.8m). Preview `http://127.0.0.1:4175` because 4173 and 4174 were other apps. mc-07 passed (733ms). Pareto spec passed (16.4s). No `worker-state` flake. `spatial3d` reported `context-lost-console: none`. An earlier local run on the pre-fix tree, with 4 workers, had also reached 93 passed after the Pareto spec stopped waiting for the second search; that run is not the CI result |
+| `npx playwright test apps/web/tests/browser/pareto-comparison.spec.ts --project=firefox --project=webkit --workers=1` | exit 0. Firefox 1 passed (18.8s), WebKit 1 passed (17.0s), on the `vite build --mode test` output |
+| `npm run test:parity` | exit 0. 2 passed (26.0s). “Native and actual browser Worker/WASM comparison completed for 124 shared fixtures.” |
 
 ## Browser
 
@@ -102,13 +104,17 @@ Native and Chromium Worker/WASM agreed on 124 shared fixtures. The new Pareto ca
 - `docs/product-expansion/contract.json` `versions.dbVersion` stays 2. Live `DB_VERSION` stays 3. `implementsNow` stays false. `contractChange` stays `NO`. `baseCapabilities` stays unchanged. `searchCapabilities` gained the new name.
 - The Pareto reply is not in exportVersion 1. A portable bundle remains `z-portable-project`.
 - The disk on this machine was full before the first compile. Stale `target/` directories under sibling review worktrees were removed so this tree could compile. Those directories are build caches outside this repository. Source trees were not edited.
+- CI on `5bf44ce` failed in the harness, not in the Pareto assertion. `window.bench` was assigned before `init` resolved, so `domainFixtureRequests` read `__wbindgen_free` on an undefined module. The harness now assigns `window.bench` only after `wasmReady`. Callers already wait for that object.
+- The same job then refused connections on 4174. The preview stamp was ignored after 60 seconds, so a worker that loaded the config again chose the next port. The stamp is reused whenever the stamped port is still listening. A free port is probed again. This is not a test timeout change. The 30s expect timeout and the Pareto spec's existing `test.setTimeout(90_000)` were left as they were.
+- This session did not push. The green browser run is local, with the same 2-worker count the failed job used. GitHub Actions has not re-executed this tree.
 
 ## Limits
 
 - Later z-nodes, incremental replan, checkout, live seller stock, cloud, accounts, photo consent, capture acceptance, and release are not implemented.
 - No approved visual baseline. No phone. No discrete GPU.
 - `docs/evidence/ZARI-SPATIAL-001-*.png` was not rewritten.
-- The create-project `worker-state` flake did not occur on the passing Chromium run. The first Chromium run failed for the reason in the command table, not for that flake.
+- The create-project `worker-state` flake did not occur on the passing 2-worker Chromium run.
+- GitHub Actions has not re-run this working tree. The recorded green suite is the local 2-worker run above.
 
 ## Out of scope
 

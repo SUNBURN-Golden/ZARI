@@ -12,7 +12,13 @@
 - 계획 화면의 후보 다음에 비교가 있다. 차이 칸은 `다름`과 기존 `primary-on-subtle`이다. 제외는 기존 `warning-on-soft`다. 저장하지 않은 라디오는 명령을 다시 보내지 않는다. `이 목표로 다시 계산`만 기존 입력 확정 뒤 기존 계산을 시작한다.
 - 기존 124 fixture 기대 바이트는 바꾸지 않았다. 새 검사는 `crates/core/tests/pareto.rs`에 있다.
 
-이 머신에서 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, Chromium 스위트 4 workers):
+수정 1회 (감독자, CI `bridge` job `113589980316`, commit `5bf44ce43afb5f140321ea33c058c9fddd4a978d`):
+
+- 첫 실패는 `measurement-regression.spec.ts` mc-07이다. 하네스가 WASM `init` 전에 `window.bench`를 공개해 `requestsFor`가 `__wbindgen_free`를 읽었다. `apps/web/tests/harness.ts`는 `wasmReady` 뒤에 `bench`를 공개한다.
+- 그 다음 워커는 `http://127.0.0.1:4174/`에서 `ERR_CONNECTION_REFUSED`였다. 미리보기 스탬프가 60초 뒤 무시되어 살아 있는 4173 대신 다음 포트를 골랐다. `playwright.config.ts`는 그 포트가 아직 듣고 있으면 스탬프를 다시 쓴다. 테스트 타임아웃은 그대로다.
+- Node.js 20 actions 경고는 실패 원인이 아니다. 워크플로는 바꾸지 않았다.
+
+이 머신에서 다시 실행한 검증 (Node v24.19.0, npm 11.17.0, Rust 1.98.1, `CARGO_BUILD_JOBS=4`, Chromium 스위트 2 workers, 미리보기 `http://127.0.0.1:4175`):
 
 - `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
 - `cargo test --workspace --locked`: exit 0, 172 passed, 1 ignored (pareto 6)
@@ -21,9 +27,10 @@
 - `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128
 - `npm run typecheck`, `npm run lint`, `npm test` (vitest 25 files / 171), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, `buildId` `fdf567c7113bb8e8`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12): exit 0
 - `node scripts/check-product-contract.mjs`: fixture impact 124 unchanged, runtime hits 0
-- `npm run test:browser -- --project=chromium`: 첫 실행은 Pareto 스펙이 두 번째 탐색을 30초 기본 제한 안에서 기다리다 실패하고, 미리보기가 끊긴 뒤 24 failed / 69 passed였다. 스펙이 그 두 번째 탐색의 종료를 기다리지 않게 고친 뒤 재실행은 93 passed, 4 workers (Playwright 3.9m). 4173·4174가 다른 앱에 잡혀 있었다. `worker-state` flake는 없었다. `spatial3d` `context-lost-console: none`
-- `pareto-comparison.spec.ts` Firefox 1 (18.2s), WebKit 1 (16.1s): exit 0
-- `npm run test:parity`: 2 passed, 124 fixture
+- `npm run test:browser -- --project=chromium --workers=2`: 93 passed (Playwright 6.8m). 4173·4174는 다른 앱이라 미리보기는 4175였다. mc-07은 733ms에 통과했다. Pareto 스펙은 16.4s였다. `worker-state` flake는 없었다. `spatial3d` `context-lost-console: none`. 타임아웃은 올리지 않았다
+- `pareto-comparison.spec.ts` Firefox 1 (18.8s), WebKit 1 (17.0s): exit 0
+- `npm run test:parity`: 2 passed (26.0s), 124 fixture
+- 이 세션은 push하지 않았다. GitHub Actions는 이 작업 트리를 다시 실행하지 않았다
 
 하지 않은 것: 다음 z-노드, 증분 재계획, 결제·실시간 재고·클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `BUILD_ID` 변경, 탐색 순위 변경. 샘플의 한 동작 접근 재계산은 예산 200000이라 브라우저에서 두 번째 탐색이 끝날 때까지 기다리지 않았다. 버튼은 저장과 계산 시작까지 확인했다. 상세는 `docs/evidence/ZARI-z-pareto-comparison.md`.
 
