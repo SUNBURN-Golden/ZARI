@@ -31,9 +31,11 @@ import {
   rectFromGeometry,
 } from '../../src/features/workspace/projection';
 import {
+  focusAnnouncement,
   focusTargets,
   parentPlacementId,
   selectedPlacementId,
+  selectionAnnouncement,
   targetKey,
   targetsEqual,
 } from '../../src/features/workspace/selection';
@@ -335,6 +337,20 @@ it('draws an item only from its measurement box and withholds a check overlay th
     contents: true,
     checks: false,
   })).toEqual([]);
+});
+
+it('names selection and list focus for assistive text without turning unknown into a pass', () => {
+  expect(selectionAnnouncement(null, null)).toBe('선택된 대상 없음');
+  expect(selectionAnnouncement({ kind: 'placement', placementId: 'box-1' }, '겨울 코트')).toBe(
+    '선택됨 겨울 코트',
+  );
+  expect(selectionAnnouncement({ kind: 'placement', placementId: 'box-1' }, '  ')).toBe(
+    '선택됨 placement:box-1',
+  );
+  expect(focusAnnouncement({ kind: 'none' })).toBe('목록 강조 없음');
+  expect(focusAnnouncement({ kind: 'check', checkId: 'outer' })).toBe('목록 강조 검사 outer');
+  expect(focusAnnouncement({ kind: 'bom', bomLineId: 'line-1' })).toBe('목록 강조 구매 행 line-1');
+  expect(focusAnnouncement({ kind: 'action', stepId: 'step-1' })).toBe('목록 강조 현재 단계 step-1');
 });
 
 it('opens a cavity pane only for an unknown offset and does not invent a centered box', () => {

@@ -193,6 +193,7 @@ function Row({
           <Button
             className="button button-quiet"
             data-testid={`pareto-select-${index}`}
+            aria-pressed={selected}
             onPress={() => onSelect(row.candidateId)}
           >
             #{index + 1} {shortId(row.candidateId)}

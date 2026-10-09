@@ -131,6 +131,7 @@ export function DiagramTextList({
                 type="button"
                 className="text-pick"
                 data-testid={`diagram-pick-${entry.key}`}
+                aria-pressed={Boolean(entry.target && targetsEqual(selection, entry.target))}
                 onClick={() => entry.target && onSelect(entry.target)}
               >
                 {entry.label}
@@ -188,6 +189,11 @@ function Contents({
                 type="button"
                 className="text-pick"
                 data-testid={`content-${row.itemId}-${row.unitOrdinal}`}
+                aria-pressed={targetsEqual(selection, {
+                  kind: 'itemInstance',
+                  itemId: row.itemId,
+                  unitOrdinal: row.unitOrdinal,
+                })}
                 onClick={() =>
                   onSelect({
                     kind: 'itemInstance',

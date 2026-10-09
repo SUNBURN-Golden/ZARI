@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState
 import type { LayoutEditCommand, SnapshotContent, SpatialProjection, SpatialTarget } from '../../contracts/generated/dto';
 import type { RectVm } from '../plan/projection';
 import { spaceFrame } from '../plan/projection';
+import { subjectLabel } from '../plan/view';
 import { isTypingTarget, movePlacementCommand, type MmPoint } from './drag';
 import { DiagramTextList, InspectorLayers } from './InspectorLayers';
 import type { WorkspaceLease } from './lease';
@@ -18,6 +19,7 @@ import {
   type WorkspaceLayers,
   type WorkspaceState,
 } from './model';
+import { focusAnnouncement, selectionAnnouncement, targetKey } from './selection';
 import {
   fitViewport,
   viewPad,
@@ -389,6 +391,12 @@ export function PlanWorkspace({
         <span className="legend-focus">목록 강조</span>
         <span className="legend-step">현재 단계 대상</span>
       </p>
+      <p className="visually-hidden" aria-live="polite" data-testid="selection-live">
+        {selectionAnnouncement(state.selection, selectionLabel(content, state.selection))}
+      </p>
+      <p className="visually-hidden" aria-live="polite" data-testid="focus-live">
+        {focusAnnouncement(state.focus)}
+      </p>
       <p className="session-note" data-testid="drag-quantum">
         드래그는 1mm 단위 · 정확한 값은 좌표 입력
       </p>
@@ -537,6 +545,18 @@ export function PlanWorkspace({
       </div>
     </div>
   );
+}
+
+function selectionLabel(content: SnapshotContent, selection: SpatialTarget | null): string | null {
+  if (!selection) return null;
+  if (selection.kind === 'placement') {
+    const placement = content.placements.find((item) => item.id === selection.placementId);
+    return placement ? subjectLabel(content, placement.subject) : selection.placementId;
+  }
+  if (selection.kind === 'item' || selection.kind === 'itemInstance') {
+    return content.inputFacts.items.find((item) => item.id === selection.itemId)?.label ?? selection.itemId;
+  }
+  return targetKey(selection);
 }
 
 function zoomActive(

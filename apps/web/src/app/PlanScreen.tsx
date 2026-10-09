@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -26,6 +27,7 @@ import {
   type MmPoint,
 } from '../features/workspace/drag';
 import { selectedPlacementId } from '../features/workspace/selection';
+import { useReturnFocus } from '../ui/returnFocus';
 import { PlanWorkspace, useWorkspace } from '../features/workspace/Workspace';
 import { StepFocus } from '../features/workspace/StepFocus';
 import type { GuideSurface } from '../features/workspace/stepFocus';
@@ -46,6 +48,7 @@ import {
   isNoPurchase,
   moneyText,
   qtyText,
+  nudgeMovePosition,
   readMovePosition,
   subjectLabel,
   unassignedPlacement,
@@ -92,10 +95,14 @@ function Inspector({
   session,
   state,
   snapshot,
+  stepMm,
+  onStepMm,
 }: {
   session: ProjectSession;
   state: SessionSnapshot;
   snapshot: PlanSnapshot;
+  stepMm: number;
+  onStepMm: (step: number) => void;
 }) {
   const content = snapshot.content;
   const edit = state.plan.edit;
@@ -132,16 +139,18 @@ function Inspector({
     (s) => s.placementId === placement.id,
   );
   const pending = edit.pending !== null;
+  const fieldOf = (form: HTMLFormElement, axis: MoveAxis) =>
+    form.elements.namedItem(`pos-${axis}`) as HTMLInputElement | null;
+  const fieldText = (form: HTMLFormElement) => ({
+    x: { text: fieldOf(form, 'x')?.value ?? '', badInput: fieldOf(form, 'x')?.validity.badInput ?? false },
+    y: { text: fieldOf(form, 'y')?.value ?? '', badInput: fieldOf(form, 'y')?.validity.badInput ?? false },
+    z: { text: fieldOf(form, 'z')?.value ?? '', badInput: fieldOf(form, 'z')?.validity.badInput ?? false },
+  });
   const applyMove = () => {
     const form = moveForm.current;
     if (!form) return;
-    const field = (axis: MoveAxis) =>
-      form.elements.namedItem(`pos-${axis}`) as HTMLInputElement | null;
-    const read = readMovePosition({
-      x: { text: field('x')?.value ?? '', badInput: field('x')?.validity.badInput ?? false },
-      y: { text: field('y')?.value ?? '', badInput: field('y')?.validity.badInput ?? false },
-      z: { text: field('z')?.value ?? '', badInput: field('z')?.validity.badInput ?? false },
-    });
+    const field = (axis: MoveAxis) => fieldOf(form, axis);
+    const read = readMovePosition(fieldText(form));
     if (!read.ok) {
       // Nothing is sent: an absent coordinate is not 0mm.
       setMoveErrors({ placementId: placement.id, errors: read.errors });
@@ -149,6 +158,22 @@ function Inspector({
       if (first) field(first)?.focus();
       return;
     }
+    setMoveErrors(null);
+    session.requestLayoutEdit(movePlacementCommand(placement.id, read.position), snapshot.planSnapshotId);
+  };
+  const nudgeAxis = (axis: MoveAxis, delta: number) => {
+    const form = moveForm.current;
+    if (!form || pending || edit.persist?.kind === 'saving') return;
+    const read = nudgeMovePosition(fieldText(form), axis, delta);
+    const field = (name: MoveAxis) => fieldOf(form, name);
+    if (!read.ok) {
+      setMoveErrors({ placementId: placement.id, errors: read.errors });
+      const first = MOVE_AXES.find((item) => read.errors[item]);
+      if (first) field(first)?.focus();
+      return;
+    }
+    const input = field(axis);
+    if (input) input.value = String(read.position[axis]);
     setMoveErrors(null);
     session.requestLayoutEdit(movePlacementCommand(placement.id, read.position), snapshot.planSnapshotId);
   };
@@ -203,6 +228,41 @@ function Inspector({
           이동 적용
         </Button>
       </form>
+      <div className="move-nudge" data-testid="move-nudge">
+        <button
+          type="button"
+          className="button button-quiet"
+          data-testid="move-step-coarse"
+          aria-pressed={stepMm === 10}
+          onClick={() => onStepMm(stepMm === 10 ? 1 : 10)}
+        >
+          이동 단위 {stepMm} mm
+        </button>
+        {MOVE_AXES.map((axis) => (
+          <span key={axis} className="move-nudge-axis">
+            <button
+              type="button"
+              className="button button-quiet"
+              data-testid={`move-${axis}-down`}
+              aria-label={`${axis.toUpperCase()}축 ${stepMm}mm 줄이기`}
+              disabled={pending || edit.persist?.kind === 'saving'}
+              onClick={() => nudgeAxis(axis, -stepMm)}
+            >
+              {axis.toUpperCase()} 줄이기
+            </button>
+            <button
+              type="button"
+              className="button button-quiet"
+              data-testid={`move-${axis}-up`}
+              aria-label={`${axis.toUpperCase()}축 ${stepMm}mm 늘리기`}
+              disabled={pending || edit.persist?.kind === 'saving'}
+              onClick={() => nudgeAxis(axis, stepMm)}
+            >
+              {axis.toUpperCase()} 늘리기
+            </button>
+          </span>
+        ))}
+      </div>
       {Object.keys(axisErrors).length > 0 && (
         <ul className="diagnostic-list" role="alert" data-testid="move-input-errors">
           {MOVE_AXES.filter((axis) => axisErrors[axis]).map((axis) => (
@@ -393,10 +453,27 @@ function PlanDetail({
   );
   const choose = (target: SpatialTarget) => workspace.select(target);
   const cancelRef = useRef<(() => void) | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  // Keyboard activation of a placement (click detail 0) should land in the
+  // numeric editor. The form mounts only after selectPlacement commits.
+  const editFocusId = useRef<string | null>(null);
   const [stepMm, setStepMm] = useState(1);
+  const touchStep = useRef(1);
+  useLayoutEffect(() => {
+    const id = editFocusId.current;
+    if (!id || edit.selectedPlacementId !== id) return;
+    const root = detailRef.current;
+    if (!root) return;
+    const dialog = root.querySelector('dialog.inspector-sheet');
+    if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+    const field = root.querySelector<HTMLInputElement>('[data-testid="move-x"]');
+    if (!field) return;
+    field.focus();
+    editFocusId.current = null;
+  }, [edit.selectedPlacementId]);
   useEffect(() => {
     const onUp = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Shift') setStepMm(1);
+      if (event.key === 'Shift') setStepMm(touchStep.current);
     };
     window.addEventListener('keyup', onUp);
     return () => window.removeEventListener('keyup', onUp);
@@ -501,7 +578,7 @@ function PlanDetail({
     );
   };
   const onSurfaceKeyUp = (e: KeyboardEvent) => {
-    if (e.key === 'Shift') setStepMm(1);
+    if (e.key === 'Shift') setStepMm(touchStep.current);
     if (isTypingTarget(e.target) || !isArrowKey(e.key) || !nudgeRef.current) return;
     nudgeRef.current.arrows.delete(e.key);
     if (nudgeRef.current.arrows.size === 0) commitNudge();
@@ -509,6 +586,7 @@ function PlanDetail({
   const surface = guideSurface(where, snapshot, state);
   return (
     <div
+      ref={detailRef}
       className="plan-detail"
       data-testid="plan-detail"
       tabIndex={editable ? 0 : undefined}
@@ -609,7 +687,20 @@ function PlanDetail({
         onCommit={(command) => session.requestLayoutEdit(command, snapshot.planSnapshotId)}
         cancelRef={cancelRef}
         onSelect={choose}
-        edit={editable ? <Inspector session={session} state={state} snapshot={snapshot} /> : null}
+        edit={
+          editable ? (
+            <Inspector
+              session={session}
+              state={state}
+              snapshot={snapshot}
+              stepMm={stepMm}
+              onStepMm={(next) => {
+                touchStep.current = next;
+                setStepMm(next);
+              }}
+            />
+          ) : null
+        }
       />
 
       <section aria-labelledby="placements-title">
@@ -623,7 +714,14 @@ function PlanDetail({
                   type="button"
                   className="placement-pick"
                   data-testid={`placement-${p.id}`}
-                  onClick={() => choose({ kind: 'placement', placementId: p.id })}
+                  aria-pressed={
+                    workspace.state.selection?.kind === 'placement' &&
+                    workspace.state.selection.placementId === p.id
+                  }
+                  onClick={(event) => {
+                    if (event.detail === 0) editFocusId.current = p.id;
+                    choose({ kind: 'placement', placementId: p.id });
+                  }}
                 >
                   {subjectLabel(content, p.subject)}
                 </button>
@@ -655,7 +753,7 @@ function PlanDetail({
         <div className="section-kicker">검사</div>
         <h3 id="checks-title">독립 검증 결과</h3>
         {checksUnknown.length > 0 && (
-          <p className="notice" data-testid="unknown-checks">
+          <p className="notice" data-testid="unknown-checks" role="status">
             미확인 검사 {checksUnknown.length}건:{' '}
             {[...new Set(checksUnknown.map((c) => c.kind))].map(
               (k) => CHECK_KIND_TEXT[k] ?? k,
@@ -677,6 +775,7 @@ function PlanDetail({
                 type="button"
                 className="text-pick"
                 data-testid={`check-focus-${c.id}`}
+                aria-pressed={workspace.state.focus.kind === 'check' && workspace.state.focus.checkId === c.id}
                 onClick={() => workspace.setFocus({ kind: 'check', checkId: c.id })}
               >
                 도면에서 강조
@@ -747,6 +846,7 @@ function PlanDetail({
                         type="button"
                         className="text-pick"
                         data-testid={`bom-focus-${line.id}`}
+                        aria-pressed={workspace.state.focus.kind === 'bom' && workspace.state.focus.bomLineId === line.id}
                         onClick={() => workspace.setFocus({ kind: 'bom', bomLineId: line.id })}
                       >
                         도면에서 보기
@@ -864,7 +964,7 @@ function PlanDetail({
           </Button>
         )}
         {state.plan.acceptError && (
-          <p className="field-error" data-testid="accept-error" role="alert">
+          <p className="field-error" data-testid="accept-error" role="alert" tabIndex={-1}>
             계획 저장 실패: {state.plan.acceptError}
           </p>
         )}
@@ -879,6 +979,38 @@ function PlanDetail({
   );
 }
 
+function SearchStatus({ session }: { session: ProjectSession }) {
+  const plan = useSyncExternalStore(
+    (listener) => session.subscribeSearchStatus(listener),
+    () => session.snapshot.plan,
+  );
+  return (
+    <p
+      className="session-note"
+      role="status"
+      data-testid="search-status"
+      data-search={plan.search}
+    >
+      {plan.search === 'running' || plan.search === 'cancelling'
+        ? `계산 중 — 작업 ${plan.progress ? BigInt(plan.progress.workUnits).toLocaleString('ko-KR') : '0'} / 노드 ${plan.progress?.nodes ?? 0}`
+        : plan.search === 'done'
+          ? `완료 — ${TERMINATION_TEXT[plan.termination ?? ''] ?? plan.termination}`
+          : plan.search === 'cancelled'
+            ? '취소되었습니다. 다시 계산할 수 있습니다.'
+            : plan.search === 'interrupted'
+              ? plan.searchError === 'activation_required' ||
+                plan.searchError === 'cancel_timeout' ||
+                plan.searchError === 'search_stalled'
+                ? '중단되었습니다. 이전 계획과 입력은 그대로입니다. 다시 계산하려면 계산기가 새로 연결된 뒤 시작하세요.'
+                : '중단되었습니다. 이전 계획과 입력은 그대로입니다.'
+              : plan.search === 'failed'
+                ? `계산에 실패했습니다: ${plan.searchError ?? ''}`
+                : '아직 계산하지 않았습니다.'}
+      {plan.searchError && plan.search === 'done' ? ` (${plan.searchError})` : ''}
+    </p>
+  );
+}
+
 export function PlanScreen({ projectId }: { projectId: string }) {
   const sessionRef = useRef<ProjectSession | null>(null);
   if (!sessionRef.current || sessionRef.current.snapshot.projectId !== projectId) {
@@ -890,6 +1022,52 @@ export function PlanScreen({ projectId }: { projectId: string }) {
     () => session.snapshot,
   );
   useEffect(() => () => releaseSession(projectId), [projectId]);
+  useReturnFocus(state.worker === 'failed', 'worker-retry');
+  useReturnFocus(state.conflict !== null, 'edit-conflict-reload');
+  useReturnFocus(Boolean(state.plan.acceptError), 'accept-error');
+  const searchNow = state.plan.search;
+  const searchRef = useRef(searchNow);
+  useEffect(() => {
+    const previous = searchRef.current;
+    searchRef.current = searchNow;
+    if (
+      (previous === 'running' || previous === 'cancelling') &&
+      (searchNow === 'cancelled' || searchNow === 'interrupted' || searchNow === 'failed')
+    ) {
+      const active = document.activeElement;
+      const lost =
+        !(active instanceof HTMLElement) ||
+        active === document.body ||
+        !active.isConnected ||
+        active.getAttribute('data-testid') === 'cancel-search';
+      if (lost) document.querySelector<HTMLElement>('[data-testid="compute-plan"]')?.focus();
+    }
+  }, [searchNow]);
+  const acceptedId = state.plan.accepted?.planSnapshotId ?? null;
+  const acceptedSeen = useRef<{ ready: boolean; id: string | null }>({ ready: false, id: null });
+  useEffect(() => {
+    if (state.status !== 'ready') return;
+    if (!acceptedSeen.current.ready) {
+      acceptedSeen.current = { ready: true, id: acceptedId };
+      return;
+    }
+    if (acceptedSeen.current.id === acceptedId) return;
+    if (!acceptedId) {
+      acceptedSeen.current.id = null;
+      return;
+    }
+    const guide = document.getElementById('accepted-guide');
+    if (!guide) return;
+    const target = guide.querySelector<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]',
+    );
+    if (target) target.focus();
+    else {
+      guide.tabIndex = -1;
+      guide.focus();
+    }
+    acceptedSeen.current.id = acceptedId;
+  }, [state.status, acceptedId]);
   const projectionQueue = [
     state.plan.selectedId ?? '',
     state.plan.edit.head?.planSnapshotId ?? '',
@@ -1037,29 +1215,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           )}
         </div>
 
-        <p
-          className="session-note"
-          role="status"
-          data-testid="search-status"
-          data-search={plan.search}
-        >
-          {plan.search === 'running' || plan.search === 'cancelling'
-            ? `계산 중 — 작업 ${plan.progress ? BigInt(plan.progress.workUnits).toLocaleString('ko-KR') : '0'} / 노드 ${plan.progress?.nodes ?? 0}`
-            : plan.search === 'done'
-              ? `완료 — ${TERMINATION_TEXT[plan.termination ?? ''] ?? plan.termination}`
-                : plan.search === 'cancelled'
-                  ? '취소되었습니다. 다시 계산할 수 있습니다.'
-                  : plan.search === 'interrupted'
-                    ? plan.searchError === 'activation_required' ||
-                      plan.searchError === 'cancel_timeout' ||
-                      plan.searchError === 'search_stalled'
-                      ? '중단되었습니다. 이전 계획과 입력은 그대로입니다. 다시 계산하려면 계산기가 새로 연결된 뒤 시작하세요.'
-                      : '중단되었습니다. 이전 계획과 입력은 그대로입니다.'
-                    : plan.search === 'failed'
-                      ? `계산에 실패했습니다: ${plan.searchError ?? ''}`
-                      : '아직 계산하지 않았습니다.'}
-          {plan.searchError && plan.search === 'done' ? ` (${plan.searchError})` : ''}
-        </p>
+        <SearchStatus session={session} />
       </section>
 
       <SearchDiagnosticPanel
@@ -1071,6 +1227,19 @@ export function PlanScreen({ projectId }: { projectId: string }) {
         ignored={plan.diagnosticIgnored}
         onCancel={() => session.cancelDiagnosis()}
         onRetry={() => session.retryDiagnosis()}
+      />
+
+      <ParetoPanel
+        state={plan.paretoState}
+        reply={plan.pareto}
+        error={plan.paretoError}
+        draftStrategy={state.form?.strategyChoice ?? null}
+        savedStrategy={state.normalizedInput?.strategyChoice ?? null}
+        labels={new Map((state.form?.items ?? []).map((item) => [item.id, item.label]))}
+        selectedId={plan.selectedId}
+        onSelect={(id) => session.selectAlternative(id)}
+        onRecalculate={() => session.recalculatePareto()}
+        onRetry={() => session.retryPareto()}
       />
 
       {plan.alternatives.length > 0 && (
@@ -1091,6 +1260,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     className="plan-card"
                     data-testid={`plan-card-${i}`}
                     data-selected={plan.selectedId === id}
+                    aria-pressed={plan.selectedId === id}
                     onClick={() => session.selectAlternative(id)}
                   >
                     <PlanThumb
@@ -1127,19 +1297,6 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           )}
         </section>
       )}
-
-      <ParetoPanel
-        state={plan.paretoState}
-        reply={plan.pareto}
-        error={plan.paretoError}
-        draftStrategy={state.form?.strategyChoice ?? null}
-        savedStrategy={state.normalizedInput?.strategyChoice ?? null}
-        labels={new Map((state.form?.items ?? []).map((item) => [item.id, item.label]))}
-        selectedId={plan.selectedId}
-        onSelect={(id) => session.selectAlternative(id)}
-        onRecalculate={() => session.recalculatePareto()}
-        onRetry={() => session.retryPareto()}
-      />
 
       <IncrementalPanel
         base={replanBase}

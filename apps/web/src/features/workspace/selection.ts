@@ -83,3 +83,29 @@ export function focusTargets(
 export function targetIn(targets: readonly SpatialTarget[], target: SpatialTarget): boolean {
   return targets.some((item) => targetsEqual(item, target));
 }
+
+/** Polite name for the current selection. Visual outline and this sentence stay together. */
+export function selectionAnnouncement(selection: SpatialTarget | null, label: string | null): string {
+  if (!selection) return '선택된 대상 없음';
+  const name = label && label.trim() !== '' ? label : targetKey(selection);
+  return `선택됨 ${name}`;
+}
+
+/** Polite name for the list-focus channel. It is not the selection outline. */
+export function focusAnnouncement(focus: WorkspaceFocus): string {
+  switch (focus.kind) {
+    case 'none':
+    case 'measurement':
+      return '목록 강조 없음';
+    case 'check':
+      return `목록 강조 검사 ${focus.checkId}`;
+    case 'bom':
+      return `목록 강조 구매 행 ${focus.bomLineId}`;
+    case 'action':
+      return `목록 강조 현재 단계 ${focus.stepId}`;
+    default: {
+      const neverFocus: never = focus;
+      return neverFocus;
+    }
+  }
+}
