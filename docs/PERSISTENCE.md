@@ -56,7 +56,7 @@ A raw save, project rename, plan acceptance, or action completion increments `pr
 
 ## 2. Object stores
 
-Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, not by documentation or Task 001. `dbVersion` 2 (ZARI-009) adds the `attachments` store for optional local photo derivatives. The upgrade writes a migration journal and does not rewrite snapshot bytes. `dbVersion` 3 (z-inventory-lifecycle) adds `inventoryLedgers`. The current `DB_VERSION` is 3. All rows include `schemaVersion`; generic metadata keys have their own tagged payload version. Use explicit key and index declarations, not indexes on arbitrary content.
+Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, not by documentation or Task 001. `dbVersion` 2 (ZARI-009) adds the `attachments` store for optional local photo derivatives. The upgrade writes a migration journal and does not rewrite snapshot bytes. `dbVersion` 3 (z-inventory-lifecycle) adds `inventoryLedgers`. `dbVersion` 4 (z-purchase-handoff) adds `purchaseHandoffs`. The current `DB_VERSION` is 4. All rows include `schemaVersion`; generic metadata keys have their own tagged payload version. Use explicit key and index declarations, not indexes on arbitrary content.
 
 | Store | Primary key / indexes | Stored content | Decision |
 |---|---|---|---|
@@ -69,6 +69,7 @@ Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, 
 | `actionProgress` | `[projectId+inputRevision+planSnapshotId+stepId]`; index `projectId` | user status, required arrival/verification acknowledgments, updated timestamp | Outside snapshot; progress is user state, not solver output |
 | `metadata` | `key` | active storage generation, migration journal, app preferences, quarantined-record envelopes | Bounded operational state; never secrets or user transcript logs |
 | `inventoryLedgers` | `ledgerId`; index `updatedAt` | project life ledger returned by Rust | z-inventory-lifecycle. Not a PlanSnapshot and not part of exportVersion 1 |
+| `purchaseHandoffs` | `ledgerId`; index `updatedAt` | purchase, receipt, measurement, and return events returned by Rust | z-purchase-handoff. Not a PlanSnapshot and not part of exportVersion 1 |
 
 A binding is `{projectId, inputRevision, planSnapshotId}`. Include `inputRevision` in action-progress keys because an identical content hash can recur after intervening edits. Completing steps on an old binding must not silently complete steps on a later binding. Same-binding accept again retains progress. Carrying progress across different bindings requires an explicit user operation with displayed matching steps; v1 does not offer automatic carry-forward.
 
@@ -277,3 +278,7 @@ The zip may contain `manifest.json` plus any of `project.json`, `observations.js
 Rust checks version, sha256, declared size, duplicate ids, path names, and zip structure before the host keeps member text. A declared uncompressed size or ratio past the cap is refused without inflate. Deflate that is under the cap is `unsupported_compression` and is not inflated. Attachment metadata with photo bytes, GPS/EXIF keys, or personal-data keys is refused. The policy is fixed: photo bytes excluded, location stripped, personal data omitted. Local originals are not deleted.
 
 A rejected inspect does not call `stageProjectImport` and writes nothing. An accepted zip with a project member is rebuilt as an exportVersion 1 envelope and committed under a fresh project id in the existing import transaction. When a ledger is present it is inserted in that same transaction with `ledgerId` equal to the new project id and `revision` `1`. The source project and source ledger stay. A failure inserts no half-project. Worker calls stay outside the transaction. The canonical snapshot id is the content id and is unchanged by the new project id.
+
+## 18. z-purchase-handoff ledger
+
+Adopted by [Dz-purchase-handoff](../design/DECISIONS.md). Live `DB_VERSION` is 4. The new store is `purchaseHandoffs`, keyed by the project id. Row `schemaVersion` stays 1. The v3 to v4 upgrade writes `migration:3->4` and does not read or rewrite snapshots, inputs, owned containers, or the life ledger. A fresh database still records the earlier journals. Saves use the same revision CAS as the life ledger. The worker call stays outside the transaction. `deleteProject` removes that project's purchase row in the project transaction. Import does not copy it. exportVersion 1 does not include it. Opening a plan does not write this store until the person records a purchase, receipt, measurement, or return.

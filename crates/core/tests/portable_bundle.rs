@@ -45,8 +45,9 @@ fn portable_commands_are_stateless_and_a_bare_payload_is_rejected() {
         .iter()
         .position(|name| *name == "disposeProject")
         .unwrap();
-    assert_eq!(names[dispose - 2], "buildPortableBundle");
-    assert_eq!(names[dispose - 1], "inspectPortableBundle");
+    assert_eq!(names[dispose - 3], "buildPortableBundle");
+    assert_eq!(names[dispose - 2], "inspectPortableBundle");
+    assert_eq!(names[dispose - 1], "preparePurchaseHandoff");
     assert_eq!(
         send(
             &mut runtime,

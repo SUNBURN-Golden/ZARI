@@ -277,9 +277,10 @@ fn the_review_command_is_stateless_and_a_bare_payload_is_invalid() {
         .iter()
         .position(|name| *name == "disposeProject")
         .unwrap();
-    assert_eq!(names[dispose - 4], "reviewCatalogImport");
-    assert_eq!(names[dispose - 3], "quoteOfferBundle");
-    assert_eq!(names[dispose - 1], "inspectPortableBundle");
+    assert_eq!(names[dispose - 5], "reviewCatalogImport");
+    assert_eq!(names[dispose - 4], "quoteOfferBundle");
+    assert_eq!(names[dispose - 2], "inspectPortableBundle");
+    assert_eq!(names[dispose - 1], "preparePurchaseHandoff");
     let bare = send(&mut runtime, "bare", json!({"kind": "reviewCatalogImport"}));
     assert_eq!(bare["event"]["code"], "invalid_input");
     let opened = send(

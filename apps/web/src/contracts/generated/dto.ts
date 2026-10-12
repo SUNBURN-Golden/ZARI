@@ -1470,6 +1470,10 @@ export type Command =
       zipBase64: string;
     }
   | {
+      action: PurchaseHandoffAction;
+      kind: 'preparePurchaseHandoff';
+    }
+  | {
       kind: 'proposeStrategies';
     }
   | {
@@ -1962,6 +1966,45 @@ export type PreviewShipping =
  */
 export type StockStatus = 'inStock' | 'outOfStock' | 'unknown';
 /**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PurchaseHandoffAction".
+ */
+export type PurchaseHandoffAction =
+  | {
+      affiliateOfferIds?: Id[];
+      asOf: string;
+      kind: 'prepare';
+      ledger: PurchaseLedger;
+      snapshot: PlanSnapshot;
+    }
+  | {
+      affiliateOfferIds?: Id[];
+      asOf: string;
+      event: PurchaseEvent;
+      kind: 'record';
+      ledger: PurchaseLedger;
+      snapshot: PlanSnapshot;
+    }
+  | {
+      affiliateOfferIds?: Id[];
+      kind: 'reviewSubstitute';
+      offer: Offer;
+      placementId: Id;
+      product: Product;
+      snapshot: PlanSnapshot;
+      variant: ProductVariant;
+    }
+  | {
+      asOf: string;
+      kind: 'classifyFreshness';
+      observedAt: string | null;
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PurchaseEventKind".
+ */
+export type PurchaseEventKind = 'confirmedPurchase' | 'received' | 'measured' | 'returned';
+/**
  * Search drive mode recorded at `startSearch`. The single-threaded runtime
  * only ever advances on explicit `stepSearch` requests, so `continuous` is a
  * scheduling hint for the host — never an autonomous loop inside WASM.
@@ -2081,6 +2124,10 @@ export type Event =
   | {
       kind: 'portableBundleInspected';
       reply: PortableInspectReply;
+    }
+  | {
+      kind: 'purchaseHandoffPrepared';
+      reply: PurchaseHandoffReply;
     }
   | {
       kind: 'searchStarted';
@@ -2378,6 +2425,53 @@ export type QuotedCount =
  * via the `definition` "ShippingStatus".
  */
 export type ShippingStatus = 'free' | 'fixed' | 'unknown' | 'complex' | 'notApplicable';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PurchaseHandoffReply".
+ */
+export type PurchaseHandoffReply =
+  | {
+      kind: 'prepared';
+      prepared: PreparedHandoff;
+    }
+  | {
+      kind: 'reviewed';
+      review: SubstituteReview;
+    }
+  | {
+      freshness: FreshnessClass;
+      kind: 'freshness';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ObservationFreshness".
+ */
+export type ObservationFreshness = 'current' | 'stale' | 'unconfirmed';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PurchaseImpact".
+ */
+export type PurchaseImpact = 'none' | 'measurementUnknown' | 'dimensionsDiffer' | 'remeasured';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PurchaseLink".
+ */
+export type PurchaseLink =
+  | {
+      kind: 'http';
+      url: string;
+    }
+  | {
+      kind: 'missing';
+    }
+  | {
+      kind: 'rejected';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "HandoffSuitability".
+ */
+export type HandoffSuitability = 'pass' | 'fail' | 'unknown' | 'notApplicable';
 
 export interface ZariContractBundle {
   BootstrapFixture: BootstrapFixture;
@@ -4049,6 +4143,24 @@ export interface PortableInclusion {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PurchaseLedger".
+ */
+export interface PurchaseLedger {
+  events: PurchaseEvent[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PurchaseEvent".
+ */
+export interface PurchaseEvent {
+  id: Id;
+  kind: PurchaseEventKind;
+  measuredWidthMm: number | null;
+  note: string;
+  offerId: Id;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "IncrementalPins".
  */
 export interface IncrementalPins {
@@ -4792,6 +4904,88 @@ export interface PortablePolicy {
   location: string;
   personalData: string;
   photoBytes: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PreparedHandoff".
+ */
+export interface PreparedHandoff {
+  affiliateChangesSuitability: boolean;
+  boundRevision: Digest;
+  changed: boolean;
+  ledger: PurchaseLedger;
+  recordsPayment: boolean;
+  sellers: SellerPrep[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SellerPrep".
+ */
+export interface SellerPrep {
+  lines: PrepLine[];
+  sellerId: Id;
+  unconfirmed: string[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PrepLine".
+ */
+export interface PrepLine {
+  affiliate: boolean;
+  confirmedPurchase: boolean;
+  freshness: ObservationFreshness;
+  /**
+   * Always false. A later measurement does not reuse the plan's pass.
+   */
+  historicalPassReused: boolean;
+  impact: PurchaseImpact;
+  lineId: Id;
+  link: PurchaseLink;
+  measured: boolean;
+  /**
+   * Always false. Measuring does not turn unknown into pass.
+   */
+  measurementPromotesPass: boolean;
+  observedAt: string | null;
+  offerId: Id | null;
+  packPrice: QuotedMoney;
+  /**
+   * Always false. A seller link is not a payment.
+   */
+  paid: boolean;
+  received: boolean;
+  returned: boolean;
+  sellerId: Id;
+  stock: StockStatus;
+  subtotal: QuotedMoney;
+  suitability: HandoffSuitability;
+  unconfirmed: string[];
+  variantId: Id | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SubstituteReview".
+ */
+export interface SubstituteReview {
+  adopted: boolean;
+  affiliateChangesSuitability: boolean;
+  boundRevision: Digest;
+  identityAssumed: boolean;
+  plannedVariantId: Id;
+  reasonCode: string;
+  recordsPayment: boolean;
+  reusedPass: boolean;
+  sameVariantId: boolean;
+  substituteVariantId: Id;
+  suitability: HandoffSuitability;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FreshnessClass".
+ */
+export interface FreshnessClass {
+  freshness: ObservationFreshness;
+  recordsPayment: boolean;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

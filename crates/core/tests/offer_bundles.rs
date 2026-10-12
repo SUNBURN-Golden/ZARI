@@ -615,8 +615,9 @@ fn quote_command_is_stateless_and_a_bare_payload_is_rejected() {
         .iter()
         .position(|name| *name == "disposeProject")
         .unwrap();
-    assert_eq!(names[dispose - 1], "inspectPortableBundle");
-    assert_eq!(names[dispose - 3], "quoteOfferBundle");
+    assert_eq!(names[dispose - 1], "preparePurchaseHandoff");
+    assert_eq!(names[dispose - 2], "inspectPortableBundle");
+    assert_eq!(names[dispose - 4], "quoteOfferBundle");
     let bare = send(&mut runtime, "bare", json!({"kind": "quoteOfferBundle"}));
     assert_eq!(bare["event"]["code"], "invalid_input");
     let quoted = send(

@@ -2,6 +2,7 @@ import Dexie from 'dexie';
 import type {
   InventoryLedger,
   OwnedContainer,
+  PurchaseLedger,
   PlanSnapshot,
   ProjectInput,
   RawProjectInputDto,
@@ -19,6 +20,7 @@ import {
   readInputRow,
   readInventoryLedgerRow,
   readOwnedContainerRow,
+  readPurchaseHandoffRow,
   readProjectRow,
   readSnapshotRow,
   type ActionProgressRow,
@@ -29,6 +31,7 @@ import {
   type InputRow,
   type InventoryLedgerRow,
   type OwnedContainerRow,
+  type PurchaseHandoffRow,
   type ProjectRow,
   type QuarantinePayload,
   type SnapshotRow,
@@ -951,6 +954,49 @@ export class ProjectRepository {
     });
   }
   /**
+   * Purchase, receipt, measurement, and return events for one project.
+   * Absent until the first recorded event. Not part of a PlanSnapshot.
+   */
+  async getPurchaseHandoff(projectId: string): Promise<PurchaseHandoffRow | null> {
+    try {
+      const raw = await this.db.purchaseHandoffs.get(projectId);
+      if (raw === undefined) return null;
+      return readPurchaseHandoffRow(raw);
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  savePurchaseHandoff(
+    projectId: string,
+    ledger: PurchaseLedger,
+    expectedRevision: string,
+  ): Promise<OwnedSaveResult> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.purchaseHandoffs,
+          async (): Promise<OwnedSaveResult> => {
+            const raw = await this.db.purchaseHandoffs.get(projectId);
+            const current = raw === undefined ? '0' : readPurchaseHandoffRow(raw).revision;
+            if (current !== expectedRevision) return { status: 'conflict', revision: current };
+            const revision = current === '0' ? '1' : nextRevision(current);
+            await this.db.purchaseHandoffs.put({
+              schemaVersion: SCHEMA_VERSION,
+              ledgerId: projectId,
+              revision,
+              ledger,
+              updatedAt: this.now(),
+            });
+            return { status: 'saved', revision };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
    * One action-step toggle bound to the project's accepted immutable
    * snapshot. The transaction also requires that binding to still be the
    * current input revision and digest. Completion requires every declared
@@ -1164,6 +1210,7 @@ export class ProjectRepository {
             this.db.actionProgress,
             this.db.attachments,
             this.db.inventoryLedgers,
+            this.db.purchaseHandoffs,
           ],
           async () => {
             await this.db.projects.delete(projectId);
@@ -1175,6 +1222,7 @@ export class ProjectRepository {
             // rows removes the orphan bytes with them.
             await this.db.attachments.where('projectId').equals(projectId).delete();
             await this.db.inventoryLedgers.delete(projectId);
+            await this.db.purchaseHandoffs.delete(projectId);
           },
         );
       } catch (error) {

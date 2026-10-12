@@ -20,6 +20,7 @@ pub mod plan;
 pub mod portable;
 pub mod probe;
 pub mod protocol;
+pub mod purchase_handoff;
 pub mod raw;
 pub mod scalars;
 pub mod search_diagnostics;

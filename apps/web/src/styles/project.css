@@ -1023,13 +1023,16 @@
   }
 }
 
-.offer-quote {
+.offer-quote,
+.purchase-handoff {
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 .offer-quote form,
-.offer-quote label {
+.offer-quote label,
+.purchase-handoff form,
+.purchase-handoff label {
   display: grid;
   gap: var(--zari-space-2);
   min-width: 0;
@@ -1037,7 +1040,9 @@
 .inventory-panel input,
 .inventory-panel select,
 .offer-quote input,
-.offer-quote select {
+.offer-quote select,
+.purchase-handoff input,
+.purchase-handoff select {
   box-sizing: border-box;
   max-width: 100%;
   min-height: var(--zari-control-min-height);
@@ -1049,7 +1054,8 @@
   font-size: var(--zari-text-base);
 }
 .inventory-panel .button,
-.offer-quote .button {
+.offer-quote .button,
+.purchase-handoff .button {
   margin-top: var(--zari-space-2);
 }
 @media (pointer: coarse) {
@@ -1058,7 +1064,10 @@
   .inventory-panel .button,
   .offer-quote input,
   .offer-quote select,
-  .offer-quote .button {
+  .offer-quote .button,
+  .purchase-handoff input,
+  .purchase-handoff select,
+  .purchase-handoff .button {
     min-height: var(--zari-touch-min-height);
   }
 }
@@ -1074,6 +1083,10 @@
   .offer-quote input,
   .offer-quote select,
   .offer-quote .button,
+  .purchase-handoff,
+  .purchase-handoff input,
+  .purchase-handoff select,
+  .purchase-handoff .button,
   .next-facts,
   .next-fact-row,
   .next-facts-stale,

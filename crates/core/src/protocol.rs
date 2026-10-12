@@ -31,7 +31,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-7";
-const CAPABILITIES: [&str; 19] = [
+const CAPABILITIES: [&str; 20] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -50,6 +50,7 @@ const CAPABILITIES: [&str; 19] = [
     "quoteOfferBundle",
     "buildPortableBundle",
     "inspectPortableBundle",
+    "preparePurchaseHandoff",
     "disposeProject",
 ];
 /// Extra capabilities advertised only when a search engine is installed.
@@ -63,7 +64,7 @@ const SEARCH_CAPABILITIES: [&str; 8] = [
     "replanIncremental",
     "diagnoseSearch",
 ];
-const COMMAND_KINDS: [&str; 26] = [
+const COMMAND_KINDS: [&str; 27] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -81,6 +82,7 @@ const COMMAND_KINDS: [&str; 26] = [
     "quoteOfferBundle",
     "buildPortableBundle",
     "inspectPortableBundle",
+    "preparePurchaseHandoff",
     "disposeProject",
     "proposeStrategies",
     "evaluateStrategyLibrary",
@@ -326,6 +328,12 @@ pub enum Command {
     InspectPortableBundle {
         zip_base64: String,
     },
+    /// Seller links, freshness, substitute recheck, and purchase events.
+    /// Does not publish a snapshot. A link is not a payment. Affiliate ids
+    /// are not an input to suitability.
+    PreparePurchaseHandoff {
+        action: crate::purchase_handoff::PurchaseHandoffAction,
+    },
     /// Evaluate every supported strategy's decision IR for the activated
     /// project context without starting a search (SOLVER.md §4).
     ProposeStrategies {},
@@ -527,6 +535,11 @@ pub enum Event {
     /// Result of `inspectPortableBundle`. Rejected replies omit member text.
     PortableBundleInspected {
         reply: crate::portable::PortableInspectReply,
+    },
+    /// Result of `preparePurchaseHandoff`. Not part of a PlanSnapshot hash.
+    /// `recordsPayment` is false. A substitute review does not adopt.
+    PurchaseHandoffPrepared {
+        reply: crate::purchase_handoff::PurchaseHandoffReply,
     },
     /// `startSearch` acknowledged; the handle must be echoed verbatim by
     /// `stepSearch`/`cancelSearch`.
@@ -2309,6 +2322,7 @@ impl Runtime {
                     | Command::QuoteOfferBundle { .. }
                     | Command::BuildPortableBundle { .. }
                     | Command::InspectPortableBundle { .. }
+                    | Command::PreparePurchaseHandoff { .. }
             )
         {
             return self.execute_stateless(&request.command);
@@ -2500,7 +2514,8 @@ impl Runtime {
             | Command::ReviewCatalogImport { .. }
             | Command::QuoteOfferBundle { .. }
             | Command::BuildPortableBundle { .. }
-            | Command::InspectPortableBundle { .. } => self.execute_stateless(&request.command),
+            | Command::InspectPortableBundle { .. }
+            | Command::PreparePurchaseHandoff { .. } => self.execute_stateless(&request.command),
             Command::ValidateCandidate { proposal } => {
                 let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
                 else {
@@ -2923,6 +2938,12 @@ impl Runtime {
             Command::InspectPortableBundle { zip_base64 } => Event::PortableBundleInspected {
                 reply: crate::portable::inspect_portable_bundle(zip_base64),
             },
+            Command::PreparePurchaseHandoff { action } => {
+                match crate::purchase_handoff::prepare_purchase_handoff(action) {
+                    Ok(reply) => Event::PurchaseHandoffPrepared { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
             Command::ProjectSpatialView { source } => {
                 match crate::spatial_view::project_spatial_view(source) {
                     Ok(projection) => Event::SpatialViewProjected { projection },

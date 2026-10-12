@@ -46,6 +46,7 @@
     "quoteOfferBundle",
     "buildPortableBundle",
     "inspectPortableBundle",
+    "preparePurchaseHandoff",
     "disposeProject"
   ],
   "searchCapabilities": [
