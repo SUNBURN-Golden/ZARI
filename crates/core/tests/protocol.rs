@@ -72,6 +72,7 @@ fn capability_subset_is_honest() {
             "quoteOfferBundle",
             "buildPortableBundle",
             "inspectPortableBundle",
+            "preparePurchaseHandoff",
             "disposeProject"
         ])
     );
@@ -469,6 +470,7 @@ fn previous_build_id_and_unimplemented_query_do_not_handshake() {
             "quoteOfferBundle",
             "buildPortableBundle",
             "inspectPortableBundle",
+            "preparePurchaseHandoff",
             "disposeProject",
             "proposeStrategies",
             "evaluateStrategyLibrary",

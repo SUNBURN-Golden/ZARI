@@ -58,6 +58,7 @@ import {
 } from '../features/plan/view';
 import { bomCsvRows, toCsv } from '../features/plan/csv';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
+import { PurchaseHandoffPanel } from '../features/purchase/PurchaseHandoffPanel';
 import { IncrementalPanel } from '../features/incremental/IncrementalPanel';
 import { SearchDiagnosticPanel } from '../features/diagnostics/SearchDiagnosticPanel';
 import { ParetoPanel } from '../features/pareto/ParetoPanel';
@@ -909,6 +910,7 @@ function PlanDetail({
           canReplace={editable && edit.pending === null && edit.persist?.kind !== 'saving'}
           onReplace={(command) => session.requestLayoutEdit(command, snapshot.planSnapshotId)}
         />
+        <PurchaseHandoffPanel projectId={session.snapshot.projectId} snapshot={snapshot} />
       </section>
 
       <section aria-labelledby="guide-title">

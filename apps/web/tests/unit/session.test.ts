@@ -43,6 +43,7 @@ class WasmPort implements WorkerPort {
   sent: ProtocolRequest[] = [];
   private runtime = new Runtime();
   private dead = false;
+  private freed = false;
   hangCancel = false;
   postMessage(text: string) {
     if (this.hangCancel) {
@@ -67,6 +68,12 @@ class WasmPort implements WorkerPort {
   }
   terminate() {
     this.dead = true;
+    // Free the Rust-side Runtime so wasm linear memory does not accumulate
+    // across the file's tests in this shared worker-fork.
+    if (!this.freed) {
+      this.freed = true;
+      this.runtime.free();
+    }
   }
 }
 
@@ -74,9 +81,24 @@ const catalog = bundledCatalog as unknown as CatalogSnapshot;
 
 const sessions: ProjectSession[] = [];
 const controllers: WorkerController[] = [];
-afterEach(() => {
+const dbs: ZariDb[] = [];
+afterEach(async () => {
   for (const session of sessions.splice(0)) void session.close(true);
   for (const controller of controllers.splice(0)) controller.dispose();
+  // Each test's database holds a full catalog and project records inside the
+  // shared fake-indexeddb store; closing without deleting would keep those
+  // bytes alive for the rest of the file.
+  const names = new Set<string>();
+  for (const db of dbs.splice(0)) {
+    names.add(db.name);
+    db.close();
+  }
+  for (const name of names) {
+    await new Promise<void>((resolve) => {
+      const request = indexedDB.deleteDatabase(name);
+      request.onsuccess = request.onerror = request.onblocked = () => resolve();
+    });
+  }
   const gate = globalThis as {
     __zariNextFactsGate?: unknown;
     __zariNextFactsInject?: unknown;
@@ -89,6 +111,7 @@ afterEach(() => {
 
 function world(name = `test-${crypto.randomUUID()}`) {
   const db = new ZariDb(name);
+  dbs.push(db);
   const repo = new ProjectRepository(db);
   const ports: WasmPort[] = [];
   const controller = new WorkerController(() => {
@@ -112,12 +135,22 @@ async function until(
   ms = 5000,
 ): Promise<SessionSnapshot> {
   const deadline = Date.now() + ms;
+  let polls = 0;
   while (Date.now() < deadline) {
     const s = session.snapshot;
     if (predicate(s)) return s;
+    polls += 1;
     await new Promise((r) => setTimeout(r, 20));
   }
-  throw new Error(`timed out waiting for session condition; last=${JSON.stringify(session.snapshot.saveState)}/${session.snapshot.status}`);
+  const s = session.snapshot;
+  throw new Error(
+    `timed out waiting for session condition; last=${JSON.stringify(s.saveState)}/${s.status}` +
+      ` worker=${s.worker} context=${s.context} search=${s.plan.search}` +
+      ` searchError=${JSON.stringify(s.plan.searchError)}` +
+      ` progress=${JSON.stringify(s.plan.progress?.workUnits ?? null)}` +
+      ` pending=${JSON.stringify(s.plan.edit.pending?.command.kind ?? null)}` +
+      ` polls=${polls}`,
+  );
 }
 
 /** Normalize the sample form through a standalone real Runtime (seeding only). */
@@ -156,7 +189,9 @@ function normalizeSample(): { input: ProjectInput; digest: string } {
   if (reply.event.kind !== 'normalized' || !reply.event.normalizedInput)
     throw new Error('seed normalize failed');
   const normalized = reply.event.normalizedInput as { kind: string; input: ProjectInput };
-  return { input: normalized.input, digest: reply.event.inputDigest as string };
+  const result = { input: normalized.input, digest: reply.event.inputDigest as string };
+  runtime.free();
+  return result;
 }
 
 /** One project with a committed normalized input and the bundled catalog. */

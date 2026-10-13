@@ -257,6 +257,13 @@ it('opens a v2 database, journals 2 to 3, and leaves snapshot bytes', async () =
     toVersion: 3,
     state: 'applied',
   });
+  const purchaseJournal = await db.metadata.get('migration:3->4');
+  expect(purchaseJournal?.payload).toMatchObject({
+    kind: 'migration',
+    fromVersion: 3,
+    toVersion: 4,
+    state: 'applied',
+  });
   const stored = await db.snapshots.toArray();
   expect(stored).toHaveLength(1);
   expect(stored[0]?.snapshot).toEqual({ marker: 'historical-bytes' });
@@ -277,4 +284,19 @@ it('saves a ledger with compare-and-swap and drops it when the project is delete
   expect(row?.ledger).toEqual(ledger);
   await r.deleteProject(project.projectId);
   expect(await r.getInventoryLedger(project.projectId)).toBeNull();
+});
+
+it('saves a purchase handoff with compare-and-swap and drops it when the project is deleted', async () => {
+  const r = repo();
+  const project = await seedProject(r);
+  const ledger = { events: [] };
+  const saved = await r.savePurchaseHandoff(project.projectId, ledger, '0');
+  expect(saved).toEqual({ status: 'saved', revision: '1' });
+  const conflict = await r.savePurchaseHandoff(project.projectId, ledger, '0');
+  expect(conflict.status).toBe('conflict');
+  const row = await r.getPurchaseHandoff(project.projectId);
+  expect(row?.revision).toBe('1');
+  expect(row?.ledger).toEqual(ledger);
+  await r.deleteProject(project.projectId);
+  expect(await r.getPurchaseHandoff(project.projectId)).toBeNull();
 });

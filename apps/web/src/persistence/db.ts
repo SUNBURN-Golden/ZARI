@@ -7,6 +7,7 @@ import type {
   InventoryLedger,
   PlanSnapshot,
   ProjectInput,
+  PurchaseLedger,
   RawProjectInputDto,
 } from '../contracts/generated/dto';
 import {
@@ -21,12 +22,13 @@ export const DB_NAME = 'zari-local';
 /**
  * v1: Task 005 stores. v2: Task 009 adds the `attachments` Blob store for
  * optional local photos. v3: z-inventory-lifecycle adds `inventoryLedgers`.
+ * v4: z-purchase-handoff adds `purchaseHandoffs`.
  * Historical declarations stay so an older database upgrades in place; a
  * newer database opened by an older build is refused by IndexedDB itself
  * (downgrade protection). The upgrade writes a journal row and does not
  * read or rewrite snapshot, input, or owned-container bytes.
  */
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 export const SCHEMA_VERSION = 1;
 const MAX_REVISION = 18446744073709551615n;
 
@@ -114,6 +116,14 @@ export interface InventoryLedgerRow {
   ledger: InventoryLedger;
   updatedAt: string;
 }
+/** Project purchase events. Not a PlanSnapshot and not exportVersion 1. */
+export interface PurchaseHandoffRow {
+  schemaVersion: number;
+  ledgerId: string;
+  revision: string;
+  ledger: PurchaseLedger;
+  updatedAt: string;
+}
 export interface OwnedContainerRow {
   schemaVersion: number;
   ownedContainerId: string;
@@ -191,6 +201,7 @@ export class ZariDb extends Dexie {
   snapshots!: Table<SnapshotRow, [string, string, string]>;
   ownedContainers!: Table<OwnedContainerRow, string>;
   inventoryLedgers!: Table<InventoryLedgerRow, string>;
+  purchaseHandoffs!: Table<PurchaseHandoffRow, string>;
   catalogs!: Table<CatalogRow, string>;
   actionProgress!: Table<ActionProgressRow, [string, string, string, string]>;
   attachments!: Table<AttachmentRow, string>;
@@ -260,6 +271,34 @@ export class ZariDb extends Dexie {
         await tx.table('metadata').put({
           schemaVersion: SCHEMA_VERSION,
           key: 'migration:2->3',
+          payload: journal,
+        });
+      });
+    this.version(4)
+      .stores({
+        projects: 'projectId, updatedAt, status',
+        inputs: '[projectId+inputRevision], projectId',
+        drafts: 'projectId',
+        snapshots: '[projectId+inputRevision+planSnapshotId], projectId, planSnapshotId',
+        ownedContainers: 'ownedContainerId, updatedAt',
+        catalogs: 'catalogDigest, catalogVersion, origin',
+        actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
+        attachments: 'attachmentId, projectId',
+        inventoryLedgers: 'ledgerId, updatedAt',
+        purchaseHandoffs: 'ledgerId, updatedAt',
+        metadata: 'key',
+      })
+      .upgrade(async (tx) => {
+        const journal: MigrationJournal = {
+          kind: 'migration',
+          fromVersion: 3,
+          toVersion: 4,
+          state: 'applied',
+          recordedAt: new Date().toISOString(),
+        };
+        await tx.table('metadata').put({
+          schemaVersion: SCHEMA_VERSION,
+          key: 'migration:3->4',
           payload: journal,
         });
       });
@@ -502,6 +541,25 @@ function isInventoryLedger(value: unknown): value is InventoryLedger {
     Array.isArray(ledger.containers) &&
     Array.isArray(ledger.events)
   );
+}
+function isPurchaseLedger(value: unknown): value is PurchaseLedger {
+  if (!value || typeof value !== 'object') return false;
+  return Array.isArray((value as PurchaseLedger).events);
+}
+export function readPurchaseHandoffRow(value: unknown): PurchaseHandoffRow {
+  const row = value as PurchaseHandoffRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.ledgerId) ||
+    !isCanonicalRevision(row.revision) ||
+    !text(row.updatedAt) ||
+    !isPurchaseLedger(row.ledger)
+  )
+    throw new Error('record_corrupt');
+  return row;
 }
 export function readInventoryLedgerRow(value: unknown): InventoryLedgerRow {
   const row = value as InventoryLedgerRow;

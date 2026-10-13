@@ -1815,6 +1815,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Seller links, freshness, substitute recheck, and purchase events.\nDoes not publish a snapshot. A link is not a payment. Affiliate ids\nare not an input to suitability.",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/PurchaseHandoffAction"
+            },
+            "kind": {
+              "const": "preparePurchaseHandoff",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Evaluate every supported strategy's decision IR for the activated\nproject context without starting a search (SOLVER.md §4).",
           "properties": {
             "kind": {
@@ -3594,6 +3612,24 @@
             },
             "reply": {
               "$ref": "#/definitions/PortableInspectReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `preparePurchaseHandoff`. Not part of a PlanSnapshot hash.\n`recordsPayment` is false. A substitute review does not adopt.",
+          "properties": {
+            "kind": {
+              "const": "purchaseHandoffPrepared",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/PurchaseHandoffReply"
             }
           },
           "required": [
@@ -6066,6 +6102,23 @@
       "title": "Frequency",
       "type": "string"
     },
+    "FreshnessClass": {
+      "additionalProperties": false,
+      "properties": {
+        "freshness": {
+          "$ref": "#/definitions/ObservationFreshness"
+        },
+        "recordsPayment": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "freshness",
+        "recordsPayment"
+      ],
+      "title": "FreshnessClass",
+      "type": "object"
+    },
     "GroupPriority": {
       "additionalProperties": false,
       "description": "Ordered group ranking; list position is semantic and never re-sorted.",
@@ -6158,6 +6211,16 @@
       ],
       "title": "HandlingClearance",
       "type": "object"
+    },
+    "HandoffSuitability": {
+      "enum": [
+        "pass",
+        "fail",
+        "unknown",
+        "notApplicable"
+      ],
+      "title": "HandoffSuitability",
+      "type": "string"
     },
     "HoldingKind": {
       "enum": [
@@ -7898,6 +7961,15 @@
       ],
       "title": "NormalizeInputDto"
     },
+    "ObservationFreshness": {
+      "enum": [
+        "current",
+        "stale",
+        "unconfirmed"
+      ],
+      "title": "ObservationFreshness",
+      "type": "string"
+    },
     "Obstacle": {
       "additionalProperties": false,
       "properties": {
@@ -9378,6 +9450,158 @@
       "title": "Preferences",
       "type": "object"
     },
+    "PreparedHandoff": {
+      "additionalProperties": false,
+      "properties": {
+        "affiliateChangesSuitability": {
+          "type": "boolean"
+        },
+        "boundRevision": {
+          "$ref": "#/definitions/Digest"
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "ledger": {
+          "$ref": "#/definitions/PurchaseLedger"
+        },
+        "recordsPayment": {
+          "type": "boolean"
+        },
+        "sellers": {
+          "items": {
+            "$ref": "#/definitions/SellerPrep"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "boundRevision",
+        "sellers",
+        "recordsPayment",
+        "affiliateChangesSuitability",
+        "ledger",
+        "changed"
+      ],
+      "title": "PreparedHandoff",
+      "type": "object"
+    },
+    "PrepLine": {
+      "additionalProperties": false,
+      "properties": {
+        "affiliate": {
+          "type": "boolean"
+        },
+        "confirmedPurchase": {
+          "type": "boolean"
+        },
+        "freshness": {
+          "$ref": "#/definitions/ObservationFreshness"
+        },
+        "historicalPassReused": {
+          "description": "Always false. A later measurement does not reuse the plan's pass.",
+          "type": "boolean"
+        },
+        "impact": {
+          "$ref": "#/definitions/PurchaseImpact"
+        },
+        "lineId": {
+          "$ref": "#/definitions/Id"
+        },
+        "link": {
+          "$ref": "#/definitions/PurchaseLink"
+        },
+        "measured": {
+          "type": "boolean"
+        },
+        "measurementPromotesPass": {
+          "description": "Always false. Measuring does not turn unknown into pass.",
+          "type": "boolean"
+        },
+        "observedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "offerId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packPrice": {
+          "$ref": "#/definitions/QuotedMoney"
+        },
+        "paid": {
+          "description": "Always false. A seller link is not a payment.",
+          "type": "boolean"
+        },
+        "received": {
+          "type": "boolean"
+        },
+        "returned": {
+          "type": "boolean"
+        },
+        "sellerId": {
+          "$ref": "#/definitions/Id"
+        },
+        "stock": {
+          "$ref": "#/definitions/StockStatus"
+        },
+        "subtotal": {
+          "$ref": "#/definitions/QuotedMoney"
+        },
+        "suitability": {
+          "$ref": "#/definitions/HandoffSuitability"
+        },
+        "unconfirmed": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "variantId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "lineId",
+        "offerId",
+        "variantId",
+        "sellerId",
+        "link",
+        "observedAt",
+        "freshness",
+        "stock",
+        "packPrice",
+        "subtotal",
+        "unconfirmed",
+        "affiliate",
+        "paid",
+        "confirmedPurchase",
+        "received",
+        "measured",
+        "returned",
+        "impact",
+        "historicalPassReused",
+        "measurementPromotesPass",
+        "suitability"
+      ],
+      "title": "PrepLine",
+      "type": "object"
+    },
     "PreviewShipping": {
       "oneOf": [
         {
@@ -9987,6 +10211,317 @@
       ],
       "title": "ProvenanceRow",
       "type": "object"
+    },
+    "PurchaseEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "kind": {
+          "$ref": "#/definitions/PurchaseEventKind"
+        },
+        "measuredWidthMm": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "offerId": {
+          "$ref": "#/definitions/Id"
+        }
+      },
+      "required": [
+        "id",
+        "offerId",
+        "kind",
+        "note",
+        "measuredWidthMm"
+      ],
+      "title": "PurchaseEvent",
+      "type": "object"
+    },
+    "PurchaseEventKind": {
+      "enum": [
+        "confirmedPurchase",
+        "received",
+        "measured",
+        "returned"
+      ],
+      "title": "PurchaseEventKind",
+      "type": "string"
+    },
+    "PurchaseHandoffAction": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "affiliateOfferIds": {
+              "default": [],
+              "items": {
+                "$ref": "#/definitions/Id"
+              },
+              "type": "array"
+            },
+            "asOf": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "prepare",
+              "type": "string"
+            },
+            "ledger": {
+              "$ref": "#/definitions/PurchaseLedger"
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot",
+            "asOf",
+            "ledger"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "affiliateOfferIds": {
+              "default": [],
+              "items": {
+                "$ref": "#/definitions/Id"
+              },
+              "type": "array"
+            },
+            "asOf": {
+              "type": "string"
+            },
+            "event": {
+              "$ref": "#/definitions/PurchaseEvent"
+            },
+            "kind": {
+              "const": "record",
+              "type": "string"
+            },
+            "ledger": {
+              "$ref": "#/definitions/PurchaseLedger"
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot",
+            "asOf",
+            "ledger",
+            "event"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "affiliateOfferIds": {
+              "default": [],
+              "items": {
+                "$ref": "#/definitions/Id"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "reviewSubstitute",
+              "type": "string"
+            },
+            "offer": {
+              "$ref": "#/definitions/Offer"
+            },
+            "placementId": {
+              "$ref": "#/definitions/Id"
+            },
+            "product": {
+              "$ref": "#/definitions/Product"
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            },
+            "variant": {
+              "$ref": "#/definitions/ProductVariant"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot",
+            "placementId",
+            "product",
+            "variant",
+            "offer"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "asOf": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "classifyFreshness",
+              "type": "string"
+            },
+            "observedAt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "observedAt",
+            "asOf"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "PurchaseHandoffAction"
+    },
+    "PurchaseHandoffReply": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "prepared",
+              "type": "string"
+            },
+            "prepared": {
+              "$ref": "#/definitions/PreparedHandoff"
+            }
+          },
+          "required": [
+            "kind",
+            "prepared"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "reviewed",
+              "type": "string"
+            },
+            "review": {
+              "$ref": "#/definitions/SubstituteReview"
+            }
+          },
+          "required": [
+            "kind",
+            "review"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "freshness": {
+              "$ref": "#/definitions/FreshnessClass"
+            },
+            "kind": {
+              "const": "freshness",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "freshness"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "PurchaseHandoffReply"
+    },
+    "PurchaseImpact": {
+      "enum": [
+        "none",
+        "measurementUnknown",
+        "dimensionsDiffer",
+        "remeasured"
+      ],
+      "title": "PurchaseImpact",
+      "type": "string"
+    },
+    "PurchaseLedger": {
+      "additionalProperties": false,
+      "properties": {
+        "events": {
+          "items": {
+            "$ref": "#/definitions/PurchaseEvent"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "events"
+      ],
+      "title": "PurchaseLedger",
+      "type": "object"
+    },
+    "PurchaseLink": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "http",
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "url"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "missing",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "rejected",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "PurchaseLink"
     },
     "PurchaseSelection": {
       "additionalProperties": false,
@@ -12679,6 +13214,33 @@
       "title": "SearchTermination",
       "type": "string"
     },
+    "SellerPrep": {
+      "additionalProperties": false,
+      "properties": {
+        "lines": {
+          "items": {
+            "$ref": "#/definitions/PrepLine"
+          },
+          "type": "array"
+        },
+        "sellerId": {
+          "$ref": "#/definitions/Id"
+        },
+        "unconfirmed": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "sellerId",
+        "lines",
+        "unconfirmed"
+      ],
+      "title": "SellerPrep",
+      "type": "object"
+    },
     "SellerQuote": {
       "additionalProperties": false,
       "properties": {
@@ -13881,6 +14443,59 @@
       ],
       "title": "SubjectKind",
       "type": "string"
+    },
+    "SubstituteReview": {
+      "additionalProperties": false,
+      "properties": {
+        "adopted": {
+          "type": "boolean"
+        },
+        "affiliateChangesSuitability": {
+          "type": "boolean"
+        },
+        "boundRevision": {
+          "$ref": "#/definitions/Digest"
+        },
+        "identityAssumed": {
+          "type": "boolean"
+        },
+        "plannedVariantId": {
+          "$ref": "#/definitions/Id"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "recordsPayment": {
+          "type": "boolean"
+        },
+        "reusedPass": {
+          "type": "boolean"
+        },
+        "sameVariantId": {
+          "type": "boolean"
+        },
+        "substituteVariantId": {
+          "$ref": "#/definitions/Id"
+        },
+        "suitability": {
+          "$ref": "#/definitions/HandoffSuitability"
+        }
+      },
+      "required": [
+        "boundRevision",
+        "identityAssumed",
+        "reusedPass",
+        "adopted",
+        "affiliateChangesSuitability",
+        "recordsPayment",
+        "suitability",
+        "plannedVariantId",
+        "substituteVariantId",
+        "sameVariantId",
+        "reasonCode"
+      ],
+      "title": "SubstituteReview",
+      "type": "object"
     },
     "SupportKind": {
       "enum": [

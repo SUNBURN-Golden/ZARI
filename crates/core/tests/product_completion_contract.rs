@@ -166,7 +166,8 @@ fn current_engine_identity_registers_the_sp013_rule() {
     assert_eq!(capabilities[next + 4], "quoteOfferBundle");
     assert_eq!(capabilities[next + 5], "buildPortableBundle");
     assert_eq!(capabilities[next + 6], "inspectPortableBundle");
-    assert_eq!(capabilities[next + 7], "disposeProject");
+    assert_eq!(capabilities[next + 7], "preparePurchaseHandoff");
+    assert_eq!(capabilities[next + 8], "disposeProject");
     let denied = send(
         &mut runtime,
         "eligibility",

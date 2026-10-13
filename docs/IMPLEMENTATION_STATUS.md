@@ -1,3 +1,37 @@
+# 2026-10-12 — ZARI-z-purchase-handoff 구매 링크·대체품 검토·구매 이후 연결
+
+정본은 GitHub issue #98, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-purchase-handoff`이다. 관찰한 base SHA는 `8857c4f4a2f0d70f15b8edafc73c324c243b80bf`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-purchase-handoff만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-purchase-handoff.md`와 `design/DECISIONS.md` Dz-purchase-handoff. 제품 완성 후보 문서에는 이 노드 노트만 추가했다.
+- 구매 준비는 스냅샷 밖의 stateless Rust 명령 `preparePurchaseHandoff`다. 응답은 PlanSnapshot 해시에 들어가지 않고 스냅샷을 발행·재작성하지 않는다. 판매처 링크는 `http`/`https` 앵커뿐이고 클릭 기록 핸들러가 없다. `paid`와 `recordsPayment`는 항상 false다.
+- 확인 시각은 호출자가 넘긴다. 7일 이내면 `current`, 그보다 오래되면 `stale`, 없거나 해석할 수 없으면 `unconfirmed`다. 화면은 `지난 확인`·`확인 시각 없음`이라 쓰고 `최신`이라 쓰지 않는다. 미확인 금액·재고·배송·세금은 미확인 코드로 보이고 ₩0으로 그리지 않는다.
+- 대체품은 동일성 가정 없이 `validate_layout`과 `validate_candidate`로 한 곳 배치에서 다시 검증하고 스냅샷을 채택하지 않는다. 외경·내경 어느 축이든 unknown이면 pass로 올리지 않는다. 광고·제휴 id는 판정에 들어가지 않는다.
+- 구매 확인·수령·실측·반품은 별개 원장 사건이다. 반품은 구매 확인을 지우지 않고, 실측은 `impact`만 바꾸며 기존 통과를 재사용하거나 unknown을 pass로 올리지 않는다.
+- 계획 상세는 판매처별 준비 목록, 확인 시점, 금액, 적합성, 네 사건 플래그, 영향 줄, 링크를 보여준다. 사건 기록·확인 시점 분류·대체품 재검증은 Enter로 제출하는 폼이다. `pending`/`ready`/`empty`/`error`를 `data-state`로 낸다.
+- 살아있는 IndexedDB `DB_VERSION`은 4다. `purchaseHandoffs` 저장소를 더하고 `migration:3->4` 일지만 쓰며 스냅샷·입력·보유·생활 원장 바이트는 읽거나 다시 쓰지 않는다. `deleteProject`가 같은 트랜잭션에서 지우고, 내보내기·가져오기는 싣지 않는다. 사건을 기록하기 전까지 계획을 열어도 쓰지 않는다.
+- `BUILD_ID`는 `zari-domain-7`이다. fixture 기대 바이트는 바꾸지 않았다. `docs/product-expansion/contract.json`의 `implementsNow`, `contractChange`, 문서 `dbVersion` 2는 그대로 두고 살아있는 `baseCapabilities`에만 `disposeProject` 앞에 명령을 넣었다. 새 색 토큰·대비 조합은 없다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.x, Rust 1.98.1, `CARGO_BUILD_JOBS=4`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 201 passed, 1 ignored(기존 completion-query 무시). 새 `purchase_handoff.rs` 10개 포함
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건, exit 0. `git status fixtures/`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 새 의존 없음
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128. 생성 파일은 손으로 고치지 않았다
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 29 files / 189), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, manifest `buildId` `3de50ed3830f86c4`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12), `node scripts/check-product-contract.mjs`: exit 0
+- `npm run test:browser -- --project=chromium`: 최종 트리에서 4회 실행. 처음 3회는 매회 다른 탐색 소요 시간 초과 flake가 1–3개씩 나왔다(`edit`/`quality`·`responsive`·`spatial3d`/`plan`·`product-completion`·`progress`). 동시 작업이 도는 이 16GB 머신에서 WASM 탐색이 30초 테스트 한도를 넘긴 시간 문제이며, 각 spec은 단독 실행으로 전부 통과했다. 2026-10-13 재검증 실행은 101 passed, 0 failed로 전부 초록이었다. 타임아웃은 올리지 않았다
+- `purchase-handoff.spec.ts`: chromium 1 passed (16.5s, 재실행 16.2s), firefox 1 passed (19.7s, 재실행 18.5s), webkit 첫 실행 15.4s. 재검증의 한 webkit 실행은 부하 아래서 사건 기록 왕복이 30초를 넘겨 멈췄고(판정 실패가 아니라 지연) 재실행은 18.1s로 통과했다
+- `npm run test:parity`: 2 passed (27.1s, 재실행 33.5s), 124 fixture
+- 이 세션은 push하지 않았다. 고친 트리는 GitHub Actions가 아직 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 외부 결제, 제휴 수익, 실시간 재고 API, 클라우드·계정, 화면 승인, 출시, 전화, 전용 GPU, `BUILD_ID` 변경. 390px·1440px·forced-colors는 데스크톱 에뮬레이션이다. 확인 윈도우는 Rust 고정 7일이다. 상세는 `docs/evidence/ZARI-z-purchase-handoff.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 ready PR을 연다. 독립 읽기 전용 검토 2회가 같은 head에서 끝난 뒤 머지한다. `BUILD_ID`는 유지했다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-09 — ZARI-z-portable-project 프로젝트 이식·검증된 가져오기
 
 정본은 GitHub issue #96, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-portable-project`이다. 관찰한 base SHA는 `f67ce9d2b0eabcce27645ef47ac338127e94283e`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
