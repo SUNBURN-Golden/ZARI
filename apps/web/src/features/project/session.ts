@@ -107,6 +107,7 @@ import {
   takeNextFactsInjection,
 } from './nextFactsGate';
 import type { NextFactsReply } from '../../contracts/generated/dto';
+import type { DraftFocusTarget } from '../execution/model';
 import { shouldApplyProgressReply, type GuideEligibility } from '../workspace/stepFocus';
 
 export type SaveState =
@@ -338,6 +339,12 @@ export class ProjectSession {
    * An in-flight progress reply captured against an older epoch is dropped.
    */
   private progressEpoch = 0;
+  /**
+   * One-shot rollback handoff from the execution checklist to the draft
+   * screen. Volatile: it survives the plan→project navigation inside this
+   * tab but never touches a store. The draft screen consumes it once.
+   */
+  private pendingDraftFocus: DraftFocusTarget | null = null;
   constructor(
     private readonly repo: ProjectRepository,
     private readonly controller: WorkerController,
@@ -1730,6 +1737,7 @@ export class ProjectSession {
           executable: row.executable,
           blockerCheckIds: row.blockerCheckIds,
           userAssertion: row.userAssertion,
+          instanceRefs: row.instanceRefs,
         })),
       },
     });
@@ -1828,6 +1836,7 @@ export class ProjectSession {
             executable: row.executable,
             blockerCheckIds: row.blockerCheckIds,
             userAssertion: row.userAssertion,
+            instanceRefs: row.instanceRefs,
           })),
         },
       });
@@ -1891,6 +1900,19 @@ export class ProjectSession {
       this.patch({ conflict: { remoteRevision: 'unknown' }, saveState: 'conflict' });
     }
     this.patchPlan({ actionError: result.status, actionRetry: null });
+  }
+  /**
+   * Execution rollback: the plan screen marks where the draft should land;
+   * the draft screen consumes the target once and focuses that control.
+   * Neither writes progress nor edits the form.
+   */
+  requestDraftFocus(target: DraftFocusTarget): void {
+    this.pendingDraftFocus = target;
+  }
+  takeDraftFocus(): DraftFocusTarget | null {
+    const target = this.pendingDraftFocus;
+    this.pendingDraftFocus = null;
+    return target;
   }
   private clearSearchProgressPaint(): void {
     if (this.searchProgressTimer !== null) {

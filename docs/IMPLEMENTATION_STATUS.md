@@ -1,3 +1,35 @@
+# 2026-10-13 — ZARI-z-execution-checklist 실행 체크리스트·막힘·되돌리기
+
+정본은 GitHub issue #100, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-execution-checklist`이다. 관찰한 base SHA는 `2bf7d4d427a0eb4c62c2ac2ee912756d89e27b0a`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-execution-checklist만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-execution-checklist.md`와 `design/DECISIONS.md` Dz-execution-checklist. 제품 완성 후보 문서와 `design/SPATIAL_WORKSPACE.md` §8에는 이 노드 노트만 추가했다.
+- 채택된 계획의 가이드에 단계별 실행 카드를 붙였다. 준비물은 Rust `instanceRefs` 라벨이고, 조건은 `reasonIds`가 가리키는 `content.validation.checks` 상태를 글자로 보인다. 단계 순서·자격·선행은 Rust가 계산하고 브라우저는 재계산하지 않는다.
+- 완료 기록은 사용자 진술이다. 기존 `toggleActionStep` → `setActionStep` CAS 경로만 쓰고 검사 결과를 건드리지 않는다. Rust가 `executable`이 아니라고 한 단계는 비활성 체크박스와 사유 글자로 보인다. 진행은 `(inputRevision, planSnapshotId)` 결합에만 저장되고 새 snapshot은 구계획 진행을 무조건 잇지 않는다.
+- 되돌리기는 세션의 휘발 `requestDraftFocus`로 초안 화면의 한 컨트롤로 이동한다. 다른 물건 발견은 물건 치수, 부품 부족은 카탈로그·보유 수납함, 실측 차이는 공간 치수 컨트롤에 초점을 둔다. 탐색은 진행·검사·초안을 쓰지 않는다.
+- `crates/core/tests/execution_checklist.rs`에 중단·재개·계획 변경 무효화 fixture 6건을 두었다. Rust 소스·프로토콜·스키마는 바꾸지 않았고 `instanceRefs`는 이미 생성 DTO에 있던 필드를 매핑만 했다.
+- `BUILD_ID`는 `zari-domain-7`이다. fixture 124건의 기대 바이트, `Cargo.lock`, 생성 계약 파일, `.aiops/**`, `docs/aiops/**`, `.github/**`는 그대로다. 새 색 토큰·대비 조합·의존성은 없다. 캡처가 다시 쓴 `ZARI-SPATIAL-001-*.png` 2장은 `git checkout`으로 되돌렸다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.x, Rust 1.98.1, `CARGO_BUILD_JOBS=4`):
+
+- `cargo fmt --all -- --check`(첫 실행은 새 테스트 파일 서식으로 실패, `cargo fmt` 후 통과), `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0. 새 `execution_checklist.rs` 6 passed 포함
+- fixture_runner `fixtures/bootstrap` 28건, `fixtures` 124건: exit 0. `git status fixtures/`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0. 새 의존 없음
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124. wasm-bindgen 0.2.128. Rust 소스 변경이 없어 재생성도 없었다
+- `npm run typecheck`, `npm run lint`, `npm test` (vitest 30 files / 193), `npm run build`, `node scripts/check-release-manifest.mjs` (`errors` 없음, manifest `buildId` `faea890c53e5221c`, assets 11), `node scripts/check-design-tokens.mjs --self-test` (대비 39/39, self-test 12), `node scripts/check-product-contract.mjs`: exit 0
+- `npm run test:browser -- --project=chromium`: 최종 트리 전체 106 passed, 0 failed (4.6m). `spatial3d` `context-lost-console: none`. create-project flake는 관측되지 않았다
+- `execution-checklist.spec.ts`: chromium 첫 실행은 controlled checkbox에 `.check()`가 실패해 `.click()`+`toBeChecked()`로 고친 뒤 5 passed. firefox 5 passed (1.5m), webkit 5 passed (1.5m)
+- `npm run test:parity`: 2 passed (28.7s), 124 fixture 네이티브·브라우저 WASM 일치
+- 이 세션은 커밋·push하지 않았다. 고친 트리는 GitHub Actions가 아직 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 외부 결제·구매 연결, 클라우드 동기화, 새 snapshot으로의 진행 승계, 전화·전용 GPU 실기기 검증, `BUILD_ID`·스키마·버전 변경. 390px·forced-colors·키보드는 데스크톱 에뮬레이션이다. 상세는 `docs/evidence/ZARI-z-execution-checklist.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 `Refs #100` ready PR을 연다. CI `bridge`가 초록이고 같은 head에서 독립 읽기 전용 검토 2회가 끝난 뒤 머지한다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-12 — ZARI-z-purchase-handoff 구매 링크·대체품 검토·구매 이후 연결
 
 정본은 GitHub issue #98, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-purchase-handoff`이다. 관찰한 base SHA는 `8857c4f4a2f0d70f15b8edafc73c324c243b80bf`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
