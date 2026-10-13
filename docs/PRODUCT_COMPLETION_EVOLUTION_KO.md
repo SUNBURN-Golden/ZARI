@@ -44,6 +44,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-purchase-handoff 채택 (2026-10-07).** 이 노트는 z-purchase-handoff만 다룬다. 같은 원문이다. 기록은 [Dz-purchase-handoff](../design/DECISIONS.md)와 [docs/adr/SP-z-purchase-handoff.md](adr/SP-z-purchase-handoff.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 판매처 링크는 결제 기록이 아니고, 지난 확인은 최신으로 보이지 않으며, 광고·제휴 표시는 적합성 판정을 바꾸지 않는다. 구매 확인·수령·실측·반품은 서로 다른 사건이다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-execution-checklist 채택 (2026-10-07).** 이 노트는 z-execution-checklist만 다룬다. 같은 원문이다. 기록은 [Dz-execution-checklist](../design/DECISIONS.md)와 [docs/adr/SP-z-execution-checklist.md](adr/SP-z-execution-checklist.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 완료 기록은 사용자 진술이고 unknown 검사를 통과로 바꾸지 않으며, 막힌 단계는 완료 가능하게 보이지 않고, 새 snapshot은 구계획 진행을 무조건 잇지 않는다. 다른 물건 발견·부품 부족·실측 차이는 draft 수정으로 돌아간다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

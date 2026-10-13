@@ -302,6 +302,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 명령, 구매 준비 화면, `purchaseHandoffs` 저장소를 걷어 낸다. 이미 저장된 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-execution-checklist — 실행 체크리스트·막힘·되돌리기 / 채택
+
+- ID: Dz-execution-checklist
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-execution-checklist만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 사용자가 물건을 옮기는 순서를 따라가려면 단계별 준비물과 조건이 보여야 한다. 완료 체크가 unknown 검사를 통과처럼 보이게 하거나 선행 blocker가 남은 단계를 완료 가능하게 보이면 안 되고, 새 snapshot에 구계획 진행이 무조건 이어지면 안 된다. 다른 물건 발견·부품 부족·실측 차이는 draft 수정으로 돌아가야 한다.
+- 변경 대상: [docs/adr/SP-z-execution-checklist.md](../docs/adr/SP-z-execution-checklist.md), `features/execution`의 실행 카드, `GuideEligibility` 행의 `instanceRefs`, 세션의 `requestDraftFocus`/`takeDraftFocus`, PlanScreen·ProjectScreen, `crates/core/tests/execution_checklist.rs`. `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, exportVersion 1, 문서 `dbVersion` 2, IndexedDB `DB_VERSION` 4, 기존 fixture 124건의 바이트와 manifest 합계는 그대로다.
+- 검토한 대안: (A) 기존 단계 목록 아래에 같은 Rust 자격·진행 결합을 따르는 단계 카드를 두고, 되돌리기는 draft의 한 컨트롤로 이동하는 휘발 탐색으로 둔다. (B) 준비물·진행·조건을 별도 저장 모델로 둔다. (C) 구계획 진행을 새 snapshot에 자동 승계한다.
+- 선택: A. B는 진행을 검사 권위 밖으로 복제한다. C는 불변 스냅샷 결합을 깬다.
+- 조건: 완료 기록은 사용자 진술이고 unknown 검사를 통과로 바꾸지 않는다. 막힌 단계는 비활성과 사유를 함께 보인다. 준비물은 Rust `instanceRefs` 라벨이고 수량 미확인은 추정하지 않는다. 되돌리기는 진행·검사·초안을 쓰지 않는다. 새 도메인 계약·액션·검사·마이그레이션·색 쌍은 없다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 카드의 완료 기록은 실제 체크박스이고 막힌 이유를 `aria-describedby`로 읽는다. 되돌리기는 버튼이고 도착한 컨트롤에 초점을 둔다. 390px에서 페이지를 넓히지 않고 터치 높이는 기존 `--zari-touch-min-height`다. forced-colors는 기존 Canvas/CanvasText다. 단계·자격·진행은 기존 쿼리와 저장 경로를 재사용하고 새 worker 명령은 없다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 실행 카드, `requestDraftFocus` 경로, `instanceRefs` 매핑을 걷어 낸다. 이미 저장된 진행 행과 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
+
 ## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
 
 - ID: D-audit-01

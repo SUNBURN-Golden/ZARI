@@ -11,6 +11,7 @@ import { DetailMeasure } from '../features/project/DetailPanel';
 import { PortablePanel } from '../features/project/PortablePanel';
 import { NextFactsList } from '../features/project/NextFactsList';
 import { diagnosticText, uncertaintyLabel } from '../features/project/detailFacts';
+import { draftFocusQuery } from '../features/execution/model';
 import {
   fieldPathFor,
   getMeasurement,
@@ -508,6 +509,24 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     if (!snap.normalizedInput || !snap.inputDigest) return;
     session.ensureInputProjection(snap.normalizedInput, snap.inputDigest);
   }, [session, state.status, state.worker, state.context, state.inputDigest]);
+  // Execution-checklist rollback lands on one draft control. The pending
+  // target is consumed once; focusing a field never edits the form.
+  useEffect(() => {
+    if (state.status !== 'ready') return;
+    const target = session.takeDraftFocus();
+    if (!target) return;
+    const query = draftFocusQuery(target);
+    const element =
+      query.kind === 'id'
+        ? document.getElementById(query.value)
+        : document.querySelector<HTMLElement>(`[data-testid="${query.value}"]`);
+    if (!(element instanceof HTMLElement)) return;
+    const control = element.matches('input, select, button, [tabindex]')
+      ? element
+      : element.querySelector<HTMLElement>('input, select, button, [tabindex]') ?? element;
+    control.scrollIntoView({ block: 'center' });
+    control.focus();
+  }, [session, state.status]);
 
   async function download(kind: 'standard' | 'recovery') {
     const data = await session.exportJson(kind);

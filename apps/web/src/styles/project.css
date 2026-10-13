@@ -1029,6 +1029,52 @@
   max-width: 100%;
   overflow-wrap: anywhere;
 }
+
+/* z-execution-checklist: per-step card above the guide list. */
+.execution-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-panel);
+  background: var(--zari-surface-panel);
+  padding: var(--zari-space-3);
+  margin: var(--zari-space-2) 0 var(--zari-space-4);
+}
+.execution-card h3 {
+  margin: var(--zari-space-1) 0 var(--zari-space-2);
+}
+.execution-card h4 {
+  margin: var(--zari-space-3) 0 var(--zari-space-1);
+  font-size: var(--zari-text-base);
+}
+.execution-card .plan-list {
+  margin: var(--zari-space-1) 0 var(--zari-space-2);
+}
+.execution-card .execution-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--zari-space-2);
+  min-height: var(--zari-control-min-height);
+}
+.execution-card .form-actions .button {
+  min-height: var(--zari-control-min-height);
+}
+@media (pointer: coarse) {
+  .execution-card .execution-mark,
+  .execution-card .button,
+  .execution-card input {
+    min-height: var(--zari-touch-min-height);
+  }
+}
+@media (forced-colors: active) {
+  .execution-card {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+}
 .offer-quote form,
 .offer-quote label,
 .purchase-handoff form,

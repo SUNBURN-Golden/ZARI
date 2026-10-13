@@ -29,6 +29,7 @@ import {
 import { selectedPlacementId } from '../features/workspace/selection';
 import { useReturnFocus } from '../ui/returnFocus';
 import { PlanWorkspace, useWorkspace } from '../features/workspace/Workspace';
+import { ExecutionChecklist } from '../features/execution/ExecutionChecklist';
 import { StepFocus } from '../features/workspace/StepFocus';
 import type { GuideSurface } from '../features/workspace/stepFocus';
 import {
@@ -916,6 +917,32 @@ function PlanDetail({
       <section aria-labelledby="guide-title">
         <div className="section-kicker">실행 순서</div>
         <h3 id="guide-title">정리 단계</h3>
+        <ExecutionChecklist
+          surface={surface}
+          actions={content.actions}
+          content={content}
+          focus={workspace.state.focus}
+          progress={surface === 'accepted' ? state.plan.actionProgress : null}
+          progressLoad={surface === 'accepted' ? state.plan.progressLoad : 'ready'}
+          displayedPlanId={snapshot.planSnapshotId}
+          displayedDigest={content.versions.inputDigest}
+          accepted={state.plan.accepted}
+          currentInputRevision={state.inputRevision}
+          currentInputDigest={state.inputDigest}
+          staleInput={state.staleInput}
+          conflict={state.conflict !== null}
+          eligibility={
+            surface === 'accepted' &&
+            state.plan.actionEligibility?.planSnapshotId === snapshot.planSnapshotId
+              ? state.plan.actionEligibility
+              : null
+          }
+          onToggle={(stepId, done) => void session.toggleActionStep(stepId, done)}
+          onRollback={(target) => {
+            session.requestDraftFocus(target);
+            navigate(`#/project/${session.snapshot.projectId}`);
+          }}
+        />
         <StepFocus
           surface={surface}
           actions={content.actions}

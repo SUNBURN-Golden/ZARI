@@ -1,6 +1,7 @@
 import type {
   ActionStep,
   ConstraintCheck,
+  InstanceRef,
   SnapshotContent,
   SpatialProjection,
   SpatialTarget,
@@ -120,6 +121,7 @@ export interface GuideEligibility {
     executable: boolean;
     blockerCheckIds: readonly string[];
     userAssertion: boolean;
+    instanceRefs: readonly InstanceRef[];
   }[];
 }
 
