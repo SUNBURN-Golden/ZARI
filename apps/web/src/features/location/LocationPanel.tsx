@@ -7,7 +7,7 @@ import type {
   ProjectInput,
 } from '../../contracts/generated/dto';
 import { repository, workerController } from '../../app/sessionRegistry';
-import { EMPTY_LOG, LocationController } from './controller';
+import { EMPTY_LOG, LocationController, parseOrdinals } from './controller';
 import { quantityPhrase } from '../inventory/phrases';
 import { kindPhrase, ordinalsPhrase, plannedPhrase, statusPhrase } from './phrases';
 
@@ -17,13 +17,6 @@ type PanelState = 'empty' | 'pending' | 'saved' | 'read' | 'error';
 
 function observationId(): string {
   return `obs-${crypto.randomUUID()}`;
-}
-
-function parseOrdinals(text: string): number[] | null {
-  const trimmed = text.trim();
-  if (trimmed === '') return [];
-  if (!/^\d+(\s*[, ]\s*\d+)*$/.test(trimmed)) return null;
-  return trimmed.split(/[,\s]+/).map(Number);
 }
 
 /**
@@ -155,11 +148,14 @@ export function LocationPanel({
         planSnapshotId: null,
       })
       .then(async (result) => {
-        if (result.persisted) {
-          setLog(result.reply.log);
-          setRevision(result.revision);
-          await runSearch(result.reply.log, query);
+        if (!result.persisted) {
+          // Rust accepted the record but it changed nothing, so nothing was saved.
+          setPanel(log.observations.length === 0 ? 'empty' : 'read');
+          return;
         }
+        setLog(result.reply.log);
+        setRevision(result.revision);
+        await runSearch(result.reply.log, query);
         setPanel('saved');
         setLocationText('');
         setAliasText('');

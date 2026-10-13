@@ -86,10 +86,16 @@ test('a planned location is never the actual location until an observation recor
   await page.getByTestId('location-search').click();
   await page.getByTestId('location-item').selectOption('item-a');
   await page.getByTestId('location-kind').selectOption('relocate');
-  await page.getByTestId('location-ordinals').fill('1');
+  // Malformed unit numbers are refused before any request and store nothing.
+  await page.getByTestId('location-ordinals').fill('1 x');
   await page.getByTestId('location-place').fill('현관');
   await page.getByTestId('location-record').click();
+  await expect(page.getByTestId('location-error')).toHaveAttribute('data-reason', 'invalid_input');
+  await expect(page.getByTestId('location-status')).toHaveAttribute('data-state', 'error');
+  await page.getByTestId('location-ordinals').fill('1');
+  await page.getByTestId('location-record').click();
   await expect(page.getByTestId('location-status')).toHaveAttribute('data-state', 'saved');
+  await expect(page.getByTestId('location-error')).toHaveCount(0);
   const moved = page.getByTestId('location-row-item-a-1');
   await expect(moved).toContainText('관측: 현관');
   expect(['mismatch', 'observed']).toContain(await moved.getAttribute('data-status'));

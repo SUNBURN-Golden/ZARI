@@ -23,6 +23,27 @@ export interface LocationClient {
 
 export const EMPTY_LOG: LocationLog = { observations: [] };
 
+/**
+ * Unit numbers typed as digits separated by commas and/or spaces. Empty text
+ * means every unit. Anything else is `null`, never a guess. This splits and
+ * checks each token instead of nesting quantifiers, so a long near-miss input
+ * cannot make the page hang.
+ */
+export function parseOrdinals(text: string): number[] | null {
+  const trimmed = text.trim();
+  if (trimmed === '') return [];
+  const ordinals: number[] = [];
+  for (const part of trimmed.split(',')) {
+    for (const word of part.trim().split(/\s+/)) {
+      if (!/^\d+$/.test(word)) return null;
+      const value = Number(word);
+      if (!Number.isSafeInteger(value)) return null;
+      ordinals.push(value);
+    }
+  }
+  return ordinals;
+}
+
 const TIMEOUT_MS = 30000;
 
 export interface LocationApplyResult {

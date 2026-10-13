@@ -4,7 +4,12 @@ import type {
   LocationObservation,
   LocationSearchReply,
 } from '../../src/contracts/generated/dto';
-import { EMPTY_LOG, LocationController, type LocationClient } from '../../src/features/location/controller';
+import {
+  EMPTY_LOG,
+  LocationController,
+  parseOrdinals,
+  type LocationClient,
+} from '../../src/features/location/controller';
 import {
   kindPhrase,
   ordinalsPhrase,
@@ -131,4 +136,26 @@ it('a rejected observation is a failure, not a save', async () => {
 
 it('the empty log constant has no observations', () => {
   expect(EMPTY_LOG.observations).toEqual([]);
+});
+
+it('unit numbers are split and checked token by token', () => {
+  expect(parseOrdinals('')).toEqual([]);
+  expect(parseOrdinals('   ')).toEqual([]);
+  expect(parseOrdinals('0')).toEqual([0]);
+  expect(parseOrdinals('0, 2 3,4 ,5')).toEqual([0, 2, 3, 4, 5]);
+  expect(parseOrdinals('1,,2')).toBeNull();
+  expect(parseOrdinals(',1')).toBeNull();
+  expect(parseOrdinals('1,')).toBeNull();
+  expect(parseOrdinals('1 x')).toBeNull();
+  expect(parseOrdinals('-1')).toBeNull();
+  expect(parseOrdinals('1.5')).toBeNull();
+  expect(parseOrdinals('9'.repeat(400))).toBeNull();
+});
+
+it('a long near-miss unit list is judged without backtracking', () => {
+  // The earlier nested-quantifier pattern took exponential time on this shape.
+  const nearMiss = `0${'  0'.repeat(100000)} x`;
+  expect(parseOrdinals(nearMiss)).toBeNull();
+  const valid = `0${'  0'.repeat(100000)}  `;
+  expect(parseOrdinals(valid)).toHaveLength(100001);
 });
