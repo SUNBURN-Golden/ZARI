@@ -1,0 +1,57 @@
+{
+  "caseId": "partial-units",
+  "items": [
+    { "id": "item-a", "label": "양말", "category": "의류", "quantity": 3 }
+  ],
+  "containers": [
+    { "placementId": "p-c1", "variantId": "var-1" }
+  ],
+  "assignments": [
+    { "itemId": "item-a", "unitOrdinal": 0, "kind": "contained", "containerPlacementId": "p-c1" },
+    { "itemId": "item-a", "unitOrdinal": 1, "kind": "contained", "containerPlacementId": "p-c1" },
+    { "itemId": "item-a", "unitOrdinal": 2, "kind": "contained", "containerPlacementId": "p-c1" }
+  ],
+  "records": [
+    {
+      "observation": {
+        "id": "obs-1",
+        "itemId": "item-a",
+        "kind": "relocate",
+        "label": "양말",
+        "location": "현관 신발장",
+        "unitOrdinals": [1],
+        "planSnapshotId": null
+      },
+      "expectCode": null
+    }
+  ],
+  "searchSnapshot": "bound",
+  "query": "",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [0],
+      "status": "plannedOnly",
+      "plannedKind": "contained",
+      "matchedAlias": null
+    },
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [1],
+      "status": "mismatch",
+      "plannedKind": "contained",
+      "observedKind": "relocate",
+      "observedLocation": "현관 신발장",
+      "matchedAlias": null
+    },
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [2],
+      "status": "plannedOnly",
+      "plannedKind": "contained",
+      "matchedAlias": null
+    }
+  ]
+}

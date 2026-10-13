@@ -11,6 +11,7 @@ pub mod geometry;
 pub mod incremental;
 pub mod input;
 pub mod inventory;
+pub mod location_search;
 pub mod measurement;
 pub mod next_facts;
 pub mod normalize;

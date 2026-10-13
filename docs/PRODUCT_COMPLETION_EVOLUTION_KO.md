@@ -46,6 +46,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-execution-checklist 채택 (2026-10-07).** 이 노트는 z-execution-checklist만 다룬다. 같은 원문이다. 기록은 [Dz-execution-checklist](../design/DECISIONS.md)와 [docs/adr/SP-z-execution-checklist.md](adr/SP-z-execution-checklist.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 완료 기록은 사용자 진술이고 unknown 검사를 통과로 바꾸지 않으며, 막힌 단계는 완료 가능하게 보이지 않고, 새 snapshot은 구계획 진행을 무조건 잇지 않는다. 다른 물건 발견·부품 부족·실측 차이는 draft 수정으로 돌아간다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-location-search 채택 (2026-10-07).** 이 노트는 z-location-search만 다룬다. 같은 원문이다. 기록은 [Dz-location-search](../design/DECISIONS.md)와 [docs/adr/SP-z-location-search.md](adr/SP-z-location-search.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 계획상 위치는 사용자가 관측으로 확인하기 전 실제 위치가 아니고, 실행 완료도 실제 위치를 만들지 않는다. `confirm`은 기록 당시 채택 snapshot에 묶이고 다른 snapshot에서는 `staleConfirmation`이다. 같은 이름의 다른 물건·부분 수량은 검색 행으로 합쳐지지 않는다. 프로젝트 삭제는 검색 기록 행을 지운다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

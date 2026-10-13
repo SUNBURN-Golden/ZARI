@@ -1,0 +1,59 @@
+{
+  "caseId": "duplicate-names",
+  "items": [
+    { "id": "item-a", "label": "수건", "category": "욕실", "quantity": 1 },
+    { "id": "item-b", "label": "수건", "category": "주방", "quantity": 1 },
+    { "id": "item-c", "label": "수건", "category": "욕실", "quantity": 1 }
+  ],
+  "containers": [
+    { "placementId": "p-c1", "variantId": "var-1" }
+  ],
+  "assignments": [
+    { "itemId": "item-a", "unitOrdinal": 0, "kind": "contained", "containerPlacementId": "p-c1" },
+    { "itemId": "item-b", "unitOrdinal": 0, "kind": "direct", "placementId": "place-1" }
+  ],
+  "records": [
+    {
+      "observation": {
+        "id": "obs-1",
+        "itemId": "item-c",
+        "kind": "reorganize",
+        "label": "수건",
+        "location": "세탁실 바구니",
+        "unitOrdinals": [],
+        "planSnapshotId": null
+      },
+      "expectCode": null
+    }
+  ],
+  "searchSnapshot": "bound",
+  "query": "수건",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [0],
+      "status": "plannedOnly",
+      "plannedKind": "contained",
+      "plannedLabel": "Storage box 20L clear",
+      "matchedAlias": null
+    },
+    {
+      "itemId": "item-b",
+      "unitOrdinals": [0],
+      "status": "plannedOnly",
+      "plannedKind": "direct",
+      "plannedLabel": null,
+      "matchedAlias": null
+    },
+    {
+      "itemId": "item-c",
+      "unitOrdinals": [0],
+      "status": "observed",
+      "observedKind": "reorganize",
+      "observedLocation": "세탁실 바구니",
+      "matchedAlias": null
+    }
+  ]
+}

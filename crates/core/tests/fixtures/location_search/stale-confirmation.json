@@ -1,0 +1,41 @@
+{
+  "caseId": "stale-confirmation",
+  "items": [
+    { "id": "item-a", "label": "겨울 코트", "category": "의류", "quantity": 1 }
+  ],
+  "containers": [
+    { "placementId": "p-c1", "variantId": "var-1" }
+  ],
+  "assignments": [
+    { "itemId": "item-a", "unitOrdinal": 0, "kind": "contained", "containerPlacementId": "p-c1" }
+  ],
+  "records": [
+    {
+      "observation": {
+        "id": "obs-1",
+        "itemId": "item-a",
+        "kind": "confirm",
+        "label": "겨울 코트",
+        "location": null,
+        "unitOrdinals": [],
+        "planSnapshotId": null
+      },
+      "expectCode": null
+    }
+  ],
+  "searchSnapshot": "other",
+  "query": "",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [0],
+      "status": "staleConfirmation",
+      "plannedKind": "contained",
+      "plannedLabel": "Storage box 20L clear",
+      "observedKind": "confirm",
+      "matchedAlias": null
+    }
+  ]
+}

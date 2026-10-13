@@ -302,7 +302,8 @@ fn the_ledger_command_is_stateless_and_a_bare_payload_is_invalid() {
         .iter()
         .position(|name| *name == "disposeProject")
         .unwrap();
-    assert_eq!(names[dispose - 6], "applyInventoryLedger");
+    assert_eq!(names[dispose - 7], "applyInventoryLedger");
+    assert_eq!(names[dispose - 6], "applyLocationLog");
     assert_eq!(names[dispose - 5], "reviewCatalogImport");
     assert_eq!(names[dispose - 4], "quoteOfferBundle");
     assert_eq!(names[dispose - 2], "inspectPortableBundle");

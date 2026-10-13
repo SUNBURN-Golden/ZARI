@@ -1,0 +1,37 @@
+{
+  "caseId": "unknown-quantity",
+  "items": [
+    { "id": "item-a", "label": "우산", "category": "잡화", "quantity": null }
+  ],
+  "assignments": [],
+  "records": [
+    {
+      "observation": {
+        "id": "obs-1",
+        "itemId": "item-a",
+        "kind": "lost",
+        "label": "우산",
+        "location": null,
+        "unitOrdinals": [],
+        "planSnapshotId": null
+      },
+      "expectCode": null
+    }
+  ],
+  "searchSnapshot": "bound",
+  "query": "",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [],
+      "status": "lost",
+      "observedKind": "lost",
+      "observedLocation": null,
+      "matchedAlias": null,
+      "quantityCode": "unknown",
+      "quantityCount": null
+    }
+  ]
+}

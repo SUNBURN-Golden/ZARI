@@ -315,6 +315,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 실행 카드, `requestDraftFocus` 경로, `instanceRefs` 매핑을 걷어 낸다. 이미 저장된 진행 행과 스냅샷 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-location-search — 내 물건 찾기와 정리 후 위치 검색 / 채택
+
+- ID: Dz-location-search
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-location-search만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 정리 결과가 채택 snapshot으로 끝나면 물건 찾기에 쓸 수 없다. 계획상 위치와 사용자가 확인한 실제 위치는 다른 사실이다. 재정리·분실·다른 곳 이동을 관측으로 남길 수단이 없고, 같은 이름의 다른 물건이나 부분 수량이 검색에서 합쳐지면 안 된다.
+- 변경 대상: [docs/adr/SP-z-location-search.md](../docs/adr/SP-z-location-search.md), `crates/core/src/location_search.rs`와 `applyLocationLog`·`queryLocationSearch` 명령, Dexie `locationLogs` 저장소(live `DB_VERSION` 5), `features/location`의 검색 패널과 ProjectScreen, `crates/core/tests/location_search.rs`와 `crates/core/tests/fixtures/location_search`의 불일치 fixture. `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, exportVersion 1, 문서 `dbVersion` 2, 기존 fixture 124건의 바이트와 manifest 합계는 그대로다.
+- 검토한 대안: (A) 프로젝트별 `LocationLog`에 confirm·relocate·reorganize·lost·alias 관측을 덧붙이고 Rust가 `(itemId, 계획 위치, 관측 위치)` 결합 행과 상태 코드를 낸다. (B) 재고 원장의 이벤트 종류를 늘려 위치 기록을 그 안에 둔다. (C) 계획 위치를 실행 체크 완료로 실제 위치에 자동 승격한다.
+- 선택: A. B는 재고 수량 이력과 실제 위치 관측을 한 계약으로 묶어 ledger 의미를 흐린다. C는 실행하지 않거나 확인하지 않은 계획 위치를 실제 위치로 단정한다.
+- 조건: `confirm`은 기록 당시 채택 snapshot 결합에만 유효하고 다른 snapshot에서는 `staleConfirmation`이다. 실행 완료·시간·추론으로 실제 위치를 만들지 않는다. 부분 수량 관측은 `unitOrdinals`가 필요하고 수량 미상이면 번호를 쓸 수 없다. 같은 이름의 물건·부분 수량은 다른 행이다. unknown 수량은 0이 아니다. 프로젝트 삭제는 `locationLogs` 행을 지운다. 새 색 쌍은 없고 기존 패널 토큰을 쓴다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 검색 입력과 관측 기록은 폼이고 Enter로 제출한다. 결과 행은 상태 글자를 항상 함께 읽고 `plannedOnly`를 실제 위치처럼 꾸미지 않는다. 390px에서 페이지를 넓히지 않고 forced-colors는 기존 Canvas/CanvasText다. 행은 128개에서 잘린다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 두 명령, 검색 패널, `locationLogs` 저장소를 걷어 낸다. 이미 저장된 스냅샷·입력·원장 바이트는 이 결정으로 다시 쓰지 않는다.
+
 ## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
 
 - ID: D-audit-01

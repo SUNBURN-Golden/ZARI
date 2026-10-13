@@ -1,3 +1,39 @@
+# 2026-10-13 — ZARI-z-location-search 내 물건 찾기와 정리 후 위치 검색
+
+정본은 GitHub issue #102, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-location-search`이다. 관찰한 base SHA는 `2cb3ceccd8753f755a8ef34ff471eccae35e019d`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-location-search만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-location-search.md`와 `design/DECISIONS.md` Dz-location-search. 제품 완성 후보 문서와 `design/SPATIAL_WORKSPACE.md` §8에는 이 노드 노트만 추가했다.
+- `crates/core/src/location_search.rs`가 관측 계약과 검색을 구현한다. `LocationLog`는 프로젝트별 append-only 관측(확인·다른 곳 이동·재정리·분실·별칭) 모음이고, `queryLocationSearch`/`applyLocationLog`는 시스템 신원의 stateless 명령이다. 계획 위치는 채택 snapshot에서만 해석하고 실제 위치는 사용자 관측에서만 온다. `confirm`은 기록 시점의 snapshot에 묶이고 다른 snapshot에서는 `staleConfirmation`이다. 실행 완료는 실제 위치를 만들지 않는다.
+- 검색 행은 `(itemId, unitOrdinals)` 결합으로 같은 이름의 다른 물건·부분 수량을 합치지 않고, unknown 수량은 0이 아니며, 행은 128개에서 합치지 않고 잘린다. 이름·별칭·분류·수량·계획/관측 위치 문자를 NFC 접어 검색한다.
+- 살아있는 IndexedDB `DB_VERSION`은 5다. `locationLogs` 저장소를 더하고 `migration:4->5` 일지만 쓰며 스냅샷·입력·원장 바이트는 읽거나 다시 쓰지 않는다. `deleteProject`가 같은 트랜잭션에서 지우고,내보내기·가져오기는 싣지 않는다.
+- 프로젝트 화면의 `LocationPanel`은 검색 폼·관측 폼·행 목록을 보인다. `plannedOnly`는 '계획 위치 · 미확인'으로 읽히고 실제 위치처럼 꾸미지 않는다. `pending`/`empty`/`read`/`saved`/`error`와 no-input·no-results 상태를 글자로 낸다. 새 색 토큰·대비 조합은 없다.
+- `crates/core/tests/location_search.rs` 8개와 `crates/core/tests/fixtures/location_search/` fixture 9건(계획만·확인·불일치·재배치·분실·별칭·동명 물건·부분 수량·stale 확인·거절·unknown 수량)을 두었다. 상위 `fixtures/` 124건의 바이트와 manifest는 그대로다.
+- `BUILD_ID`는 `zari-domain-7`이다. capabilities·명령 목록은 기존 순서를 유지하며 두 이름만 넣었다. 생성 계약(dto/schema/validators)은 스크립트로 재생성했고 `contract.json`은 `baseCapabilities` 두 줄만 바뀌었다. `.aiops/**`, `docs/aiops/**`, `.github/**`는 그대로다. 캡처가 다시 쓴 `ZARI-SPATIAL-001-*.png` 2장은 `git checkout`으로 되돌렸다. 새 의존성은 없다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.x, Rust 1.98.1, `CARGO_BUILD_JOBS=4`):
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 215개 통과. 새 `location_search.rs` 8개 포함
+- fixture_runner `fixtures/bootstrap`, `fixtures` 124건: exit 0. `git status fixtures/`는 비어 있다
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124
+- `npm run typecheck`, `npm run lint`, `npm run build`, `node scripts/check-release-manifest.mjs`(`errors` 없음, `buildId` `7d00136785426fce`), `node scripts/check-design-tokens.mjs --self-test`(대비 39/39, self-test 12), `node scripts/check-product-contract.mjs`(DB_VERSION pin을 4→5로 이 노드 관례대로 갱신): exit 0
+- `npm test`: 최종 트리 마지막 전체 실행 exit 0, vitest 31 files / 199 tests 통과(188.3s, 1분 load avg ≈13). 같은 트리의 앞선 실행에서는 DB 버전 pin 미갱신 2건(수정)과, 부하 아래서 `session.test.ts`의 실제 WASM 탐색 테스트 1건이 고정 대기 시간을 넘긴 실패가 있었다(취소 재시작·전략 탐색·레이아웃 편집 재검증 중 매번 다른 1건). 위치 기능과 무관하고 전체 재실행에서 모두 통과했다. 재시도·타임아웃 상향 없음
+- 두 번째 감독자 재검증 실패(`npm test`, `session.test.ts`의 충돌-중-검색 테스트 1건): 대기 헬퍼가 `Date.now()` 벽시계로 기한을 재서 호스트의 시계 도약(실측 +1시간)이 기한을 즉시 소진시킨 것이 근본 원인이다. `until`과 수동 대기 루프 2곳을 단조 시계 `performance.now()`로 바꾸고 회귀 테스트 `a system clock step does not expire a session wait`를 추가했다(+199번째 테스트). 예산·술어·본문·타임아웃 값은 그대로다. 수정 후 전체 스위트 통과. `session.test.ts` 외 마감 대기를 쓰는 단위 테스트 파일은 없다(검색으로 확인)
+- `npm run test:browser -- --project=chromium`: 최종 트리에서 exit 0, 108 passed·0 failed(4.9m, 1분 load avg 평균 8.7·최대 12.4). 같은 트리의 앞선 더 바쁜 실행은 105 passed·3 failed(`drag.spec.ts:374`, `edit.spec.ts:157`, `execution-checklist.spec.ts:51`, 모두 `search-status` running→interrupted)였고 세 테스트 모두 단독 실행(49s)에서 통과했다. 이후 외부 작업 포화(1분 load ≈45·≈60) 아래 두 번의 전체 재실행은 99/9·93/15로 실패했고 전부 기존 스펙의 30s 타임아웃·teardown 타임아웃이며 집합이 실행마다 달랐다. `location-search.spec.ts`는 매 실행 통과, 첫 9건은 단독 재실행(4.0m)에서 모두 통과했고, 부하가 가라앉은 뒤 마지막 전체 실행은 exit 0·108 passed(5.5m, 1분 load ≈8)였다
+- `location-search.spec.ts`: chromium 2 passed(전체 108에 포함), firefox 2 passed(31.4s), webkit 2 passed(35.9s)
+- `npm run test:parity`: exit 0, 2 passed(37.4s), 124 fixture 네이티브·브라우저 WASM 일치
+- 감독자 재검증 실패(chromium 24건·12건 실패)의 원인 분석: 그 시각 호스트 load average가 11.4 / 82.6 / 100.2(8코어)였고 스위트가 4–5분 대신 27.6분 걸렸으며 첫 실행에서는 프리뷰 서버 연결이 끊겼다. 실패 집합은 실행마다 달랐고 새 `location-search.spec.ts`는 한 번도 포함되지 않았다. 같은 테스트의 단독·무부하 소요 시간은 앞선 노드의 통과 기록과 같다(예: `edit.spec.ts:157` 15.4s 대 14.6–18.4s). `PlanScreen`·`SearchPump`·워커 step 경로는 바꾸지 않았다. 건너뜀·삭제·`.only`/`.fixme`·타임아웃·임계값 상향·재시도 추가는 없다. 자세한 내용은 `docs/evidence/ZARI-z-location-search.md`
+- 이 세션은 커밋·push하지 않았다. 고친 트리는 GitHub Actions가 아직 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 프로젝트 간 전역 검색·랭킹·오타 허용, 클라우드 동기화, 사진 연결 위치, 외부 결제, `BUILD_ID`·스키마·버전 변경. 행 128개 cap의 페이지네이션은 없다. 390px·forced-colors·키보드는 데스크톱 에뮬레이션이고 전화·전용 GPU는 미검증이다. 상세는 `docs/evidence/ZARI-z-location-search.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 `Refs #102` ready PR을 연다. CI `bridge`가 초록이고 같은 head에서 독립 읽기 전용 검토 2회가 끝난 뒤 머지한다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-13 — ZARI-z-execution-checklist 실행 체크리스트·막힘·되돌리기
 
 정본은 GitHub issue #100, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-execution-checklist`이다. 관찰한 base SHA는 `2bf7d4d427a0eb4c62c2ac2ee912756d89e27b0a`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

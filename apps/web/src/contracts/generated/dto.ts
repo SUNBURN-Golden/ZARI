@@ -1443,9 +1443,23 @@ export type Command =
       stamp: ActionEligibilityStamp;
     }
   | {
+      input: ProjectInput;
+      kind: 'queryLocationSearch';
+      log: LocationLog;
+      query: string;
+      snapshot: PlanSnapshot | null;
+    }
+  | {
       action: InventoryAction;
       kind: 'applyInventoryLedger';
       ledger: InventoryLedger;
+    }
+  | {
+      action: LocationAction;
+      input: ProjectInput;
+      kind: 'applyLocationLog';
+      log: LocationLog;
+      snapshot: PlanSnapshot | null;
     }
   | {
       action: CatalogReviewAction;
@@ -1853,6 +1867,11 @@ export type SpatialViewSource =
 export type ProgressMark = 'done' | 'todo';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ObservationKind".
+ */
+export type ObservationKind = 'confirm' | 'relocate' | 'reorganize' | 'lost' | 'alias';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "InventoryAction".
  */
 export type InventoryAction =
@@ -1888,6 +1907,14 @@ export type SubjectKind = 'item' | 'container';
  * via the `definition` "ContainerUse".
  */
 export type ContainerUse = 'empty' | 'inUse';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LocationAction".
+ */
+export type LocationAction = {
+  kind: 'record';
+  observation: LocationObservation;
+};
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "CatalogReviewAction".
@@ -2106,8 +2133,16 @@ export type Event =
       reply: ActionEligibilityReply;
     }
   | {
+      kind: 'locationSearchQueried';
+      reply: LocationSearchReply;
+    }
+  | {
       kind: 'inventoryLedgerApplied';
       reply: InventoryReply;
+    }
+  | {
+      kind: 'locationLogApplied';
+      reply: LocationLogReply;
     }
   | {
       kind: 'catalogImportReviewed';
@@ -2380,9 +2415,26 @@ export type SpatialSourceStamp =
     };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PlannedKind".
+ */
+export type PlannedKind = 'direct' | 'contained' | 'provisional';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "QuantityLabelCode".
  */
 export type QuantityLabelCode = 'unknown' | 'zero' | 'count';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LocationStatus".
+ */
+export type LocationStatus =
+  | 'unlocated'
+  | 'plannedOnly'
+  | 'confirmed'
+  | 'mismatch'
+  | 'observed'
+  | 'lost'
+  | 'staleConfirmation';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "RowDisposition".
@@ -3996,6 +4048,42 @@ export interface ActionProgressInput {
   stepId: Id;
 }
 /**
+ * Append-only per-project location record. Not a PlanSnapshot.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LocationLog".
+ */
+export interface LocationLog {
+  observations: LocationObservation[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LocationObservation".
+ */
+export interface LocationObservation {
+  id: Id;
+  itemId: Id;
+  kind: ObservationKind;
+  /**
+   * The item's label as the user recorded it. For `alias` this is the
+   * alternative name itself.
+   */
+  label: string;
+  /**
+   * Required for `relocate`/`reorganize`; forbidden otherwise.
+   */
+  location: string | null;
+  /**
+   * The adopted plan the observation was recorded against. Rust stamps
+   * it; the wire value is never trusted.
+   */
+  planSnapshotId: Digest | null;
+  /**
+   * Empty applies to every unit. Non-empty lists exact unit ordinals.
+   */
+  unitOrdinals: number[];
+}
+/**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "InventoryEvent".
  */
@@ -4745,6 +4833,71 @@ export interface SpatialOverlay {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LocationSearchReply".
+ */
+export interface LocationSearchReply {
+  rows: LocationRow[];
+  truncated: boolean;
+}
+/**
+ * One location row: a maximal run of an item's units sharing the same
+ * planned and observed state. Different items and split unit groups are
+ * never merged into one row.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LocationRow".
+ */
+export interface LocationRow {
+  category: string;
+  itemId: Id;
+  label: string;
+  matchedAlias: string | null;
+  observed: ObservedRef | null;
+  planned: PlannedRef | null;
+  /**
+   * The item's whole-quantity label. A row's covered units stay in
+   * `unit_ordinals`; they are not summed into another item's count.
+   */
+  quantityCode: QuantityLabelCode;
+  quantityCount: number | null;
+  status: LocationStatus;
+  /**
+   * Covered unit ordinals. Empty marks an item-level row whose quantity
+   * is unknown or known zero, not "all units".
+   */
+  unitOrdinals: number[];
+}
+/**
+ * The latest user-recorded location claim covering the unit.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ObservedRef".
+ */
+export interface ObservedRef {
+  kind: ObservationKind;
+  /**
+   * The user-stated place. `confirm` and `lost` carry no text; a
+   * `confirm` row's actual place is the bound planned location.
+   */
+  location: string | null;
+  /**
+   * The adopted plan id the observation was recorded against.
+   */
+  planSnapshotId: Digest | null;
+}
+/**
+ * Where the adopted plan says the unit goes. Never an actual location.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PlannedRef".
+ */
+export interface PlannedRef {
+  kind: PlannedKind;
+  label: string | null;
+  reasonCode: string | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "InventoryReply".
  */
 export interface InventoryReply {
@@ -4771,6 +4924,14 @@ export interface QuantityLabel {
   count: number | null;
   role: SubjectKind;
   subjectId: Id;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LocationLogReply".
+ */
+export interface LocationLogReply {
+  changed: boolean;
+  log: LocationLog;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

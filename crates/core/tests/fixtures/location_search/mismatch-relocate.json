@@ -1,0 +1,51 @@
+{
+  "caseId": "mismatch-relocate",
+  "items": [
+    { "id": "item-a", "label": "겨울 코트", "category": "의류", "quantity": 2 }
+  ],
+  "containers": [
+    { "placementId": "p-c1", "variantId": "var-1" }
+  ],
+  "assignments": [
+    { "itemId": "item-a", "unitOrdinal": 0, "kind": "contained", "containerPlacementId": "p-c1" },
+    { "itemId": "item-a", "unitOrdinal": 1, "kind": "contained", "containerPlacementId": "p-c1" }
+  ],
+  "records": [
+    {
+      "observation": {
+        "id": "obs-1",
+        "itemId": "item-a",
+        "kind": "relocate",
+        "label": "겨울 코트",
+        "location": "소파 옷걸이",
+        "unitOrdinals": [1],
+        "planSnapshotId": null
+      },
+      "expectCode": null
+    }
+  ],
+  "searchSnapshot": "bound",
+  "query": "",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [0],
+      "status": "plannedOnly",
+      "plannedKind": "contained",
+      "plannedLabel": "Storage box 20L clear",
+      "matchedAlias": null
+    },
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [1],
+      "status": "mismatch",
+      "plannedKind": "contained",
+      "plannedLabel": "Storage box 20L clear",
+      "observedKind": "relocate",
+      "observedLocation": "소파 옷걸이",
+      "matchedAlias": null
+    }
+  ]
+}

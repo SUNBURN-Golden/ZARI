@@ -1697,6 +1697,43 @@
         },
         {
           "additionalProperties": false,
+          "description": "Stateless local search over item names, aliases, categories, and\nthe planned/observed location split. A planned location is never\nreported as an actual one; `snapshot: null` means no plan.",
+          "properties": {
+            "input": {
+              "$ref": "#/definitions/ProjectInput"
+            },
+            "kind": {
+              "const": "queryLocationSearch",
+              "type": "string"
+            },
+            "log": {
+              "$ref": "#/definitions/LocationLog"
+            },
+            "query": {
+              "type": "string"
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PlanSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "input",
+            "snapshot",
+            "log",
+            "query"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Stateless life-ledger step. Does not read or write a PlanSnapshot.\n`openHistorical` returns the same ledger.",
           "properties": {
             "action": {
@@ -1713,6 +1750,43 @@
           "required": [
             "kind",
             "ledger",
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Stateless location-log step. Does not read or write a PlanSnapshot.\n`snapshot` is only the adopted plan a `confirm` observation binds\nto; nothing here changes the plan.",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/LocationAction"
+            },
+            "input": {
+              "$ref": "#/definitions/ProjectInput"
+            },
+            "kind": {
+              "const": "applyLocationLog",
+              "type": "string"
+            },
+            "log": {
+              "$ref": "#/definitions/LocationLog"
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PlanSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "log",
+            "input",
+            "snapshot",
             "action"
           ],
           "type": "object"
@@ -3532,6 +3606,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Result of `queryLocationSearch`. `plannedOnly` is not an actual\nlocation; `staleConfirmation` is not a current confirmation.",
+          "properties": {
+            "kind": {
+              "const": "locationSearchQueried",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/LocationSearchReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Result of `applyInventoryLedger`. `changed: false` is a read.",
           "properties": {
             "kind": {
@@ -3540,6 +3632,24 @@
             },
             "reply": {
               "$ref": "#/definitions/InventoryReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `applyLocationLog`. `changed: false` is a read.",
+          "properties": {
+            "kind": {
+              "const": "locationLogApplied",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/LocationLogReply"
             }
           },
           "required": [
@@ -7457,6 +7567,261 @@
       "title": "LinkResolution",
       "type": "string"
     },
+    "LocationAction": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "record",
+              "type": "string"
+            },
+            "observation": {
+              "$ref": "#/definitions/LocationObservation"
+            }
+          },
+          "required": [
+            "kind",
+            "observation"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "LocationAction"
+    },
+    "LocationLog": {
+      "additionalProperties": false,
+      "description": "Append-only per-project location record. Not a PlanSnapshot.",
+      "properties": {
+        "observations": {
+          "items": {
+            "$ref": "#/definitions/LocationObservation"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "observations"
+      ],
+      "title": "LocationLog",
+      "type": "object"
+    },
+    "LocationLogReply": {
+      "additionalProperties": false,
+      "properties": {
+        "changed": {
+          "type": "boolean"
+        },
+        "log": {
+          "$ref": "#/definitions/LocationLog"
+        }
+      },
+      "required": [
+        "log",
+        "changed"
+      ],
+      "title": "LocationLogReply",
+      "type": "object"
+    },
+    "LocationObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "itemId": {
+          "$ref": "#/definitions/Id"
+        },
+        "kind": {
+          "$ref": "#/definitions/ObservationKind"
+        },
+        "label": {
+          "description": "The item's label as the user recorded it. For `alias` this is the\nalternative name itself.",
+          "type": "string"
+        },
+        "location": {
+          "description": "Required for `relocate`/`reorganize`; forbidden otherwise.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "planSnapshotId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The adopted plan the observation was recorded against. Rust stamps\nit; the wire value is never trusted."
+        },
+        "unitOrdinals": {
+          "description": "Empty applies to every unit. Non-empty lists exact unit ordinals.",
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "itemId",
+        "kind",
+        "label",
+        "location",
+        "unitOrdinals",
+        "planSnapshotId"
+      ],
+      "title": "LocationObservation",
+      "type": "object"
+    },
+    "LocationRow": {
+      "additionalProperties": false,
+      "description": "One location row: a maximal run of an item's units sharing the same\nplanned and observed state. Different items and split unit groups are\nnever merged into one row.",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "itemId": {
+          "$ref": "#/definitions/Id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "matchedAlias": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ObservedRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "planned": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlannedRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quantityCode": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/QuantityLabelCode"
+            }
+          ],
+          "description": "The item's whole-quantity label. A row's covered units stay in\n`unit_ordinals`; they are not summed into another item's count."
+        },
+        "quantityCount": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "status": {
+          "$ref": "#/definitions/LocationStatus"
+        },
+        "unitOrdinals": {
+          "description": "Covered unit ordinals. Empty marks an item-level row whose quantity\nis unknown or known zero, not \"all units\".",
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "itemId",
+        "label",
+        "category",
+        "quantityCode",
+        "quantityCount",
+        "unitOrdinals",
+        "matchedAlias",
+        "status",
+        "planned",
+        "observed"
+      ],
+      "title": "LocationRow",
+      "type": "object"
+    },
+    "LocationSearchReply": {
+      "additionalProperties": false,
+      "properties": {
+        "rows": {
+          "items": {
+            "$ref": "#/definitions/LocationRow"
+          },
+          "type": "array"
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "rows",
+        "truncated"
+      ],
+      "title": "LocationSearchReply",
+      "type": "object"
+    },
+    "LocationStatus": {
+      "oneOf": [
+        {
+          "const": "unlocated",
+          "description": "No plan and no observation claim a location.",
+          "type": "string"
+        },
+        {
+          "const": "plannedOnly",
+          "description": "The plan names a location but no observation covers the unit.",
+          "type": "string"
+        },
+        {
+          "const": "confirmed",
+          "description": "User-confirmed at the bound plan's location.",
+          "type": "string"
+        },
+        {
+          "const": "mismatch",
+          "description": "The user observed the unit elsewhere than the plan says.",
+          "type": "string"
+        },
+        {
+          "const": "observed",
+          "description": "The user observed a location and no plan covers the unit.",
+          "type": "string"
+        },
+        {
+          "const": "lost",
+          "description": "The user reported the unit missing.",
+          "type": "string"
+        },
+        {
+          "const": "staleConfirmation",
+          "description": "A `confirm` recorded against another plan. Not a current location.",
+          "type": "string"
+        }
+      ],
+      "title": "LocationStatus"
+    },
     "LockedGroupZone": {
       "additionalProperties": false,
       "description": "A user-locked assignment of one group to one explicit zone.",
@@ -7969,6 +8334,70 @@
       ],
       "title": "ObservationFreshness",
       "type": "string"
+    },
+    "ObservationKind": {
+      "oneOf": [
+        {
+          "const": "confirm",
+          "description": "The user states the unit is where the adopted plan put it.",
+          "type": "string"
+        },
+        {
+          "const": "relocate",
+          "description": "The user moved the unit somewhere else.",
+          "type": "string"
+        },
+        {
+          "const": "reorganize",
+          "description": "The user re-tidied the unit into a new spot.",
+          "type": "string"
+        },
+        {
+          "const": "lost",
+          "description": "The user reports the unit missing; no location is claimed.",
+          "type": "string"
+        },
+        {
+          "const": "alias",
+          "description": "Another name the user calls the item.",
+          "type": "string"
+        }
+      ],
+      "title": "ObservationKind"
+    },
+    "ObservedRef": {
+      "additionalProperties": false,
+      "description": "The latest user-recorded location claim covering the unit.",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/ObservationKind"
+        },
+        "location": {
+          "description": "The user-stated place. `confirm` and `lost` carry no text; a\n`confirm` row's actual place is the bound planned location.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "planSnapshotId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The adopted plan id the observation was recorded against."
+        }
+      },
+      "required": [
+        "kind",
+        "location",
+        "planSnapshotId"
+      ],
+      "title": "ObservedRef",
+      "type": "object"
     },
     "Obstacle": {
       "additionalProperties": false,
@@ -9238,6 +9667,43 @@
         "nextSnapshotId"
       ],
       "title": "PlanDiff",
+      "type": "object"
+    },
+    "PlannedKind": {
+      "enum": [
+        "direct",
+        "contained",
+        "provisional"
+      ],
+      "title": "PlannedKind",
+      "type": "string"
+    },
+    "PlannedRef": {
+      "additionalProperties": false,
+      "description": "Where the adopted plan says the unit goes. Never an actual location.",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/PlannedKind"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reasonCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "label",
+        "reasonCode"
+      ],
+      "title": "PlannedRef",
       "type": "object"
     },
     "PlanSnapshot": {
