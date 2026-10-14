@@ -1,5 +1,6 @@
 import Dexie from 'dexie';
 import type {
+  FeedbackLog,
   InventoryLedger,
   LocationLog,
   OwnedContainer,
@@ -18,6 +19,7 @@ import {
   readAttachmentRow,
   readCatalogRow,
   readDraftRow,
+  readFeedbackLogRow,
   readInputRow,
   readInventoryLedgerRow,
   readLocationLogRow,
@@ -30,6 +32,7 @@ import {
   type CatalogRow,
   type DraftRow,
   type EditChain,
+  type FeedbackLogRow,
   type InputRow,
   type InventoryLedgerRow,
   type LocationLogRow,
@@ -1048,6 +1051,54 @@ export class ProjectRepository {
     });
   }
   /**
+   * The project's use feedback. Absent until the first recorded entry. A
+   * malformed row is corrupt; it is not rewritten empty.
+   */
+  async getFeedbackLog(projectId: string): Promise<FeedbackLogRow | null> {
+    try {
+      const raw = await this.db.feedbackLogs.get(projectId);
+      if (raw === undefined) return null;
+      return readFeedbackLogRow(raw);
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /**
+   * CAS write of a feedback log Rust already accepted. `expectedRevision` is
+   * `'0'` for the first save. The transaction does not call the worker and
+   * does not touch snapshots, inputs, location logs, or inventory bytes.
+   */
+  saveFeedbackLog(
+    projectId: string,
+    log: FeedbackLog,
+    expectedRevision: string,
+  ): Promise<OwnedSaveResult> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction(
+          'rw',
+          this.db.feedbackLogs,
+          async (): Promise<OwnedSaveResult> => {
+            const raw = await this.db.feedbackLogs.get(projectId);
+            const current = raw === undefined ? '0' : readFeedbackLogRow(raw).revision;
+            if (current !== expectedRevision) return { status: 'conflict', revision: current };
+            const revision = current === '0' ? '1' : nextRevision(current);
+            await this.db.feedbackLogs.put({
+              schemaVersion: SCHEMA_VERSION,
+              logId: projectId,
+              revision,
+              log,
+              updatedAt: this.now(),
+            });
+            return { status: 'saved', revision };
+          },
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
    * One action-step toggle bound to the project's accepted immutable
    * snapshot. The transaction also requires that binding to still be the
    * current input revision and digest. Completion requires every declared
@@ -1263,6 +1314,7 @@ export class ProjectRepository {
             this.db.inventoryLedgers,
             this.db.purchaseHandoffs,
             this.db.locationLogs,
+            this.db.feedbackLogs,
           ],
           async () => {
             await this.db.projects.delete(projectId);
@@ -1276,6 +1328,7 @@ export class ProjectRepository {
             await this.db.inventoryLedgers.delete(projectId);
             await this.db.purchaseHandoffs.delete(projectId);
             await this.db.locationLogs.delete(projectId);
+            await this.db.feedbackLogs.delete(projectId);
           },
         );
       } catch (error) {

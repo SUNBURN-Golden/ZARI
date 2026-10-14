@@ -389,7 +389,14 @@ it('v1 databases upgrade to v2 and the journal records the transition', async ()
     toVersion: 5,
     state: 'applied',
   });
-  expect((await repo.db.metadata.get('db:verno'))?.payload).toEqual({ version: 5 });
+  const feedbackJournal = await repo.db.metadata.get('migration:5->6');
+  expect(feedbackJournal?.payload).toMatchObject({
+    kind: 'migration',
+    fromVersion: 5,
+    toVersion: 6,
+    state: 'applied',
+  });
+  expect((await repo.db.metadata.get('db:verno'))?.payload).toEqual({ version: 6 });
 });
 
 // ---------- export / import / duplicate ----------

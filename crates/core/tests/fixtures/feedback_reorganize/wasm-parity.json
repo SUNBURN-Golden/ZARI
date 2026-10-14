@@ -1,0 +1,19 @@
+{
+  "caseId": "wasm-parity",
+  "note": "The verified bounded fixture with the weekly coat moved behind the rare documents. Native Rust and the browser WASM runtime must answer with the same bytes. Expectations come from the native oracle.",
+  "fixture": "fixtures/domain/candidate-bounded-confirmed.json",
+  "coatBehind": { "placementId": "p-a0", "y": 200 },
+  "feedback": { "id": "fb-1", "itemId": "item-a", "kind": "accessDifficulty" },
+  "budget": 16,
+  "expect": {
+    "baseSnapshotId": "31aaf3652bac1928f0cdb29e5572c45ce02b930bd078fee359e976ac222c06b5",
+    "draftSnapshotId": "ed7c07431ef27275c4f9b07c83cfce9a1a7b58759266d1cbacb8e9b64787b1a2",
+    "requestDigest": "cfbb8381ccaa1efa5d5612a9bc5571035b5ba4592289e149acef8875169afedb",
+    "feedbackDigest": "17f5f543c8f11842ba2b0f6be34eda7dc870d28186ba3dac0e95a22f7efab2da",
+    "moves": [
+      { "placementId": "p-a0", "from": [310, 200], "to": [310, 0] },
+      { "placementId": "p-b0", "from": [5, 0], "to": [5, 200] }
+    ],
+    "cause": { "outcome": "applied", "reasonCode": "swapped_depth", "partner": "p-b0" }
+  }
+}

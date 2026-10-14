@@ -1,0 +1,99 @@
+{
+  "caseId": "maintenance-group",
+  "note": "A and B belong to one group but sit far apart. C is alone. B is hard to keep tidy.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "컵",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "접시",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-c",
+      "label": "수건",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "groups": [
+    [
+      "item-a",
+      "item-b"
+    ],
+    [
+      "item-c"
+    ]
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      0
+    ],
+    "item-c": [
+      150,
+      0
+    ],
+    "item-b": [
+      450,
+      300
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-b",
+      "kind": "maintenanceDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "published",
+    "moves": [
+      {
+        "placementId": "p-item-b",
+        "to": [
+          150,
+          0
+        ]
+      },
+      {
+        "placementId": "p-item-c",
+        "to": [
+          450,
+          300
+        ]
+      }
+    ],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "applied",
+        "reasonCode": "swapped_slot",
+        "partner": "p-item-c",
+        "swap": "slotSwap",
+        "measureBefore": 745,
+        "measureAfter": 145
+      }
+    ]
+  }
+}

@@ -18,6 +18,9 @@ import type {
   SearchDiagnosticReply,
   IncrementalPins,
   IncrementalReply,
+  FeedbackLog,
+  LocationLog,
+  ProposalReply,
   ParetoReply,
   Strategy,
   StrategyDecision,
@@ -49,6 +52,14 @@ import {
   forgetParetoComparison,
   paretoKey,
 } from '../pareto/controller';
+import {
+  feedbackKey,
+  forgetProposal,
+  proposalOpenAllowed,
+  proposalReplyApplies,
+  proposeOnce,
+  type FeedbackPanelState,
+} from '../feedback/controller';
 import {
   forgetReplan,
   replanAdoptAllowed,
@@ -179,6 +190,12 @@ export interface PlanState {
   incrementalState: IncrementalPanelState;
   /** Late replies noticed after cancel. They do not change `selectedId`. */
   incrementalIgnored: number;
+  /** Rust draft from recorded use feedback. Not a snapshot field and not an adoption. */
+  feedback: ProposalReply | null;
+  feedbackError: string | null;
+  feedbackState: FeedbackPanelState;
+  /** Late proposal replies noticed after cancel. They do not change `selectedId`. */
+  feedbackIgnored: number;
   /** Rust separation of no product, geometry, unknown, and budget. Not a snapshot field. */
   diagnostic: SearchDiagnosticReply | null;
   diagnosticError: string | null;
@@ -326,6 +343,11 @@ export class ProjectSession {
   /** Epoch of the reply currently held. Adopt requires this to match. */
   private incrementalReplyEpoch = 0;
   private incrementalKey: string | null = null;
+  /** Drops a feedback proposal after cancel, a new ask, a record change, an input commit, a search, or an accept. */
+  private feedbackEpoch = 0;
+  /** Epoch of the reply currently held. Opening the draft requires this to match. */
+  private feedbackReplyEpoch = 0;
+  private feedbackKeyHeld: string | null = null;
   /** Drops a diagnosis reply after cancel, a new search, or an input commit. */
   private diagnosticEpoch = 0;
   private diagnosticKey: string | null = null;
@@ -388,6 +410,10 @@ export class ProjectSession {
         incrementalError: null,
         incrementalState: 'idle',
         incrementalIgnored: 0,
+        feedback: null,
+        feedbackError: null,
+        feedbackState: 'idle',
+        feedbackIgnored: 0,
         diagnostic: null,
         diagnosticError: null,
         diagnosticState: 'idle',
@@ -1115,6 +1141,8 @@ export class ProjectSession {
       this.paretoEpoch += 1;
       this.incrementalEpoch += 1;
       this.incrementalKey = null;
+      this.feedbackEpoch += 1;
+      this.feedbackKeyHeld = null;
       this.diagnosticEpoch += 1;
       this.diagnosticKey = null;
       this.patchPlan({
@@ -1125,6 +1153,10 @@ export class ProjectSession {
         incrementalError: null,
         incrementalState: 'idle',
         incrementalIgnored: 0,
+        feedback: null,
+        feedbackError: null,
+        feedbackState: 'idle',
+        feedbackIgnored: 0,
         diagnostic: null,
         diagnosticError: null,
         diagnosticState: 'idle',
@@ -1361,6 +1393,154 @@ export class ProjectSession {
     const reply = this.state.plan.incremental;
     const outcome = reply?.outcome.kind ?? null;
     if (!replanAdoptAllowed(this.incrementalReplyEpoch, this.incrementalEpoch, outcome)) return;
+    if (!reply || reply.outcome.kind !== 'published') return;
+    const snapshot = reply.outcome.snapshot;
+    const alternatives = this.state.plan.alternatives.some(
+      (item) => item.planSnapshotId === snapshot.planSnapshotId,
+    )
+      ? this.state.plan.alternatives
+      : [...this.state.plan.alternatives, snapshot];
+    this.snapshotIndex.set(snapshot.planSnapshotId, snapshot);
+    this.patchPlan({ alternatives, selectedId: snapshot.planSnapshotId });
+  }
+  /**
+   * One feedback-driven draft of the adopted plan against the activated
+   * input. Does not select, accept, or move anything in the adopted plan.
+   */
+  proposeFeedback(
+    base: PlanSnapshot,
+    log: FeedbackLog,
+    locations: LocationLog,
+    budget: number,
+  ): void {
+    const client = this.controller.current;
+    const digest = this.state.inputDigest;
+    if (
+      !client ||
+      !digest ||
+      this.closed ||
+      this.state.status !== 'ready' ||
+      this.state.context !== 'installed'
+    ) {
+      this.patchPlan({
+        feedback: null,
+        feedbackError:
+          this.state.context !== 'installed' ? 'context_not_installed' : 'no_committed_input',
+        feedbackState: 'error',
+      });
+      return;
+    }
+    this.feedbackEpoch += 1;
+    const epoch = this.feedbackEpoch;
+    const key = feedbackKey(digest, base.planSnapshotId, log, locations, budget);
+    this.feedbackKeyHeld = key;
+    this.patchPlan({
+      feedback: null,
+      feedbackError: null,
+      feedbackState: 'pending',
+      feedbackIgnored: 0,
+    });
+    void this.finishFeedback(client, base, log, locations, budget, key, epoch);
+  }
+  private async finishFeedback(
+    client: ProbeClient,
+    base: PlanSnapshot,
+    log: FeedbackLog,
+    locations: LocationLog,
+    budget: number,
+    key: string,
+    epoch: number,
+  ): Promise<void> {
+    try {
+      const reply = await proposeOnce(key, async () => {
+        const event = await client.request({
+          kind: 'proposeFeedbackReorganize',
+          baseSnapshot: base,
+          log,
+          locations,
+          budget: { maxEvaluations: budget },
+        });
+        if (event.kind !== 'feedbackReorganizeProposed') throw new Error('unexpected_worker_event');
+        return event.reply;
+      });
+      if (this.closed || !proposalReplyApplies(epoch, this.feedbackEpoch)) {
+        this.noteIgnoredFeedback(epoch);
+        return;
+      }
+      this.feedbackReplyEpoch = epoch;
+      this.patchPlan({
+        feedback: reply,
+        feedbackError: null,
+        feedbackState: reply.outcome.kind === 'published' ? 'ready' : 'nochange',
+      });
+    } catch (error) {
+      if (
+        this.closed ||
+        error instanceof StaleRequest ||
+        !proposalReplyApplies(epoch, this.feedbackEpoch)
+      ) {
+        this.noteIgnoredFeedback(epoch);
+        return;
+      }
+      forgetProposal(key);
+      this.patchPlan({
+        feedback: null,
+        feedbackError: error instanceof Error ? error.message : String(error),
+        feedbackState: 'error',
+      });
+    }
+  }
+  private noteIgnoredFeedback(epoch: number): void {
+    if (this.closed || proposalReplyApplies(epoch, this.feedbackEpoch)) return;
+    if (this.state.plan.feedbackState !== 'cancelled') return;
+    this.patchPlan({ feedbackIgnored: this.state.plan.feedbackIgnored + 1 });
+  }
+  /** Drops the in-flight reply. Does not change the selected or adopted plan. */
+  cancelFeedback(): void {
+    if (this.state.plan.feedbackState !== 'pending') return;
+    this.feedbackEpoch += 1;
+    if (this.feedbackKeyHeld) forgetProposal(this.feedbackKeyHeld);
+    this.feedbackKeyHeld = null;
+    this.patchPlan({
+      feedback: null,
+      feedbackError: null,
+      feedbackState: 'cancelled',
+    });
+  }
+  /**
+   * Clears the draft preview. Nothing the person adopted changes, and a draft
+   * that was already opened stays in the alternatives list like any other.
+   */
+  discardFeedback(): void {
+    this.feedbackEpoch += 1;
+    if (this.feedbackKeyHeld) forgetProposal(this.feedbackKeyHeld);
+    this.feedbackKeyHeld = null;
+    this.patchPlan({
+      feedback: null,
+      feedbackError: null,
+      feedbackState: 'idle',
+      feedbackIgnored: 0,
+    });
+  }
+  /**
+   * Explicit open of the draft: it joins the alternatives and is selected so
+   * the plan screen compares it. It is not adopted. A late or foreign reply
+   * does nothing.
+   */
+  openFeedbackDraft(): void {
+    const reply = this.state.plan.feedback;
+    const outcome = reply?.outcome.kind ?? null;
+    if (
+      !proposalOpenAllowed(
+        this.feedbackReplyEpoch,
+        this.feedbackEpoch,
+        outcome,
+        reply?.baseSnapshotId ?? null,
+        this.state.plan.acceptedSnapshot?.planSnapshotId ?? null,
+      )
+    ) {
+      return;
+    }
     if (!reply || reply.outcome.kind !== 'published') return;
     const snapshot = reply.outcome.snapshot;
     const alternatives = this.state.plan.alternatives.some(
@@ -1998,6 +2178,8 @@ export class ProjectSession {
     this.paretoEpoch += 1;
     this.incrementalEpoch += 1;
     this.incrementalKey = null;
+    this.feedbackEpoch += 1;
+    this.feedbackKeyHeld = null;
     this.diagnosticEpoch += 1;
     this.diagnosticKey = null;
     this.patchPlan({
@@ -2013,6 +2195,10 @@ export class ProjectSession {
       incrementalError: null,
       incrementalState: 'idle',
       incrementalIgnored: 0,
+      feedback: null,
+      feedbackError: null,
+      feedbackState: 'idle',
+      feedbackIgnored: 0,
       diagnostic: null,
       diagnosticError: null,
       diagnosticState: 'idle',
@@ -2161,6 +2347,9 @@ export class ProjectSession {
         this.broadcast(result.projectRevision);
         this.progressEpoch += 1;
         this.patch({ projectRevision: result.projectRevision });
+        // A draft made for the previous adopted plan no longer applies.
+        this.feedbackEpoch += 1;
+        this.feedbackKeyHeld = null;
         this.patchPlan({
           accepted: {
             inputRevision: this.state.inputRevision,
@@ -2168,6 +2357,10 @@ export class ProjectSession {
           },
           acceptedSnapshot: snapshot,
           acceptState: 'saved',
+          feedback: null,
+          feedbackError: null,
+          feedbackState: 'idle',
+          feedbackIgnored: 0,
           actionProgress: null,
           actionError: null,
           actionRetry: null,

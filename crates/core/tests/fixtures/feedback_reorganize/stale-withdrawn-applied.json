@@ -1,0 +1,113 @@
+{
+  "caseId": "stale-withdrawn-applied",
+  "note": "One entry was recorded against an earlier plan, one was withdrawn, and one applies.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      200
+    ],
+    "item-b": [
+      310,
+      0
+    ]
+  },
+  "otherPlacements": {
+    "item-a": [
+      5,
+      0
+    ],
+    "item-b": [
+      310,
+      200
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-old",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "snapshot": "other",
+      "expectCode": null
+    },
+    {
+      "op": "record",
+      "id": "fb-gone",
+      "itemId": "item-b",
+      "kind": "maintenanceDifficulty",
+      "expectCode": null
+    },
+    {
+      "op": "withdraw",
+      "id": "fb-gone",
+      "expectCode": null
+    },
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "published",
+    "evaluationsUsed": 1,
+    "moves": [
+      {
+        "placementId": "p-item-a",
+        "to": [
+          5,
+          0
+        ]
+      },
+      {
+        "placementId": "p-item-b",
+        "to": [
+          310,
+          200
+        ]
+      }
+    ],
+    "causes": [
+      {
+        "feedbackId": "fb-old",
+        "outcome": "stale",
+        "reasonCode": "other_plan"
+      },
+      {
+        "feedbackId": "fb-gone",
+        "outcome": "withdrawn",
+        "reasonCode": "withdrawn"
+      },
+      {
+        "feedbackId": "fb-1",
+        "outcome": "applied",
+        "reasonCode": "swapped_depth"
+      }
+    ]
+  }
+}

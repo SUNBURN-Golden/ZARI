@@ -6,6 +6,7 @@ pub mod edit;
 pub mod eligibility;
 pub mod eval_continue;
 pub mod facts;
+pub mod feedback_reorganize;
 pub mod finalize;
 pub mod geometry;
 pub mod incremental;

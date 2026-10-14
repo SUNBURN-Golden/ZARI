@@ -1,0 +1,89 @@
+{
+  "caseId": "frequency-superseded",
+  "note": "The same item's frequency was corrected. Only the latest live entry acts; the earlier one says it was replaced.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      200
+    ],
+    "item-b": [
+      310,
+      0
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "frequencyChange",
+      "frequency": "monthly",
+      "expectCode": null
+    },
+    {
+      "op": "record",
+      "id": "fb-2",
+      "itemId": "item-a",
+      "kind": "frequencyChange",
+      "frequency": "daily",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "published",
+    "evaluationsUsed": 1,
+    "moves": [
+      {
+        "placementId": "p-item-a",
+        "to": [
+          5,
+          0
+        ]
+      },
+      {
+        "placementId": "p-item-b",
+        "to": [
+          310,
+          200
+        ]
+      }
+    ],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "notApplicable",
+        "reasonCode": "superseded"
+      },
+      {
+        "feedbackId": "fb-2",
+        "outcome": "applied",
+        "reasonCode": "swapped_depth",
+        "frequencyInput": "weekly",
+        "frequencyEffective": "daily"
+      }
+    ]
+  }
+}

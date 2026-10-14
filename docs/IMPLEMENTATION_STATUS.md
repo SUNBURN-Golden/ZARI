@@ -1,3 +1,36 @@
+# 2026-10-14 — ZARI-z-feedback-reorganize 사용 피드백에서 다음 정리로 이어지는 루프
+
+정본은 GitHub issue #104, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-feedback-reorganize`이다. 관찰한 base SHA는 `dca8fc401bea33966682b2fb98fe1a53c043c7e9`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-feedback-reorganize만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-feedback-reorganize.md`와 `design/DECISIONS.md` Dz-feedback-reorganize. `docs/PRODUCT_COMPLETION_EVOLUTION_KO.md`와 `design/SPATIAL_WORKSPACE.md` §8에는 이 노드 노트만 추가했다.
+- `crates/core/src/feedback_reorganize.rs`: 프로젝트별 append-only `FeedbackLog`(접근 불편·사용 빈도 변경·정리 유지 어려움, 철회는 별도 id 목록). `applyFeedbackLog`는 stateless이고 Rust가 채택 snapshot id를 찍는다. `proposeFeedbackReorganize`는 채택한 계획의 최상위 배치 위치 맞바꿈(깊이/바닥 위치) 후보를 세 규칙(접근·빈도·유지)으로 고르고 모든 후보를 `evaluate_candidate`로 검증한다. 채택한 계획보다 어느 검사도 나빠지면 거절한다. 빈도를 모르면 비교·이동하지 않는다. 응답은 기록마다 원인(규칙·결과·이유·측도·막힌 이유·참고한 위치 관측), 이동, 검사 변화, Rust가 비교한 `preserved`, 항상 false인 `autoDiscard`·`autoPurchase`·`reusedPass`, 재현 기록(`requestDigest`)이다. 채택하지 않고 입력 사실도 바꾸지 않는다.
+- 프로토콜: 두 명령·두 이벤트·capability 두 이름(base 24, 엔진 포함 32). `BUILD_ID` `zari-domain-7` 유지. 생성 계약은 스크립트로 재생성했고 `contract.json`은 `baseCapabilities` 두 줄만 바뀌었다.
+- IndexedDB `DB_VERSION` 6: `feedbackLogs` 저장소, `migration:5->6` 일지만 쓰고 기존 바이트는 읽거나 다시 쓰지 않는다. `deleteProject`가 같은 트랜잭션에서 지우고 내보내기·가져오기는 싣지 않는다.
+- 계획 화면의 `FeedbackPanel`: 기록·철회, 검토 횟수 선택, 제안·취소·재시도, 원인 목록, 현재/제안 위치(mm) 비교, 검사 변화, 그대로 둔 것, 재현 정보, 초안 보기·채택·닫기. session은 epoch로 취소·늦은 응답·입력 커밋·새 탐색·채택에서 낡은 응답을 버린다. 새 색 토큰·대비 조합은 없다.
+- 테스트: Rust `feedback_reorganize.rs` 25개 + 인라인 1개, fixture 17건(시나리오·거절·WASM parity 오라클). vitest `feedback.test.ts` 6, `feedbackWasm.test.ts` 1, 저장소 테스트 1 추가. 브라우저 `feedback-reorganize.spec.ts` 3개. 상위 `fixtures/` 124건의 바이트와 manifest는 그대로다. `.aiops/**`, `docs/aiops/**`, `.github/**`, `Cargo.lock`은 그대로다. 캡처가 다시 쓴 `ZARI-SPATIAL-001-*.png`는 `git checkout`으로 되돌렸다. 새 의존성은 없다.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.x, Rust 1.98.1, `CARGO_BUILD_JOBS=4`), 최종 트리:
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked --no-fail-fast`: exit 0, 241개 통과. 플레인 명령의 첫 실행은 부하(load 6–7)에서 `completion_query::warm_query_p95_stays_within_the_rust_target`(20ms 벽시계 게이트) 1건이 실패했고 단독·재실행에서 통과했다. 임계값은 그대로
+- fixture_runner `fixtures/bootstrap`, `fixtures`(124건): exit 0. `git status fixtures Cargo.lock` 비어 있음
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124
+- `npm run typecheck`, `npm run lint`, `npm run build`, `node scripts/check-release-manifest.mjs`(`errors: []`), `node scripts/check-design-tokens.mjs --self-test`(12 self-test, 대비 39/39), `node scripts/check-product-contract.mjs`(DB_VERSION pin 5→6): exit 0
+- `npm test`: 최종 트리 재실행에서 exit 0, 33 files / 209 tests 통과. 앞선 두 실행은 호스트 부하와 시계 도약 중 `session.test.ts`의 실제 WASM 탐색 대기 1건씩이 실패했고(서로 다른 테스트) `session.test.ts` 단독은 35/35, 전체 재실행은 209/209였다. 타임아웃·테스트는 바꾸지 않았다
+- `npm run test:browser -- --project=chromium`: 최종 트리에서 exit 0, 111 passed·0 failed(5.3m)
+- `feedback-reorganize.spec.ts`: firefox 3/3, webkit 3/3(부하 load≈11에서 한 번 3개 중 1개가 `toHaveAttribute` 타임아웃으로 실패했고 두 번의 재실행에서 통과)
+- `npm run test:parity`: exit 0, 2 passed, 124 fixture 네이티브·브라우저 WASM 일치
+- 이 세션은 커밋·push하지 않았다. GitHub Actions는 아직 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, 전체 재탐색, 형상·용기 교체, 폐기·구매의 자동 추천, 입력 사실의 자동 수정, 위치 관측으로부터 피드백 추론, 클라우드 동기화, `BUILD_ID`·스키마·버전 변경. 초안은 위치 맞바꿈의 유한 이웃 탐색이고 깊이(입구 거리)와 빈도만 본다. 390px·forced-colors·키보드는 데스크톱 에뮬레이션이고 전화·전용 GPU는 미검증이다. 상세는 `docs/evidence/ZARI-z-feedback-reorganize.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 `Refs #104` ready PR을 연다. CI `bridge`가 초록이고 같은 head에서 독립 읽기 전용 검토 2회가 끝난 뒤 머지한다. 다음 z-노드는 이 작업에서 시작하지 않았다.
+
 # 2026-10-13 — ZARI-z-location-search 내 물건 찾기와 정리 후 위치 검색
 
 정본은 GitHub issue #102, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-location-search`이다. 관찰한 base SHA는 `2cb3ceccd8753f755a8ef34ff471eccae35e019d`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

@@ -1,0 +1,60 @@
+{
+  "caseId": "unknown-frequency",
+  "note": "A's frequency is unknown. The rule must not treat it as daily or rare.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": null,
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      200
+    ],
+    "item-b": [
+      310,
+      0
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "noChange",
+    "evaluationsUsed": 0,
+    "moves": [],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "notApplicable",
+        "reasonCode": "frequency_unknown",
+        "frequencyInput": null,
+        "frequencyEffective": null
+      }
+    ]
+  }
+}

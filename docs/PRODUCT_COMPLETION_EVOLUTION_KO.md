@@ -48,6 +48,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-location-search 채택 (2026-10-07).** 이 노트는 z-location-search만 다룬다. 같은 원문이다. 기록은 [Dz-location-search](../design/DECISIONS.md)와 [docs/adr/SP-z-location-search.md](adr/SP-z-location-search.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 계획상 위치는 사용자가 관측으로 확인하기 전 실제 위치가 아니고, 실행 완료도 실제 위치를 만들지 않는다. `confirm`은 기록 당시 채택 snapshot에 묶이고 다른 snapshot에서는 `staleConfirmation`이다. 같은 이름의 다른 물건·부분 수량은 검색 행으로 합쳐지지 않는다. 프로젝트 삭제는 검색 기록 행을 지운다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-feedback-reorganize 채택 (2026-10-07).** 이 노트는 z-feedback-reorganize만 다룬다. 같은 원문이다. 기록은 [Dz-feedback-reorganize](../design/DECISIONS.md)와 [docs/adr/SP-z-feedback-reorganize.md](adr/SP-z-feedback-reorganize.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 피드백은 결정이 아니라 기록이고, 폐기·구매를 자동 확정하지 않는다. 제안은 채택한 계획을 보존한 초안이고 취소나 늦은 응답이 채택한 계획과 실제 위치를 바꾸지 않으며, 같은 입력·규칙·피드백·예산에서 같은 초안이 나온다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

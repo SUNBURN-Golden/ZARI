@@ -1,0 +1,61 @@
+{
+  "caseId": "blocked-overflow",
+  "note": "Swapping depth would push the deeper box through the back wall. The validator refuses it.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        200,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      210
+    ],
+    "item-b": [
+      5,
+      0
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "noChange",
+    "evaluationsUsed": 1,
+    "budgetExhausted": false,
+    "moves": [],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "blocked",
+        "reasonCode": "candidates_blocked",
+        "evaluations": 1,
+        "blockersNonEmpty": true
+      }
+    ]
+  }
+}

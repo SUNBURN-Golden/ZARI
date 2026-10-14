@@ -1,0 +1,175 @@
+{
+  "caseId": "record-rejections",
+  "note": "Every refusal is a Rust code and nothing is appended.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-x",
+      "label": "미배치",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      200
+    ],
+    "item-b": [
+      310,
+      0
+    ]
+  },
+  "unplaced": [
+    "item-x"
+  ],
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    },
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "maintenanceDifficulty",
+      "expectCode": "duplicate_feedback"
+    },
+    {
+      "op": "record",
+      "id": "fb-2",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": "duplicate_feedback"
+    },
+    {
+      "op": "record",
+      "id": "fb-3",
+      "itemId": "item-zzz",
+      "kind": "accessDifficulty",
+      "expectCode": "subject_missing"
+    },
+    {
+      "op": "record",
+      "id": "fb-4",
+      "itemId": "item-x",
+      "kind": "accessDifficulty",
+      "expectCode": "item_unplaced"
+    },
+    {
+      "op": "record",
+      "id": "fb-5",
+      "itemId": "item-b",
+      "kind": "frequencyChange",
+      "expectCode": "frequency_required"
+    },
+    {
+      "op": "record",
+      "id": "fb-6",
+      "itemId": "item-b",
+      "kind": "accessDifficulty",
+      "frequency": "daily",
+      "expectCode": "frequency_forbidden"
+    },
+    {
+      "op": "record",
+      "id": "fb-7",
+      "itemId": "item-b",
+      "kind": "frequencyChange",
+      "frequency": "rare",
+      "expectCode": "frequency_unchanged"
+    },
+    {
+      "op": "record",
+      "id": "fb-8",
+      "itemId": "item-b",
+      "kind": "maintenanceDifficulty",
+      "note": "   ",
+      "expectCode": "invalid_label"
+    },
+    {
+      "op": "record",
+      "id": "fb-9",
+      "itemId": "item-b",
+      "kind": "frequencyChange",
+      "frequency": "daily",
+      "note": "매일 꺼낸다",
+      "expectCode": null
+    },
+    {
+      "op": "record",
+      "id": "fb-10",
+      "itemId": "item-b",
+      "kind": "frequencyChange",
+      "frequency": "daily",
+      "expectCode": "frequency_unchanged"
+    },
+    {
+      "op": "withdraw",
+      "id": "fb-nope",
+      "expectCode": "subject_missing"
+    },
+    {
+      "op": "withdraw",
+      "id": "fb-1",
+      "expectCode": null
+    },
+    {
+      "op": "withdraw",
+      "id": "fb-1",
+      "expectCode": "already_withdrawn"
+    },
+    {
+      "op": "record",
+      "id": "fb-11",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    },
+    {
+      "op": "record",
+      "id": "fb-12",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "snapshot": "none",
+      "expectCode": "needs_plan"
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "entryIds": [
+      "fb-1",
+      "fb-9",
+      "fb-11"
+    ],
+    "withdrawn": [
+      "fb-1"
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "caseId": "frequency-demote-no-discard",
+  "note": "A at the front is now rare. Nothing is discarded or bought; B, weekly, moves forward.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "daily",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      0
+    ],
+    "item-b": [
+      310,
+      200
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "frequencyChange",
+      "frequency": "rare",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "published",
+    "moves": [
+      {
+        "placementId": "p-item-a",
+        "to": [
+          5,
+          200
+        ]
+      },
+      {
+        "placementId": "p-item-b",
+        "to": [
+          310,
+          0
+        ]
+      }
+    ],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "applied",
+        "reasonCode": "swapped_depth",
+        "frequencyInput": "daily",
+        "frequencyEffective": "rare"
+      }
+    ]
+  }
+}
