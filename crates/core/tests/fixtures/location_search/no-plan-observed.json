@@ -1,0 +1,40 @@
+{
+  "caseId": "no-plan-observed",
+  "items": [
+    { "id": "item-a", "label": "충전 케이블", "category": "전자", "quantity": 1 }
+  ],
+  "containers": [
+    { "placementId": "p-c1", "variantId": "var-1" }
+  ],
+  "assignments": [
+    { "itemId": "item-a", "unitOrdinal": 0, "kind": "contained", "containerPlacementId": "p-c1" }
+  ],
+  "records": [
+    {
+      "observation": {
+        "id": "obs-1",
+        "itemId": "item-a",
+        "kind": "reorganize",
+        "label": "충전 케이블",
+        "location": "책상 서랍",
+        "unitOrdinals": [],
+        "planSnapshotId": null
+      },
+      "expectCode": null
+    }
+  ],
+  "searchSnapshot": "none",
+  "query": "",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [0],
+      "status": "observed",
+      "observedKind": "reorganize",
+      "observedLocation": "책상 서랍",
+      "matchedAlias": null
+    }
+  ]
+}

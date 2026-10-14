@@ -264,6 +264,13 @@ it('opens a v2 database, journals 2 to 3, and leaves snapshot bytes', async () =
     toVersion: 4,
     state: 'applied',
   });
+  const locationJournal = await db.metadata.get('migration:4->5');
+  expect(locationJournal?.payload).toMatchObject({
+    kind: 'migration',
+    fromVersion: 4,
+    toVersion: 5,
+    state: 'applied',
+  });
   const stored = await db.snapshots.toArray();
   expect(stored).toHaveLength(1);
   expect(stored[0]?.snapshot).toEqual({ marker: 'historical-bytes' });
@@ -284,6 +291,21 @@ it('saves a ledger with compare-and-swap and drops it when the project is delete
   expect(row?.ledger).toEqual(ledger);
   await r.deleteProject(project.projectId);
   expect(await r.getInventoryLedger(project.projectId)).toBeNull();
+});
+
+it('saves a location log with compare-and-swap and drops it when the project is deleted', async () => {
+  const r = repo();
+  const project = await seedProject(r);
+  const log = { observations: [] };
+  const saved = await r.saveLocationLog(project.projectId, log, '0');
+  expect(saved).toEqual({ status: 'saved', revision: '1' });
+  const conflict = await r.saveLocationLog(project.projectId, log, '0');
+  expect(conflict.status).toBe('conflict');
+  const row = await r.getLocationLog(project.projectId);
+  expect(row?.revision).toBe('1');
+  expect(row?.log).toEqual(log);
+  await r.deleteProject(project.projectId);
+  expect(await r.getLocationLog(project.projectId)).toBeNull();
 });
 
 it('saves a purchase handoff with compare-and-swap and drops it when the project is deleted', async () => {

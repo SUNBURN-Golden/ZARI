@@ -22,6 +22,7 @@ import {
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import type { AttachmentRow, CatalogRow, OwnedContainerRow } from '../persistence/db';
 import { InventoryPanel } from '../features/inventory/InventoryPanel';
+import { LocationPanel } from '../features/location/LocationPanel';
 import { ownedToRaw } from '../features/owned/model';
 import { DimensionField } from '../ui/DimensionField';
 import { useReturnFocus } from '../ui/returnFocus';
@@ -767,6 +768,11 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
       </section>
       <CatalogAndOwned session={session} state={state} />
       <InventoryPanel projectId={projectId} />
+      <LocationPanel
+        projectId={projectId}
+        input={state.normalizedInput}
+        snapshot={state.plan.acceptedSnapshot}
+      />
       <PhotosPanel projectId={projectId} />
       <aside className="inspector" aria-labelledby="state-title">
         <div className="section-kicker">정규화 상태</div>

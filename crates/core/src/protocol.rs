@@ -31,7 +31,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-7";
-const CAPABILITIES: [&str; 20] = [
+const CAPABILITIES: [&str; 22] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -45,7 +45,9 @@ const CAPABILITIES: [&str; 20] = [
     "projectSpatialView",
     "queryNextFacts",
     "queryActionEligibility",
+    "queryLocationSearch",
     "applyInventoryLedger",
+    "applyLocationLog",
     "reviewCatalogImport",
     "quoteOfferBundle",
     "buildPortableBundle",
@@ -64,7 +66,7 @@ const SEARCH_CAPABILITIES: [&str; 8] = [
     "replanIncremental",
     "diagnoseSearch",
 ];
-const COMMAND_KINDS: [&str; 27] = [
+const COMMAND_KINDS: [&str; 29] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -77,7 +79,9 @@ const COMMAND_KINDS: [&str; 27] = [
     "projectSpatialView",
     "queryNextFacts",
     "queryActionEligibility",
+    "queryLocationSearch",
     "applyInventoryLedger",
+    "applyLocationLog",
     "reviewCatalogImport",
     "quoteOfferBundle",
     "buildPortableBundle",
@@ -296,11 +300,33 @@ pub enum Command {
         progress: Option<Vec<ActionProgressInput>>,
         stamp: ActionEligibilityStamp,
     },
+    /// Stateless local search over item names, aliases, categories, and
+    /// the planned/observed location split. A planned location is never
+    /// reported as an actual one; `snapshot: null` means no plan.
+    QueryLocationSearch {
+        input: ProjectInput,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
+        snapshot: Option<PlanSnapshot>,
+        log: crate::location_search::LocationLog,
+        query: String,
+    },
     /// Stateless life-ledger step. Does not read or write a PlanSnapshot.
     /// `openHistorical` returns the same ledger.
     ApplyInventoryLedger {
         ledger: crate::inventory::InventoryLedger,
         action: crate::inventory::InventoryAction,
+    },
+    /// Stateless location-log step. Does not read or write a PlanSnapshot.
+    /// `snapshot` is only the adopted plan a `confirm` observation binds
+    /// to; nothing here changes the plan.
+    ApplyLocationLog {
+        log: crate::location_search::LocationLog,
+        input: ProjectInput,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
+        snapshot: Option<PlanSnapshot>,
+        action: crate::location_search::LocationAction,
     },
     /// Stateless catalog import review. Does not read or write a stored
     /// catalog. `snapshot` is present only when every row is ready.
@@ -515,9 +541,18 @@ pub enum Event {
     ActionEligibilityQueried {
         reply: ActionEligibilityReply,
     },
+    /// Result of `queryLocationSearch`. `plannedOnly` is not an actual
+    /// location; `staleConfirmation` is not a current confirmation.
+    LocationSearchQueried {
+        reply: crate::location_search::LocationSearchReply,
+    },
     /// Result of `applyInventoryLedger`. `changed: false` is a read.
     InventoryLedgerApplied {
         reply: crate::inventory::InventoryReply,
+    },
+    /// Result of `applyLocationLog`. `changed: false` is a read.
+    LocationLogApplied {
+        reply: crate::location_search::LocationLogReply,
     },
     /// Result of `reviewCatalogImport`. `snapshot: null` publishes nothing.
     CatalogImportReviewed {
@@ -2317,7 +2352,9 @@ impl Runtime {
                     | Command::ProjectSpatialView { .. }
                     | Command::QueryNextFacts { .. }
                     | Command::QueryActionEligibility { .. }
+                    | Command::QueryLocationSearch { .. }
                     | Command::ApplyInventoryLedger { .. }
+                    | Command::ApplyLocationLog { .. }
                     | Command::ReviewCatalogImport { .. }
                     | Command::QuoteOfferBundle { .. }
                     | Command::BuildPortableBundle { .. }
@@ -2510,7 +2547,9 @@ impl Runtime {
             | Command::ProjectSpatialView { .. }
             | Command::QueryNextFacts { .. }
             | Command::QueryActionEligibility { .. }
+            | Command::QueryLocationSearch { .. }
             | Command::ApplyInventoryLedger { .. }
+            | Command::ApplyLocationLog { .. }
             | Command::ReviewCatalogImport { .. }
             | Command::QuoteOfferBundle { .. }
             | Command::BuildPortableBundle { .. }
@@ -2899,6 +2938,34 @@ impl Runtime {
             Command::ApplyInventoryLedger { ledger, action } => {
                 match crate::inventory::apply_inventory(ledger, action) {
                     Ok(reply) => Event::InventoryLedgerApplied { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::QueryLocationSearch {
+                input,
+                snapshot,
+                log,
+                query,
+            } => {
+                match crate::location_search::search_locations(input, snapshot.as_ref(), log, query)
+                {
+                    Ok(reply) => Event::LocationSearchQueried { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::ApplyLocationLog {
+                log,
+                input,
+                snapshot,
+                action,
+            } => {
+                match crate::location_search::apply_location_log(
+                    log,
+                    input,
+                    snapshot.as_ref(),
+                    action,
+                ) {
+                    Ok(reply) => Event::LocationLogApplied { reply },
                     Err(error) => failure(error.code),
                 }
             }

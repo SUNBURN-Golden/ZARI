@@ -1,0 +1,35 @@
+{
+  "caseId": "alias-index",
+  "items": [
+    { "id": "item-a", "label": "서류 봉투", "category": "서류", "quantity": 1 }
+  ],
+  "assignments": [],
+  "records": [
+    {
+      "observation": {
+        "id": "obs-1",
+        "itemId": "item-a",
+        "kind": "alias",
+        "label": "세금 서류",
+        "location": null,
+        "unitOrdinals": [],
+        "planSnapshotId": null
+      },
+      "expectCode": null
+    }
+  ],
+  "searchSnapshot": "bound",
+  "query": "세금",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [0],
+      "status": "unlocated",
+      "matchedAlias": "세금 서류",
+      "quantityCode": "count",
+      "quantityCount": 1
+    }
+  ]
+}

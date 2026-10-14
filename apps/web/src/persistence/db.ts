@@ -3,6 +3,7 @@ import type {
   CatalogSnapshot,
   Diagnostic,
   LayoutEditCommand,
+  LocationLog,
   OwnedContainer,
   InventoryLedger,
   PlanSnapshot,
@@ -23,12 +24,13 @@ export const DB_NAME = 'zari-local';
  * v1: Task 005 stores. v2: Task 009 adds the `attachments` Blob store for
  * optional local photos. v3: z-inventory-lifecycle adds `inventoryLedgers`.
  * v4: z-purchase-handoff adds `purchaseHandoffs`.
+ * v5: z-location-search adds `locationLogs`.
  * Historical declarations stay so an older database upgrades in place; a
  * newer database opened by an older build is refused by IndexedDB itself
  * (downgrade protection). The upgrade writes a journal row and does not
  * read or rewrite snapshot, input, or owned-container bytes.
  */
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 export const SCHEMA_VERSION = 1;
 const MAX_REVISION = 18446744073709551615n;
 
@@ -124,6 +126,17 @@ export interface PurchaseHandoffRow {
   ledger: PurchaseLedger;
   updatedAt: string;
 }
+/**
+ * Project-scoped location observations. Not a PlanSnapshot and not
+ * exportVersion 1; a planned location is not an actual one.
+ */
+export interface LocationLogRow {
+  schemaVersion: number;
+  logId: string;
+  revision: string;
+  log: LocationLog;
+  updatedAt: string;
+}
 export interface OwnedContainerRow {
   schemaVersion: number;
   ownedContainerId: string;
@@ -202,6 +215,7 @@ export class ZariDb extends Dexie {
   ownedContainers!: Table<OwnedContainerRow, string>;
   inventoryLedgers!: Table<InventoryLedgerRow, string>;
   purchaseHandoffs!: Table<PurchaseHandoffRow, string>;
+  locationLogs!: Table<LocationLogRow, string>;
   catalogs!: Table<CatalogRow, string>;
   actionProgress!: Table<ActionProgressRow, [string, string, string, string]>;
   attachments!: Table<AttachmentRow, string>;
@@ -299,6 +313,35 @@ export class ZariDb extends Dexie {
         await tx.table('metadata').put({
           schemaVersion: SCHEMA_VERSION,
           key: 'migration:3->4',
+          payload: journal,
+        });
+      });
+    this.version(5)
+      .stores({
+        projects: 'projectId, updatedAt, status',
+        inputs: '[projectId+inputRevision], projectId',
+        drafts: 'projectId',
+        snapshots: '[projectId+inputRevision+planSnapshotId], projectId, planSnapshotId',
+        ownedContainers: 'ownedContainerId, updatedAt',
+        catalogs: 'catalogDigest, catalogVersion, origin',
+        actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
+        attachments: 'attachmentId, projectId',
+        inventoryLedgers: 'ledgerId, updatedAt',
+        purchaseHandoffs: 'ledgerId, updatedAt',
+        locationLogs: 'logId, updatedAt',
+        metadata: 'key',
+      })
+      .upgrade(async (tx) => {
+        const journal: MigrationJournal = {
+          kind: 'migration',
+          fromVersion: 4,
+          toVersion: 5,
+          state: 'applied',
+          recordedAt: new Date().toISOString(),
+        };
+        await tx.table('metadata').put({
+          schemaVersion: SCHEMA_VERSION,
+          key: 'migration:4->5',
           payload: journal,
         });
       });
@@ -572,6 +615,25 @@ export function readInventoryLedgerRow(value: unknown): InventoryLedgerRow {
     !isCanonicalRevision(row.revision) ||
     !text(row.updatedAt) ||
     !isInventoryLedger(row.ledger)
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+function isLocationLog(value: unknown): value is LocationLog {
+  if (!value || typeof value !== 'object') return false;
+  return Array.isArray((value as LocationLog).observations);
+}
+export function readLocationLogRow(value: unknown): LocationLogRow {
+  const row = value as LocationLogRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.logId) ||
+    !isCanonicalRevision(row.revision) ||
+    !text(row.updatedAt) ||
+    !isLocationLog(row.log)
   )
     throw new Error('record_corrupt');
   return row;

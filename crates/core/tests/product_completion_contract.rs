@@ -161,13 +161,15 @@ fn current_engine_identity_registers_the_sp013_rule() {
         .position(|item| item == "queryNextFacts")
         .unwrap();
     assert_eq!(capabilities[next + 1], "queryActionEligibility");
-    assert_eq!(capabilities[next + 2], "applyInventoryLedger");
-    assert_eq!(capabilities[next + 3], "reviewCatalogImport");
-    assert_eq!(capabilities[next + 4], "quoteOfferBundle");
-    assert_eq!(capabilities[next + 5], "buildPortableBundle");
-    assert_eq!(capabilities[next + 6], "inspectPortableBundle");
-    assert_eq!(capabilities[next + 7], "preparePurchaseHandoff");
-    assert_eq!(capabilities[next + 8], "disposeProject");
+    assert_eq!(capabilities[next + 2], "queryLocationSearch");
+    assert_eq!(capabilities[next + 3], "applyInventoryLedger");
+    assert_eq!(capabilities[next + 4], "applyLocationLog");
+    assert_eq!(capabilities[next + 5], "reviewCatalogImport");
+    assert_eq!(capabilities[next + 6], "quoteOfferBundle");
+    assert_eq!(capabilities[next + 7], "buildPortableBundle");
+    assert_eq!(capabilities[next + 8], "inspectPortableBundle");
+    assert_eq!(capabilities[next + 9], "preparePurchaseHandoff");
+    assert_eq!(capabilities[next + 10], "disposeProject");
     let denied = send(
         &mut runtime,
         "eligibility",

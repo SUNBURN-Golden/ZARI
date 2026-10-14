@@ -1085,6 +1085,8 @@
 }
 .inventory-panel input,
 .inventory-panel select,
+.location-panel input,
+.location-panel select,
 .offer-quote input,
 .offer-quote select,
 .purchase-handoff input,
@@ -1100,14 +1102,40 @@
   font-size: var(--zari-text-base);
 }
 .inventory-panel .button,
+.location-panel .button,
 .offer-quote .button,
 .purchase-handoff .button {
   margin-top: var(--zari-space-2);
+}
+.location-panel .location-row-head,
+.location-panel .location-row-body {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.location-panel .location-row-body {
+  margin-top: var(--zari-space-1);
+}
+.location-panel .location-status {
+  display: inline-block;
+  padding: 0 var(--zari-space-2);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+}
+.location-panel .plan-list li {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--zari-space-1);
 }
 @media (pointer: coarse) {
   .inventory-panel input,
   .inventory-panel select,
   .inventory-panel .button,
+  .location-panel input,
+  .location-panel select,
+  .location-panel .button,
   .offer-quote input,
   .offer-quote select,
   .offer-quote .button,
@@ -1125,6 +1153,11 @@
   .inventory-panel input,
   .inventory-panel select,
   .inventory-panel .button,
+  .location-panel,
+  .location-panel input,
+  .location-panel select,
+  .location-panel .button,
+  .location-panel .location-status,
   .offer-quote,
   .offer-quote input,
   .offer-quote select,

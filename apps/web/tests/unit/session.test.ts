@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { initSync, Runtime } from '../../../../crates/wasm/pkg/zari_wasm.js';
 import { WORKER_BUILD_ID } from '../../src/worker/client';
 import type {
@@ -128,15 +128,22 @@ function watch(session: ProjectSession) {
   return session;
 }
 
+/**
+ * Elapsed time for test budgets. `Date.now()` follows the system clock, which a
+ * host can step by minutes while a test runs; that would expire every wait in
+ * flight without any real time passing. The budgets themselves are unchanged.
+ */
+const elapsedNow = () => performance.now();
+
 /** Poll the session snapshot until `predicate` holds or the deadline passes. */
 async function until(
   session: ProjectSession,
   predicate: (s: SessionSnapshot) => boolean,
   ms = 5000,
 ): Promise<SessionSnapshot> {
-  const deadline = Date.now() + ms;
+  const deadline = elapsedNow() + ms;
   let polls = 0;
-  while (Date.now() < deadline) {
+  while (elapsedNow() < deadline) {
     const s = session.snapshot;
     if (predicate(s)) return s;
     polls += 1;
@@ -492,6 +499,25 @@ it('a cancelled search can be restarted on the same context', async () => {
   expect(done.plan.alternatives.length).toBeGreaterThan(0);
 }, 90000);
 
+it('a system clock step does not expire a session wait', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  // The host steps the system clock one hour forward right after the wait begins.
+  const realNow = Date.now.bind(Date);
+  let calls = 0;
+  const step = vi
+    .spyOn(Date, 'now')
+    .mockImplementation(() => realNow() + (calls++ === 0 ? 0 : 3_600_000));
+  try {
+    const ready = await until(session, (s) => s.context === 'installed', 15000);
+    expect(ready.context).toBe('installed');
+  } finally {
+    step.mockRestore();
+  }
+}, 60000);
+
 it('a worker crash mid-search is interrupted, not a completed result', async () => {
   const { repo, controller, ports } = world();
   const projectId = await seedCommitted(repo);
@@ -567,9 +593,9 @@ it('a source change during search does not apply the in-flight result', async ()
     },
     unschedule: () => {},
   });
-  const queuedDeadline = Date.now() + 15000;
+  const queuedDeadline = elapsedNow() + 15000;
   while (queued.length === 0) {
-    if (Date.now() > queuedDeadline) throw new Error('search did not schedule a step');
+    if (elapsedNow() > queuedDeadline) throw new Error('search did not schedule a step');
     await new Promise((r) => setTimeout(r, 20));
   }
   session.edit('space.interior.width', '610');
@@ -1004,8 +1030,8 @@ it('accepted progress stays on its binding across edit, accept switch, and a lat
     });
   try {
     const pending = session.toggleActionStep(second.id, true);
-    const deadline = Date.now() + 8000;
-    while (!held && Date.now() < deadline) await new Promise((r) => setTimeout(r, 20));
+    const deadline = elapsedNow() + 8000;
+    while (!held && elapsedNow() < deadline) await new Promise((r) => setTimeout(r, 20));
     expect(held).toBe(true);
     void session.acceptPlan(head.planSnapshotId);
     await until(

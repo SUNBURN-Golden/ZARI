@@ -1,0 +1,91 @@
+{
+  "caseId": "record-rejections",
+  "items": [
+    { "id": "item-a", "label": "겨울 코트", "category": "의류", "quantity": 2 },
+    { "id": "item-b", "label": "우산", "category": "잡화", "quantity": null }
+  ],
+  "containers": [
+    { "placementId": "p-c1", "variantId": "var-1" }
+  ],
+  "assignments": [
+    { "itemId": "item-a", "unitOrdinal": 0, "kind": "contained", "containerPlacementId": "p-c1" }
+  ],
+  "records": [
+    {
+      "observation": { "id": "r-1", "itemId": "item-a", "kind": "confirm", "label": "겨울 코트", "location": null, "unitOrdinals": [1], "planSnapshotId": null },
+      "expectCode": "no_planned_location"
+    },
+    {
+      "observation": { "id": "r-2", "itemId": "item-a", "kind": "confirm", "label": "겨울 코트", "location": null, "unitOrdinals": [0, 0], "planSnapshotId": null },
+      "expectCode": "duplicate_ordinal"
+    },
+    {
+      "observation": { "id": "r-3", "itemId": "item-a", "kind": "confirm", "label": "겨울 코트", "location": null, "unitOrdinals": [5], "planSnapshotId": null },
+      "expectCode": "ordinal_out_of_range"
+    },
+    {
+      "observation": { "id": "r-4", "itemId": "item-a", "kind": "relocate", "label": "겨울 코트", "location": null, "unitOrdinals": [], "planSnapshotId": null },
+      "expectCode": "location_required"
+    },
+    {
+      "observation": { "id": "r-5", "itemId": "item-a", "kind": "confirm", "label": "겨울 코트", "location": "어딘가", "unitOrdinals": [0], "planSnapshotId": null },
+      "expectCode": "location_forbidden"
+    },
+    {
+      "observation": { "id": "r-6", "itemId": "item-a", "kind": "relocate", "label": "다른 이름", "location": "서랍", "unitOrdinals": [], "planSnapshotId": null },
+      "expectCode": "label_conflict"
+    },
+    {
+      "observation": { "id": "r-7", "itemId": "item-ghost", "kind": "lost", "label": "우산", "location": null, "unitOrdinals": [], "planSnapshotId": null },
+      "expectCode": "subject_missing"
+    },
+    {
+      "observation": { "id": "r-8", "itemId": "item-b", "kind": "relocate", "label": "우산", "location": "현관", "unitOrdinals": [0], "planSnapshotId": null },
+      "expectCode": "quantity_unknown"
+    },
+    {
+      "observation": { "id": "r-9", "itemId": "item-a", "kind": "confirm", "label": "겨울 코트", "location": null, "unitOrdinals": [], "planSnapshotId": null },
+      "expectCode": "confirm_needs_plan"
+    },
+    {
+      "observation": { "id": "r-10", "itemId": "item-a", "kind": "alias", "label": "패딩", "location": null, "unitOrdinals": [], "planSnapshotId": null },
+      "expectCode": null
+    },
+    {
+      "observation": { "id": "r-11", "itemId": "item-a", "kind": "alias", "label": "패딩", "location": null, "unitOrdinals": [], "planSnapshotId": null },
+      "expectCode": "duplicate_alias"
+    },
+    {
+      "observation": { "id": "r-12", "itemId": "item-a", "kind": "alias", "label": "점퍼", "location": "서랍", "unitOrdinals": [], "planSnapshotId": null },
+      "expectCode": "location_forbidden"
+    }
+  ],
+  "searchSnapshot": "bound",
+  "query": "",
+  "expectCode": null,
+  "expectTruncated": false,
+  "expectRows": [
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [0],
+      "status": "plannedOnly",
+      "plannedKind": "contained",
+      "plannedLabel": "Storage box 20L clear",
+      "matchedAlias": null
+    },
+    {
+      "itemId": "item-a",
+      "unitOrdinals": [1],
+      "status": "unlocated",
+      "matchedAlias": null
+    },
+    {
+      "itemId": "item-b",
+      "unitOrdinals": [],
+      "status": "unlocated",
+      "matchedAlias": null,
+      "quantityCode": "unknown",
+      "quantityCount": null
+    }
+  ]
+}
