@@ -1,0 +1,58 @@
+{
+  "caseId": "already-ordered",
+  "note": "A is already in front of B. There is nothing to improve.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      0
+    ],
+    "item-b": [
+      310,
+      200
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "noChange",
+    "evaluationsUsed": 0,
+    "moves": [],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "noBetterSlot",
+        "reasonCode": "already_ordered"
+      }
+    ]
+  }
+}

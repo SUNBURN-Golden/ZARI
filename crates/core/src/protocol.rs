@@ -31,7 +31,7 @@ use std::{
 };
 
 pub const BUILD_ID: &str = "zari-domain-7";
-const CAPABILITIES: [&str; 22] = [
+const CAPABILITIES: [&str; 24] = [
     "initialize",
     "activateProject",
     "normalizeInput(bootstrap)",
@@ -42,12 +42,14 @@ const CAPABILITIES: [&str; 22] = [
     "validateCatalog",
     "validateCandidate",
     "evaluateLayoutEdit",
+    "proposeFeedbackReorganize",
     "projectSpatialView",
     "queryNextFacts",
     "queryActionEligibility",
     "queryLocationSearch",
     "applyInventoryLedger",
     "applyLocationLog",
+    "applyFeedbackLog",
     "reviewCatalogImport",
     "quoteOfferBundle",
     "buildPortableBundle",
@@ -66,7 +68,7 @@ const SEARCH_CAPABILITIES: [&str; 8] = [
     "replanIncremental",
     "diagnoseSearch",
 ];
-const COMMAND_KINDS: [&str; 29] = [
+const COMMAND_KINDS: [&str; 31] = [
     "initialize",
     "activateProject",
     "normalizeInput",
@@ -76,12 +78,14 @@ const COMMAND_KINDS: [&str; 29] = [
     "validateCatalog",
     "validateCandidate",
     "evaluateLayoutEdit",
+    "proposeFeedbackReorganize",
     "projectSpatialView",
     "queryNextFacts",
     "queryActionEligibility",
     "queryLocationSearch",
     "applyInventoryLedger",
     "applyLocationLog",
+    "applyFeedbackLog",
     "reviewCatalogImport",
     "quoteOfferBundle",
     "buildPortableBundle",
@@ -276,6 +280,16 @@ pub enum Command {
         #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
         source_snapshot: Option<PlanSnapshot>,
     },
+    /// Explainable next-arrangement draft from recorded use feedback. The
+    /// activated project is the input. Does not search, adopt a plan, change
+    /// an input fact, discard an item, or buy anything. The base must be the
+    /// adopted plan for the activated input.
+    ProposeFeedbackReorganize {
+        base_snapshot: PlanSnapshot,
+        log: crate::feedback_reorganize::FeedbackLog,
+        locations: crate::location_search::LocationLog,
+        budget: crate::feedback_reorganize::ProposalBudget,
+    },
     /// One authoritative spatial projection over an integrity-validated
     /// source (SPATIAL_VIEW_CONTRACT §6). Stateless like `verifyRecord`: it
     /// never mutates the active context, search, budget or any source bytes.
@@ -327,6 +341,17 @@ pub enum Command {
         #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
         snapshot: Option<PlanSnapshot>,
         action: crate::location_search::LocationAction,
+    },
+    /// Stateless feedback-log step. Does not read or write a PlanSnapshot.
+    /// `snapshot` is the adopted plan an entry binds to; nothing here changes
+    /// the plan or the input.
+    ApplyFeedbackLog {
+        log: crate::feedback_reorganize::FeedbackLog,
+        input: ProjectInput,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<PlanSnapshot>")]
+        snapshot: Option<PlanSnapshot>,
+        action: crate::feedback_reorganize::FeedbackAction,
     },
     /// Stateless catalog import review. Does not read or write a stored
     /// catalog. `snapshot` is present only when every row is ready.
@@ -526,6 +551,11 @@ pub enum Event {
     SearchDiagnosed {
         reply: Box<crate::search_diagnostics::SearchDiagnosticReply>,
     },
+    /// Result of `proposeFeedbackReorganize`. The published snapshot, when
+    /// present, is a draft. `autoDiscard` and `autoPurchase` are false.
+    FeedbackReorganizeProposed {
+        reply: Box<crate::feedback_reorganize::ProposalReply>,
+    },
     /// Result of `projectSpatialView`: the additive ephemeral read model over
     /// the validated source. ProjectionVersion=1 versions this DTO
     /// independently of the persisted schema/canonical versions.
@@ -553,6 +583,10 @@ pub enum Event {
     /// Result of `applyLocationLog`. `changed: false` is a read.
     LocationLogApplied {
         reply: crate::location_search::LocationLogReply,
+    },
+    /// Result of `applyFeedbackLog`. A recorded entry is not a decision.
+    FeedbackLogApplied {
+        reply: crate::feedback_reorganize::FeedbackLogReply,
     },
     /// Result of `reviewCatalogImport`. `snapshot: null` publishes nothing.
     CatalogImportReviewed {
@@ -2355,6 +2389,7 @@ impl Runtime {
                     | Command::QueryLocationSearch { .. }
                     | Command::ApplyInventoryLedger { .. }
                     | Command::ApplyLocationLog { .. }
+                    | Command::ApplyFeedbackLog { .. }
                     | Command::ReviewCatalogImport { .. }
                     | Command::QuoteOfferBundle { .. }
                     | Command::BuildPortableBundle { .. }
@@ -2550,6 +2585,7 @@ impl Runtime {
             | Command::QueryLocationSearch { .. }
             | Command::ApplyInventoryLedger { .. }
             | Command::ApplyLocationLog { .. }
+            | Command::ApplyFeedbackLog { .. }
             | Command::ReviewCatalogImport { .. }
             | Command::QuoteOfferBundle { .. }
             | Command::BuildPortableBundle { .. }
@@ -2673,6 +2709,32 @@ impl Runtime {
                 };
                 match crate::pareto::compare(&action) {
                     Ok(reply) => Event::ParetoCompared { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::ProposeFeedbackReorganize {
+                base_snapshot,
+                log,
+                locations,
+                budget,
+            } => {
+                let (Some(input), Some(catalog)) = (&self.active_input, &self.active_catalog)
+                else {
+                    return failure("invalid_state");
+                };
+                match crate::feedback_reorganize::propose(
+                    &crate::feedback_reorganize::ProposeAction {
+                        input,
+                        catalog,
+                        base: base_snapshot,
+                        log,
+                        locations,
+                        budget,
+                    },
+                ) {
+                    Ok(reply) => Event::FeedbackReorganizeProposed {
+                        reply: Box::new(reply),
+                    },
                     Err(error) => failure(error.code),
                 }
             }
@@ -2966,6 +3028,22 @@ impl Runtime {
                     action,
                 ) {
                     Ok(reply) => Event::LocationLogApplied { reply },
+                    Err(error) => failure(error.code),
+                }
+            }
+            Command::ApplyFeedbackLog {
+                log,
+                input,
+                snapshot,
+                action,
+            } => {
+                match crate::feedback_reorganize::apply_feedback_log(
+                    log,
+                    input,
+                    snapshot.as_ref(),
+                    action,
+                ) {
+                    Ok(reply) => Event::FeedbackLogApplied { reply },
                     Err(error) => failure(error.code),
                 }
             }

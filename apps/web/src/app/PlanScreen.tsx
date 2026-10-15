@@ -60,6 +60,7 @@ import {
 import { bomCsvRows, toCsv } from '../features/plan/csv';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
 import { PurchaseHandoffPanel } from '../features/purchase/PurchaseHandoffPanel';
+import { FeedbackPanel } from '../features/feedback/FeedbackPanel';
 import { IncrementalPanel } from '../features/incremental/IncrementalPanel';
 import { SearchDiagnosticPanel } from '../features/diagnostics/SearchDiagnosticPanel';
 import { ParetoPanel } from '../features/pareto/ParetoPanel';
@@ -1339,6 +1340,28 @@ export function PlanScreen({ projectId }: { projectId: string }) {
         }}
         onCancel={() => session.cancelReplan()}
         onAdopt={() => session.adoptReplan()}
+      />
+
+      <FeedbackPanel
+        projectId={projectId}
+        input={state.normalizedInput}
+        inputDigest={state.inputDigest}
+        accepted={plan.acceptedSnapshot}
+        selectedId={plan.selectedId}
+        acceptState={plan.acceptState}
+        state={plan.feedbackState}
+        reply={plan.feedback}
+        error={plan.feedbackError}
+        ignored={plan.feedbackIgnored}
+        onPropose={(log, locations, budget) => {
+          if (plan.acceptedSnapshot) {
+            session.proposeFeedback(plan.acceptedSnapshot, log, locations, budget);
+          }
+        }}
+        onCancel={() => session.cancelFeedback()}
+        onDiscard={() => session.discardFeedback()}
+        onOpen={() => session.openFeedbackDraft()}
+        onAccept={(id) => void session.acceptPlan(id)}
       />
 
       {plan.edit.head && (

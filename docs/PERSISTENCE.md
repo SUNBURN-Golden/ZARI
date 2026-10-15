@@ -56,7 +56,7 @@ A raw save, project rename, plan acceptance, or action completion increments `pr
 
 ## 2. Object stores
 
-Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, not by documentation or Task 001. `dbVersion` 2 (ZARI-009) adds the `attachments` store for optional local photo derivatives. The upgrade writes a migration journal and does not rewrite snapshot bytes. `dbVersion` 3 (z-inventory-lifecycle) adds `inventoryLedgers`. `dbVersion` 4 (z-purchase-handoff) adds `purchaseHandoffs`. `dbVersion` 5 (z-location-search) adds `locationLogs`. The current `DB_VERSION` is 5. All rows include `schemaVersion`; generic metadata keys have their own tagged payload version. Use explicit key and index declarations, not indexes on arbitrary content.
+Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, not by documentation or Task 001. `dbVersion` 2 (ZARI-009) adds the `attachments` store for optional local photo derivatives. The upgrade writes a migration journal and does not rewrite snapshot bytes. `dbVersion` 3 (z-inventory-lifecycle) adds `inventoryLedgers`. `dbVersion` 4 (z-purchase-handoff) adds `purchaseHandoffs`. `dbVersion` 5 (z-location-search) adds `locationLogs`. `dbVersion` 6 (z-feedback-reorganize) adds `feedbackLogs`. The current `DB_VERSION` is 6. All rows include `schemaVersion`; generic metadata keys have their own tagged payload version. Use explicit key and index declarations, not indexes on arbitrary content.
 
 | Store | Primary key / indexes | Stored content | Decision |
 |---|---|---|---|
@@ -71,6 +71,7 @@ Database name: `zari-local`. Initial `dbVersion = 1` is introduced by Task 005, 
 | `inventoryLedgers` | `ledgerId`; index `updatedAt` | project life ledger returned by Rust | z-inventory-lifecycle. Not a PlanSnapshot and not part of exportVersion 1 |
 | `purchaseHandoffs` | `ledgerId`; index `updatedAt` | purchase, receipt, measurement, and return events returned by Rust | z-purchase-handoff. Not a PlanSnapshot and not part of exportVersion 1 |
 | `locationLogs` | `logId`; index `updatedAt` | project location observations (confirm, relocate, reorganize, lost, alias) returned by Rust | z-location-search. A planned location is not stored as an actual one. Not a PlanSnapshot and not part of exportVersion 1 |
+| `feedbackLogs` | `logId`; index `updatedAt` | project use feedback (access difficulty, frequency change, maintenance difficulty) and withdrawn ids returned by Rust | z-feedback-reorganize. A recorded entry is a statement, not a decision, and changes no input fact. Not a PlanSnapshot and not part of exportVersion 1 |
 
 A binding is `{projectId, inputRevision, planSnapshotId}`. Include `inputRevision` in action-progress keys because an identical content hash can recur after intervening edits. Completing steps on an old binding must not silently complete steps on a later binding. Same-binding accept again retains progress. Carrying progress across different bindings requires an explicit user operation with displayed matching steps; v1 does not offer automatic carry-forward.
 
@@ -207,7 +208,7 @@ Create a fresh project ID with revision counters starting at `1`, copied current
 
 ### Deletion
 
-Project deletion removes its project, draft, inputs, snapshot bindings, action progress, life ledger, purchase ledger, and location log in one transaction. Shared catalogs and library owned containers remain unless separately selected for deletion. Cleanup removes unreferenced catalogs only after computing live references. Attachment deletion removes bytes when no remaining local reference exists. Confirm irreversible project deletion at the UI action, not every ordinary save. Do not claim deletion from exported files or OS/browser storage backups.
+Project deletion removes its project, draft, inputs, snapshot bindings, action progress, life ledger, purchase ledger, location log, and feedback log in one transaction. Shared catalogs and library owned containers remain unless separately selected for deletion. Cleanup removes unreferenced catalogs only after computing live references. Attachment deletion removes bytes when no remaining local reference exists. Confirm irreversible project deletion at the UI action, not every ordinary save. Do not claim deletion from exported files or OS/browser storage backups.
 
 ## 8. Failure semantics and gate
 
@@ -287,3 +288,7 @@ Adopted by [Dz-purchase-handoff](../design/DECISIONS.md). Live `DB_VERSION` is 4
 ## 19. z-location-search location log
 
 Adopted by [Dz-location-search](../design/DECISIONS.md). Live `DB_VERSION` is 5. The new store is `locationLogs`, keyed by the project id (`logId`). Row `schemaVersion` stays 1. The v4 to v5 upgrade writes `migration:4->5` and does not read or rewrite snapshots, inputs, owned containers, the life ledger, or the purchase ledger. A fresh database still records the earlier journals. Saves use the same revision CAS as the ledgers: `'0'` is the first save, and a stale expected revision returns a conflict and writes nothing. The worker call stays outside the transaction. A row whose `log.observations` is not an array is `record_corrupt` and is not rewritten empty. `deleteProject` removes that project's row in the project transaction. exportVersion 1 does not include it, and import does not copy it. Opening a plan or running a search does not write this store; only an observation Rust accepted with `changed: true` does.
+
+## 20. z-feedback-reorganize feedback log
+
+Adopted by [Dz-feedback-reorganize](../design/DECISIONS.md). Live `DB_VERSION` is 6. The new store is `feedbackLogs`, keyed by the project id (`logId`). Row `schemaVersion` stays 1. The v5 to v6 upgrade writes `migration:5->6` and does not read or rewrite snapshots, inputs, owned containers, the life ledger, the purchase ledger, or the location log. A fresh database still records the earlier journals. Saves use the same revision CAS as the other logs: `'0'` is the first save, and a stale expected revision returns a conflict and writes nothing. The worker call stays outside the transaction. A row whose `log.entries` or `log.withdrawnIds` is not an array is `record_corrupt` and is not rewritten empty. `deleteProject` removes that project's row in the project transaction. exportVersion 1 does not include it, and import does not copy it. Opening a plan, running a proposal, cancelling it, or adopting a draft does not write this store; only an entry or withdrawal Rust accepted with `changed: true` does. The store never holds a PlanSnapshot, an input fact, or a location.

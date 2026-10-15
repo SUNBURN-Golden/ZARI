@@ -1,0 +1,81 @@
+{
+  "caseId": "maintenance-no-mates",
+  "note": "C has no group mate, so there is nothing to bring closer.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "컵",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "접시",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-c",
+      "label": "수건",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "groups": [
+    [
+      "item-a",
+      "item-b"
+    ],
+    [
+      "item-c"
+    ]
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      0
+    ],
+    "item-c": [
+      150,
+      0
+    ],
+    "item-b": [
+      450,
+      300
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-c",
+      "kind": "maintenanceDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "noChange",
+    "evaluationsUsed": 0,
+    "moves": [],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "notApplicable",
+        "reasonCode": "no_group_mates"
+      }
+    ]
+  }
+}

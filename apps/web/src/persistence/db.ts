@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type {
   CatalogSnapshot,
   Diagnostic,
+  FeedbackLog,
   LayoutEditCommand,
   LocationLog,
   OwnedContainer,
@@ -25,12 +26,13 @@ export const DB_NAME = 'zari-local';
  * optional local photos. v3: z-inventory-lifecycle adds `inventoryLedgers`.
  * v4: z-purchase-handoff adds `purchaseHandoffs`.
  * v5: z-location-search adds `locationLogs`.
+ * v6: z-feedback-reorganize adds `feedbackLogs`.
  * Historical declarations stay so an older database upgrades in place; a
  * newer database opened by an older build is refused by IndexedDB itself
  * (downgrade protection). The upgrade writes a journal row and does not
  * read or rewrite snapshot, input, or owned-container bytes.
  */
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 export const SCHEMA_VERSION = 1;
 const MAX_REVISION = 18446744073709551615n;
 
@@ -137,6 +139,17 @@ export interface LocationLogRow {
   log: LocationLog;
   updatedAt: string;
 }
+/**
+ * Project-scoped use feedback. Not a PlanSnapshot, not an input fact, and not
+ * exportVersion 1; a recorded entry is a statement, never a decision.
+ */
+export interface FeedbackLogRow {
+  schemaVersion: number;
+  logId: string;
+  revision: string;
+  log: FeedbackLog;
+  updatedAt: string;
+}
 export interface OwnedContainerRow {
   schemaVersion: number;
   ownedContainerId: string;
@@ -216,6 +229,7 @@ export class ZariDb extends Dexie {
   inventoryLedgers!: Table<InventoryLedgerRow, string>;
   purchaseHandoffs!: Table<PurchaseHandoffRow, string>;
   locationLogs!: Table<LocationLogRow, string>;
+  feedbackLogs!: Table<FeedbackLogRow, string>;
   catalogs!: Table<CatalogRow, string>;
   actionProgress!: Table<ActionProgressRow, [string, string, string, string]>;
   attachments!: Table<AttachmentRow, string>;
@@ -342,6 +356,36 @@ export class ZariDb extends Dexie {
         await tx.table('metadata').put({
           schemaVersion: SCHEMA_VERSION,
           key: 'migration:4->5',
+          payload: journal,
+        });
+      });
+    this.version(6)
+      .stores({
+        projects: 'projectId, updatedAt, status',
+        inputs: '[projectId+inputRevision], projectId',
+        drafts: 'projectId',
+        snapshots: '[projectId+inputRevision+planSnapshotId], projectId, planSnapshotId',
+        ownedContainers: 'ownedContainerId, updatedAt',
+        catalogs: 'catalogDigest, catalogVersion, origin',
+        actionProgress: '[projectId+inputRevision+planSnapshotId+stepId], projectId',
+        attachments: 'attachmentId, projectId',
+        inventoryLedgers: 'ledgerId, updatedAt',
+        purchaseHandoffs: 'ledgerId, updatedAt',
+        locationLogs: 'logId, updatedAt',
+        feedbackLogs: 'logId, updatedAt',
+        metadata: 'key',
+      })
+      .upgrade(async (tx) => {
+        const journal: MigrationJournal = {
+          kind: 'migration',
+          fromVersion: 5,
+          toVersion: 6,
+          state: 'applied',
+          recordedAt: new Date().toISOString(),
+        };
+        await tx.table('metadata').put({
+          schemaVersion: SCHEMA_VERSION,
+          key: 'migration:5->6',
           payload: journal,
         });
       });
@@ -634,6 +678,26 @@ export function readLocationLogRow(value: unknown): LocationLogRow {
     !isCanonicalRevision(row.revision) ||
     !text(row.updatedAt) ||
     !isLocationLog(row.log)
+  )
+    throw new Error('record_corrupt');
+  return row;
+}
+function isFeedbackLog(value: unknown): value is FeedbackLog {
+  if (!value || typeof value !== 'object') return false;
+  const log = value as FeedbackLog;
+  return Array.isArray(log.entries) && Array.isArray(log.withdrawnIds);
+}
+export function readFeedbackLogRow(value: unknown): FeedbackLogRow {
+  const row = value as FeedbackLogRow;
+  checkSchemaVersion(row);
+  if (
+    !row ||
+    typeof row !== 'object' ||
+    row.schemaVersion !== SCHEMA_VERSION ||
+    !text(row.logId) ||
+    !isCanonicalRevision(row.revision) ||
+    !text(row.updatedAt) ||
+    !isFeedbackLog(row.log)
   )
     throw new Error('record_corrupt');
   return row;

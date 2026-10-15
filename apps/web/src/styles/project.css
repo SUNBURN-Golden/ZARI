@@ -1087,6 +1087,8 @@
 .inventory-panel select,
 .location-panel input,
 .location-panel select,
+.feedback-panel input,
+.feedback-panel select,
 .offer-quote input,
 .offer-quote select,
 .purchase-handoff input,
@@ -1103,6 +1105,7 @@
 }
 .inventory-panel .button,
 .location-panel .button,
+.feedback-panel .button,
 .offer-quote .button,
 .purchase-handoff .button {
   margin-top: var(--zari-space-2);
@@ -1136,6 +1139,9 @@
   .location-panel input,
   .location-panel select,
   .location-panel .button,
+  .feedback-panel input,
+  .feedback-panel select,
+  .feedback-panel .button,
   .offer-quote input,
   .offer-quote select,
   .offer-quote .button,
@@ -1158,6 +1164,11 @@
   .location-panel select,
   .location-panel .button,
   .location-panel .location-status,
+  .feedback-panel,
+  .feedback-panel input,
+  .feedback-panel select,
+  .feedback-panel .button,
+  .feedback-panel .feedback-badge,
   .offer-quote,
   .offer-quote input,
   .offer-quote select,
@@ -1291,4 +1302,66 @@
   font-size: var(--zari-text-sm);
   line-height: var(--zari-line-label);
   white-space: nowrap;
+}
+
+.feedback-panel form,
+.feedback-panel label {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
+.feedback-panel .feedback-entry-head,
+.feedback-panel .feedback-entry-body {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.feedback-panel .feedback-entry-body {
+  margin-top: var(--zari-space-1);
+}
+.feedback-panel .feedback-badge {
+  display: inline-block;
+  padding: 0 var(--zari-space-2);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+}
+.feedback-panel .plan-list li {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--zari-space-1);
+}
+.feedback-panel .feedback-causes,
+.feedback-panel .feedback-moves,
+.feedback-panel .feedback-checks,
+.feedback-panel .feedback-preserved {
+  display: grid;
+  gap: var(--zari-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 100%;
+}
+.feedback-panel .feedback-causes li,
+.feedback-panel .feedback-moves li,
+.feedback-panel .feedback-checks li,
+.feedback-panel .feedback-preserved li,
+.feedback-panel .feedback-result p {
+  margin: 0;
+  color: var(--zari-text-secondary);
+  overflow-wrap: anywhere;
+}
+.feedback-panel .feedback-causes strong {
+  color: var(--zari-text-primary);
+}
+.feedback-panel .feedback-subhead {
+  margin: var(--zari-space-3) 0 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+.feedback-panel .feedback-result {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
 }

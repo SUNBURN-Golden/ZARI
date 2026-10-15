@@ -1133,6 +1133,46 @@
       "title": "CatalogSourceKind",
       "type": "string"
     },
+    "CauseOutcome": {
+      "oneOf": [
+        {
+          "const": "applied",
+          "description": "A validated exchange was applied for this entry.",
+          "type": "string"
+        },
+        {
+          "const": "noBetterSlot",
+          "description": "No exchange improves the entry's rule without hurting the other.",
+          "type": "string"
+        },
+        {
+          "const": "blocked",
+          "description": "Exchanges existed but none passed the validator or kept every check.",
+          "type": "string"
+        },
+        {
+          "const": "notApplicable",
+          "description": "The rule cannot weigh this entry; `reasonCode` says what is missing.",
+          "type": "string"
+        },
+        {
+          "const": "withdrawn",
+          "description": "The user withdrew the entry.",
+          "type": "string"
+        },
+        {
+          "const": "stale",
+          "description": "The entry was recorded against another plan.",
+          "type": "string"
+        },
+        {
+          "const": "budgetExhausted",
+          "description": "The evaluation budget ran out before this entry was settled.",
+          "type": "string"
+        }
+      ],
+      "title": "CauseOutcome"
+    },
     "CavityClearancePolicy": {
       "additionalProperties": false,
       "properties": {
@@ -1236,6 +1276,27 @@
       ],
       "title": "CheckBasis",
       "type": "string"
+    },
+    "CheckChange": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "before": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "checkId": {
+          "$ref": "#/definitions/Id"
+        }
+      },
+      "required": [
+        "checkId",
+        "before",
+        "after"
+      ],
+      "title": "CheckChange",
+      "type": "object"
     },
     "CheckKind": {
       "enum": [
@@ -1614,6 +1675,36 @@
         },
         {
           "additionalProperties": false,
+          "description": "Explainable next-arrangement draft from recorded use feedback. The\nactivated project is the input. Does not search, adopt a plan, change\nan input fact, discard an item, or buy anything. The base must be the\nadopted plan for the activated input.",
+          "properties": {
+            "baseSnapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            },
+            "budget": {
+              "$ref": "#/definitions/ProposalBudget"
+            },
+            "kind": {
+              "const": "proposeFeedbackReorganize",
+              "type": "string"
+            },
+            "locations": {
+              "$ref": "#/definitions/LocationLog"
+            },
+            "log": {
+              "$ref": "#/definitions/FeedbackLog"
+            }
+          },
+          "required": [
+            "kind",
+            "baseSnapshot",
+            "log",
+            "locations",
+            "budget"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "One authoritative spatial projection over an integrity-validated\nsource (SPATIAL_VIEW_CONTRACT §6). Stateless like `verifyRecord`: it\nnever mutates the active context, search, budget or any source bytes.",
           "properties": {
             "kind": {
@@ -1770,6 +1861,43 @@
             },
             "log": {
               "$ref": "#/definitions/LocationLog"
+            },
+            "snapshot": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PlanSnapshot"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "log",
+            "input",
+            "snapshot",
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Stateless feedback-log step. Does not read or write a PlanSnapshot.\n`snapshot` is the adopted plan an entry binds to; nothing here changes\nthe plan or the input.",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/FeedbackAction"
+            },
+            "input": {
+              "$ref": "#/definitions/ProjectInput"
+            },
+            "kind": {
+              "const": "applyFeedbackLog",
+              "type": "string"
+            },
+            "log": {
+              "$ref": "#/definitions/FeedbackLog"
             },
             "snapshot": {
               "anyOf": [
@@ -3552,6 +3680,24 @@
         },
         {
           "additionalProperties": false,
+          "description": "Result of `proposeFeedbackReorganize`. The published snapshot, when\npresent, is a draft. `autoDiscard` and `autoPurchase` are false.",
+          "properties": {
+            "kind": {
+              "const": "feedbackReorganizeProposed",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/ProposalReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "description": "Result of `projectSpatialView`: the additive ephemeral read model over\nthe validated source. ProjectionVersion=1 versions this DTO\nindependently of the persisted schema/canonical versions.",
           "properties": {
             "kind": {
@@ -3650,6 +3796,24 @@
             },
             "reply": {
               "$ref": "#/definitions/LocationLogReply"
+            }
+          },
+          "required": [
+            "kind",
+            "reply"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Result of `applyFeedbackLog`. A recorded entry is not a decision.",
+          "properties": {
+            "kind": {
+              "const": "feedbackLogApplied",
+              "type": "string"
+            },
+            "reply": {
+              "$ref": "#/definitions/FeedbackLogReply"
             }
           },
           "required": [
@@ -5939,6 +6103,295 @@
         }
       ],
       "title": "FactFor_UnitCount"
+    },
+    "FeedbackAction": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "entry": {
+              "$ref": "#/definitions/FeedbackEntry"
+            },
+            "kind": {
+              "const": "record",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "entry"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "feedbackId": {
+              "$ref": "#/definitions/Id"
+            },
+            "kind": {
+              "const": "withdraw",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "feedbackId"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "FeedbackAction"
+    },
+    "FeedbackCause": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "evaluations": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "feedbackId": {
+          "$ref": "#/definitions/Id"
+        },
+        "focusPlacementIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "frequencyEffective": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Frequency"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What the rules used: the latest live frequency feedback, else the\ninput fact. `null` is unknown."
+        },
+        "frequencyInput": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Frequency"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The input fact. `null` is unknown."
+        },
+        "itemId": {
+          "$ref": "#/definitions/Id"
+        },
+        "kind": {
+          "$ref": "#/definitions/FeedbackKind"
+        },
+        "measureAfter": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "measureBefore": {
+          "description": "The rule's measure for the focus placement's sibling set before and\nafter the exchange. Both are `null` when the rule did not run.",
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ObservedClaim"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "$ref": "#/definitions/CauseOutcome"
+        },
+        "partnerPlacementId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "ruleId": {
+          "type": "string"
+        },
+        "swap": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SwapKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unknownSiblings": {
+          "description": "Sibling placements whose frequency is unknown. They were not compared.",
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "feedbackId",
+        "kind",
+        "itemId",
+        "ruleId",
+        "outcome",
+        "reasonCode",
+        "frequencyInput",
+        "frequencyEffective",
+        "focusPlacementIds",
+        "partnerPlacementId",
+        "swap",
+        "measureBefore",
+        "measureAfter",
+        "unknownSiblings",
+        "blockers",
+        "evaluations",
+        "observed"
+      ],
+      "title": "FeedbackCause",
+      "type": "object"
+    },
+    "FeedbackEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "frequency": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Frequency"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Required for `frequencyChange`; forbidden otherwise."
+        },
+        "id": {
+          "$ref": "#/definitions/Id"
+        },
+        "itemId": {
+          "$ref": "#/definitions/Id"
+        },
+        "kind": {
+          "$ref": "#/definitions/FeedbackKind"
+        },
+        "note": {
+          "description": "A short note in the user's words. It explains nothing to a rule.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "planSnapshotId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The adopted plan the entry was recorded against. Rust stamps it; the\nwire value is never trusted."
+        }
+      },
+      "required": [
+        "id",
+        "itemId",
+        "kind",
+        "frequency",
+        "note",
+        "planSnapshotId"
+      ],
+      "title": "FeedbackEntry",
+      "type": "object"
+    },
+    "FeedbackKind": {
+      "oneOf": [
+        {
+          "const": "accessDifficulty",
+          "description": "The user says the item is hard to reach where the adopted plan put it.",
+          "type": "string"
+        },
+        {
+          "const": "frequencyChange",
+          "description": "The user says the item is used more or less often than recorded.",
+          "type": "string"
+        },
+        {
+          "const": "maintenanceDifficulty",
+          "description": "The user says the place is hard to keep tidy.",
+          "type": "string"
+        }
+      ],
+      "title": "FeedbackKind"
+    },
+    "FeedbackLog": {
+      "additionalProperties": false,
+      "description": "Append-only per-project feedback record. Not a PlanSnapshot. A\nwithdrawal is a separate id list; no entry is edited or removed.",
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/definitions/FeedbackEntry"
+          },
+          "type": "array"
+        },
+        "withdrawnIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "entries",
+        "withdrawnIds"
+      ],
+      "title": "FeedbackLog",
+      "type": "object"
+    },
+    "FeedbackLogReply": {
+      "additionalProperties": false,
+      "properties": {
+        "changed": {
+          "type": "boolean"
+        },
+        "log": {
+          "$ref": "#/definitions/FeedbackLog"
+        }
+      },
+      "required": [
+        "log",
+        "changed"
+      ],
+      "title": "FeedbackLogReply",
+      "type": "object"
     },
     "FieldFormatRequest": {
       "additionalProperties": false,
@@ -8365,6 +8818,27 @@
       ],
       "title": "ObservationKind"
     },
+    "ObservedClaim": {
+      "additionalProperties": false,
+      "description": "The latest location claim the user recorded for the item. Context only.",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/ObservationKind"
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "location"
+      ],
+      "title": "ObservedClaim",
+      "type": "object"
+    },
     "ObservedRef": {
       "additionalProperties": false,
       "description": "The latest user-recorded location claim covering the unit.",
@@ -10068,6 +10542,36 @@
       "title": "PrepLine",
       "type": "object"
     },
+    "Preserved": {
+      "additionalProperties": false,
+      "description": "What the draft left exactly as the adopted plan had it. Rust compares\nthe two snapshots; none of these is a claim.",
+      "properties": {
+        "assignments": {
+          "type": "boolean"
+        },
+        "bom": {
+          "type": "boolean"
+        },
+        "costSummary": {
+          "type": "boolean"
+        },
+        "purchaseSelections": {
+          "type": "boolean"
+        },
+        "unassigned": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "assignments",
+        "unassigned",
+        "purchaseSelections",
+        "bom",
+        "costSummary"
+      ],
+      "title": "Preserved",
+      "type": "object"
+    },
     "PreviewShipping": {
       "oneOf": [
         {
@@ -10512,6 +11016,164 @@
         }
       ],
       "title": "ProjectionGeometryFor_ViewSegmentMm"
+    },
+    "ProposalBudget": {
+      "additionalProperties": false,
+      "description": "How many candidate layouts one proposal may send through the validator.",
+      "properties": {
+        "maxEvaluations": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "maxEvaluations"
+      ],
+      "title": "ProposalBudget",
+      "type": "object"
+    },
+    "ProposalOutcome": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "published",
+              "type": "string"
+            },
+            "snapshot": {
+              "$ref": "#/definitions/PlanSnapshot"
+            }
+          },
+          "required": [
+            "kind",
+            "snapshot"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "noChange",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "ProposalOutcome"
+    },
+    "ProposalReply": {
+      "additionalProperties": false,
+      "properties": {
+        "autoDiscard": {
+          "description": "Always false. Feedback never decides that an item is discarded.",
+          "type": "boolean"
+        },
+        "autoPurchase": {
+          "description": "Always false. Feedback never decides that something is bought.",
+          "type": "boolean"
+        },
+        "baseSnapshotId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "budgetExhausted": {
+          "type": "boolean"
+        },
+        "causes": {
+          "items": {
+            "$ref": "#/definitions/FeedbackCause"
+          },
+          "type": "array"
+        },
+        "checkChanges": {
+          "items": {
+            "$ref": "#/definitions/CheckChange"
+          },
+          "type": "array"
+        },
+        "evaluationsUsed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "moves": {
+          "items": {
+            "$ref": "#/definitions/ProposedMove"
+          },
+          "type": "array"
+        },
+        "outcome": {
+          "$ref": "#/definitions/ProposalOutcome"
+        },
+        "preserved": {
+          "$ref": "#/definitions/Preserved"
+        },
+        "readModelVersion": {
+          "type": "string"
+        },
+        "reproduction": {
+          "$ref": "#/definitions/Reproduction"
+        },
+        "reusedPass": {
+          "description": "Always false. The draft's checks are a fresh Rust evaluation.",
+          "type": "boolean"
+        },
+        "ruleSetVersion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "readModelVersion",
+        "ruleSetVersion",
+        "baseSnapshotId",
+        "outcome",
+        "causes",
+        "moves",
+        "checkChanges",
+        "preserved",
+        "reusedPass",
+        "autoDiscard",
+        "autoPurchase",
+        "evaluationsUsed",
+        "budgetExhausted",
+        "reproduction"
+      ],
+      "title": "ProposalReply",
+      "type": "object"
+    },
+    "ProposedMove": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "$ref": "#/definitions/Vec3Mm"
+        },
+        "itemIds": {
+          "items": {
+            "$ref": "#/definitions/Id"
+          },
+          "type": "array"
+        },
+        "placementId": {
+          "$ref": "#/definitions/Id"
+        },
+        "to": {
+          "$ref": "#/definitions/Vec3Mm"
+        }
+      },
+      "required": [
+        "placementId",
+        "itemIds",
+        "from",
+        "to"
+      ],
+      "title": "ProposedMove",
+      "type": "object"
     },
     "ProtocolRequest": {
       "additionalProperties": false,
@@ -13026,6 +13688,67 @@
       "title": "RemovedPlacement",
       "type": "object"
     },
+    "Reproduction": {
+      "additionalProperties": false,
+      "properties": {
+        "baseSnapshotId": {
+          "$ref": "#/definitions/Digest"
+        },
+        "budget": {
+          "$ref": "#/definitions/ProposalBudget"
+        },
+        "catalogDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "draftSnapshotId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "feedbackDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "inputDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "locationDigest": {
+          "$ref": "#/definitions/Digest"
+        },
+        "readModelVersion": {
+          "type": "string"
+        },
+        "requestDigest": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Digest"
+            }
+          ],
+          "description": "One digest over every field above. Equal digests mean the same\nrequest; the same request yields the same draft."
+        },
+        "ruleSetVersion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "readModelVersion",
+        "ruleSetVersion",
+        "inputDigest",
+        "catalogDigest",
+        "baseSnapshotId",
+        "feedbackDigest",
+        "locationDigest",
+        "budget",
+        "requestDigest",
+        "draftSnapshotId"
+      ],
+      "title": "Reproduction",
+      "type": "object"
+    },
     "RequestMeta": {
       "additionalProperties": false,
       "properties": {
@@ -15027,6 +15750,21 @@
       ],
       "title": "SupportSurface",
       "type": "object"
+    },
+    "SwapKind": {
+      "oneOf": [
+        {
+          "const": "depthSwap",
+          "description": "Two placements trade only their distance from the opening.",
+          "type": "string"
+        },
+        {
+          "const": "slotSwap",
+          "description": "Two placements trade their whole floor position.",
+          "type": "string"
+        }
+      ],
+      "title": "SwapKind"
     },
     "TaxStatus": {
       "enum": [

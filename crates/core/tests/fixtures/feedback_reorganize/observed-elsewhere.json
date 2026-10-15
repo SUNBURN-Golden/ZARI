@@ -1,0 +1,83 @@
+{
+  "caseId": "observed-elsewhere",
+  "note": "The user also recorded that A now lives somewhere else. That is context and never an actual location change.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      200
+    ],
+    "item-b": [
+      310,
+      0
+    ]
+  },
+  "locations": [
+    {
+      "id": "obs-1",
+      "itemId": "item-a",
+      "kind": "relocate",
+      "label": "겨울 코트",
+      "location": "현관 옷걸이"
+    }
+  ],
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "published",
+    "moves": [
+      {
+        "placementId": "p-item-a",
+        "to": [
+          5,
+          0
+        ]
+      },
+      {
+        "placementId": "p-item-b",
+        "to": [
+          310,
+          200
+        ]
+      }
+    ],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "applied",
+        "reasonCode": "swapped_depth",
+        "observedKind": "relocate",
+        "observedLocation": "현관 옷걸이"
+      }
+    ]
+  }
+}

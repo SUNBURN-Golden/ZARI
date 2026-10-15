@@ -152,6 +152,8 @@ touch target 48px 상당, 기본 control 최소44px. 작은 실물의 hit region
 
 **z-location-search만.** 이 문장은 이 노드의 구현 노트다. 프로젝트 화면의 검색 패널은 이름·별칭·분류·수량·위치로 물건을 찾고, 행은 계획 위치와 사용자가 관측으로 기록한 실제 위치를 나란히 보인다. 계획 위치는 `plannedOnly`로 읽히고 실제 위치처럼 쓰지 않는다. 관측 기록은 확인·다른 곳 이동·재정리·분실·별칭이다. 새 색 쌍은 없고 forced-colors·터치 높이는 기존 토큰이다. 기록은 [Dz-location-search](DECISIONS.md)와 [docs/adr/SP-z-location-search.md](../docs/adr/SP-z-location-search.md)이다.
 
+**z-feedback-reorganize만.** 이 문장은 이 노드의 구현 노트다. 계획 화면의 피드백 패널은 접근 불편·사용 빈도 변경·정리 유지 어려움을 기록으로 남기고, Rust가 규칙별 원인과 위치 맞바꿈 초안을 낸다. 초안은 채택하기 전까지 대안이고, 배정·구매·BOM·비용은 채택한 계획과 같다. 결과는 현재 위치와 제안 위치를 mm로 나란히 보이며 색 없이 글자로 읽힌다. 새 색 쌍은 없고 forced-colors·터치 높이는 기존 토큰이다. 기록은 [Dz-feedback-reorganize](DECISIONS.md)와 [docs/adr/SP-z-feedback-reorganize.md](../docs/adr/SP-z-feedback-reorganize.md)이다.
+
 ## 9. draft capture 요구
 
 SP-007은 실제 구현 HEAD/fixture/environment와 다음 capture를 등록한다: 측정 focus known/unknown/invalid, 선택 수납함 outer/inner, 접근 unknown, drag 검사 전/거절/검증 후 저장 실패, 3D cutaway와 exact child selection, WebGL fallback, BOM 다중 대상, 현재 step/prerequisite blocked/progress unavailable/stale/타 탭 conflict. wide1440와 compact390, 200% 확대와 reduced-motion/forced-colors 근거 포함. 비동기 state는 test hook으로 고정하되 Rust 평가를 mock하여 통과 화면을 꾸미지 않는다.

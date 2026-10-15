@@ -1427,6 +1427,13 @@ export type Command =
       sourceSnapshot: PlanSnapshot | null;
     }
   | {
+      baseSnapshot: PlanSnapshot;
+      budget: ProposalBudget;
+      kind: 'proposeFeedbackReorganize';
+      locations: LocationLog;
+      log: FeedbackLog;
+    }
+  | {
       kind: 'projectSpatialView';
       source: SpatialViewSource;
     }
@@ -1459,6 +1466,13 @@ export type Command =
       input: ProjectInput;
       kind: 'applyLocationLog';
       log: LocationLog;
+      snapshot: PlanSnapshot | null;
+    }
+  | {
+      action: FeedbackAction;
+      input: ProjectInput;
+      kind: 'applyFeedbackLog';
+      log: FeedbackLog;
       snapshot: PlanSnapshot | null;
     }
   | {
@@ -1844,6 +1858,16 @@ export type RawCatalogFieldValueDto =
       text: string;
     };
 /**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ObservationKind".
+ */
+export type ObservationKind = 'confirm' | 'relocate' | 'reorganize' | 'lost' | 'alias';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FeedbackKind".
+ */
+export type FeedbackKind = 'accessDifficulty' | 'frequencyChange' | 'maintenanceDifficulty';
+/**
  * The two legal projection sources. Both cross the same boundary validation
  * as external JSON; label/size-only payloads are never trusted for drawing.
  *
@@ -1865,11 +1889,6 @@ export type SpatialViewSource =
  * via the `definition` "ProgressMark".
  */
 export type ProgressMark = 'done' | 'todo';
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "ObservationKind".
- */
-export type ObservationKind = 'confirm' | 'relocate' | 'reorganize' | 'lost' | 'alias';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "InventoryAction".
@@ -1915,6 +1934,19 @@ export type LocationAction = {
   kind: 'record';
   observation: LocationObservation;
 };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FeedbackAction".
+ */
+export type FeedbackAction =
+  | {
+      entry: FeedbackEntry;
+      kind: 'record';
+    }
+  | {
+      feedbackId: Id;
+      kind: 'withdraw';
+    };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "CatalogReviewAction".
@@ -2121,6 +2153,10 @@ export type Event =
       reply: SearchDiagnosticReply;
     }
   | {
+      kind: 'feedbackReorganizeProposed';
+      reply: ProposalReply;
+    }
+  | {
       kind: 'spatialViewProjected';
       projection: SpatialProjection;
     }
@@ -2143,6 +2179,10 @@ export type Event =
   | {
       kind: 'locationLogApplied';
       reply: LocationLogReply;
+    }
+  | {
+      kind: 'feedbackLogApplied';
+      reply: FeedbackLogReply;
     }
   | {
       kind: 'catalogImportReviewed';
@@ -2307,6 +2347,35 @@ export type DiagnosticClass =
  */
 export type SupportStatus =
   'finiteNotComplete' | 'outsideModel' | 'inScope' | 'notClaimed' | 'exhausted';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CauseOutcome".
+ */
+export type CauseOutcome =
+  | 'applied'
+  | 'noBetterSlot'
+  | 'blocked'
+  | 'notApplicable'
+  | 'withdrawn'
+  | 'stale'
+  | 'budgetExhausted';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SwapKind".
+ */
+export type SwapKind = 'depthSwap' | 'slotSwap';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProposalOutcome".
+ */
+export type ProposalOutcome =
+  | {
+      kind: 'published';
+      snapshot: PlanSnapshot;
+    }
+  | {
+      kind: 'noChange';
+    };
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "DimensionFrame".
@@ -4040,12 +4109,13 @@ export interface CandidateLayout {
   unassigned: Unassigned[];
 }
 /**
+ * How many candidate layouts one proposal may send through the validator.
+ *
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "ActionProgressInput".
+ * via the `definition` "ProposalBudget".
  */
-export interface ActionProgressInput {
-  status: ProgressMark;
-  stepId: Id;
+export interface ProposalBudget {
+  maxEvaluations: number;
 }
 /**
  * Append-only per-project location record. Not a PlanSnapshot.
@@ -4082,6 +4152,47 @@ export interface LocationObservation {
    * Empty applies to every unit. Non-empty lists exact unit ordinals.
    */
   unitOrdinals: number[];
+}
+/**
+ * Append-only per-project feedback record. Not a PlanSnapshot. A
+ * withdrawal is a separate id list; no entry is edited or removed.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FeedbackLog".
+ */
+export interface FeedbackLog {
+  entries: FeedbackEntry[];
+  withdrawnIds: Id[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FeedbackEntry".
+ */
+export interface FeedbackEntry {
+  /**
+   * Required for `frequencyChange`; forbidden otherwise.
+   */
+  frequency: Frequency | null;
+  id: Id;
+  itemId: Id;
+  kind: FeedbackKind;
+  /**
+   * A short note in the user's words. It explains nothing to a rule.
+   */
+  note: string | null;
+  /**
+   * The adopted plan the entry was recorded against. Rust stamps it; the
+   * wire value is never trusted.
+   */
+  planSnapshotId: Digest | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ActionProgressInput".
+ */
+export interface ActionProgressInput {
+  status: ProgressMark;
+  stepId: Id;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -4699,6 +4810,135 @@ export interface SupportRangeRow {
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProposalReply".
+ */
+export interface ProposalReply {
+  /**
+   * Always false. Feedback never decides that an item is discarded.
+   */
+  autoDiscard: boolean;
+  /**
+   * Always false. Feedback never decides that something is bought.
+   */
+  autoPurchase: boolean;
+  baseSnapshotId: Digest;
+  budgetExhausted: boolean;
+  causes: FeedbackCause[];
+  checkChanges: CheckChange[];
+  evaluationsUsed: number;
+  moves: ProposedMove[];
+  outcome: ProposalOutcome;
+  preserved: Preserved;
+  readModelVersion: string;
+  reproduction: Reproduction;
+  /**
+   * Always false. The draft's checks are a fresh Rust evaluation.
+   */
+  reusedPass: boolean;
+  ruleSetVersion: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FeedbackCause".
+ */
+export interface FeedbackCause {
+  blockers: string[];
+  evaluations: number;
+  feedbackId: Id;
+  focusPlacementIds: Id[];
+  /**
+   * What the rules used: the latest live frequency feedback, else the
+   * input fact. `null` is unknown.
+   */
+  frequencyEffective: Frequency | null;
+  /**
+   * The input fact. `null` is unknown.
+   */
+  frequencyInput: Frequency | null;
+  itemId: Id;
+  kind: FeedbackKind;
+  measureAfter: number | null;
+  /**
+   * The rule's measure for the focus placement's sibling set before and
+   * after the exchange. Both are `null` when the rule did not run.
+   */
+  measureBefore: number | null;
+  observed: ObservedClaim | null;
+  outcome: CauseOutcome;
+  partnerPlacementId: Id | null;
+  reasonCode: string;
+  ruleId: string;
+  swap: SwapKind | null;
+  /**
+   * Sibling placements whose frequency is unknown. They were not compared.
+   */
+  unknownSiblings: number;
+}
+/**
+ * The latest location claim the user recorded for the item. Context only.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ObservedClaim".
+ */
+export interface ObservedClaim {
+  kind: ObservationKind;
+  location: string | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CheckChange".
+ */
+export interface CheckChange {
+  after: CheckStatus;
+  before: CheckStatus;
+  checkId: Id;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "ProposedMove".
+ */
+export interface ProposedMove {
+  from: Vec3Mm;
+  itemIds: Id[];
+  placementId: Id;
+  to: Vec3Mm;
+}
+/**
+ * What the draft left exactly as the adopted plan had it. Rust compares
+ * the two snapshots; none of these is a claim.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "Preserved".
+ */
+export interface Preserved {
+  assignments: boolean;
+  bom: boolean;
+  costSummary: boolean;
+  purchaseSelections: boolean;
+  unassigned: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "Reproduction".
+ */
+export interface Reproduction {
+  baseSnapshotId: Digest;
+  budget: ProposalBudget;
+  catalogDigest: Digest;
+  draftSnapshotId: Digest | null;
+  feedbackDigest: Digest;
+  inputDigest: Digest;
+  locationDigest: Digest;
+  readModelVersion: string;
+  /**
+   * One digest over every field above. Equal digests mean the same
+   * request; the same request yields the same draft.
+   */
+  requestDigest: Digest;
+  ruleSetVersion: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "SpatialProjection".
  */
 export interface SpatialProjection {
@@ -4932,6 +5172,14 @@ export interface QuantityLabel {
 export interface LocationLogReply {
   changed: boolean;
   log: LocationLog;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "FeedbackLogReply".
+ */
+export interface FeedbackLogReply {
+  changed: boolean;
+  log: FeedbackLog;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

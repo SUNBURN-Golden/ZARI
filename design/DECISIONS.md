@@ -328,6 +328,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 두 명령, 검색 패널, `locationLogs` 저장소를 걷어 낸다. 이미 저장된 스냅샷·입력·원장 바이트는 이 결정으로 다시 쓰지 않는다.
 
+## Dz-feedback-reorganize — 사용 피드백에서 다음 정리로 이어지는 루프 / 채택
+
+- ID: Dz-feedback-reorganize
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-feedback-reorganize만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 채택한 계획으로 살면서 알게 된 접근 불편·빈도 변경·정리 유지 어려움을 남길 자리가 없다. 피드백을 곧바로 결정으로 읽으면 물건 폐기·구매가 자동 확정되거나 채택한 계획과 실제 위치가 몰래 바뀐다. 제안은 규칙으로 설명되고 같은 입력·규칙·예산에서 재현되어야 한다.
+- 변경 대상: [docs/adr/SP-z-feedback-reorganize.md](../docs/adr/SP-z-feedback-reorganize.md), `crates/core/src/feedback_reorganize.rs`와 `applyFeedbackLog`·`proposeFeedbackReorganize` 명령, Dexie `feedbackLogs` 저장소(live `DB_VERSION` 6), `features/feedback`의 패널과 PlanScreen·session의 초안 흐름, `crates/core/tests/feedback_reorganize.rs`와 `crates/core/tests/fixtures/feedback_reorganize`의 시나리오·parity fixture. `BUILD_ID` `zari-domain-7`, `ruleVersion` `zari-domain-v2`, schema 1, canonical 1, protocol 1, exportVersion 1, 문서 `dbVersion` 2, 기존 fixture 124건의 바이트와 manifest 합계는 그대로다.
+- 검토한 대안: (A) 프로젝트별 `FeedbackLog`를 덧붙이고, Rust가 채택한 계획의 최상위 배치 맞바꿈 후보를 기존 `evaluate_candidate`로 검증해 초안과 규칙별 원인을 낸다. (B) 피드백을 `ProjectInput`의 빈도 사실에 자동 반영하고 전체 탐색을 다시 돌린다. (C) 피드백이 쌓이면 안 쓰는 물건의 폐기·구매를 추천해 확정한다.
+- 선택: A. B는 입력 사실을 사용자 확인 없이 바꾸고 탐색 엔진을 다른 입력으로 활성화해야 한다. C는 피드백만으로 폐기·구매를 결정한다.
+- 조건: 기록은 채택한 계획에 묶이고 Rust가 계획 id를 찍는다. 빈도를 모르면 모르는 채로 두고 비교·이동하지 않는다. 후보는 같은 검증기를 지나고 채택한 계획보다 어느 검사도 나빠지지 않아야 하며 배정·미배정·구매·BOM·비용은 그대로다. `autoDiscard`·`autoPurchase`는 항상 false다. 취소와 늦은 응답은 채택한 계획과 위치 기록을 바꾸지 않는다. 초안은 사용자가 채택하기 전까지 대안일 뿐이다. 위치 관측은 맥락이고 고치지 않는다. 같은 요청 digest는 같은 초안이다. 프로젝트 삭제는 `feedbackLogs` 행을 지운다. 새 색 쌍은 없고 기존 패널 토큰을 쓴다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 기록·제안은 폼 컨트롤이고 Enter로 실행한다. 결과 상태는 글자로 읽히고(`role="status"`·`alert`) 원인은 색 없이 결과 글자를 함께 쓴다. 390px에서 페이지를 넓히지 않고 forced-colors는 기존 Canvas/CanvasText다. 후보는 예산(최대 128)에서 멈춘다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 두 명령, 피드백 패널, `feedbackLogs` 저장소를 걷어 낸다. 이미 저장된 스냅샷·입력·원장·위치 기록 바이트는 이 결정으로 다시 쓰지 않는다.
+
 ## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
 
 - ID: D-audit-01

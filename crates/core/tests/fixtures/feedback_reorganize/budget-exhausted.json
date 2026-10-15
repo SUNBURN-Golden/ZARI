@@ -1,0 +1,74 @@
+{
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": "rare",
+      "size": [
+        100,
+        200,
+        50
+      ]
+    },
+    {
+      "id": "item-c",
+      "label": "박스",
+      "frequency": "rare",
+      "size": [
+        100,
+        200,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      210
+    ],
+    "item-b": [
+      5,
+      0
+    ],
+    "item-c": [
+      300,
+      0
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    }
+  ],
+  "caseId": "budget-exhausted",
+  "note": "Three exchanges exist and all are refused. With a budget of two the third is never tried.",
+  "budget": 2,
+  "expect": {
+    "outcome": "noChange",
+    "evaluationsUsed": 2,
+    "budgetExhausted": true,
+    "moves": [],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "budgetExhausted",
+        "reasonCode": "budget_exhausted",
+        "evaluations": 2
+      }
+    ]
+  }
+}

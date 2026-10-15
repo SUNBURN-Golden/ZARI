@@ -1,0 +1,88 @@
+{
+  "caseId": "unknown-sibling",
+  "note": "B's frequency is unknown, so A never swaps with B; C, rare, is the only partner.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "겨울 코트",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "서류",
+      "frequency": null,
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-c",
+      "label": "박스",
+      "frequency": "rare",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      300
+    ],
+    "item-b": [
+      310,
+      0
+    ],
+    "item-c": [
+      155,
+      150
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-a",
+      "kind": "accessDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "published",
+    "moves": [
+      {
+        "placementId": "p-item-a",
+        "to": [
+          5,
+          150
+        ]
+      },
+      {
+        "placementId": "p-item-c",
+        "to": [
+          155,
+          300
+        ]
+      }
+    ],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "applied",
+        "reasonCode": "swapped_depth",
+        "partner": "p-item-c",
+        "unknownSiblings": 1
+      }
+    ]
+  }
+}

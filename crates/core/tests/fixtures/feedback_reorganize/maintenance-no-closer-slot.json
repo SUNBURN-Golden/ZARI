@@ -1,0 +1,83 @@
+{
+  "caseId": "maintenance-no-closer-slot",
+  "note": "A and B already sit side by side. Swapping B with C would only push them apart.",
+  "items": [
+    {
+      "id": "item-a",
+      "label": "컵",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-b",
+      "label": "접시",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    },
+    {
+      "id": "item-c",
+      "label": "수건",
+      "frequency": "weekly",
+      "size": [
+        100,
+        100,
+        50
+      ]
+    }
+  ],
+  "groups": [
+    [
+      "item-a",
+      "item-b"
+    ],
+    [
+      "item-c"
+    ]
+  ],
+  "placements": {
+    "item-a": [
+      5,
+      0
+    ],
+    "item-b": [
+      110,
+      0
+    ],
+    "item-c": [
+      215,
+      0
+    ]
+  },
+  "actions": [
+    {
+      "op": "record",
+      "id": "fb-1",
+      "itemId": "item-b",
+      "kind": "maintenanceDifficulty",
+      "expectCode": null
+    }
+  ],
+  "budget": 16,
+  "expect": {
+    "outcome": "noChange",
+    "evaluationsUsed": 0,
+    "moves": [],
+    "causes": [
+      {
+        "feedbackId": "fb-1",
+        "outcome": "noBetterSlot",
+        "reasonCode": "no_closer_slot",
+        "measureBefore": 105,
+        "measureAfter": 105
+      }
+    ]
+  }
+}
