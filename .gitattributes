@@ -6,3 +6,5 @@
 docs/MASTER_PROMPT_KO.md -text
 docs/RUST_ADDENDUM_KO.md -text
 SOURCE_MANIFEST.json -text
+# Print-share export fixtures are compared byte for byte with generated output.
+apps/web/tests/fixtures/print-share/** -text
