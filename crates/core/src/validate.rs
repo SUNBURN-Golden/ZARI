@@ -11,7 +11,6 @@ use crate::plan::*;
 use crate::scalars::*;
 use crate::strategy::StrategyDecision;
 
-use serde::Serialize;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -100,82 +99,90 @@ fn reject_not_applicable(
     path: &str,
     allowed_prefixes: &[&str],
 ) {
+    reject_not_applicable_at(diagnostics, value, &mut path.to_owned(), allowed_prefixes);
+}
+/// Run `visit` with `.segment` appended to the shared path buffer. The buffer
+/// is restored afterwards, so a deep value allocates one path string instead
+/// of one per node. Diagnostic paths and visiting order are unchanged.
+fn with_segment(
+    path: &mut String,
+    segment: &dyn std::fmt::Display,
+    visit: impl FnOnce(&mut String),
+) {
+    use std::fmt::Write;
+    let restore = path.len();
+    path.push('.');
+    write!(path, "{segment}").expect("writing to a String cannot fail");
+    visit(path);
+    path.truncate(restore);
+}
+fn reject_not_applicable_at(
+    diagnostics: &mut Vec<Diagnostic>,
+    value: &Value,
+    path: &mut String,
+    allowed_prefixes: &[&str],
+) {
     if allowed_prefixes.iter().any(|p| path.starts_with(p)) {
         return;
     }
     match value {
         Value::Object(map) => {
             if map.get("state").and_then(Value::as_str) == Some("notApplicable") {
-                err(diagnostics, path.to_owned(), "not_applicable_not_allowed");
+                err(diagnostics, path.clone(), "not_applicable_not_allowed");
                 return;
             }
             for (key, child) in map {
-                reject_not_applicable(
-                    diagnostics,
-                    child,
-                    &format!("{path}.{key}"),
-                    allowed_prefixes,
-                );
+                with_segment(path, key, |path| {
+                    reject_not_applicable_at(diagnostics, child, path, allowed_prefixes);
+                });
             }
         }
         Value::Array(items) => {
             for (index, child) in items.iter().enumerate() {
-                reject_not_applicable(
-                    diagnostics,
-                    child,
-                    &format!("{path}.{index}"),
-                    allowed_prefixes,
-                );
+                with_segment(path, &index, |path| {
+                    reject_not_applicable_at(diagnostics, child, path, allowed_prefixes);
+                });
             }
         }
         _ => {}
     }
 }
 /// Collect every provenance evidence id under the serialized value.
-fn collect_evidence_refs(value: &Value, path: &str, out: &mut Vec<(String, String)>) {
+fn collect_evidence_refs(value: &Value, path: &mut String, out: &mut Vec<(String, String)>) {
     if let Value::Object(map) = value {
         if let Some(Value::Array(ids)) = map.get("evidenceIds") {
             for id in ids {
                 if let Some(id) = id.as_str() {
-                    out.push((path.to_owned(), id.to_owned()));
+                    out.push((path.clone(), id.to_owned()));
                 }
             }
         }
         for (key, child) in map {
-            collect_evidence_refs(child, &format!("{path}.{key}"), out);
+            with_segment(path, key, |path| collect_evidence_refs(child, path, out));
         }
     } else if let Value::Array(items) = value {
         for (index, child) in items.iter().enumerate() {
-            collect_evidence_refs(child, &format!("{path}.{index}"), out);
+            with_segment(path, &index, |path| collect_evidence_refs(child, path, out));
         }
     }
 }
-fn check_evidence_refs<T: Serialize>(
+fn check_evidence_refs(
     diagnostics: &mut Vec<Diagnostic>,
     path: &str,
-    value: &T,
+    serialized: &Value,
     evidence: &[Evidence],
 ) {
     let known: BTreeSet<&str> = evidence.iter().map(|e| e.id.as_str()).collect();
     let mut refs = vec![];
-    collect_evidence_refs(
-        &serde_json::to_value(value).expect("typed DTO serializes"),
-        path,
-        &mut refs,
-    );
+    collect_evidence_refs(serialized, &mut path.to_owned(), &mut refs);
     for (at, id) in refs {
         if !known.contains(id.as_str()) {
             err(diagnostics, at, "dangling_evidence_ref");
         }
     }
 }
-fn check_provenance_wellformed<T: Serialize>(
-    diagnostics: &mut Vec<Diagnostic>,
-    path: &str,
-    value: &T,
-) {
-    let value = serde_json::to_value(value).expect("typed DTO serializes");
-    fn walk(diagnostics: &mut Vec<Diagnostic>, value: &Value, path: &str) {
+fn check_provenance_wellformed(diagnostics: &mut Vec<Diagnostic>, path: &str, value: &Value) {
+    fn walk(diagnostics: &mut Vec<Diagnostic>, value: &Value, path: &mut String) {
         if let Value::Object(map) = value {
             if map.get("state").and_then(Value::as_str) == Some("known")
                 && let Some(provenance) = map.get("provenance")
@@ -202,15 +209,15 @@ fn check_provenance_wellformed<T: Serialize>(
                 }
             }
             for (key, child) in map {
-                walk(diagnostics, child, &format!("{path}.{key}"));
+                with_segment(path, key, |path| walk(diagnostics, child, path));
             }
         } else if let Value::Array(items) = value {
             for (index, child) in items.iter().enumerate() {
-                walk(diagnostics, child, &format!("{path}.{index}"));
+                with_segment(path, &index, |path| walk(diagnostics, child, path));
             }
         }
     }
-    walk(diagnostics, &value, path);
+    walk(diagnostics, value, &mut path.to_owned());
 }
 
 fn check_evidence_entries(diagnostics: &mut Vec<Diagnostic>, path: &str, evidence: &[Evidence]) {
@@ -472,9 +479,9 @@ pub fn validate_project_input(input: &ProjectInput) -> Vec<Diagnostic> {
     }
     check_project_offset_intervals(&mut diagnostics, input);
     check_evidence_entries(&mut diagnostics, "evidence", &input.evidence);
-    check_evidence_refs(&mut diagnostics, "input", input, &input.evidence);
-    check_provenance_wellformed(&mut diagnostics, "input", input);
     let serialized = serde_json::to_value(input).expect("typed DTO serializes");
+    check_evidence_refs(&mut diagnostics, "input", &serialized, &input.evidence);
+    check_provenance_wellformed(&mut diagnostics, "input", &serialized);
     reject_not_applicable(&mut diagnostics, &serialized, "input", &[]);
     diagnostics
 }
@@ -762,9 +769,9 @@ pub fn validate_catalog_content(content: &CatalogContent) -> Vec<Diagnostic> {
             );
         }
     }
-    check_evidence_refs(&mut diagnostics, "catalog", content, &content.evidence);
-    check_provenance_wellformed(&mut diagnostics, "catalog", content);
     let serialized = serde_json::to_value(content).expect("typed DTO serializes");
+    check_evidence_refs(&mut diagnostics, "catalog", &serialized, &content.evidence);
+    check_provenance_wellformed(&mut diagnostics, "catalog", &serialized);
     // Offer-level facts may be not-applicable (e.g. a purchase-free offer).
     reject_not_applicable(
         &mut diagnostics,

@@ -468,6 +468,14 @@ for (const caseId of [...NORMALIZE_CASES, ...SEARCH_CASES]) {
         // versus a separate in-page run. It carries run-to-run compute
         // variance and is not a transport cost (docs/INV01_MESSAGING_RESIDUAL.md).
         crossRealmDeltaMs: stats(timed.map((r) => r.workerComputeMs - r.directMs)),
+        // Residual decomposition on one aligned clock (estimates, see harness).
+        toWorkerMs: stats(timed.flatMap((r) => (r.toWorkerMs === null ? [] : [r.toWorkerMs]))),
+        workerQueueMs: stats(
+          timed.flatMap((r) => (r.workerQueueMs === null ? [] : [r.workerQueueMs])),
+        ),
+        fromWorkerMs: stats(
+          timed.flatMap((r) => (r.fromWorkerMs === null ? [] : [r.fromWorkerMs])),
+        ),
         requestBytes: stats(rows.map((r) => r.requestBytes)),
         responseBytes: stats(rows.map((r) => r.responseBytes)),
         n: rows.length,
@@ -478,6 +486,70 @@ for (const caseId of [...NORMALIZE_CASES, ...SEARCH_CASES]) {
       expected,
       perCommand,
       heapDeltaMax: Math.max(0, ...runs.map((r) => r.heapDelta ?? 0)),
+    };
+  });
+}
+
+// z-performance-budget: the same search project activated twice in one Worker
+// session. The first activation carries the catalog; the re-activation names
+// only the input, as the page does after a small edit. Both must produce the
+// same context id, so the cheaper path never changes a canonical result.
+for (const caseId of ['bench-search-small', 'bench-search-reference']) {
+  test(`@bench warm: re-activation with the cached catalog: ${caseId}`, async ({ page }) => {
+    const fixture = await loadFixture(caseId);
+    await page.goto('/tests/harness.html');
+    await page.waitForFunction(() => typeof window.bench === 'object');
+    const runs: {
+      full: BenchRequestTiming;
+      cached: BenchRequestTiming;
+      sameContext: boolean;
+    }[] = [];
+    for (let i = 0; i < WARM_SAMPLES; i += 1) {
+      runs.push(
+        await page.evaluate(async (f) => {
+          const requests = window.bench.requestsFor(f);
+          const worker = window.bench.spawnTimedWorker();
+          const direct = window.bench.directRuntime();
+          try {
+            await window.bench.send(worker, direct, requests[0]!);
+            const fullResult = await window.bench.send(worker, direct, requests[1]!);
+            const again = JSON.parse(requests[1]!) as {
+              meta: { requestId: string; projectActivationId: string };
+              command: { context: { catalog: unknown } };
+            };
+            again.meta.requestId = `${again.meta.requestId}-again`;
+            again.meta.projectActivationId = `${again.meta.projectActivationId}-again`;
+            again.command.context.catalog = null;
+            const cachedResult = await window.bench.send(worker, direct, JSON.stringify(again));
+            const contextOf = (event: unknown) =>
+              (event as { kind?: string; contextId?: string } | null)?.contextId ?? null;
+            return {
+              full: fullResult.timing,
+              cached: cachedResult.timing,
+              sameContext:
+                contextOf(fullResult.event) !== null &&
+                contextOf(fullResult.event) === contextOf(cachedResult.event),
+            };
+          } finally {
+            worker.terminate();
+          }
+        }, fixture),
+      );
+    }
+    expect(runs.every((r) => r.sameContext)).toBe(true);
+    const timed = (pick: (r: (typeof runs)[number]) => BenchRequestTiming) => ({
+      workerMs: stats(runs.map((r) => pick(r).workerMs)),
+      workerComputeMs: stats(
+        runs.flatMap((r) => (pick(r).workerComputeMs === null ? [] : [pick(r).workerComputeMs!])),
+      ),
+      requestBytes: stats(runs.map((r) => pick(r).requestBytes)),
+    });
+    (report.reactivation ??= {}) as Record<string, unknown>;
+    (report.reactivation as Record<string, unknown>)[caseId] = {
+      iterations: runs.length,
+      sameContextId: true,
+      fullCatalog: timed((r) => r.full),
+      cachedCatalog: timed((r) => r.cached),
     };
   });
 }

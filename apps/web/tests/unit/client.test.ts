@@ -156,3 +156,92 @@ it('rejects an old build id and a capability list that is not an exact match', a
   });
   expect(missing.error).toEqual(new Error('protocol_version_mismatch'));
 });
+
+// z-performance-budget: an unchanged catalog is not re-sent on re-activation.
+import smallFixture from '../../../../fixtures/bench/bench-search-small.json';
+type ProjectContext = Extract<
+  Extract<ProtocolRequest['command'], { kind: 'activateProject' }>['context'],
+  { kind: 'project' }
+>;
+const projectContext = (digest?: string): ProjectContext => {
+  const input = smallFixture.input.input as unknown as ProjectContext['input'];
+  const catalog = {
+    ...(smallFixture.input.catalog as unknown as NonNullable<ProjectContext['catalog']>),
+  };
+  if (digest) catalog.catalogDigest = digest as typeof catalog.catalogDigest;
+  return { kind: 'project', input, catalog };
+};
+const catalogOf = (request: ProtocolRequest) =>
+  (request.command as Extract<ProtocolRequest['command'], { kind: 'activateProject' }>).context
+    .kind === 'project'
+    ? (
+        (request.command as Extract<ProtocolRequest['command'], { kind: 'activateProject' }>)
+          .context as ProjectContext
+      ).catalog
+    : undefined;
+async function activateWith(
+  client: ProbeClient,
+  port: Port,
+  context: ProjectContext,
+  reply: ProtocolResponse['event'] = { kind: 'projectActivated', contextId: 'c'.repeat(64) },
+) {
+  const done = client.activate('A', '0', '0', context);
+  port.respond(reply);
+  await done;
+}
+it('sends the catalog once and then reuses the engine copy', async () => {
+  const { client, port } = await setup();
+  await activateWith(client, port, projectContext());
+  expect(catalogOf(port.sent.at(-1)!)).not.toBeNull();
+  await activateWith(client, port, projectContext());
+  expect(catalogOf(port.sent.at(-1)!)).toBeNull();
+  expect([client.fullCatalogActivations, client.reusedCatalogActivations]).toEqual([1, 1]);
+});
+it('falls back to the full catalog when the engine no longer holds it', async () => {
+  const { client, port } = await setup();
+  await activateWith(client, port, projectContext());
+  const sentBefore = port.sent.length;
+  const done = client.activate('A', '0', '0', projectContext());
+  port.respond({
+    kind: 'operationFailed',
+    code: 'catalog_unavailable',
+    affectedFields: [],
+    affectedIds: [],
+    retryable: false,
+    reasonParameters: {},
+  });
+  await vi.waitFor(() => expect(port.sent.length).toBe(sentBefore + 2));
+  expect(catalogOf(port.sent.at(-2)!)).toBeNull();
+  expect(catalogOf(port.sent.at(-1)!)).not.toBeNull();
+  port.respond({ kind: 'projectActivated', contextId: 'c'.repeat(64) });
+  await done;
+  expect([client.fullCatalogActivations, client.reusedCatalogActivations]).toEqual([2, 0]);
+});
+it('does not retry or default on any other activation failure', async () => {
+  const { client, port } = await setup();
+  await activateWith(client, port, projectContext());
+  const sentBefore = port.sent.length;
+  const done = client.activate('A', '0', '0', projectContext());
+  const rejected = expect(done).rejects.toThrow('catalog_pin_mismatch');
+  port.respond({
+    kind: 'operationFailed',
+    code: 'catalog_pin_mismatch',
+    affectedFields: [],
+    affectedIds: [],
+    retryable: false,
+    reasonParameters: {},
+  });
+  await rejected;
+  expect(port.sent.length).toBe(sentBefore + 1);
+});
+it('mirrors the engine two-entry catalog cache', async () => {
+  const { client, port } = await setup();
+  const digest = (n: number) => String(n).repeat(64).slice(0, 64);
+  await activateWith(client, port, projectContext(digest(1)));
+  await activateWith(client, port, projectContext(digest(2)));
+  await activateWith(client, port, projectContext(digest(3))); // evicts digest 1
+  await activateWith(client, port, projectContext(digest(1)));
+  expect(catalogOf(port.sent.at(-1)!)).not.toBeNull();
+  await activateWith(client, port, projectContext(digest(1)));
+  expect(catalogOf(port.sent.at(-1)!)).toBeNull();
+});

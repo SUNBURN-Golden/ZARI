@@ -2919,11 +2919,15 @@ impl Runtime {
                 reason_parameters: BTreeMap::new(),
             });
         }
-        let content = match catalog {
+        // The digest of `content` is computed at most once per activation: the
+        // snapshot path verifies it against the claimed digest, the cached path
+        // reuses the key the content was verified under.
+        let (content, content_digest) = match catalog {
             Some(snapshot) => {
                 let content = CatalogContent::from(snapshot);
                 let mut diagnostics = validate::validate_catalog_content(&content);
-                if canonical::catalog_digest(&content) != snapshot.catalog_digest {
+                let computed_digest = canonical::catalog_digest(&content);
+                if computed_digest != snapshot.catalog_digest {
                     diagnostics.push(Diagnostic {
                         field_path: "catalogDigest".into(),
                         code: "digest_mismatch".into(),
@@ -2949,19 +2953,21 @@ impl Runtime {
                 }
                 self.catalogs
                     .push_back((snapshot.catalog_digest.clone(), content.clone()));
-                content
+                (content, computed_digest)
             }
             None => match self
                 .catalogs
                 .iter()
                 .find(|(digest, _)| digest == &input.catalog_pin.catalog_digest)
             {
-                Some((_, content)) => content.clone(),
+                Some((digest, content)) => (content.clone(), digest.clone()),
                 None => return Err(failure("catalog_unavailable")),
             },
         };
         Ok((
-            canonical::context_id(input, &content).as_str().to_owned(),
+            canonical::context_id_for_catalog_digest(input, &content_digest)
+                .as_str()
+                .to_owned(),
             content,
         ))
     }

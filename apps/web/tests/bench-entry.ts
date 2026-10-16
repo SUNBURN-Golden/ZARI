@@ -11,6 +11,9 @@ let runtime: Runtime | null = null;
 let fatal = false;
 let queue = Promise.resolve();
 self.onmessage = (event: MessageEvent<unknown>) => {
+  // Wall-clock epoch milliseconds (timeOrigin + now) so the page can place the
+  // Worker's stamps on its own timeline. Both contexts share one OS clock.
+  const receivedAt = performance.timeOrigin + performance.now();
   queue = queue
     .then(async () => {
       if (fatal) return;
@@ -20,10 +23,12 @@ self.onmessage = (event: MessageEvent<unknown>) => {
         runtime = new Runtime();
       }
       const start = performance.now();
+      const startedAt = performance.timeOrigin + start;
       const reply = runtime.handle_json(event.data);
       const computeMs = performance.now() - start;
+      const postedAt = performance.timeOrigin + performance.now();
       self.postMessage(reply);
-      self.postMessage({ benchComputeMs: computeMs });
+      self.postMessage({ benchComputeMs: computeMs, receivedAt, startedAt, postedAt });
     })
     .catch(() => {
       fatal = true;

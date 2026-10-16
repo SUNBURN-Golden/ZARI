@@ -192,6 +192,17 @@ export class ProbeClient {
       this.rejectPending(new StaleRequest(), true);
     }
   }
+  /**
+   * Catalogs this Worker session's engine still holds, oldest first. It mirrors
+   * the engine's two-entry cache so an unchanged catalog is not re-sent,
+   * re-validated and re-hashed on every input commit. Only a successful
+   * activation with the full snapshot records an entry.
+   */
+  private heldCatalogs: string[] = [];
+  /** Number of activations that carried the full catalog snapshot (for tests and the bench). */
+  fullCatalogActivations = 0;
+  /** Number of activations that reused the engine's verified catalog. */
+  reusedCatalogActivations = 0;
   async activate(
     project: string,
     epoch: string,
@@ -199,6 +210,34 @@ export class ProbeClient {
     context: Extract<Command, { kind: 'activateProject' }>['context'] = { kind: 'bootstrap' },
   ): Promise<void> {
     this.rejectPending(new StaleRequest());
+    const catalog = context.kind === 'project' ? context.catalog : null;
+    const key = catalog ? `${catalog.catalogDigest}@${catalog.catalogVersion}` : null;
+    if (context.kind === 'project' && key !== null && this.heldCatalogs.includes(key)) {
+      try {
+        await this.activateOnce(project, epoch, revision, { ...context, catalog: null });
+        this.reusedCatalogActivations += 1;
+        return;
+      } catch (error) {
+        // Only "the engine no longer holds it" (evicted, other session) earns
+        // the full snapshot. Every other failure, including a stale request,
+        // is the caller's to see unchanged.
+        if (!(error instanceof Error) || error.message !== 'catalog_unavailable') throw error;
+        this.heldCatalogs = this.heldCatalogs.filter((held) => held !== key);
+      }
+    }
+    await this.activateOnce(project, epoch, revision, context);
+    if (key !== null) {
+      if (this.heldCatalogs.length >= 2) this.heldCatalogs.shift();
+      this.heldCatalogs.push(key);
+      this.fullCatalogActivations += 1;
+    }
+  }
+  private async activateOnce(
+    project: string,
+    epoch: string,
+    revision: string,
+    context: Extract<Command, { kind: 'activateProject' }>['context'],
+  ): Promise<void> {
     this.project = project;
     this.activation = crypto.randomUUID();
     this.epoch = epoch;

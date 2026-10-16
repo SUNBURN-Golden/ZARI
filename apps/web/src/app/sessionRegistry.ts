@@ -20,6 +20,20 @@ export const workerController = new WorkerController(
 export const libraryController = new WorkerController(
   () => new Worker(new URL('../worker/entry.ts', import.meta.url), { type: 'module' }),
 );
+/**
+ * Start the project Worker while the page is idle so WASM transfer, compile and
+ * the first-request warm-up are paid before a project opens, not after the
+ * click. It only calls the same `ensure()` a session would; a failure here is
+ * left for the next real `ensure()` to retry and surface. No data is sent.
+ * Routes that never use this Worker (the probe and catalog screens own their
+ * own) do not start it.
+ */
+export function warmProjectWorker(): void {
+  if (location.hash === '#/probe' || location.hash === '#/catalog') return;
+  const start = () => void workerController.ensure().catch(() => {});
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(start, { timeout: 2000 });
+  else setTimeout(start, 200);
+}
 export const catalogManager = new CatalogManager(libraryController, repository);
 export const ownedManager = new OwnedManager(libraryController, repository);
 

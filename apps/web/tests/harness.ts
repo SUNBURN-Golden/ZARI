@@ -32,6 +32,16 @@ export interface BenchRequestTiming {
    * production entry. `workerMs - workerComputeMs` is the messaging residual.
    */
   workerComputeMs: number | null;
+  /**
+   * Residual decomposed on one aligned wall clock (timeOrigin + now in each
+   * context): page postMessage -> Worker onmessage, Worker onmessage -> Rust
+   * start (promise queue and, on the first request, WASM init), and Worker
+   * postMessage -> page onmessage. Null for the production entry. Cross-context
+   * subtraction is an estimate; the three parts need not sum to the residual.
+   */
+  toWorkerMs: number | null;
+  workerQueueMs: number | null;
+  fromWorkerMs: number | null;
   requestBytes: number;
   responseBytes: number;
 }
@@ -214,24 +224,42 @@ const benchApi: BenchApi = {
     const timed = timedWorkers.has(worker);
     const start = now();
     let workerMs = 0;
+    let sentAt = 0;
+    let pageReceivedAt = 0;
     // The round trip ends at the reply itself; an instrumented worker then
     // posts its compute timing as a separate message outside that window.
-    const { reply, workerComputeMs } = await new Promise<{
+    const { reply, workerComputeMs, stamps } = await new Promise<{
       reply: unknown;
       workerComputeMs: number | null;
+      stamps: { receivedAt: number; startedAt: number; postedAt: number } | null;
     }>((resolve, reject) => {
       let first: { data: unknown } | null = null;
       worker.onmessage = (e) => {
         if (first === null) {
           workerMs = now() - start;
+          pageReceivedAt = performance.timeOrigin + performance.now();
           first = { data: e.data };
-          if (!timed) resolve({ reply: e.data, workerComputeMs: null });
+          if (!timed) resolve({ reply: e.data, workerComputeMs: null, stamps: null });
           return;
         }
-        const ms = (e.data as { benchComputeMs?: unknown } | null)?.benchComputeMs;
-        resolve({ reply: first.data, workerComputeMs: typeof ms === 'number' ? ms : null });
+        const note = e.data as {
+          benchComputeMs?: unknown;
+          receivedAt?: unknown;
+          startedAt?: unknown;
+          postedAt?: unknown;
+        } | null;
+        const numeric = (v: unknown): v is number => typeof v === 'number';
+        resolve({
+          reply: first.data,
+          workerComputeMs: numeric(note?.benchComputeMs) ? note.benchComputeMs : null,
+          stamps:
+            numeric(note?.receivedAt) && numeric(note?.startedAt) && numeric(note?.postedAt)
+              ? { receivedAt: note.receivedAt, startedAt: note.startedAt, postedAt: note.postedAt }
+              : null,
+        });
       };
       worker.onerror = (e) => reject(new Error(`worker_error:${e.message ?? 'unknown'}`));
+      sentAt = performance.timeOrigin + performance.now();
       worker.postMessage(wire);
     });
     const decodeStart = now();
@@ -247,6 +275,9 @@ const benchApi: BenchApi = {
         decodeMs,
         directMs,
         workerComputeMs,
+        toWorkerMs: stamps ? stamps.receivedAt - sentAt : null,
+        workerQueueMs: stamps ? stamps.startedAt - stamps.receivedAt : null,
+        fromWorkerMs: stamps ? pageReceivedAt - stamps.postedAt : null,
         requestBytes: encoder.encode(wire).length,
         responseBytes: encoder.encode(typeof reply === 'string' ? reply : JSON.stringify(reply))
           .length,

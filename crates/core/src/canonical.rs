@@ -48,18 +48,35 @@ pub fn solver_version_for(profile: &SearchProfile) -> &'static str {
     }
 }
 
-fn canonicalize_strings(value: Value) -> Value {
+/// NFC-normalize every string value and object key in place. ASCII text is
+/// already NFC, so only non-ASCII strings are rebuilt; the output is
+/// byte-identical to normalizing every string.
+fn canonicalize_strings(mut value: Value) -> Value {
+    nfc_in_place(&mut value);
+    value
+}
+fn nfc_in_place(value: &mut Value) {
     match value {
-        Value::String(text) => Value::String(text.nfc().collect()),
-        Value::Array(values) => {
-            Value::Array(values.into_iter().map(canonicalize_strings).collect())
+        Value::String(text) => {
+            if !text.is_ascii() {
+                *text = text.nfc().collect();
+            }
         }
-        Value::Object(map) => Value::Object(
-            map.into_iter()
-                .map(|(key, value)| (key.nfc().collect(), canonicalize_strings(value)))
-                .collect(),
-        ),
-        scalar => scalar,
+        Value::Array(values) => values.iter_mut().for_each(nfc_in_place),
+        Value::Object(map) => {
+            if map.keys().all(|key| key.is_ascii()) {
+                map.values_mut().for_each(nfc_in_place);
+            } else {
+                *map = std::mem::take(map)
+                    .into_iter()
+                    .map(|(key, mut value)| {
+                        nfc_in_place(&mut value);
+                        (key.nfc().collect(), value)
+                    })
+                    .collect();
+            }
+        }
+        _ => {}
     }
 }
 /// Canonical JSON value: sorted keys via BTreeMap plus NFC strings.
@@ -544,11 +561,17 @@ struct ContextMaterial<'a> {
     seed: &'a Option<String>,
 }
 pub fn context_id(input: &ProjectInput, catalog_content: &CatalogContent) -> Digest {
+    context_id_for_catalog_digest(input, &catalog_digest(catalog_content))
+}
+/// `context_id` for a caller that already holds the verified digest of the
+/// catalog content, so activation does not canonicalize and hash a large
+/// catalog twice. The result is byte-identical to `context_id`.
+pub fn context_id_for_catalog_digest(input: &ProjectInput, catalog_digest: &Digest) -> Digest {
     content_digest(&ContextMaterial {
         schema_version: SCHEMA_VERSION,
         canonical_version: CANONICAL_VERSION,
         input_digest: &input_digest(input),
-        catalog_digest: &catalog_digest(catalog_content),
+        catalog_digest,
         rule_version: RULE_VERSION,
         solver_version: solver_version_for(&input.search.profile),
         search_profile: &input.search.profile,

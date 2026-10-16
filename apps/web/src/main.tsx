@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
+import { warmProjectWorker } from './app/sessionRegistry';
 import { registerShell } from './features/shell/offline';
 import './styles/tokens.css';
 import './styles/app.css';
@@ -14,6 +15,8 @@ createRoot(root).render(
     <App />
   </StrictMode>,
 );
+
+warmProjectWorker();
 
 // Versioned same-origin app-shell caching (offline revisit); skipped in dev.
 registerShell();
