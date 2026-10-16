@@ -57,7 +57,7 @@ import {
   type MoveAxis,
   type MoveInputError,
 } from '../features/plan/view';
-import { bomCsvRows, toCsv } from '../features/plan/csv';
+import { PrintPanel } from '../features/print/PrintPanel';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
 import { PurchaseHandoffPanel } from '../features/purchase/PurchaseHandoffPanel';
 import { FeedbackPanel } from '../features/feedback/FeedbackPanel';
@@ -797,26 +797,6 @@ function PlanDetail({
           </p>
         ) : (
           <>
-          <div className="form-actions">
-            <Button
-              className="button button-quiet"
-              data-testid="bom-csv"
-              onPress={() => {
-                // A leading BOM keeps spreadsheet apps on the UTF-8 path.
-                const blob = new Blob(['\uFEFF', toCsv(bomCsvRows(content))], {
-                  type: 'text/csv',
-                });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `zari-bom-${snapshot.planSnapshotId.slice(0, 12)}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-            >
-              구매 목록 CSV
-            </Button>
-          </div>
           <div className="table-scroll">
           <table className="bom-table" data-testid="bom-table" data-revision={snapshot.planSnapshotId}>
             <thead>
@@ -977,6 +957,23 @@ function PlanDetail({
           }
         />
       </section>
+
+      <PrintPanel
+        input={{
+          snapshot,
+          projection: projectionEntry?.projection ?? null,
+          projectionStatus: projectionEntry?.status ?? 'absent',
+          projectionFailure: projectionEntry?.failureCode ?? null,
+          catalog: state.plan.catalog,
+          projectName: state.name,
+          stage: surface,
+          current,
+          progress:
+            surface === 'accepted' && state.plan.progressLoad === 'ready'
+              ? state.plan.actionProgress
+              : null,
+        }}
+      />
 
       <div className="form-actions">
         {state.plan.accepted?.planSnapshotId === snapshot.planSnapshotId ? (

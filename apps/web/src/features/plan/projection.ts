@@ -83,7 +83,7 @@ const DRAW_ROLES = new Set<SpatialElement['role']>([
   'containedItem',
 ]);
 
-function rectOf(
+export function rectOf(
   geometry: SpatialElement['topRect'],
 ): { x: number; y: number; width: number; height: number } | null {
   if (geometry.kind !== 'available') return null;

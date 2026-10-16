@@ -1,0 +1,349 @@
+/* z-print-share: the output panel, the preview, and the printed package.
+ * Semantic tokens only; no new colour pair. Meaning never rests on colour:
+ * an unknown is underlined and bold, a container is solid and a contained
+ * item is dashed.
+ */
+.print-panel {
+  display: grid;
+  gap: var(--zari-space-3);
+  min-width: 0;
+  margin-top: var(--zari-space-4);
+  padding: var(--zari-space-3);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+}
+
+.print-scope {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--zari-space-3);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+}
+
+.print-scope legend {
+  padding: 0 var(--zari-space-2);
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+}
+
+.print-scope-choices {
+  display: grid;
+  gap: var(--zari-space-1);
+}
+
+.print-scope-choices label {
+  display: flex;
+  gap: var(--zari-space-2);
+  align-items: center;
+  min-height: var(--zari-touch-min-height);
+  min-width: 0;
+  font-size: var(--zari-text-sm);
+}
+
+/* ---- preview (screen) ---- */
+.print-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--zari-z-modal);
+  overflow: auto;
+  background: var(--zari-surface-subtle);
+  color: var(--zari-text-primary);
+  font-family: var(--zari-font-ui);
+}
+
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--zari-z-header);
+  display: grid;
+  gap: var(--zari-space-2);
+  padding: var(--zari-space-3) var(--zari-space-4);
+  border-bottom: var(--zari-border-width) solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+}
+
+.print-toolbar h2 {
+  margin: 0;
+  font-size: var(--zari-text-lg);
+}
+
+.print-sheet {
+  box-sizing: border-box;
+  max-width: 210mm;
+  margin: var(--zari-space-4) auto;
+  padding: var(--zari-space-4);
+  background: var(--zari-surface-panel);
+  box-shadow: var(--zari-shadow-raised);
+}
+
+/* ---- the package itself (screen and print) ---- */
+.print-package {
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-sm);
+  line-height: var(--zari-line-label);
+  /* Korean breaks between words; only a string with no gap may break inside. */
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+.print-frame {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.print-frame > thead > tr > td,
+.print-frame > tfoot > tr > td,
+.print-frame > tbody > tr > td {
+  padding: 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.print-head,
+.print-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-1) var(--zari-space-4);
+  align-items: baseline;
+  font-size: var(--zari-text-xs);
+  color: var(--zari-text-secondary);
+}
+
+.print-head {
+  padding-bottom: var(--zari-space-2);
+  margin-bottom: var(--zari-space-3);
+  border-bottom: var(--zari-border-width) solid var(--zari-border-control);
+}
+
+.print-head code {
+  font-family: var(--zari-font-mono);
+  color: var(--zari-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.print-foot {
+  padding-top: var(--zari-space-2);
+  margin-top: var(--zari-space-3);
+  border-top: var(--zari-border-width) solid var(--zari-border-control);
+}
+
+.print-package h1 {
+  margin: 0 0 var(--zari-space-3);
+  font-size: var(--zari-text-xl);
+}
+
+.print-package h2 {
+  margin: var(--zari-space-4) 0 var(--zari-space-2);
+  font-size: var(--zari-text-lg);
+}
+
+.print-package h3 {
+  margin: var(--zari-space-3) 0 var(--zari-space-1);
+  font-size: var(--zari-text-base);
+}
+
+.print-meta,
+.print-note {
+  margin: 0 0 var(--zari-space-2);
+  color: var(--zari-text-secondary);
+}
+
+.print-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--zari-space-1) var(--zari-space-4);
+  margin: 0 0 var(--zari-space-3);
+}
+
+.print-facts dt {
+  color: var(--zari-text-secondary);
+}
+
+.print-facts dd {
+  margin: 0;
+}
+
+.print-table {
+  width: 100%;
+  margin: var(--zari-space-2) 0 var(--zari-space-3);
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.print-table caption {
+  padding-bottom: var(--zari-space-1);
+  text-align: left;
+  color: var(--zari-text-secondary);
+}
+
+.print-table th,
+.print-table td {
+  padding: var(--zari-space-1) var(--zari-space-2);
+  border: var(--zari-border-width) solid var(--zari-border-control);
+  text-align: left;
+  vertical-align: top;
+}
+
+.print-table thead th {
+  background: var(--zari-surface-subtle);
+}
+
+.print-url {
+  font-family: var(--zari-font-mono);
+  font-size: var(--zari-text-xs);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+/* Nine columns on one sheet: fixed shares so a price never splits mid-number. */
+.print-bom {
+  table-layout: fixed;
+}
+
+.print-bom th:nth-child(1) { width: 22%; }
+.print-bom th:nth-child(2),
+.print-bom th:nth-child(3) { width: 7%; }
+.print-bom th:nth-child(4) { width: 8%; }
+.print-bom th:nth-child(5) { width: 12%; }
+.print-bom th:nth-child(6),
+.print-bom th:nth-child(7) { width: 9%; }
+.print-bom th:nth-child(8) { width: 9%; }
+.print-bom th:nth-child(9) { width: 17%; }
+
+.print-unknown {
+  font-weight: var(--zari-weight-semibold);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+}
+
+.print-unknown-block {
+  padding: var(--zari-space-2);
+  border: var(--zari-border-width) dashed var(--zari-border-control);
+}
+
+.print-notes {
+  margin: var(--zari-space-2) 0;
+  padding-left: var(--zari-space-6);
+}
+
+.print-svg {
+  display: block;
+  width: 100%;
+  max-height: 120mm;
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+}
+
+.print-drawing-number {
+  fill: var(--zari-text-primary);
+  font-weight: var(--zari-weight-semibold);
+}
+
+.print-drawing-dim {
+  fill: var(--zari-text-secondary);
+}
+
+.print-missing {
+  padding: var(--zari-space-2);
+  border: var(--zari-border-width) dashed var(--zari-border-control);
+}
+
+.print-missing h3 {
+  margin-top: 0;
+}
+
+@media (forced-colors: active) {
+  .print-overlay,
+  .print-toolbar,
+  .print-sheet {
+    forced-color-adjust: auto;
+    border-color: CanvasText;
+  }
+  .print-table th,
+  .print-table td,
+  .print-svg {
+    border-color: CanvasText;
+  }
+}
+
+/* ---- paper ---- */
+@page {
+  size: A4;
+  margin: 12mm 12mm 14mm;
+}
+
+@media print {
+  /* Only while the preview is open does the app step aside. */
+  body[data-print-open] #root {
+    display: none;
+  }
+  body[data-print-open] {
+    background: none;
+  }
+  body[data-print-open] .print-overlay {
+    position: static;
+    overflow: visible;
+    background: none;
+  }
+  .print-toolbar {
+    display: none;
+  }
+  .print-sheet {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+  .print-package {
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+  .print-package h1 {
+    font-size: 16pt;
+  }
+  .print-package h2 {
+    font-size: 12pt;
+  }
+  .print-package h3 {
+    font-size: 10pt;
+  }
+  .print-head,
+  .print-foot {
+    font-size: 7.5pt;
+  }
+  .print-bom {
+    font-size: 8pt;
+  }
+  .print-frame > thead {
+    display: table-header-group;
+  }
+  .print-frame > tfoot {
+    display: table-footer-group;
+  }
+  .print-drawing {
+    break-before: page;
+  }
+  .print-package h1,
+  .print-package h2,
+  .print-package h3,
+  .print-table caption {
+    break-after: avoid;
+  }
+  .print-table thead {
+    display: table-header-group;
+  }
+  .print-table tr,
+  .print-svg,
+  .print-missing,
+  .print-facts {
+    break-inside: avoid;
+  }
+  .print-table tfoot {
+    display: table-row-group;
+  }
+}

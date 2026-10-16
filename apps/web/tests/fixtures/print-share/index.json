@@ -1,0 +1,18 @@
+{
+  "conditional.share": {
+    "planSnapshotId": "fbdf358c2e12ad71ed5c68b6100d61eeb95241aed7acf88f79cc301ea08406d6",
+    "digest": "c34cc24e013e6e508a659f3fdf0d5654eff9ae1570ee4d1caf663d091f8eac91"
+  },
+  "conditional.full": {
+    "planSnapshotId": "fbdf358c2e12ad71ed5c68b6100d61eeb95241aed7acf88f79cc301ea08406d6",
+    "digest": "db34682982fd28b6471ad9ed68a74c716720232b0611d883f09ca8036c26c6d4"
+  },
+  "bounded.share": {
+    "planSnapshotId": "51be5d856d1711c9c9f3dba582d8d104b33bd6afd98aad0273f2f042ed187396",
+    "digest": "b44968a379c2ef1e709fd87df110540ba0970ef2f47f80d7558da35fedb1fa01"
+  },
+  "bounded.full": {
+    "planSnapshotId": "51be5d856d1711c9c9f3dba582d8d104b33bd6afd98aad0273f2f042ed187396",
+    "digest": "79c34c580d86f19263d5cf59f3bf8f98227de8cc5566ed614b0c0f8e7ed6434c"
+  }
+}

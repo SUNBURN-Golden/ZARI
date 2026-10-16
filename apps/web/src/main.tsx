@@ -5,6 +5,7 @@ import { registerShell } from './features/shell/offline';
 import './styles/tokens.css';
 import './styles/app.css';
 import './styles/project.css';
+import './styles/print.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('ZARI root element is missing.');

@@ -1,3 +1,37 @@
+# 2026-10-15 — ZARI-z-print-share 도면·BOM·실행 가이드의 한 묶음 출력
+
+정본은 GitHub issue #106, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-print-share`이다. 관찰한 base SHA는 `3274613051142b125e818f1dd912d310d959fbfd`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 전달은 z-print-share만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- ADR `docs/adr/SP-z-print-share.md`와 `design/DECISIONS.md` Dz-print-share. `docs/PRODUCT_COMPLETION_EVOLUTION_KO.md`와 `design/SPATIAL_WORKSPACE.md` §8에는 이 노드 노트만 추가했다.
+- 출력은 새 도메인 계약이 아니라 host 쪽 보기다. `features/print/package.ts`의 순수 함수 `buildPrintPackage`가 하나의 PlanSnapshot과 Rust가 그 계획에 찍은 공간 투영만 읽어 표지·위/앞 도면·배치·물건별 위치·미배치·모든 검사·구매 목록·실행 순서를 만든다. 수량·가격·적합성·좌표 계산은 없고 Rust 값을 글자로 옮길 뿐이며 미확인은 `미확인`으로 남는다.
+- revision 차단: 투영이 다른 계획·입력·카탈로그에서 나왔거나 없거나 실패하면 패키지와 CSV를 만들지 않는다. 조립 뒤 `verifyPackage`가 섹션 revision과 행 개수를 다시 세어 빠진 행이 있으면 출력하지 않는다. 출력 지문은 패키지 JSON의 SHA-256이다.
+- 개인정보 포함 범위는 출력마다 고르는 네 가지 체크(프로젝트 이름·물건 이름·구매 링크·진행 기록)이고 기본은 모두 제외, 저장하지 않는다. 이름을 끄면 저장된 입력 순서 번호로 바뀌고 사진·위치 기록·피드백·메모·계정 정보는 항상 제외다. 구매 링크는 켰을 때도 평문 http(s)만 적는다.
+- CSV 두 종(구매 목록·계획 전체)은 모든 줄이 계획 ID로 시작하고 모든 칸이 수식 안전 `csvCell`을 지나며 카탈로그·출처 가져오기 형식이 아니다. 기존 BOM 단독 CSV 단추는 이 패널로 대체됐다.
+- 인쇄 미리보기는 `role="dialog"` 전체 화면(포커스 가둠·Esc·복귀·앱 루트 `inert`)이고 `인쇄`는 `window.print()` 한 번이다. 인쇄 CSS는 미리보기가 열린 동안만 앱을 숨기고, A4의 모든 쪽 머리·바닥 띠에 계획 ID·단위 mm·입력/카탈로그/규칙·포함 범위·미확인 안내가 반복된다. 새 색 쌍·토큰은 없다.
+- 테스트: vitest `print.test.ts` 20개(실제 빌드 WASM으로 공용 도메인 fixture 두 건을 통과시킨 스냅샷·투영 사용) + 재현 헬퍼 `printFixture.ts`, 브라우저 `print-share.spec.ts` 6개. `apps/web/tests/fixtures/print-share/`에 범위별 HTML·CSV·지문 13개를 바이트로 대조한다. 생성 CSV가 CRLF를 쓰고 바이트 비교이므로 `.gitattributes`에 `apps/web/tests/fixtures/print-share/** -text` 한 줄을 추가해 체크아웃 정규화로 깨지지 않게 했다. 상위 `fixtures/` 124건의 바이트와 manifest는 그대로다. `.aiops/**`, `docs/aiops/**`, `.github/**`, `Cargo.lock`, 생성 계약, 저장소는 그대로다. 새 의존성은 없다. `BUILD_ID` `zari-domain-7` 유지.
+
+이 머신에서 실행한 검증 (Node v24.19.0, npm 11.x, Rust 1.98.1, `CARGO_BUILD_JOBS=4`), 최종 트리:
+
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0
+- `cargo test --workspace --locked`: exit 0, 241개 통과(0 실패)
+- fixture_runner `fixtures/bootstrap`, `fixtures`(124건): exit 0. `git status fixtures Cargo.lock` 비어 있음
+- `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`: exit 0
+- `npm run wasm:build`, `npm run contracts:check`: exit 0, fixture 구조 124
+- `npm run typecheck`, `npm run lint`: exit 0
+- `npm test`: exit 0, 34 files / 229 tests 통과(기존 209 + 새 20)
+- `npm run build`, `node scripts/check-release-manifest.mjs`(`errors: []`, buildId `e523533848307a97`), `node scripts/check-design-tokens.mjs --self-test`(12 self-test, 대비 39/39), `node scripts/check-product-contract.mjs`(id 16·fixture 124 그대로, runtime hits 0): exit 0
+- `npm run test:browser -- --project=chromium`: exit 0, 117 passed·0 failed(5.4m). 최종 트리의 `--workers=1` 전체 재실행도 exit 0, 117 passed·0 failed(17.6m) — 이전 동일 트리 재검증에서 나온 간헐 실패는 호스트 메모리 압박(OOM kill·search_stalled)으로 분석했고 evidence에 기록했다. `print-share.spec.ts`는 firefox 6/6·webkit 6/6 통과(skip 없음; PDF 두 테스트는 Chromium에서 PDF, 다른 엔진에서 인쇄 미디어 레이아웃을 검사). `npm run test:parity`: exit 0, 2 passed, 124 fixture 네이티브·브라우저 WASM 일치
+- 실제 인쇄 경로는 Chromium `page.pdf()`로 검증했다: 미리보기가 열린 실제 화면과 90행 BOM·도면 40도형의 긴 한글 패키지를 A4 PDF로 찍고 `pdftotext`로 쪽마다 계획 ID·단위·포함 범위를 읽어 확인했고 모든 행·반복 머리글·도면별 쪽 시작·한글을 확인했다
+- 이 세션은 커밋·push하지 않았다. GitHub Actions는 아직 실행하지 않았다
+
+하지 않은 것: 다음 z-노드, PDF·이미지 생성 기능(브라우저가 인쇄한다), 이메일·공유 링크·클라우드 전송, 구매·결제 연결, 사진 동의, 인쇄물 서명, 도면의 새 계산·치수 선, 3D 출력, 서버 렌더링, 승인 baseline 변경. 실제 프린터 출력·전화·전용 GPU는 미검증이다(Chromium PDF로만 쪽 나눔을 봤다). 390px·forced-colors·키보드는 데스크톱 에뮬레이션이다. 상세는 `docs/evidence/ZARI-z-print-share.md`.
+
+다음: 감독자가 이 작업 트리를 커밋하고 `Refs #106` ready PR을 연다. CI `bridge`가 초록이고 같은 head에서 독립 읽기 전용 검토 2회가 끝난 뒤 머지한다. 다음 z-노드는 이 노드가 시작하지 않는다.
+
 # 2026-10-14 — ZARI-z-feedback-reorganize 사용 피드백에서 다음 정리로 이어지는 루프
 
 정본은 GitHub issue #104, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-feedback-reorganize`이다. 관찰한 base SHA는 `dca8fc401bea33966682b2fb98fe1a53c043c7e9`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
