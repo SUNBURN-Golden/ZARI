@@ -52,6 +52,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-print-share 채택 (2026-10-07).** 이 노트는 z-print-share만 다룬다. 같은 원문이다. 기록은 [Dz-print-share](../design/DECISIONS.md)와 [docs/adr/SP-z-print-share.md](adr/SP-z-print-share.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 출력은 새 계산이 아니라 하나의 PlanSnapshot과 그 투영을 읽는 보기이며, 도면과 구매 목록의 계획 ID가 다르면 출력하지 않고 미확인·미배치는 생략하지 않는다. 개인정보 포함 범위는 출력마다 고르고 기본은 모두 제외다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-performance-budget 채택 (2026-10-07).** 이 노트는 z-performance-budget만 다룬다. 같은 원문이다. 기록은 [Dz-performance-budget](../design/DECISIONS.md)와 [docs/adr/SP-z-performance-budget.md](adr/SP-z-performance-budget.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 같은 입력은 같은 canonical 바이트를 내며 줄어드는 것은 중복 digest·직렬화·카탈로그 재전송 비용뿐이다. 목표 미달과 실제 모바일 미측정은 숨기지 않는다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 ## 1. 실제 소스에서 확인한 누락과 작업 소유
 
 기존 측정 후속 SP-008–011은 실제 사실 입력과 Rust 다음 확인 목록을 보완한다.

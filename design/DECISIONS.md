@@ -354,6 +354,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 출력 패널과 `features/print`, `print.css`를 걷어 낸다. 기존 BOM 단독 CSV 단추는 되살릴 수 있다. 저장된 데이터는 이 결정으로 읽거나 쓰지 않으므로 되돌릴 데이터가 없다.
 
+## Dz-performance-budget — 실측 성능 예산과 WASM 병목 개선 / 채택
+
+- ID: Dz-performance-budget
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-performance-budget만 다룬다. 같은 발화의 이후 z-노드는 각 노드에서 구현한다.
+- 문제: 초안 성능 목표의 초과가 어느 단계 비용인지 분리되지 않았고, 속도 개선이 결정성이나 검증 권위를 건드리면 안 된다. 벽시계로 멈춘 것과 결정론적 예산이 소진된 것을 같은 말로 부르면 안 된다.
+- 변경 대상: [docs/adr/SP-z-performance-budget.md](../docs/adr/SP-z-performance-budget.md), `crates/core/{src/canonical.rs,src/protocol.rs,src/validate.rs}`(같은 출력, 적은 재계산), `crates/core/examples/perf_profile.rs`, `apps/web/src/worker/client.ts`(카탈로그 재사용), `apps/web/src/app/sessionRegistry.ts`·`main.tsx`(Worker 조기 시작), bench 시계 도장과 재활성화 측정, 단위·Rust·브라우저 테스트. 화면, 토큰, 프로토콜 DTO, 스키마, 저장소, `BUILD_ID`는 바꾸지 않는다.
+- 검토한 대안: (A) 같은 canonical 출력을 유지하며 중복 digest·직렬화·경로 할당을 없애고, 엔진이 이미 가진 카탈로그는 다시 보내지 않고, Worker를 idle에 미리 시작한다. (B) 목표 임계값을 현실에 맞게 올린다. (C) 새 직렬화 형식이나 Rust 쪽 delta 프로토콜을 둔다.
+- 선택: A. B는 초과를 숨긴다. C는 새 계약과 BUILD_ID 재고정·fixture 124건 변경이 필요한데 측정된 병목은 중복 계산과 전체 카탈로그 재전송이었다.
+- 조건: 개선 전후 같은 fixture의 모든 응답 SHA-256이 같다(`perf_profile`). 124 fixture 기대 바이트는 변하지 않는다. 카탈로그 재사용은 엔진이 검증해 가진 digest에만 쓰고 모르면 `catalog_unavailable`로 전체를 다시 보내며 기본값을 만들지 않는다. 결정론적 `budgetExhausted`는 보폭·호스트 속도와 무관하다. 목표 미달과 실제 모바일 미측정은 숨기지 않는다. 새 색·토큰은 없다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 화면 변경이 없다. Worker 조기 시작은 입력이나 사용자 데이터를 보내지 않는다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 실제 모바일 성능·출시·배포 승인은 아니다.
+- 되돌리기: 이 결정과 위 변경 대상을 걷어 낸다. 저장 데이터와 계약은 바뀌지 않으므로 되돌릴 데이터가 없다.
+
 ## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
 
 - ID: D-audit-01

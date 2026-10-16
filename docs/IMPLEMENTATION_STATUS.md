@@ -2126,3 +2126,21 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 [PRODUCT_COMPLETION_EVOLUTION_KO.md](PRODUCT_COMPLETION_EVOLUTION_KO.md)에 새 A3 ADR, physical guide/condition guard, bounded independent evaluator, 저장·자료·역사·Worker lifecycle, 전체 qualification/capture 인계를 명세했다. 기존 program001–011은 그대로 보존하고012–016을 append해 분모16으로 연결했다. 전체 pending sidecar를 같은 바이트로 작성했고 승인 포인터는 PENDING이다. 최초7-node sidecar는 역사 checkpoint로 보존한다.
 
 실제 변경은 문서/비활성 계획뿐이다. 원본 MASTER/RUST/SOURCE_MANIFEST·앱·schema·dependency·approved baseline·runtime/client pin·activation·host·계정·모델 감사·배포를 변경하지 않았다. 작성 단계 검증은 JSON 구조·중복·DAG·분모·001–011 보존·mirror 일치·참조/범위 검사다. 앱/native/WASM/browser/parity/성능·독립 Fable 감사·User 채택·새 화면 승인은 이번 작업에서 미실행이다. 후속 구현에서 기존 record와 progress를 새 의미로 덮어쓰지 않으며, 별도 architecture/rule adoption과 실제 qualification 근거를 요구한다.
+
+## ZARI-z-performance-budget — 실측 성능 예산과 WASM 병목 개선 (2026-10-16)
+
+기준 main `9803ee960cfc25c0279470f15f977ea120d4b67f`. 상세·표·명령은 [evidence](evidence/ZARI-z-performance-budget.md). 결정은 [Dz-performance-budget](../design/DECISIONS.md), [SP-z-performance-budget](adr/SP-z-performance-budget.md). 화면·프로토콜·BUILD_ID·fixture 기대 바이트는 바꾸지 않았다.
+
+실제 변경:
+
+- Rust(출력 동일): `activateProject`의 카탈로그 digest 이중 계산 제거, 카탈로그·입력 검증의 3중 직렬화와 노드별 경로 할당 제거, canonical NFC의 ASCII 빠른 경로. 네이티브 reference 활성화 p50 76.0→31.9 ms, 검증 21.2→6.7 ms. 7개 bench fixture의 응답 SHA-256 전후 동일.
+- 페이지: 같은 Worker 세션이 이미 검증한 카탈로그는 `catalog: null`로 재활성화(`catalog_unavailable`이면 전체 1회 재전송). reference 재활성화 브라우저 p50 69.8→5.5 ms, 요청 908 KB→67 KB, contextId 동일.
+- 프로젝트 Worker를 idle에 미리 시작(`#/probe`·`#/catalog` 제외).
+- 측정: `perf_profile` 예제, bench의 `toWorkerMs/workerQueueMs/fromWorkerMs` 분리와 재활성화 케이스. 임계값 변경 없음.
+- 시험: Rust 5, vitest 4, 브라우저 2 추가. 결정론적 `budgetExhausted`가 보폭·호스트 속도와 무관함과 취소가 소진으로 보고되지 않음을 고정.
+
+검증: fmt·clippy·cargo test 246(1 ignored)·fixture 124·contracts·typecheck·lint·vitest 233·build·release manifest·토큰 39/39·Chromium 119 통과·parity 124 일치. Firefox/WebKit은 이 host에 브라우저가 없어 미실행.
+
+미해결·공개된 shortfall: messagingResidual p95(~40–50 ms, 새 분해로 page→Worker 두 번째 요청 전달의 ~10% 지연으로 확인, 원인 미규명, 조기 시작은 완화일 뿐 앱 내 지연 측정 없음), normalization p95(host 부하에 따라 14–21 ms), bench-mc queryTransport·coldQuerySource. 실제 모바일·GPU, Firefox·WebKit 재측정은 미검증. 작성자는 자신의 변경에 PASS를 부여하지 않는다.
+
+다음: 독립 검토 2회 후 감독자 병합. 다른 z-노드는 시작하지 않았다.
