@@ -252,6 +252,9 @@ export function ProjectsScreen() {
           <a href="#/catalog" onClick={(e) => { e.preventDefault(); navigate('#/catalog'); }}>
             카탈로그 · 보유 수납함
           </a>
+          <a href="#/data" data-testid="nav-data" onClick={(e) => { e.preventDefault(); navigate('#/data'); }}>
+            내 데이터
+          </a>
           <a href="#/probe" onClick={(e) => { e.preventDefault(); navigate('#/probe'); }}>
             폭 확인 예제
           </a>

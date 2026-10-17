@@ -2144,3 +2144,21 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 미해결·공개된 shortfall: messagingResidual p95(~40–50 ms, 새 분해로 page→Worker 두 번째 요청 전달의 ~10% 지연으로 확인, 원인 미규명, 조기 시작은 완화일 뿐 앱 내 지연 측정 없음), normalization p95(host 부하에 따라 14–21 ms), bench-mc queryTransport·coldQuerySource. 실제 모바일·GPU, Firefox·WebKit 재측정은 미검증. 작성자는 자신의 변경에 PASS를 부여하지 않는다.
 
 다음: 독립 검토 2회 후 감독자 병합. 다른 z-노드는 시작하지 않았다.
+
+## ZARI-z-privacy-offline — 오프라인 수명과 사용자 데이터 통제 (2026-10-17)
+
+기준 main `d533b408a7da44a6a4d84a94609935d16098c2c3`. 상세·표·명령은 [evidence](evidence/ZARI-z-privacy-offline.md). 결정은 [Dz-privacy-offline](../design/DECISIONS.md), [SP-z-privacy-offline](adr/SP-z-privacy-offline.md). Rust·프로토콜·스키마·DB version 6·BUILD_ID·fixture는 바꾸지 않았다.
+
+실제 변경:
+
+- `#/data` "내 데이터" 화면: 프로젝트별 프로젝트·사진·검색(위치 기록) 범위의 내려받기와 삭제. 삭제는 다시 읽어 확인한 뒤에만 완료라고 말하고 실패는 "지워진 것은 없습니다". 읽을 수 없는 행은 0이 아니다.
+- 저장 공간(`storage.estimate`, 모르면 알 수 없음), 읽기 전용 호환 검사(저장된 DB version, 업그레이드 일지, 새 schema 행, 앱 캐시 build), 완전 로컬/연결 필요 구분.
+- 저장 실패는 사진·위치 패널과 데이터 화면에서 "저장되지 않았습니다". Dexie 4가 더 새로운 저장 version을 거절하지 않고 여는 점을 시험으로 확인해 `newer_database`로 보고한다.
+- 시험: vitest 18(범위·quota·v1→v6 이월·새 schema·네트워크 정적 검사), 브라우저 5(범위 삭제·내보내기, 삭제 실패, 사진 quota, 390px·forced-colors, 오프라인 방문+강제 종료 뒤 채택 snapshot 동일).
+
+검증: fmt·clippy·cargo test 246(1 ignored)·fixture 124·contracts·typecheck·lint·vitest 251·build·release manifest·토큰 39/39·Chromium 124 통과(재실행)·parity 124 일치. Firefox·WebKit은 이 host에 브라우저가 없어 미실행(미검증). 실제 모바일·GPU 미검증.
+
+미완료: 전체 기기 초기화, `storage.persist()` 요청, 사진 바이트 이식, 위치 JSON 가져오기, 구매·피드백·보유 이력의 개별 삭제 범위. 강제 종료는 실제 OS 종료가 아닌 탭 닫기다.
+
+다음: 독립 검토 2회 후 감독자 병합. 다른 z-노드는 시작하지 않았다.
+

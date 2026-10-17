@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { describeStoreFailure } from '../privacy/connections';
 import type {
   LocationLog,
   LocationSearchReply,
@@ -193,7 +194,7 @@ export function LocationPanel({
       </p>
       {error && (
         <p className="session-note" data-testid="location-error" data-reason={error}>
-          {error}
+          {describeStoreFailure(error)}
         </p>
       )}
       {noInput && (

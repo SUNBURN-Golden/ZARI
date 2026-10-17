@@ -12,6 +12,7 @@ import type {
 import { WORKER_BUILD_ID, WORKER_RULE_VERSION } from '../worker/client';
 import {
   ATTACHMENT_MAX_COUNT,
+  DB_VERSION,
   SCHEMA_VERSION,
   ZariDb,
   nextRevision,
@@ -36,6 +37,7 @@ import {
   type InputRow,
   type InventoryLedgerRow,
   type LocationLogRow,
+  type MigrationJournal,
   type OwnedContainerRow,
   type PurchaseHandoffRow,
   type ProjectRow,
@@ -74,6 +76,24 @@ export function storeError(error: unknown): StoreError {
   if (error instanceof Error && error.message === 'revision_exhausted')
     return new StoreError('revision_exhausted');
   return new StoreError('persistence_failed:unavailable', String(error));
+}
+
+/** Per-project data on this device, by the scopes the data screen offers. */
+export interface ProjectDataScope {
+  photos: { count: number; bytes: number; corrupt: number };
+  /** `observations` is null when the log row is unreadable (never 0). */
+  location: { observations: number | null; corrupt: boolean };
+  otherLogs: { feedback: number; purchase: number; inventory: number };
+}
+export interface CompatibilityReport {
+  /** `newer_database`: this build is older than the stored schema. */
+  status: 'ok' | 'newer_rows' | 'newer_database';
+  openedVersion: number | null;
+  supportedVersion: number;
+  schemaVersion: number;
+  journals: { from: number; to: number }[];
+  newerSchemaRows: number;
+  quarantined: number;
 }
 
 export interface CorruptRecord {
@@ -1390,6 +1410,160 @@ export class ProjectRepository {
         throw storeError(error);
       }
     });
+  }
+  /**
+   * z-privacy-offline scopes. Each one removes only its own rows in one
+   * transaction; the project, its snapshots and every other log stay. The
+   * count is the number of rows the transaction removed, never a guess.
+   */
+  async deleteProjectPhotos(projectId: string): Promise<number> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction('rw', this.db.attachments, async () =>
+          this.db.attachments.where('projectId').equals(projectId).delete(),
+        );
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /** Photo names and sizes without keeping the bytes in memory. */
+  async listPhotoMeta(
+    projectId: string,
+  ): Promise<{ attachmentId: string; name: string; mime: string; byteSize: number }[]> {
+    try {
+      const out: { attachmentId: string; name: string; mime: string; byteSize: number }[] = [];
+      await this.db.attachments
+        .where('projectId')
+        .equals(projectId)
+        .each((raw) => {
+          try {
+            const row = readAttachmentRow(raw);
+            out.push({
+              attachmentId: row.attachmentId,
+              name: row.name,
+              mime: row.mime,
+              byteSize: row.byteSize,
+            });
+          } catch {
+            /* counted as corrupt by dataScope */
+          }
+        });
+      return out;
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  async getAttachment(attachmentId: string): Promise<AttachmentRow | null> {
+    try {
+      const raw = await this.db.attachments.get(attachmentId);
+      return raw === undefined ? null : readAttachmentRow(raw);
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  async deleteLocationLog(projectId: string): Promise<boolean> {
+    return this.enqueue(async () => {
+      try {
+        return await this.db.transaction('rw', this.db.locationLogs, async () => {
+          const existed = (await this.db.locationLogs.get(projectId)) !== undefined;
+          await this.db.locationLogs.delete(projectId);
+          return existed;
+        });
+      } catch (error) {
+        throw storeError(error);
+      }
+    });
+  }
+  /**
+   * What a project keeps on this device, by user-facing scope. Read only.
+   * A row that fails its envelope guard is counted as `corrupt`, never as
+   * zero, and is never repaired here.
+   */
+  async dataScope(projectId: string): Promise<ProjectDataScope> {
+    try {
+      const photoRows = await this.db.attachments.where('projectId').equals(projectId).toArray();
+      let photoBytes = 0;
+      let photoCorrupt = 0;
+      for (const raw of photoRows) {
+        try {
+          photoBytes += readAttachmentRow(raw).byteSize;
+        } catch {
+          photoCorrupt += 1;
+        }
+      }
+      let observations: number | null = 0;
+      let locationCorrupt = false;
+      try {
+        const row = await this.getLocationLog(projectId);
+        observations = row ? row.log.observations.length : 0;
+      } catch {
+        observations = null;
+        locationCorrupt = true;
+      }
+      const countOf = async (table: 'feedbackLogs' | 'purchaseHandoffs' | 'inventoryLedgers') =>
+        (await this.db[table].get(projectId)) === undefined ? 0 : 1;
+      return {
+        photos: { count: photoRows.length - photoCorrupt, bytes: photoBytes, corrupt: photoCorrupt },
+        location: { observations, corrupt: locationCorrupt },
+        otherLogs: {
+          feedback: await countOf('feedbackLogs'),
+          purchase: await countOf('purchaseHandoffs'),
+          inventory: await countOf('inventoryLedgers'),
+        },
+      };
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /**
+   * PERSISTENCE §6 read-only compatibility check. It never opens a
+   * transaction that writes and never rewrites a row it flags.
+   */
+  async compatibility(): Promise<CompatibilityReport> {
+    try {
+      await this.db.open();
+      // Dexie 4 may open a database stored at a newer version than this
+      // build declares. Report the stored version, not the declared one.
+      const stored = Math.round(this.db.backendDB().version / 10);
+      const journals = (
+        await this.db.metadata.where('key').startsWith('migration:').toArray()
+      )
+        .map((row) => row.payload as MigrationJournal)
+        .filter((entry) => entry?.kind === 'migration')
+        .map((entry) => ({ from: entry.fromVersion, to: entry.toVersion }))
+        .sort((a, b) => a.from - b.from);
+      const newer = async (rows: { schemaVersion?: unknown }[]) =>
+        rows.filter((row) => typeof row.schemaVersion === 'number' && row.schemaVersion > SCHEMA_VERSION)
+          .length;
+      const newerSchemaRows =
+        (await newer(await this.db.projects.toArray())) +
+        (await newer(await this.db.drafts.toArray())) +
+        (await newer(await this.db.inputs.toArray())) +
+        (await newer(await this.db.snapshots.toArray()));
+      return {
+        status: stored > DB_VERSION ? 'newer_database' : newerSchemaRows > 0 ? 'newer_rows' : 'ok',
+        openedVersion: stored,
+        supportedVersion: DB_VERSION,
+        schemaVersion: SCHEMA_VERSION,
+        journals,
+        newerSchemaRows,
+        quarantined: (await this.quarantined()).length,
+      };
+    } catch (error) {
+      const failure = storeError(error);
+      if (failure.code === 'migration_blocked')
+        return {
+          status: 'newer_database',
+          openedVersion: null,
+          supportedVersion: DB_VERSION,
+          schemaVersion: SCHEMA_VERSION,
+          journals: [],
+          newerSchemaRows: 0,
+          quarantined: 0,
+        };
+      throw failure;
+    }
   }
   /**
    * Read the rows a duplicate would copy. This does not write and does not
