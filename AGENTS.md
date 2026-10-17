@@ -60,3 +60,10 @@ UI 작업 전 DESIGN.md, design/SCREENS.md, design/COMPONENTS.md, design/DECISIO
 - draft와 approved baseline을 구분합니다. 승인 근거 없이 생성한 화면을 승인 상태로 기록하지 않습니다.
 - 디자인 변경 시 `node scripts/check-design-tokens.mjs --self-test`를 실행하고 실제 화면 검증 여부를 별도로 기록합니다.
 - 기존 보존 프롬프트와 SOURCE_MANIFEST.json을 디자인 수정 때문에 변경하지 않습니다.
+
+## Cursor Cloud specific instructions
+
+- Use Node 24.19.0 from `/usr/local/bin`. `node`, `npm`, and `npx` are linked into `/usr/local/cargo/bin` so they resolve before the agent runtime binary at `/exec-daemon/node` (Node 22). `node -v` must print `v24.19.0`. npm is the release bundled with that Node (11.17.0), which satisfies `engines.npm`.
+- Rust 1.98.1, rustfmt, clippy, and the `wasm32-unknown-unknown` target follow `rust-toolchain.toml`. The wasm-bindgen CLI must be exactly `0.2.128`.
+- `crates/wasm/pkg` is produced by `npm run wasm:build` and is not committed. The dev server is `npm run dev` at `http://127.0.0.1:5173`. The connection check is `#/probe`: a 600 mm compartment, a 190 mm object, and a count of 3 require 590 mm.
+- The default web build does not need DuckDB, Polars, Python, or CUDA.
