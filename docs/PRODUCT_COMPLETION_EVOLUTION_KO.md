@@ -48,6 +48,8 @@ HEAD `09e161caa652d75e9617caf632b3b9899be35740`가 쌓여 있다. 실패 기록 
 
 **z-location-search 채택 (2026-10-07).** 이 노트는 z-location-search만 다룬다. 같은 원문이다. 기록은 [Dz-location-search](../design/DECISIONS.md)와 [docs/adr/SP-z-location-search.md](adr/SP-z-location-search.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 계획상 위치는 사용자가 관측으로 확인하기 전 실제 위치가 아니고, 실행 완료도 실제 위치를 만들지 않는다. `confirm`은 기록 당시 채택 snapshot에 묶이고 다른 snapshot에서는 `staleConfirmation`이다. 같은 이름의 다른 물건·부분 수량은 검색 행으로 합쳐지지 않는다. 프로젝트 삭제는 검색 기록 행을 지운다. 이 노트는 다음 z-노드의 구현이 아니다.
 
+**z-privacy-offline 채택 (2026-10-07).** 이 노트는 z-privacy-offline만 다룬다. 같은 원문이다. 기록은 [Dz-privacy-offline](../design/DECISIONS.md)와 [docs/adr/SP-z-privacy-offline.md](adr/SP-z-privacy-offline.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 사진·검색 기록·프로젝트를 범위별로 내려받고 지우는 화면, 저장 실패를 저장 성공으로 보이지 않는 문구, 호환 검사, 연결 구분을 호스트에만 둔다. 이 노트는 다음 z-노드의 구현이 아니다.
+
 **z-feedback-reorganize 채택 (2026-10-07).** 이 노트는 z-feedback-reorganize만 다룬다. 같은 원문이다. 기록은 [Dz-feedback-reorganize](../design/DECISIONS.md)와 [docs/adr/SP-z-feedback-reorganize.md](adr/SP-z-feedback-reorganize.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 피드백은 결정이 아니라 기록이고, 폐기·구매를 자동 확정하지 않는다. 제안은 채택한 계획을 보존한 초안이고 취소나 늦은 응답이 채택한 계획과 실제 위치를 바꾸지 않으며, 같은 입력·규칙·피드백·예산에서 같은 초안이 나온다. 이 노트는 다음 z-노드의 구현이 아니다.
 
 **z-print-share 채택 (2026-10-07).** 이 노트는 z-print-share만 다룬다. 같은 원문이다. 기록은 [Dz-print-share](../design/DECISIONS.md)와 [docs/adr/SP-z-print-share.md](adr/SP-z-print-share.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 출력은 새 계산이 아니라 하나의 PlanSnapshot과 그 투영을 읽는 보기이며, 도면과 구매 목록의 계획 ID가 다르면 출력하지 않고 미확인·미배치는 생략하지 않는다. 개인정보 포함 범위는 출력마다 고르고 기본은 모두 제외다. 이 노트는 다음 z-노드의 구현이 아니다.

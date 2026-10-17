@@ -29,7 +29,7 @@ export const libraryController = new WorkerController(
  * own) do not start it.
  */
 export function warmProjectWorker(): void {
-  if (location.hash === '#/probe' || location.hash === '#/catalog') return;
+  if (location.hash === '#/probe' || location.hash === '#/catalog' || location.hash === '#/data') return;
   const start = () => void workerController.ensure().catch(() => {});
   if (typeof requestIdleCallback === 'function') requestIdleCallback(start, { timeout: 2000 });
   else setTimeout(start, 200);
@@ -37,7 +37,7 @@ export function warmProjectWorker(): void {
 export const catalogManager = new CatalogManager(libraryController, repository);
 export const ownedManager = new OwnedManager(libraryController, repository);
 
-const ENGINE_BUILD_ID = 'zari-web:005';
+export const ENGINE_BUILD_ID = 'zari-web:005';
 
 const sessions = new Map<string, ProjectSession>();
 const refs = new Map<string, number>();

@@ -156,6 +156,8 @@ touch target 48px 상당, 기본 control 최소44px. 작은 실물의 hit region
 
 **z-print-share만.** 이 문장은 이 노드의 구현 노트다. 계획 상세의 출력 패널은 하나의 PlanSnapshot과 그 계획의 Rust 투영으로 위·앞 도면, 배치·미배치·모든 검사, 구매 목록, 실행 순서를 한 묶음으로 인쇄하거나 CSV로 내려받게 한다. 모든 쪽에 계획 ID·단위 mm·포함 범위·미확인 안내가 붙고, 도면의 계획 ID가 다르면 출력하지 않는다. 프로젝트 이름·물건 이름·구매 링크·진행 기록은 출력마다 고르며 기본은 모두 제외다. 새 색 쌍은 없고 미확인은 밑줄·굵게, 수납함과 안의 물건은 실선·점선으로 읽힌다. 기록은 [Dz-print-share](DECISIONS.md)와 [docs/adr/SP-z-print-share.md](../docs/adr/SP-z-print-share.md)이다.
 
+**z-privacy-offline만.** 이 문장은 이 노드의 구현 노트다. `#/data`의 "내 데이터" 화면은 프로젝트마다 프로젝트·사진·검색(위치 기록) 범위를 나눠 보이고, 범위별 내려받기와 삭제는 인라인 확인 뒤에 한다. 삭제 완료는 다시 읽어 확인한 뒤에만 말하고 실패는 "지워진 것은 없습니다"다. 저장 공간을 모르면 "알 수 없음"이고 0이 아니다. 완전 로컬과 연결 필요를 글자로 나눈다. 새 색 쌍은 없고 forced-colors·터치 높이는 기존 토큰이다. 기록은 [Dz-privacy-offline](DECISIONS.md)과 [docs/adr/SP-z-privacy-offline.md](../docs/adr/SP-z-privacy-offline.md)이다.
+
 ## 9. draft capture 요구
 
 SP-007은 실제 구현 HEAD/fixture/environment와 다음 capture를 등록한다: 측정 focus known/unknown/invalid, 선택 수납함 outer/inner, 접근 unknown, drag 검사 전/거절/검증 후 저장 실패, 3D cutaway와 exact child selection, WebGL fallback, BOM 다중 대상, 현재 step/prerequisite blocked/progress unavailable/stale/타 탭 conflict. wide1440와 compact390, 200% 확대와 reduced-motion/forced-colors 근거 포함. 비동기 state는 test hook으로 고정하되 Rust 평가를 mock하여 통과 화면을 꾸미지 않는다.
