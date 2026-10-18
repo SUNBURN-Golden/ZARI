@@ -298,3 +298,5 @@ User acceptance의 PENDING/ACCEPTED/REJECTED, release NOT_AUTHORIZED를 독립�
 runtime/client pin·activation·host·계정·비밀·유료/외부 연결·approved baseline·공개·배포는 변경하지 않는다.
 작성자 검사는 JSON 구조/중복/의존/순환/분모/원본 001–011 보존/문서 경로/변경 범위에 한정한다.
 앱 구현·실물 실측·성능 결과·actual browser parity·User 화면 채택·독립 Fable PASS는 미수행이다.
+
+**z-guided-onboarding 채택 (2026-10-07).** 이 노트는 z-guided-onboarding만 다룬다. 같은 원문이다. 기록은 [Dz-guided-onboarding](../design/DECISIONS.md)와 [docs/adr/SP-z-guided-onboarding.md](adr/SP-z-guided-onboarding.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 합성 예제와 실제 시작의 분리, 측정 순서·입력 예시·오류 수정·지원 범위 안내, 문맥 도움말에서 실제 칸으로의 이동을 호스트에만 둔다. 이 노트는 다음 z-노드의 구현이 아니다.

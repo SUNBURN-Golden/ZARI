@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'react-aria-components';
-import { emptyProjectForm } from '../features/project/draft';
+import { EXAMPLE_NAME, isExampleName } from '../features/onboarding/guide';
+import { emptyProjectForm, sampleProjectForm } from '../features/project/draft';
 import { isZipMagic, stagePortableBundle } from '../features/project/portable';
 import {
   commitProjectImport,
@@ -176,6 +177,22 @@ export function ProjectsScreen() {
       setBusy(false);
     }
   }
+  /**
+   * The example is a separate, clearly named project filled with the bundled
+   * synthetic values. It never touches an existing project and a real start
+   * (`create`) never copies these values.
+   */
+  async function createExample() {
+    setBusy(true);
+    setError(null);
+    try {
+      const row = await repository.createProject(EXAMPLE_NAME, sampleProjectForm());
+      navigate(`#/project/${row.projectId}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  }
   async function stage(file: File) {
     setBusy(true);
     setError(null);
@@ -333,6 +350,11 @@ export function ProjectsScreen() {
                   }}
                 >
                   <strong>{project.name}</strong>
+                  {isExampleName(project.name) && (
+                    <span className="badge-example" data-testid={`example-badge-${project.projectId}`}>
+                      예제 · 합성
+                    </span>
+                  )}
                   <span>
                     리비전 {project.projectRevision} · 입력 리비전{' '}
                     {project.currentInputRevision}
@@ -384,10 +406,25 @@ export function ProjectsScreen() {
             ))}
             {projects !== null && projects.length === 0 && (
               <li className="project-empty" data-testid="project-empty">
-                아직 프로젝트가 없습니다.
+                아직 프로젝트가 없습니다. 아래에서 시작 방법을 고르세요.
               </li>
             )}
           </ul>
+          <div className="start-choices" data-testid="start-choices">
+            <div>
+              <strong>내 공간으로 시작</strong>
+              <p className="session-note">
+                빈 칸에서 시작합니다. 줄자로 잰 값만 넣으면 되고, 비워 둔 값은 “미측정”으로 남습니다.
+              </p>
+            </div>
+            <div>
+              <strong>예제로 둘러보기</strong>
+              <p className="session-note" data-testid="example-disclosure">
+                연습용 합성 데이터입니다. 상품·가격·재고는 실제가 아니며 구매할 수 없습니다. 내 프로젝트와
+                따로 저장됩니다.
+              </p>
+            </div>
+          </div>
           <div className="form-actions">
             <Button
               className="button button-primary"
@@ -396,7 +433,15 @@ export function ProjectsScreen() {
               data-testid="create-project"
               data-list-settled={listSettled ? 'true' : 'false'}
             >
-              새 프로젝트
+              내 공간으로 시작
+            </Button>
+            <Button
+              className="button button-secondary"
+              onPress={() => void createExample()}
+              isDisabled={busy || !listSettled}
+              data-testid="create-example"
+            >
+              예제로 둘러보기
             </Button>
             <Button
               className="button button-secondary"

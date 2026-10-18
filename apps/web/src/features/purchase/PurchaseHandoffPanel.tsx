@@ -10,6 +10,7 @@ import type {
   SubstituteReview,
 } from '../../contracts/generated/dto';
 import { repository, workerController } from '../../app/sessionRegistry';
+import { SYNTHETIC_NOTICE } from '../onboarding/guide';
 import { quotedMoneyText } from '../offer/phrases';
 import {
   EMPTY_PURCHASE_LEDGER,
@@ -68,9 +69,12 @@ function withWideWidth(variant: ProductVariant): ProductVariant | null {
 export function PurchaseHandoffPanel({
   projectId,
   snapshot,
+  synthetic = false,
 }: {
   projectId: string;
   snapshot: PlanSnapshot;
+  /** The plan uses the bundled synthetic catalog; nothing here is a real offer. */
+  synthetic?: boolean;
 }) {
   const titleId = useId();
   const planId = snapshot.planSnapshotId;
@@ -241,9 +245,15 @@ export function PurchaseHandoffPanel({
       data-records-payment="false"
       data-revision={prepared?.boundRevision ?? ''}
       data-affiliate-mark={markedAffiliate ? 'on' : 'off'}
+      data-synthetic={synthetic ? 'true' : 'false'}
     >
       <div className="section-kicker">구매 준비</div>
       <h3 id={titleId}>판매처별 확인</h3>
+      {synthetic && (
+        <p className="onboarding-example" data-testid="purchase-synthetic-note" role="note">
+          {SYNTHETIC_NOTICE}
+        </p>
+      )}
       <p className="session-note" data-testid="purchase-link-note">
         링크를 열어도 구매 확인으로 기록하지 않습니다.
       </p>
@@ -309,7 +319,7 @@ export function PurchaseHandoffPanel({
                           rel="noopener noreferrer"
                           data-testid={`purchase-link-${line.lineId}`}
                         >
-                          판매처에서 보기
+                          {synthetic ? '예제 링크 (실제 판매처 아님)' : '판매처에서 보기'}
                         </a>
                       ) : (
                         <span data-testid={`purchase-link-${line.lineId}`}>

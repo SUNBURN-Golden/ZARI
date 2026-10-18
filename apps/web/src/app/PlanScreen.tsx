@@ -59,6 +59,7 @@ import {
 } from '../features/plan/view';
 import { PrintPanel } from '../features/print/PrintPanel';
 import { OfferQuotePanel } from '../features/offer/OfferQuotePanel';
+import { SYNTHETIC_NOTICE, usesSyntheticCatalog } from '../features/onboarding/guide';
 import { PurchaseHandoffPanel } from '../features/purchase/PurchaseHandoffPanel';
 import { FeedbackPanel } from '../features/feedback/FeedbackPanel';
 import { IncrementalPanel } from '../features/incremental/IncrementalPanel';
@@ -892,7 +893,11 @@ function PlanDetail({
           canReplace={editable && edit.pending === null && edit.persist?.kind !== 'saving'}
           onReplace={(command) => session.requestLayoutEdit(command, snapshot.planSnapshotId)}
         />
-        <PurchaseHandoffPanel projectId={session.snapshot.projectId} snapshot={snapshot} />
+        <PurchaseHandoffPanel
+          projectId={session.snapshot.projectId}
+          snapshot={snapshot}
+          synthetic={usesSyntheticCatalog(session.snapshot.form)}
+        />
       </section>
 
       <section aria-labelledby="guide-title">
@@ -1172,6 +1177,11 @@ export function PlanScreen({ projectId }: { projectId: string }) {
       <section className="measurement-panel" aria-labelledby="plan-title">
         <div className="section-kicker">03 · 계획</div>
         <h2 id="plan-title">어떻게 정리할지 계산합니다.</h2>
+        {usesSyntheticCatalog(state.form) && (
+          <p className="onboarding-example" data-testid="synthetic-notice" role="note">
+            {SYNTHETIC_NOTICE}
+          </p>
+        )}
         <p className="session-note">
           계산은 워커 안의 Rust가 하고, 결과는 한 장의 스냅샷으로 고정됩니다.{' '}
           <a

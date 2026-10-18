@@ -1424,3 +1424,80 @@
   color: var(--zari-text-primary);
   font-weight: 600;
 }
+
+/* z-guided-onboarding: first-use guide, example/synthetic notices. Tokens only. */
+.onboarding {
+  grid-column: 1 / -1;
+  background: var(--zari-info-soft);
+  color: var(--zari-text-primary);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-panel);
+  padding: var(--zari-space-4);
+  margin-bottom: var(--zari-space-4);
+}
+.onboarding-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--zari-space-4);
+}
+.onboarding-head h3 {
+  margin: 0;
+  font-size: var(--zari-text-lg);
+}
+.onboarding-closed {
+  margin-top: var(--zari-space-2);
+  color: var(--zari-text-secondary);
+}
+.onboarding-steps,
+.onboarding-fields,
+.onboarding-errors {
+  padding-left: var(--zari-space-6);
+}
+.onboarding-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  list-style: none;
+  padding-left: 0;
+}
+.onboarding-help {
+  background: var(--zari-surface-panel);
+  border-radius: var(--zari-radius-control);
+  padding: var(--zari-space-3);
+  margin: var(--zari-space-3) 0;
+}
+.onboarding-errors {
+  background: var(--zari-danger-soft);
+  color: var(--zari-danger);
+  border-radius: var(--zari-radius-control);
+  padding: var(--zari-space-3) var(--zari-space-3) var(--zari-space-3) var(--zari-space-8);
+}
+.onboarding-example {
+  background: var(--zari-warning-soft);
+  color: var(--zari-warning);
+  border-left: 4px solid var(--zari-warning);
+  padding: var(--zari-space-3);
+  margin: var(--zari-space-3) 0;
+  font-size: var(--zari-text-sm);
+}
+.badge-example {
+  margin-left: var(--zari-space-2);
+  padding: 0 var(--zari-space-2);
+  background: var(--zari-warning-soft);
+  color: var(--zari-warning);
+  border: var(--zari-border-width) solid var(--zari-warning);
+  border-radius: var(--zari-radius-control);
+  font-size: var(--zari-text-xs);
+}
+.start-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--zari-space-4);
+  margin: var(--zari-space-4) 0;
+}
+@media (max-width: 47.999rem) {
+  .start-choices {
+    grid-template-columns: 1fr;
+  }
+}

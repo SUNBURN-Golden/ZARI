@@ -235,6 +235,18 @@
       "foreground": "--zari-preview",
       "background": "--zari-surface-panel",
       "minimum": 4.5
+    },
+    {
+      "id": "primary-on-info-soft",
+      "foreground": "--zari-text-primary",
+      "background": "--zari-info-soft",
+      "minimum": 4.5
+    },
+    {
+      "id": "secondary-on-info-soft",
+      "foreground": "--zari-text-secondary",
+      "background": "--zari-info-soft",
+      "minimum": 4.5
     }
   ]
 }

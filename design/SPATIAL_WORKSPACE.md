@@ -163,3 +163,5 @@ touch target 48px 상당, 기본 control 최소44px. 작은 실물의 hit region
 SP-007은 실제 구현 HEAD/fixture/environment와 다음 capture를 등록한다: 측정 focus known/unknown/invalid, 선택 수납함 outer/inner, 접근 unknown, drag 검사 전/거절/검증 후 저장 실패, 3D cutaway와 exact child selection, WebGL fallback, BOM 다중 대상, 현재 step/prerequisite blocked/progress unavailable/stale/타 탭 conflict. wide1440와 compact390, 200% 확대와 reduced-motion/forced-colors 근거 포함. 비동기 state는 test hook으로 고정하되 Rust 평가를 mock하여 통과 화면을 꾸미지 않는다.
 
 manifest의 draft/approved와 승인 근거를 분리한다. DOM/SVG 상태는 시각 regression용 결정적 캡처; WebGL은 renderer/browser/GPU 별 recorded tolerances로 비교하고 exact pixel equality를 물리 검증으로 쓰지 않는다. 사용자가 exact capture set을 승인하기 전 기존 approved baseline을 바꾸거나 승인0을 완료로 고치지 않는다.
+
+**z-guided-onboarding만.** 이 문장은 이 노드의 구현 노트다. 프로젝트 목록은 "내 공간으로 시작"(빈 칸)과 "예제로 둘러보기"(합성 값, 이름과 배지로 구분)를 나눈다. 측정 화면의 안내 패널은 단계·입력 예시·오류 고치는 법·지원 범위를 보이고, "지금 필요한 값"은 Rust 다음 사실 목록의 첫 측정 칸을 따른다. 칸 단추는 실제 입력으로 포커스를 옮길 뿐 값을 바꾸지 않고, 안내를 닫아도 입력은 남는다. 합성 카탈로그를 쓰는 계획·구매 준비 화면은 구매할 수 없다고 쓴다. 새 색 토큰은 없고 정보 바탕 위 글자 쌍 두 개를 contrast case에 더했다. 기록은 [Dz-guided-onboarding](DECISIONS.md)과 [docs/adr/SP-z-guided-onboarding.md](../docs/adr/SP-z-guided-onboarding.md)이다.

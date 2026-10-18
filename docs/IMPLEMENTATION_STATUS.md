@@ -2162,3 +2162,20 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 
 다음: 독립 검토 2회 후 감독자 병합. 다른 z-노드는 시작하지 않았다.
 
+## ZARI-z-guided-onboarding — 처음 사용해도 완성하는 예제와 빈 화면 (2026-10-18)
+
+기준 main `48a2b0a47179046ad36cbec6602a87da6e8df179`. 상세·표·명령은 [evidence](evidence/ZARI-z-guided-onboarding.md). 결정은 [Dz-guided-onboarding](../design/DECISIONS.md), [SP-z-guided-onboarding](adr/SP-z-guided-onboarding.md). Rust·프로토콜·스키마·DB version·BUILD_ID·fixture는 바꾸지 않았다.
+
+실제 변경:
+
+- 프로젝트 목록: "내 공간으로 시작"(빈 칸)과 "예제로 둘러보기"(합성 값, 이름·배지·배너로 구분)를 분리.
+- 측정 화면 안내 패널: 단계, 칸별 재는 법·입력 예시, 오류 코드별 고치는 법, 지원 범위. "지금 필요한 값"은 Rust 다음 사실 목록 첫 측정 칸. 칸 단추는 실제 입력으로 포커스만 옮기고 값을 바꾸지 않는다. 안내를 닫아도 입력은 남는다(열림 상태는 탭 sessionStorage).
+- 합성 카탈로그를 쓰는 계획·구매 준비 화면에 "구매할 수 없습니다" 문구, 링크 글자는 "예제 링크 (실제 판매처 아님)".
+- 시험: vitest 9, 브라우저 5 추가. 새 색 토큰 없음, contrast case 2개 추가.
+
+검증: fmt·clippy·cargo test 246(1 ignored)·fixture 124·contracts·typecheck·lint·vitest 260·build·release manifest·토큰 41/41·Chromium 129 통과(전체)·parity 124 일치. Firefox·WebKit은 이 host에 브라우저가 없어 미실행(미검증). 실제 모바일·GPU 미검증.
+
+미완료: 실제 카탈로그·상품 연결, 안내 진행 상태의 영구 저장, 프로젝트 이름 변경, 실사용자 문구 검증. 예제 표시는 이름 접두에 의존한다.
+
+다음: 독립 검토 2회 후 감독자 병합. 다른 z-노드는 시작하지 않았다.
+
