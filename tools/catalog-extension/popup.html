@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>ZARI 치수 수집</title>
+    <style>
+      body { font: 14px/1.5 system-ui, sans-serif; margin: 12px; width: 280px; }
+      button { font: inherit; padding: 6px 12px; }
+      #status { margin-top: 8px; min-height: 2.5em; }
+    </style>
+  </head>
+  <body>
+    <p>현재 상품 페이지의 치수 글자만 읽어 수집 파일로 저장합니다. 이미지는 읽지 않습니다.</p>
+    <button id="add" type="button">이 상품 담기</button>
+    <p id="status" role="status"></p>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

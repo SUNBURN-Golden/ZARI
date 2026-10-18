@@ -552,6 +552,26 @@
       "title": "BudgetAccount",
       "type": "object"
     },
+    "BuildRejection": {
+      "additionalProperties": false,
+      "properties": {
+        "codes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "codes"
+      ],
+      "title": "BuildRejection",
+      "type": "object"
+    },
     "BundleComponent": {
       "additionalProperties": false,
       "description": "A declared component of a heterogeneous bundle. v1 plans only homogeneous\nvariant packs; a nonempty list marks the offer as an unsupported bundle.",
@@ -568,6 +588,170 @@
         "quantity"
       ],
       "title": "BundleComponent",
+      "type": "object"
+    },
+    "BundleDimensions": {
+      "additionalProperties": false,
+      "description": "Values stay in the page's own unit as decimal text. Conversion to mm is\ndone here, never by the collector.",
+      "properties": {
+        "confidence": {
+          "$ref": "#/definitions/DimensionConfidence"
+        },
+        "depth": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "height": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rawText": {
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/LengthUnit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "rawText",
+        "width",
+        "depth",
+        "height",
+        "unit",
+        "confidence"
+      ],
+      "title": "BundleDimensions",
+      "type": "object"
+    },
+    "BundleGenerator": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "BundleGenerator",
+      "type": "object"
+    },
+    "BundleItemDiagnosis": {
+      "additionalProperties": false,
+      "properties": {
+        "codes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "index": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "index",
+        "id",
+        "codes"
+      ],
+      "title": "BundleItemDiagnosis",
+      "type": "object"
+    },
+    "BundleManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "bundleId": {
+          "type": "string"
+        },
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "generator": {
+          "$ref": "#/definitions/BundleGenerator"
+        },
+        "itemCount": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "noImages": {
+          "type": "boolean"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/definitions/BundleSource"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "bundleId",
+        "createdAt",
+        "generator",
+        "sources",
+        "itemCount",
+        "bytes",
+        "sha256",
+        "noImages"
+      ],
+      "title": "BundleManifest",
+      "type": "object"
+    },
+    "BundleSource": {
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "site": {
+          "$ref": "#/definitions/CrawlSite"
+        }
+      },
+      "required": [
+        "site",
+        "host"
+      ],
+      "title": "BundleSource",
       "type": "object"
     },
     "CandidateLayout": {
@@ -628,6 +812,132 @@
         "creation"
       ],
       "title": "CandidateProposal",
+      "type": "object"
+    },
+    "CatalogBundle": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/definitions/CrawledItem"
+          },
+          "type": "array"
+        },
+        "manifest": {
+          "$ref": "#/definitions/BundleManifest"
+        }
+      },
+      "required": [
+        "manifest",
+        "items"
+      ],
+      "title": "CatalogBundle",
+      "type": "object"
+    },
+    "CatalogBundleBuild": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "bundleText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "codes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "manifestText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rejected": {
+          "items": {
+            "$ref": "#/definitions/BuildRejection"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "codes",
+        "accepted",
+        "rejected",
+        "bundleText",
+        "manifestText"
+      ],
+      "title": "CatalogBundleBuild",
+      "type": "object"
+    },
+    "CatalogBundleReview": {
+      "additionalProperties": false,
+      "description": "Result of reading a bundle. `snapshot: null` publishes nothing and leaves\nevery stored catalog untouched.",
+      "properties": {
+        "bundleId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "codes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "existingUntouched": {
+          "type": "boolean"
+        },
+        "itemCount": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/definitions/BundleItemDiagnosis"
+          },
+          "type": "array"
+        },
+        "quarantined": {
+          "type": "boolean"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CatalogSnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unconfirmedDimensionIds": {
+          "description": "Items whose dimensions are not usable for placement (low/unparsed).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "itemCount",
+        "codes",
+        "items",
+        "quarantined",
+        "existingUntouched",
+        "unconfirmedDimensionIds",
+        "snapshot"
+      ],
+      "title": "CatalogBundleReview",
       "type": "object"
     },
     "CatalogContent": {
@@ -1131,6 +1441,21 @@
         "imported"
       ],
       "title": "CatalogSourceKind",
+      "type": "string"
+    },
+    "CategoryHint": {
+      "enum": [
+        "shelf",
+        "cabinet",
+        "bin",
+        "table",
+        "chair",
+        "sofa",
+        "bed",
+        "other",
+        "unknown"
+      ],
+      "title": "CategoryHint",
       "type": "string"
     },
     "CauseOutcome": {
@@ -2457,6 +2782,88 @@
       "title": "CostSummary",
       "type": "object"
     },
+    "CrawledItem": {
+      "additionalProperties": false,
+      "properties": {
+        "brand": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "categoryHint": {
+          "$ref": "#/definitions/CategoryHint"
+        },
+        "dimensions": {
+          "$ref": "#/definitions/BundleDimensions"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "priceText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "productUrl": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/CrawlSite"
+        },
+        "sourceKind": {
+          "$ref": "#/definitions/CrawlSourceKind"
+        },
+        "status": {
+          "$ref": "#/definitions/CrawlItemStatus"
+        }
+      },
+      "required": [
+        "id",
+        "sourceKind",
+        "status",
+        "name",
+        "brand",
+        "category",
+        "categoryHint",
+        "productUrl",
+        "source",
+        "fetchedAt",
+        "dimensions"
+      ],
+      "title": "CrawledItem",
+      "type": "object"
+    },
+    "CrawlItemStatus": {
+      "enum": [
+        "unconfirmed"
+      ],
+      "title": "CrawlItemStatus",
+      "type": "string"
+    },
+    "CrawlSite": {
+      "enum": [
+        "ohou",
+        "29cm",
+        "ikea"
+      ],
+      "title": "CrawlSite",
+      "type": "string"
+    },
+    "CrawlSourceKind": {
+      "enum": [
+        "crawled"
+      ],
+      "title": "CrawlSourceKind",
+      "type": "string"
+    },
     "Cuboid": {
       "additionalProperties": false,
       "properties": {
@@ -2509,6 +2916,16 @@
     "Digest": {
       "pattern": "^[0-9a-f]{64}(?![\\s\\S])",
       "title": "Digest",
+      "type": "string"
+    },
+    "DimensionConfidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "unparsed"
+      ],
+      "title": "DimensionConfidence",
       "type": "string"
     },
     "DimensionFrame": {
@@ -7785,6 +8202,15 @@
       "minimum": 1,
       "title": "LengthMm",
       "type": "integer"
+    },
+    "LengthUnit": {
+      "enum": [
+        "mm",
+        "cm",
+        "m"
+      ],
+      "title": "LengthUnit",
+      "type": "string"
     },
     "LibraryAlternative": {
       "additionalProperties": false,
@@ -16334,6 +16760,15 @@
     "BootstrapProbeResult": {
       "$ref": "#/definitions/BootstrapProbeResult"
     },
+    "CatalogBundle": {
+      "$ref": "#/definitions/CatalogBundle"
+    },
+    "CatalogBundleBuild": {
+      "$ref": "#/definitions/CatalogBundleBuild"
+    },
+    "CatalogBundleReview": {
+      "$ref": "#/definitions/CatalogBundleReview"
+    },
     "CatalogImportDto": {
       "$ref": "#/definitions/CatalogImportDto"
     },
@@ -16390,7 +16825,10 @@
     "RawCatalogFieldDto",
     "NormalizedCatalogField",
     "SnapshotBinding",
-    "LayoutEditCommand"
+    "LayoutEditCommand",
+    "CatalogBundle",
+    "CatalogBundleReview",
+    "CatalogBundleBuild"
   ],
   "title": "ZariContractBundle",
   "type": "object"

@@ -16,6 +16,7 @@ import {
 } from '../features/owned/model';
 import type { ImportEntry, ImportIssue } from '../features/catalog/import';
 import { ProvenancePanel } from '../features/catalog/ProvenancePanel';
+import { BundlePanel } from '../features/catalog/BundlePanel';
 import { isIdText, type StageResult } from '../features/catalog/manager';
 import { navigate } from './router';
 import { Shell } from './ProjectScreen';
@@ -429,7 +430,10 @@ function OwnedLibrary({
       raw.allowedUse = fresh.allowedUse;
     }
     if (variantPick && !editing) {
-      const [digest, variantId] = variantPick.split(':');
+      // Variant ids may contain ':' (crawl:<site>:<id>); the digest never does.
+      const split = variantPick.indexOf(':');
+      const digest = variantPick.slice(0, split);
+      const variantId = variantPick.slice(split + 1);
       const found = variants.find(
         (v) => v.catalog.catalogDigest === digest && v.variant.id === variantId,
       );
@@ -605,8 +609,12 @@ function OwnedLibrary({
                 key={`${catalog.catalogDigest}:${variant.id}`}
                 value={`${catalog.catalogDigest}:${variant.id}`}
               >
+                {catalog.origin === 'crawled-bundle'
+                  ? `${catalog.catalog.products.find((p) => p.id === variant.productId)?.name ?? variant.id} · `
+                  : ''}
                 {variant.optionLabel} ({catalog.catalogVersion}
-                {catalog.origin === 'synthetic-bundled' ? ' · 데모' : ''})
+                {catalog.origin === 'synthetic-bundled' ? ' · 데모' : ''}
+                {catalog.origin === 'crawled-bundle' ? ' · 수집·미확인' : ''})
               </option>
             ))}
           </select>
@@ -755,6 +763,7 @@ export function CatalogScreen() {
       </section>
       <CatalogImport onCommitted={() => void refresh()} />
       <ProvenancePanel catalogs={catalogs ?? []} onCommitted={() => void refresh()} />
+      <BundlePanel preservedDigest={catalogs?.[0]?.catalogDigest ?? null} onCommitted={() => void refresh()} />
       {owned !== null && catalogs !== null && (
         <OwnedLibrary catalogs={catalogs} owned={owned} onChanged={() => void refresh()} />
       )}

@@ -206,7 +206,11 @@ function CatalogAndOwned({
           {(catalogs ?? []).map((row) => (
             <option key={row.catalogDigest} value={row.catalogDigest}>
               {row.catalogVersion}
-              {row.origin === 'synthetic-bundled' ? ' — 데모·합성' : ` — ${row.origin}`}
+              {row.origin === 'synthetic-bundled'
+                ? ' — 데모·합성'
+                : row.origin === 'crawled-bundle'
+                  ? ' — 수집·치수만·미확인'
+                  : ` — ${row.origin}`}
             </option>
           ))}
         </select>
@@ -215,6 +219,12 @@ function CatalogAndOwned({
         'synthetic-bundled' && (
         <p className="session-note" data-testid="catalog-demo-note">
           현재 선택은 데모·합성 데이터입니다 — 실제 상품이 아닙니다.
+        </p>
+      )}
+      {catalogs?.find((c) => c.catalogDigest === pin.catalogDigest)?.origin === 'crawled-bundle' && (
+        <p className="session-note" data-testid="catalog-crawled-note">
+          현재 선택은 수집한 치수 전용 카탈로그입니다. 모든 항목은 미확인이며 내경은 알 수 없습니다 — 맞는 것으로
+          계산하지 않습니다.
         </p>
       )}
       <ul className="plan-list" data-testid="draft-owned-list">

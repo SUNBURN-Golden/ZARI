@@ -224,7 +224,7 @@ Use synthetic malicious data, never real secrets. Validate import size/depth/rec
 
 The local app must make no external AI/photo/telemetry request by default. Browser network assertions permit same-origin app/WASM assets and explicit user-opened HTTPS product links only. Test project names and home-item descriptions are absent from error telemetry/log transport. Do not embed credentials in bundles, fixtures, screenshots, or CI logs. A dependency/security advisory is reviewed with actual affected paths, not dismissed merely because code is local-first.
 
-A future scraper has a separate SSRF and redirect/DNS boundary; its tests are prerequisite to enabling fetch, not evidence delivered by v1's URL-reference storage. A future AI adapter must test explicit data consent, scope minimization, cancel/failure behavior, and untrusted suggestion validation before it can change user input.
+A future scraper has a separate SSRF and redirect/DNS boundary; its tests are prerequisite to enabling fetch, not evidence delivered by v1's URL-reference storage. The owner-ordered collection tooling (SP-z-catalog-crawler) makes no server-side site request: its tests use synthetic HTML fixtures, a fake extension over the real local socket, and a mock S3, with no live network and no Chrome launch. A future AI adapter must test explicit data consent, scope minimization, cancel/failure behavior, and untrusted suggestion validation before it can change user input.
 
 ## 10. Performance targets and measurement
 

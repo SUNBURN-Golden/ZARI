@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "ZARI 치수 수집기 (개발자 모드)",
+  "version": "0.1.0",
+  "description": "ZARI 수집 봇이 보낸 허용 사이트 URL에서 상품 치수 텍스트만 읽습니다. 이미지·쿠키·로그인 정보는 읽지 않습니다.",
+  "minimum_chrome_version": "120",
+  "permissions": ["scripting", "nativeMessaging", "activeTab"],
+  "host_permissions": [
+    "https://ohou.se/*",
+    "https://store.ohou.se/*",
+    "https://www.29cm.co.kr/*",
+    "https://www.ikea.com/kr/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_title": "이 상품 담기", "default_popup": "popup.html" }
+}

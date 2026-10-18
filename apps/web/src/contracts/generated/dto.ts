@@ -222,6 +222,42 @@ export type CheckKind =
   | 'budget';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CategoryHint".
+ */
+export type CategoryHint =
+  'shelf' | 'cabinet' | 'bin' | 'table' | 'chair' | 'sofa' | 'bed' | 'other' | 'unknown';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionConfidence".
+ */
+export type DimensionConfidence = 'high' | 'medium' | 'low' | 'unparsed';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "LengthUnit".
+ */
+export type LengthUnit = 'mm' | 'cm' | 'm';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CrawlSite".
+ */
+export type CrawlSite = 'ohou' | '29cm' | 'ikea';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CrawlSourceKind".
+ */
+export type CrawlSourceKind = 'crawled';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CrawlItemStatus".
+ */
+export type CrawlItemStatus = 'unconfirmed';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "Digest".
+ */
+export type Digest = string;
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "PackQuantity".
  */
 export type PackQuantity = number;
@@ -613,11 +649,6 @@ export type Stackability =
       kind: 'stackable';
       maxUnits: number;
     };
-/**
- * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "Digest".
- */
-export type Digest = string;
 /**
  * Per-operation oracle. `decodeError` asserts that the payload cannot even
  * decode into the operation's input type — the worker answers
@@ -2598,6 +2629,9 @@ export interface ZariContractBundle {
   BootstrapFixture: BootstrapFixture;
   BootstrapProbeDto: BootstrapProbeDto;
   BootstrapProbeResult: BootstrapProbeResult;
+  CatalogBundle: CatalogBundle;
+  CatalogBundleBuild: CatalogBundleBuild;
+  CatalogBundleReview: CatalogBundleReview;
   CatalogImportDto: CatalogImportDto;
   CatalogSnapshot: CatalogSnapshot;
   DomainFixture: DomainFixture;
@@ -2778,13 +2812,131 @@ export interface Remediation {
   fieldPaths: string[];
 }
 /**
- * Same versioned fields as `CatalogSnapshot` minus the digest that only Rust
- * produces; the catalog import boundary for Task008.
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogBundle".
+ */
+export interface CatalogBundle {
+  items: CrawledItem[];
+  manifest: BundleManifest;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CrawledItem".
+ */
+export interface CrawledItem {
+  brand: string;
+  category: string;
+  categoryHint: CategoryHint;
+  dimensions: BundleDimensions;
+  fetchedAt: string;
+  id: string;
+  name: string;
+  priceText?: string | null;
+  productUrl: string;
+  source: CrawlSite;
+  sourceKind: CrawlSourceKind;
+  status: CrawlItemStatus;
+}
+/**
+ * Values stay in the page's own unit as decimal text. Conversion to mm is
+ * done here, never by the collector.
  *
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "CatalogImportDto".
+ * via the `definition` "BundleDimensions".
  */
-export interface CatalogImportDto {
+export interface BundleDimensions {
+  confidence: DimensionConfidence;
+  depth: string | null;
+  height: string | null;
+  rawText: string;
+  unit: LengthUnit | null;
+  width: string | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "BundleManifest".
+ */
+export interface BundleManifest {
+  bundleId: string;
+  bytes: number;
+  createdAt: string;
+  generator: BundleGenerator;
+  itemCount: number;
+  noImages: boolean;
+  schemaVersion: number;
+  sha256: string;
+  sources: BundleSource[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "BundleGenerator".
+ */
+export interface BundleGenerator {
+  name: string;
+  version: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "BundleSource".
+ */
+export interface BundleSource {
+  host: string;
+  site: CrawlSite;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogBundleBuild".
+ */
+export interface CatalogBundleBuild {
+  accepted: number;
+  bundleText: string | null;
+  codes: string[];
+  manifestText: string | null;
+  rejected: BuildRejection[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "BuildRejection".
+ */
+export interface BuildRejection {
+  codes: string[];
+  id: string;
+}
+/**
+ * Result of reading a bundle. `snapshot: null` publishes nothing and leaves
+ * every stored catalog untouched.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogBundleReview".
+ */
+export interface CatalogBundleReview {
+  bundleId?: string | null;
+  codes: string[];
+  existingUntouched: boolean;
+  itemCount: number;
+  items: BundleItemDiagnosis[];
+  quarantined: boolean;
+  snapshot: CatalogSnapshot | null;
+  /**
+   * Items whose dimensions are not usable for placement (low/unparsed).
+   */
+  unconfirmedDimensionIds: string[];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "BundleItemDiagnosis".
+ */
+export interface BundleItemDiagnosis {
+  codes: string[];
+  id: string;
+  index: number;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "CatalogSnapshot".
+ */
+export interface CatalogSnapshot {
+  catalogDigest: Digest;
   catalogVersion: string;
   evidence: Evidence[];
   ingestionVersion: string;
@@ -2972,11 +3124,13 @@ export interface HandlingClearance {
   top: FactFor_ClearanceMm;
 }
 /**
+ * Same versioned fields as `CatalogSnapshot` minus the digest that only Rust
+ * produces; the catalog import boundary for Task008.
+ *
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
- * via the `definition` "CatalogSnapshot".
+ * via the `definition` "CatalogImportDto".
  */
-export interface CatalogSnapshot {
-  catalogDigest: Digest;
+export interface CatalogImportDto {
   catalogVersion: string;
   evidence: Evidence[];
   ingestionVersion: string;

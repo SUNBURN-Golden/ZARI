@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /embed/
+Disallow: /home/embed/
+Disallow: /my-page/
+Disallow: /order/
+Disallow: /auth/
+Disallow: /inbox/
+Disallow: /content/post/preview

@@ -2179,3 +2179,20 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 
 다음: 독립 검토 2회 후 감독자 병합. 다른 z-노드는 시작하지 않았다.
 
+
+## ZARI-z-catalog-crawler — 공개 상품 치수 수집 봇과 읽기 전용 카탈로그 클라이언트 (2026-10-18)
+
+기준 main `1cb98f2ae498264750cd2300dcf419b291cc89ca`. 상세·표·명령은 [evidence](evidence/ZARI-z-catalog-crawler.md). 결정은 [Dz-catalog-crawler](../design/DECISIONS.md), [SP-z-catalog-crawler](adr/SP-z-catalog-crawler.md), 런북은 [CATALOG_COLLECTION](CATALOG_COLLECTION.md). 소유자 지시(2026-10-15)로 추가된 노드다. 프로토콜·`BUILD_ID`·capability·DB version·기존 fixture 기대값은 바꾸지 않았다.
+
+실제 변경:
+
+- Rust `catalog_bundle.rs`: 치수 전용 번들(정규 JSON·SHA-256, 이미지 거부, 단위 변환, 신뢰도 일관성), 기존 provenance 검토로 스냅샷 변환(한 행이라도 격리되면 스냅샷 없음), core example과 WASM `reviewCatalogBundle`, 생성 계약 루트 3개.
+- `tools/catalog-extension/`(MV3, 권한 scripting·nativeMessaging·activeTab, 파서·차단 감지·작업 실행기·수동 담기 팝업)와 `tools/catalog-crawler-bot/`(큐·pacing·robots·백오프·킬 스위치·락·0600 소켓·native host·ingest/build/publish/remove-source/status·env 게이트 R2 PutObject).
+- 앱 `#/catalog` 번들 패널: 파일 → Rust 검토 → 사용자 확인 → 불변 카탈로그 캐시, 이미지 없는 평면·정면·상자 도형, "치수 미확인". 저장소 URL 읽기는 z-privacy-offline 가드와 충돌해 이 빌드에서 꺼 두고 읽기 규칙 코어만 시험으로 고정.
+- 시험: Rust 14, vitest 142(도구 131 포함), 브라우저 6.
+
+검증: fmt·clippy·cargo test 260(1 ignored)·fixture 124·contracts·typecheck·lint·vitest 402·build·release manifest·토큰 41/41·Chromium 135 통과(전체)·parity 124 일치. Firefox·WebKit은 이 host에 브라우저가 없어 미실행. 이전 실행에서 product-completion·edit·print-share가 한 번씩 실패했으나 단독 재실행과 최종 전체 실행은 통과(원인 미규명, 재시도·타임아웃 변경 없음).
+
+미완료·미검증: 실제 사이트 구조·실제 Chrome·native messaging·실제 R2, 앱의 저장소 URL 읽기 활성화(소유자 결정), 가져온 변형의 보유 수납함 복사(기존 `dangling_evidence_ref` 동작), 수집 항목을 쓴 솔버 배치 결과, 큰 번들(스냅샷 4 MiB 초과 거절).
+
+다음: 독립 검토 2회 후 감독자 병합. 다른 노드는 시작하지 않았다.

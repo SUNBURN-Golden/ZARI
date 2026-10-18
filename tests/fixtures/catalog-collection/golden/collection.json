@@ -1,0 +1,189 @@
+{
+  "format": "zari-collection/1",
+  "createdAt": "2026-10-15T00:00:00Z",
+  "items": [
+    {
+      "id": "crawl:ohou:1001",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "모듈 5단 선반",
+      "brand": "합성브랜드",
+      "category": "홈 > 가구 > 수납·선반",
+      "categoryHint": "shelf",
+      "productUrl": "https://ohou.se/productions/1001/selling",
+      "source": "ohou",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "제품 사이즈: 가로 80cm x 세로 30cm x 높이 180cm",
+        "width": "80",
+        "depth": "30",
+        "height": "180",
+        "unit": "cm",
+        "confidence": "high"
+      },
+      "priceText": "59000 KRW"
+    },
+    {
+      "id": "crawl:ohou:1003:o1aa33fda",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "스택 수납함 (소형)",
+      "brand": "합성브랜드",
+      "category": "홈 > 수납함",
+      "categoryHint": "bin",
+      "productUrl": "https://ohou.se/productions/1003/selling",
+      "source": "ohou",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "소형: 가로 30cm x 세로 20cm x 높이 15cm",
+        "width": "30",
+        "depth": "20",
+        "height": "15",
+        "unit": "cm",
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "crawl:ohou:1003:oe920d1be",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "스택 수납함 (대형)",
+      "brand": "합성브랜드",
+      "category": "홈 > 수납함",
+      "categoryHint": "bin",
+      "productUrl": "https://ohou.se/productions/1003/selling",
+      "source": "ohou",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "대형: 가로 45cm x 세로 30cm x 높이 25cm",
+        "width": "45",
+        "depth": "30",
+        "height": "25",
+        "unit": "cm",
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "crawl:29cm:3001",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "우드 서랍장",
+      "brand": "합성우드",
+      "category": "가구 > 서랍장",
+      "categoryHint": "cabinet",
+      "productUrl": "https://www.29cm.co.kr/products/3001",
+      "source": "29cm",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "사이즈: W 60 D 40 H 90 (cm)",
+        "width": "60",
+        "depth": "40",
+        "height": "90",
+        "unit": "cm",
+        "confidence": "high"
+      },
+      "priceText": "189000 KRW"
+    },
+    {
+      "id": "crawl:29cm:3002",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "미니 사이드 테이블",
+      "brand": "",
+      "category": "",
+      "categoryHint": "table",
+      "productUrl": "https://www.29cm.co.kr/products/3002",
+      "source": "29cm",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "크기: 40 x 40 x 55 cm",
+        "width": null,
+        "depth": null,
+        "height": null,
+        "unit": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "id": "crawl:29cm:3005",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "라운드 스툴",
+      "brand": "",
+      "category": "",
+      "categoryHint": "chair",
+      "productUrl": "https://www.29cm.co.kr/products/3005",
+      "source": "29cm",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "지름 40cm 높이 45cm",
+        "width": null,
+        "depth": null,
+        "height": null,
+        "unit": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "id": "crawl:ikea:80275887",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "KALLAX 칼락스 선반유닛",
+      "brand": "IKEA",
+      "category": "가구 > 책장",
+      "categoryHint": "shelf",
+      "productUrl": "https://www.ikea.com/kr/ko/p/kallax-shelf-unit-white-80275887/",
+      "source": "ikea",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "너비: 77 cm / 깊이: 39 cm / 높이: 147 cm",
+        "width": "77",
+        "depth": "39",
+        "height": "147",
+        "unit": "cm",
+        "confidence": "high"
+      },
+      "priceText": "69900 KRW"
+    },
+    {
+      "id": "crawl:ikea:12345678",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "SAMLA 삼라 박스",
+      "brand": "IKEA",
+      "category": "",
+      "categoryHint": "bin",
+      "productUrl": "https://www.ikea.com/kr/ko/p/samla-box-12345678/",
+      "source": "ikea",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "외경 가로 39cm 세로 28cm 높이 14cm",
+        "width": "39",
+        "depth": "28",
+        "height": "14",
+        "unit": "cm",
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "crawl:ikea:23456789",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "VARIERA 박스",
+      "brand": "IKEA",
+      "category": "",
+      "categoryHint": "bin",
+      "productUrl": "https://www.ikea.com/kr/ko/p/variera-box-23456789/",
+      "source": "ikea",
+      "fetchedAt": "2026-10-15T00:00:00Z",
+      "dimensions": {
+        "rawText": "내부 가로 20cm 세로 15cm 높이 10cm",
+        "width": null,
+        "depth": null,
+        "height": null,
+        "unit": null,
+        "confidence": "unparsed"
+      }
+    }
+  ]
+}

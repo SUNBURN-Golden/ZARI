@@ -393,6 +393,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 결제·출시·사진 동의·클라우드·실상품 연결·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, `features/onboarding`, 시작 선택·배너·합성 문구를 걷어 낸다. 저장 데이터와 계약은 바뀌지 않으므로 되돌릴 데이터가 없다.
 
+## Dz-catalog-crawler — 공개 상품 치수 자동 수집 봇과 읽기 전용 카탈로그 클라이언트 / 채택
+
+- ID: Dz-catalog-crawler
+- 상태: 채택. 소유자 지시 2026-10-15 KST. 이 기록은 z-catalog-crawler만 다룬다. 이 노드는 고정된 `.aiops/program.json`에 없고 감독자 프로그램 사본에만 있다.
+- 문제: 실상품 치수를 사람이 한 건씩 입력하지 않고 카탈로그를 채우고 싶다. 동시에 v1의 "scraper 없음", 이미지·로그인·차단 우회 금지, 앱의 로컬 우선과 읽기 전용, unknown을 통과로 바꾸지 않는 규칙을 지켜야 한다.
+- 변경 대상: [docs/adr/SP-z-catalog-crawler.md](../docs/adr/SP-z-catalog-crawler.md), [docs/CATALOG_COLLECTION.md](../docs/CATALOG_COLLECTION.md), `tools/catalog-extension/`, `tools/catalog-crawler-bot/`, `crates/core/src/catalog_bundle.rs`(와 example·WASM 자유 함수·생성 계약), `apps/web/src/features/catalog/`의 번들 패널과 이미지 없는 도형, `apps/web/src/worker/bundleWorker.ts`, `project.css`의 도형 규칙, 단위·브라우저·Rust 시험, `tests/fixtures/catalog-collection/`. 프로토콜·`BUILD_ID`·capability·DB version·기존 fixture 기대값은 바꾸지 않는다.
+- 검토한 대안: (A) 사용자 Chrome 안의 MV3 확장이 봇의 작업만 실행하고, 봇은 Native Messaging(+0600 Unix 소켓)으로 구동·검증·게시하며, 앱은 번들을 읽기만 한다. (B) 서버측 fetch 크롤러. (C) 앱 안의 크롤러. (D) 127.0.0.1 브리지 또는 CDP로 브라우저 제어.
+- 선택: A. B는 ohou.se가 비브라우저에 robots.txt를 403으로 막아 우회 압력이 되고, C는 앱의 읽기 전용·로컬 우선을 깬다. D는 다른 프로세스·웹페이지가 닿는 포트를 연다.
+- 조건: 이미지·사진·썸네일은 수집·저장·배포·표시하지 않는다. 항목은 항상 `unconfirmed`이며 Rust는 Unverified 조건부 적합으로만 다룬다. 외경으로 내경을 채우지 않는다. 단위·축을 추측하지 않는다. 한 행이라도 격리되면 기존 카탈로그를 부분 덮어쓰지 않는다. 수집은 호스트별 저속·상한·robots·차단 즉시 중단·킬 스위치 아래에서만 돈다. 앱의 URL 읽기는 z-privacy-offline의 네트워크 가드와 충돌하므로 이 빌드에서는 파일 전용이고 읽기 규칙 코어만 시험으로 고정했다(켜는 조건은 ADR에 기록). 약관·데이터베이스권·저작권·차단 위험은 소유자가 수용했다(법률 자문 아님, 무인 자동 수집은 약관이 가장 자주 금지하는 유형). 새 색 토큰은 없고 기존 `canvas-outline`/`warning-on-soft` 쌍만 쓴다. Fable 게이트는 독립 읽기 전용 검토 2회로 대체하고 머지는 감독자에게 위임된다.
+- 접근성·성능: 파일 입력은 네이티브 컨트롤이고 저장 단추는 Enter로 누른다. 결과는 `role="status"`이며 도형은 `role="img"`에 가로·세로·높이를 읽어 준다. 미확인 항목은 글자로 "치수 미확인"이라 쓴다. 390px에서 한 열이고 forced-colors는 시스템 색을 쓴다. 번들 검토는 전용 Worker에서 하고 항목 5,000개·10 MiB로 제한한다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-15 KST, 원문: "크롤링해야지. 이것도 일종의 디지털트윈으로 해서 직접 적용할수있게 해주는건데." 이 문장은 이 노드의 채택이다. R2 계정·비용·공개 base URL, Chrome 웹 스토어 게시, 사진·이미지 사용, 앱 URL 읽기 활성화, 화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, `tools/`, `catalog_bundle.rs`와 생성 계약 루트 세 개, 번들 패널을 걷어 낸다. 저장된 번들 카탈로그는 일반 `imported` 카탈로그라 데이터를 지울 필요는 없고 `#/data`·카탈로그 화면의 기존 경로로 다룬다.
+
 ## D-audit-01 — 프로젝트 화면의 빠진 토큰을 기존 semantic token으로 닫음 / 채택
 
 - ID: D-audit-01

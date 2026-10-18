@@ -33,3 +33,12 @@ pub fn domain_fixture_requests(fixture_json: &str) -> Result<String, JsError> {
     serde_json::to_string(&zari_core::domain_fixture_requests(&fixture))
         .map_err(|e| JsError::new(&e.to_string()))
 }
+
+/// Read-only review of a dimension-only catalog bundle. This is deliberately
+/// outside the Worker protocol: bundles may exceed the 5 MiB message cap and
+/// the review never touches a project, snapshot or stored catalog.
+#[wasm_bindgen(js_name = reviewCatalogBundle)]
+pub fn review_catalog_bundle(text: &str) -> Result<String, JsError> {
+    serde_json::to_string(&zari_core::catalog_bundle::review_bundle_text(text))
+        .map_err(|e| JsError::new(&e.to_string()))
+}

@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /kr/ko/search/
+Disallow: /kr/ko/compare/
+Disallow: /kr/ko/profile/
+Disallow: /*?sort=
+Disallow: /*?filters=
+Crawl-delay: 12
