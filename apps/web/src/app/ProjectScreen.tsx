@@ -7,6 +7,7 @@ import { useWorkspace } from '../features/workspace/Workspace';
 import { fieldCaption, preferredMeasureView } from '../features/workspace/projection';
 import { AttachmentManager } from '../features/attachments/model';
 import { reencodeImage } from '../features/attachments/image';
+import { describeStoreFailure } from '../features/privacy/connections';
 import { DetailMeasure } from '../features/project/DetailPanel';
 import { PortablePanel } from '../features/project/PortablePanel';
 import { NextFactsList } from '../features/project/NextFactsList';
@@ -355,7 +356,11 @@ function PhotosPanel({ projectId }: { projectId: string }) {
       if (result.status === 'saved') {
         setRows(await attachmentManager.list(projectId));
       } else {
-        setError(ATTACH_ERROR_TEXT[result.code] ?? result.code);
+        setError(
+          result.code === 'persist_failed'
+            ? describeStoreFailure(result.detail ?? 'persistence_failed')
+            : (ATTACH_ERROR_TEXT[result.code] ?? result.code),
+        );
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
