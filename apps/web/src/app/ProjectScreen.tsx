@@ -22,6 +22,13 @@ import {
 } from '../features/project/draft';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import type { AttachmentRow, CatalogRow, OwnedContainerRow } from '../persistence/db';
+import { OnboardingPanel } from '../features/onboarding/OnboardingPanel';
+import {
+  EXAMPLE_NAME,
+  FIELD_LABELS,
+  focusMeasurementInput,
+  isExampleName,
+} from '../features/onboarding/guide';
 import { InventoryPanel } from '../features/inventory/InventoryPanel';
 import { LocationPanel } from '../features/location/LocationPanel';
 import { ownedToRaw } from '../features/owned/model';
@@ -35,20 +42,6 @@ import {
   workerController,
 } from './sessionRegistry';
 import { navigate } from './router';
-
-const FIELD_LABELS: Record<MeasurementField, string> = {
-  'space.interior.width': '공간 안쪽 폭',
-  'space.interior.depth': '공간 안쪽 깊이',
-  'space.interior.height': '공간 안쪽 높이',
-  'space.opening.width': '개구부 폭',
-  'space.opening.height': '개구부 높이',
-  'items.item-a.dimensions.envelope.width': '물건 A 폭',
-  'items.item-a.dimensions.envelope.depth': '물건 A 깊이',
-  'items.item-a.dimensions.envelope.height': '물건 A 높이',
-  'items.item-b.dimensions.envelope.width': '물건 B 폭',
-  'items.item-b.dimensions.envelope.depth': '물건 B 깊이',
-  'items.item-b.dimensions.envelope.height': '물건 B 높이',
-};
 
 const UNKNOWN_REASON: Record<string, string> = {
   notMeasured: '미측정',
@@ -492,6 +485,10 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     workspace.setFocus({ kind: 'measurement', fieldPath: field });
     workspace.setView(preferredMeasureView(field, entry?.projection ?? null));
   };
+  const gotoField = (field: MeasurementField) => {
+    setFocused(field);
+    focusMeasurementInput(field);
+  };
   const fieldBlock = (field: MeasurementField): 'stale' | 'invalid' | null => {
     if (state.diagnostics.some((entry) => fieldPathFor(entry.fieldPath) === field)) return 'invalid';
     if (state.staleInput) return 'stale';
@@ -577,6 +574,12 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
             보유품을 예약하지 않습니다.
           </p>
         </div>
+      )}
+      {isExampleName(state.name) && (
+        <p className="onboarding-example" data-testid="example-banner" role="note">
+          {EXAMPLE_NAME}. 값과 상품은 연습용 합성 자료이며 실제 공간·상품이 아닙니다. 내 공간은 프로젝트
+          목록에서 “내 공간으로 시작”으로 새로 만드세요.
+        </p>
       )}
       <div
         className="session-status"
@@ -672,6 +675,15 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
       >
         <div className="section-kicker">01 · 공간 치수</div>
         <h2 id="measure-title">공간을 측정해 주세요.</h2>
+        <OnboardingPanel
+          projectId={projectId}
+          form={state.form}
+          diagnostics={state.diagnostics}
+          nextFacts={state.plan.nextFacts}
+          focused={focused}
+          example={isExampleName(state.name)}
+          onGoto={gotoField}
+        />
         <NextFactsList
           view={state.plan.nextFacts}
           onRecompile={() => session.recompileNextFacts()}
@@ -755,7 +767,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
             onPress={() => session.replaceForm(sampleProjectForm())}
             data-testid="fill-sample"
           >
-            샘플 값 채우기
+            합성 샘플 값으로 바꾸기
           </Button>
           <Button className="button button-quiet" onPress={() => void download('standard')} data-testid="export-project">
             프로젝트보내기
