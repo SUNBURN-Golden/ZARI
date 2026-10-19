@@ -125,9 +125,13 @@ test('importing a bundle file draws items from W/D/H only, saves, reopens, with 
   await offline.close();
   await context.setOffline(false);
 
-  // No image request, no third-party request, only same-origin GETs.
+  // No catalog image request, no third-party request, only same-origin GETs.
   const origin = new URL(url).origin;
-  expect(seen.filter((r) => r.type === 'image' || r.type === 'media')).toEqual([]);
+  const imageRequests = seen.filter((r) => r.type === 'image' || r.type === 'media');
+  expect(imageRequests.filter((r) => new URL(r.url).pathname !== '/favicon.svg')).toEqual([]);
+  expect(new Set(imageRequests.map((r) => new URL(r.url).pathname))).toEqual(
+    new Set(imageRequests.length > 0 ? ['/favicon.svg'] : []),
+  );
   expect(seen.filter((r) => !r.url.startsWith(origin) && !r.url.startsWith('data:') && !r.url.startsWith('blob:'))).toEqual([]);
   expect(seen.filter((r) => r.method !== 'GET')).toEqual([]);
   expect(errors).toEqual([]);
@@ -181,6 +185,31 @@ test('a saved crawled catalog is selectable for a project and listed as an owned
   await select.selectOption(value!);
   await expect(page.getByTestId('catalog-crawled-note')).toContainText('미확인');
   await expect(page.getByTestId('worker-state')).toHaveText('ready');
+  expect(errors).toEqual([]);
+});
+
+test('copying a measured crawled variant into an owned container registers and shows its basis', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  collectErrors(page, errors);
+  await page.goto('/#/catalog');
+  await page.getByTestId('bundle-file').setInputFiles(bundleFile(golden));
+  await expect(page.getByTestId('bundle-status')).toHaveAttribute('data-phase', 'ready', { timeout: 60_000 });
+  await page.getByTestId('bundle-save').click();
+  await expect(page.getByTestId('bundle-status')).toHaveAttribute('data-phase', 'saved', { timeout: 30_000 });
+
+  // Pick the measured SAMLA variant, enter only identity/quantity, register.
+  const pick = page.getByTestId('owned-variant-pick');
+  const value = await pick.locator('option[value$=":crawl:ikea:12345678"]').getAttribute('value');
+  expect(value).toBeTruthy();
+  await pick.selectOption(value!);
+  await page.getByTestId('owned-id').fill('own-samla');
+  await page.getByTestId('owned-quantity-owned').fill('1');
+  await page.getByTestId('owned-quantity-available').fill('1');
+  await page.getByTestId('owned-register').click();
+  await expect(page.getByTestId('owned-list')).toContainText('own-samla', { timeout: 30_000 });
+  await expect(page.getByTestId('owned-list')).toContainText('옵션 crawl:ikea:12345678 기반');
+  await expect(page.getByTestId('owned-error')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

@@ -51,6 +51,9 @@ const DIAGNOSTIC_TEXT: Record<string, string> = {
   invalid_timestamp: '날짜·시각 형식을 확인해 주세요.',
   not_applicable_not_allowed: '이 필드는 "해당 없음"을 쓸 수 없습니다.',
   input_limit_exceeded: '허용 개수를 넘었습니다.',
+  dangling_evidence_ref: '연결된 근거 기록을 찾을 수 없습니다.',
+  available_exceeds_owned: '사용 가능 수량이 보유 수량보다 많습니다.',
+  invalid_support_kind: '지지면 종류가 올바르지 않습니다.',
 };
 
 function issueText(issue: ImportIssue): string {

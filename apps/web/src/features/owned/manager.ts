@@ -81,11 +81,12 @@ export class OwnedManager {
           ? (reply.normalizedInput.input.ownedContainers.find((o) => o.id === raw.id) ?? null)
           : null;
       if (owned === null) {
+        const scoped = reply.diagnostics.filter((d) =>
+          d.fieldPath.replace(/^input\./, '').startsWith('ownedContainers.'),
+        );
         return {
           status: 'rejected',
-          diagnostics: reply.diagnostics.filter((d) =>
-            d.fieldPath.startsWith(`ownedContainers.${raw.id}`),
-          ),
+          diagnostics: scoped.length > 0 ? scoped : reply.diagnostics,
         };
       }
       const result = await this.repo.saveOwnedContainer(owned, expectedRevision);

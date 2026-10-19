@@ -14,8 +14,8 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. N
 - Generated (by `npm run contracts:generate`, `scripts/contracts.mjs` roots list extended): `apps/web/src/contracts/generated/*`.
 - Extension: `tools/catalog-extension/` (`manifest.json`, `background.js`, `popup.*`, `lib/{sites,dimensions,collector,blocked,extract,runner}.js`+`.d.ts`, `parsers/{ohou,cm29,ikea,index}.js`, `tests/`).
 - Bot: `tools/catalog-crawler-bot/` (`cli, scheduler, state, channel, robots, config, paths, fsx, chrome, native-host, install-native-host, rust, bundle, publish-r2`, `tests/`).
-- App: `apps/web/src/features/catalog/{bundle.ts,BundlePanel.tsx,ItemShapeView.tsx}`, `apps/web/src/worker/bundleWorker.ts`, `apps/web/src/app/{CatalogScreen,ProjectScreen}.tsx`, `apps/web/src/styles/project.css`.
-- Tests/fixtures: `apps/web/tests/unit/catalogBundle.test.ts`, `apps/web/tests/browser/catalog-crawler.spec.ts`, `tests/fixtures/catalog-collection/**`, `vitest.config.ts` (include adds `tools/**/tests/**`), `tsconfig.json` (include adds the bot).
+- App: `apps/web/src/features/catalog/{bundle.ts,BundlePanel.tsx,ItemShapeView.tsx}`, `apps/web/src/worker/bundleWorker.ts`, `apps/web/src/app/{CatalogScreen,ProjectScreen}.tsx`, `apps/web/src/features/owned/{model,manager}.ts`, `apps/web/src/styles/project.css`.
+- Tests/fixtures: `apps/web/tests/unit/catalogBundle.test.ts`, `apps/web/tests/unit/catalogCrawlerPlacement.test.ts`, `apps/web/tests/browser/catalog-crawler.spec.ts`, `tests/fixtures/catalog-collection/**`, `vitest.config.ts` (include adds `tools/**/tests/**`), `tsconfig.json` (include adds the bot).
 - Docs: `docs/adr/SP-z-catalog-crawler.md`, `docs/CATALOG_COLLECTION.md`, `design/DECISIONS.md`, `design/SPATIAL_WORKSPACE.md`, `docs/PERFORMANCE_SECURITY_FAILURES.md` (scraper row revised), `docs/PRODUCT_SPEC.md`, `docs/TEST_STRATEGY.md`, `docs/IMPLEMENTATION_STATUS.md`, this file.
 
 No new dependency (root and `apps/web` package.json unchanged; asserted by test). `Cargo.lock`, `fixtures/**`, protocol, `BUILD_ID` (`zari-domain-7`), capability lists, DB version unchanged (`git status` clean for `fixtures Cargo.lock`; 124 fixture cases still run).
@@ -34,11 +34,11 @@ Extension (MV3, plain JS, permissions exactly `scripting`, `nativeMessaging`, `a
 | 3 dimension rules | `dimensions.test.mjs`, `extract.test.mjs`, Rust `inner` handling in `catalog_bundle` tests and `catalogBundle.test.ts` (inner stays unknown) |
 | 4 bundle contract | Rust unit (10) + `crates/core/tests/catalog_bundle.rs` (4, byte-for-byte golden) + `catalogBundle.test.ts` (image field/url, unknown field, checksum, version, bad host, non-JSON) |
 | 5 quarantine / unconfirmed | `catalogBundle.test.ts` (stored catalogs identical after a bad bundle; conflict quarantine; no `confirmed`), browser spec test 4 |
-| 6 file → cache → offline → pin; mock repository; no crawl code | browser spec tests 3 and 5 (save, reload, offline reopen via service worker, project pin), `catalogBundle.test.ts` repository tests (GET, `credentials: 'omit'`, `redirect: 'error'`, https, userinfo/query refusal, size/timeout, pointer mismatch) and static scan of `apps/web/src` |
+| 6 file → cache → offline → pin → owned copy → placement; mock repository; no crawl code | browser spec tests 3, 5 and 6 (save, reload, offline reopen via service worker, project pin, measured variant → owned container registers through the real UI), `catalogCrawlerPlacement.test.ts` (all 9 golden variants register, real diagnostics surface, embed → plan conditional with every `ic` check unknown, re-serialization clean), `catalogBundle.test.ts` repository tests (GET, `credentials: 'omit'`, `redirect: 'error'`, https, userinfo/query refusal, size/timeout, pointer mismatch) and static scan of `apps/web/src` |
 | 6 network assertions | browser spec test 3: 0 image/media requests, 0 third-party, 0 non-GET |
 | 7 publisher | `publish.test.ts` (15): disabled cases, mock S3 verifies SigV4, PUT-only ordering with `latest.json` last, secret masking, no request without `--yes`/env; `bundle-flow.test.ts` auto-publish with R2 on and off |
 | 8 no secrets / deps | `static.test.ts` (account host, AKIA, private key, assigned secret, bearer; dependency lists) |
-| 7 (render) shapes from W/D/H only | browser spec 3 (plan rect ratio 80:30, shelf/cabinet hint lines, unmeasured items draw nothing), 6 (390px forced colors, no overflow, axe clean on the panel) |
+| 7 (render) shapes from W/D/H only | browser spec 3 (plan rect ratio 80:30, shelf/cabinet hint lines, unmeasured items draw nothing), 7 (390px forced colors, no overflow, axe clean on the panel) |
 
 ## Commands (all with `PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/bin:$HOME/.cargo/bin:$PATH CARGO_BUILD_JOBS=4`)
 
@@ -51,23 +51,23 @@ Extension (MV3, plain JS, permissions exactly `scripting`, `nativeMessaging`, `a
 | `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked` | exit 0 |
 | `npm run wasm:build`, `npm run contracts:check` | ok; "Contracts match Rust source; 124 fixture structures valid." |
 | `npm run typecheck`, `npm run lint` | exit 0, exit 0 |
-| `npm test` | exit 0, 48 files, 402 tests (includes 131 under `tools/**`, 11 in `catalogBundle.test.ts`) |
+| `npm test` | exit 0, 49 files, 406 tests (includes 131 under `tools/**`, 11 in `catalogBundle.test.ts`, 4 in `catalogCrawlerPlacement.test.ts`) |
 | `npm run build`, `node scripts/check-release-manifest.mjs` | ok, `errors: []` |
 | `node scripts/check-design-tokens.mjs --self-test` | 72 base tokens; 41/41 contrast cases (no new case needed) |
-| `npm run test:browser -- --project=chromium` (full, final tree) | exit 0, 135 passed |
+| `npm run test:browser -- --project=chromium` (full, final tree, re-run after fix round 1) | exit 0, 136 passed |
 | `npm run test:parity` | exit 0, 124 shared fixtures match native vs browser Worker/WASM |
 | `npx playwright test catalog-crawler.spec.ts --project=firefox` / `webkit` | not run: browsers not installed on this host (`Executable doesn't exist`). **UNVERIFIED** |
 
-Flakiness, reported truthfully: an earlier full-suite run (taken while a first draft was still being verified) failed `product-completion.spec.ts` (`search-status` stuck on `interrupted`) and `edit.spec.ts`; a second run failed `print-share.spec.ts:334` and `product-completion.spec.ts`. Each of those specs passed when rerun alone, and the final full run on the unchanged tree passed 135/135. No timeout or retry setting was changed and no existing test edited. The cause (host load vs. my change) was not isolated; none of those specs touch the catalog screen.
+Flakiness, reported truthfully: an earlier full-suite run (taken while a first draft was still being verified) failed `product-completion.spec.ts` (`search-status` stuck on `interrupted`) and `edit.spec.ts`; a second run failed `print-share.spec.ts:334` and `product-completion.spec.ts`. Each of those specs passed when rerun alone, and the final full run on the unchanged tree passed 135/135; the post-fix-round full run on this tree passed 136/136. No timeout or retry setting was changed and no existing test edited. The cause (host load vs. my change) was not isolated; none of those specs touch the catalog screen.
 
-Browser evidence: Chromium 1440×1000 and 390×844 forced-colors; routes `#/catalog`, `#/` → project; flows: collector on real DOM (fixture HTML via `setContent`, no request), import → review → keyboard save (Enter) → reload → offline reopen, tampered/image/non-JSON refusal, project pin, narrow/forced-colors/axe. Console and page errors asserted empty. No screenshots kept; none is a baseline.
+Browser evidence: Chromium 1440×1000 and 390×844 forced-colors; routes `#/catalog`, `#/` → project; flows: collector on real DOM (fixture HTML via `setContent`, no request), import → review → keyboard save (Enter) → reload → offline reopen, tampered/image/non-JSON refusal, project pin, owned-copy variant pick → register → listed with its `variantRef` basis, narrow/forced-colors/axe. Console and page errors asserted empty. No screenshots kept; none is a baseline.
 
 ## Known limits / unverified
 
 - **Real sites are unverified.** Parsers, URL patterns, and the assumption that pages expose JSON-LD / spec rows / body text were never checked against ohou.se, 29cm, or IKEA KR. Only the supervisor's three robots.txt observations are used.
 - Real Chrome, `--load-extension` (Chrome ≥137 may ignore it for branded builds), native messaging end to end, the MV3 service worker, and real R2 were not exercised. The extension's Chrome glue (`background.js`, `popup.js`) is untested beyond static scans.
 - **App URL reading is off in this build** (deviation, as the spec instructs): the z-privacy-offline guard forbids `fetch` outside the service worker. The read rules are implemented and tested as a transport-injected core; enabling needs an owner decision listed in the ADR. There is no "카탈로그 새로고침" button.
-- Placement with crawled items: the catalog can be saved, pinned to a project (Worker activates), and offered as an owned-copy source, but copying an imported variant into an owned container is rejected with `dangling_evidence_ref` for every imported catalog that has evidence (also the provenance samples; existing behaviour, left unchanged). No solver plan using crawled items was asserted. Inner dimensions are always unknown, so fit is unknown, never pass.
+- Contained (support-bound) item assignments cannot resolve on a crawled container — it declares no inner support. `provisionalContainer` assignment is the honest "inside, pending measurement" path.
 - The "3D box" is an SVG isometric box in the catalog panel, not the WebGL viewer; the placed-plan viewer is unchanged.
 - Snapshots over 4 MiB are refused (`snapshot_too_large`), so a 5,000-item bundle may be rejected by size.
 - Option labels are hashed into the id for non-ASCII labels; the bundle has no option-label field (name carries it).
@@ -76,6 +76,10 @@ Browser evidence: Chromium 1440×1000 and 390×844 forced-colors; routes `#/cata
 ## Incidental fix
 
 `CatalogScreen` split the owned-copy variant pick at every `:`; variant ids containing `:` (`crawl:<site>:<id>`) were not found. It now splits at the first `:` (digests never contain one).
+
+## Fix round 1 (review finding: copied variant could not be placed)
+
+The owned-copy prefill carried each fact's catalog-scoped `evidenceIds` into a project-scoped input, so every measured imported variant was rejected `dangling_evidence_ref` and the UI showed only the generic message. `rawPhysicalFromVariant` now drops the ids on the by-value copy — origins stay as declared (never upgraded), `verification` stays `unverified`, and `variantRef` keeps the digest-pinned link to the snapshot that holds the evidence records. `OwnedManager.register` also filters diagnostics by both reported path shapes (`ownedContainers.<id>` and `input.ownedContainers.<index>`), and `CatalogScreen` maps the newly surfaced codes to text. Coverage: `catalogCrawlerPlacement.test.ts` (4 tests: all 9 golden variants register with no catalog evidence ids and `unverified` provenance; rejections return the real `dangling_evidence_ref`/`available_exceeds_owned` codes; a crawled container embeds and reaches a `validateCandidate` plan as `conditional` with every `chk:ic` check `unknown`; `ownedToRaw` re-serializes clean) and browser spec test 6 (the full copy flow through the real UI registers `own-samla`).
 
 ## Contract-change advisory
 
