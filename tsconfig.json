@@ -17,5 +17,5 @@
     "types": ["vite/client", "node"],
     "noEmit": true
   },
-  "include": ["apps/web/src", "apps/web/tests", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
+  "include": ["apps/web/src", "apps/web/tests", "tools/catalog-crawler-bot", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
 }

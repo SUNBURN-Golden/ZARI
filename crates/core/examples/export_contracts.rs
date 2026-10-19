@@ -49,7 +49,10 @@ fn main() {
             "RawCatalogFieldDto":schema::<RawCatalogFieldDto>(),
             "NormalizedCatalogField":schema::<NormalizedCatalogField>(),
             "SnapshotBinding":schema::<SnapshotBinding>(),
-            "LayoutEditCommand":schema::<LayoutEditCommand>()
+            "LayoutEditCommand":schema::<LayoutEditCommand>(),
+            "CatalogBundle":schema::<catalog_bundle::CatalogBundle>(),
+            "CatalogBundleReview":schema::<catalog_bundle::CatalogBundleReview>(),
+            "CatalogBundleBuild":schema::<catalog_bundle::CatalogBundleBuild>()
         }))
         .expect("schema serializes")
     );

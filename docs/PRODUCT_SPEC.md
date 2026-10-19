@@ -28,7 +28,7 @@ Contents retrieval uses a measured external staging volume and support, not mere
 
 Supported first, with precise scope: numeric measurements, explicit unknowns, synthetic demo catalog, owned storage, conservative axis-aligned placement, top/front SVG, local save/reload. Before v1 beta: real manually verified catalog/import, simple seller links, execution progress, project duplication/export/import, keyboard/mobile workflows, optional locally stored photos without measurement inference, local recovery and offline revisit after initial load.
 
-Out of v1: rooms, wall mounting, assembly requiring internal rearrangement/rotation, drawers/lids, new shelves, structural engineering, child-safety certification, multi-compartment solving, account/cloud sync, remote AI, scraper, automatic cart/checkout, GPU and 3D editor. Future requests receive unsupported_geometry/unsupported_primitive with a supported alternative, never simulated support.
+Out of v1: rooms, wall mounting, assembly requiring internal rearrangement/rotation, drawers/lids, new shelves, structural engineering, child-safety certification, multi-compartment solving, account/cloud sync, remote AI, scraper in the app (collection tooling lives outside the app, see SP-z-catalog-crawler), automatic cart/checkout, GPU and 3D editor. Future requests receive unsupported_geometry/unsupported_primitive with a supported alternative, never simulated support.
 
 ## 3. Facts and check presentation
 

@@ -16,6 +16,7 @@ import {
 } from '../features/owned/model';
 import type { ImportEntry, ImportIssue } from '../features/catalog/import';
 import { ProvenancePanel } from '../features/catalog/ProvenancePanel';
+import { BundlePanel } from '../features/catalog/BundlePanel';
 import { isIdText, type StageResult } from '../features/catalog/manager';
 import { navigate } from './router';
 import { Shell } from './ProjectScreen';
@@ -50,6 +51,9 @@ const DIAGNOSTIC_TEXT: Record<string, string> = {
   invalid_timestamp: '날짜·시각 형식을 확인해 주세요.',
   not_applicable_not_allowed: '이 필드는 "해당 없음"을 쓸 수 없습니다.',
   input_limit_exceeded: '허용 개수를 넘었습니다.',
+  dangling_evidence_ref: '연결된 근거 기록을 찾을 수 없습니다.',
+  available_exceeds_owned: '사용 가능 수량이 보유 수량보다 많습니다.',
+  invalid_support_kind: '지지면 종류가 올바르지 않습니다.',
 };
 
 function issueText(issue: ImportIssue): string {
@@ -429,7 +433,10 @@ function OwnedLibrary({
       raw.allowedUse = fresh.allowedUse;
     }
     if (variantPick && !editing) {
-      const [digest, variantId] = variantPick.split(':');
+      // Variant ids may contain ':' (crawl:<site>:<id>); the digest never does.
+      const split = variantPick.indexOf(':');
+      const digest = variantPick.slice(0, split);
+      const variantId = variantPick.slice(split + 1);
       const found = variants.find(
         (v) => v.catalog.catalogDigest === digest && v.variant.id === variantId,
       );
@@ -605,8 +612,12 @@ function OwnedLibrary({
                 key={`${catalog.catalogDigest}:${variant.id}`}
                 value={`${catalog.catalogDigest}:${variant.id}`}
               >
+                {catalog.origin === 'crawled-bundle'
+                  ? `${catalog.catalog.products.find((p) => p.id === variant.productId)?.name ?? variant.id} · `
+                  : ''}
                 {variant.optionLabel} ({catalog.catalogVersion}
-                {catalog.origin === 'synthetic-bundled' ? ' · 데모' : ''})
+                {catalog.origin === 'synthetic-bundled' ? ' · 데모' : ''}
+                {catalog.origin === 'crawled-bundle' ? ' · 수집·미확인' : ''})
               </option>
             ))}
           </select>
@@ -755,6 +766,7 @@ export function CatalogScreen() {
       </section>
       <CatalogImport onCommitted={() => void refresh()} />
       <ProvenancePanel catalogs={catalogs ?? []} onCommitted={() => void refresh()} />
+      <BundlePanel preservedDigest={catalogs?.[0]?.catalogDigest ?? null} onCommitted={() => void refresh()} />
       {owned !== null && catalogs !== null && (
         <OwnedLibrary catalogs={catalogs} owned={owned} onChanged={() => void refresh()} />
       )}

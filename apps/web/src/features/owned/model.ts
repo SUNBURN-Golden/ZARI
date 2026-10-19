@@ -293,18 +293,27 @@ export function ownedToRaw(container: OwnedContainer): RawOwnedContainerDto {
   };
 }
 
-/**
- * Registration prefill from a catalog variant: physical facts are copied with
- * their declared origins/evidence ids — never upgraded to user-measured.
- */
+function dropEvidenceIds(value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const child of value) dropEvidenceIds(child);
+    return;
+  }
+  if (value === null || typeof value !== 'object') return;
+  const record = value as Record<string, unknown>;
+  if (Array.isArray(record.evidenceIds)) record.evidenceIds = [];
+  for (const child of Object.values(record)) dropEvidenceIds(child);
+}
+
 export function rawPhysicalFromVariant(variant: ProductVariant): RawPhysicalContainerModelDto {
-  return {
+  const physical: RawPhysicalContainerModelDto = {
     dimensions: rawDimensions(variant.dimensions),
     primitive: variant.primitive,
     allowedOrientations: orientationsToRaw(variant.allowedOrientations),
     mass: scalarToRaw(variant.mass),
     handling: rawHandling(variant.handling),
   };
+  dropEvidenceIds(physical);
+  return physical;
 }
 
 export interface OwnedFormFields {

@@ -2179,3 +2179,21 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 
 다음: 독립 검토 2회 후 감독자 병합. 다른 z-노드는 시작하지 않았다.
 
+
+## ZARI-z-catalog-crawler — 공개 상품 치수 수집 봇과 읽기 전용 카탈로그 클라이언트 (2026-10-18)
+
+기준 main `1cb98f2ae498264750cd2300dcf419b291cc89ca`. 상세·표·명령은 [evidence](evidence/ZARI-z-catalog-crawler.md). 결정은 [Dz-catalog-crawler](../design/DECISIONS.md), [SP-z-catalog-crawler](adr/SP-z-catalog-crawler.md), 런북은 [CATALOG_COLLECTION](CATALOG_COLLECTION.md). 소유자 지시(2026-10-15)로 추가된 노드다. 프로토콜·`BUILD_ID`·capability·DB version·기존 fixture 기대값은 바꾸지 않았다.
+
+실제 변경:
+
+- Rust `catalog_bundle.rs`: 치수 전용 번들(정규 JSON·SHA-256, 이미지 거부, 단위 변환, 신뢰도 일관성), 기존 provenance 검토로 스냅샷 변환(한 행이라도 격리되면 스냅샷 없음), core example과 WASM `reviewCatalogBundle`, 생성 계약 루트 3개.
+- `tools/catalog-extension/`(MV3, 권한 scripting·nativeMessaging·activeTab, 파서·차단 감지·작업 실행기·수동 담기 팝업)와 `tools/catalog-crawler-bot/`(큐·pacing·robots·백오프·킬 스위치·락·0600 소켓·native host·ingest/build/publish/remove-source/status·env 게이트 R2 PutObject).
+- 앱 `#/catalog` 번들 패널: 파일 → Rust 검토 → 사용자 확인 → 불변 카탈로그 캐시, 이미지 없는 평면·정면·상자 도형, "치수 미확인". 저장소 URL 읽기는 z-privacy-offline 가드와 충돌해 이 빌드에서 꺼 두고 읽기 규칙 코어만 시험으로 고정.
+- 시험: Rust 14, vitest 147(도구 132 포함), 브라우저 7.
+- 검토 수정(1라운드): 보유 수납함 복사 프리필이 카탈로그 범위 `evidenceIds`를 그대로 옮겨 외경 있는 가져온 변형 전부가 `dangling_evidence_ref`로 거절되던 문제를 고쳤다. 복사본은 근거 id를 비우고 `variantRef`가 다이제스트로 고정된 스냅샷을 가리키게 하며, 거절 시 실제 진단 코드가 화면에 나온다. 내경이 알 수 없음인 보유 수납함은 `validateCandidate` 계획에서 조건부(`chk:ic` 전부 unknown)로만 도달한다. 추가로 robots 작업이 사이트당 단일 호스트로 고정돼 allowlist 안 `store.ohou.se`가 항상 fail-closed이던 것을 호스트별 robots.txt 허용으로 고쳤다(RFC 9309; 각 호스트는 여전히 독립 pacing·차단).
+
+검증(수정 라운드 후 전체 재실행): fmt·clippy·cargo test 260(1 ignored)·fixture 28+124·contracts·typecheck·lint·vitest 49파일 407·build·release manifest·토큰 41/41·Chromium 136 통과(전체)·parity 124 일치. Firefox·WebKit은 이 host에 브라우저가 없어 미실행. 이전 실행에서 product-completion·edit·print-share가 한 번씩 실패했고, 이번 전체 실행(기본 4 workers, 부하 호스트)에서는 probe·project·purchase-handoff·quality·spatial3d·workspace 6건이 탐색/워커 대기 타임아웃으로 실패했으나 각각 재실행과 workers=2 최종 전체 실행은 통과(원인 미규명, 재시도·타임아웃 변경 없음, 카탈로그 화면과 무관).
+
+미완료·미검증: 실제 사이트 구조·실제 Chrome·native messaging·실제 R2, 앱의 저장소 URL 읽기 활성화(소유자 결정), 수집 수납함 안쪽의 지지면 결속 배치(내경·지지면 미확인 — 잠정 배치만 가능), 큰 번들(스냅샷 4 MiB 초과 거절).
+
+다음: 독립 검토 2회 후 감독자 병합. 다른 노드는 시작하지 않았다.

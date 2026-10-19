@@ -1,6 +1,6 @@
 /* Generated from Rust DTOs. Do not edit. */
 import type { ValidateFunction } from 'ajv';
-import type { ProtocolRequest, ProtocolResponse, BootstrapProbeDto, BootstrapProbeResult, BootstrapFixture, DomainFixture, RawProjectInputDto, ProjectInput, CatalogImportDto, CatalogSnapshot, PlanSnapshot, VerifiableRecordDto, RawCatalogFieldDto, NormalizedCatalogField, SnapshotBinding, LayoutEditCommand } from './dto';
+import type { ProtocolRequest, ProtocolResponse, BootstrapProbeDto, BootstrapProbeResult, BootstrapFixture, DomainFixture, RawProjectInputDto, ProjectInput, CatalogImportDto, CatalogSnapshot, PlanSnapshot, VerifiableRecordDto, RawCatalogFieldDto, NormalizedCatalogField, SnapshotBinding, LayoutEditCommand, CatalogBundle, CatalogBundleReview, CatalogBundleBuild } from './dto';
 export const validateProtocolRequest: ValidateFunction<ProtocolRequest>;
 export const validateProtocolResponse: ValidateFunction<ProtocolResponse>;
 export const validateBootstrapProbeDto: ValidateFunction<BootstrapProbeDto>;
@@ -17,3 +17,6 @@ export const validateRawCatalogFieldDto: ValidateFunction<RawCatalogFieldDto>;
 export const validateNormalizedCatalogField: ValidateFunction<NormalizedCatalogField>;
 export const validateSnapshotBinding: ValidateFunction<SnapshotBinding>;
 export const validateLayoutEditCommand: ValidateFunction<LayoutEditCommand>;
+export const validateCatalogBundle: ValidateFunction<CatalogBundle>;
+export const validateCatalogBundleReview: ValidateFunction<CatalogBundleReview>;
+export const validateCatalogBundleBuild: ValidateFunction<CatalogBundleBuild>;

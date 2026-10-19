@@ -157,9 +157,20 @@ pub fn review_catalog_import(
     action: &CatalogReviewAction,
 ) -> Result<CatalogProvenanceReply, ProvenanceError> {
     match action {
-        CatalogReviewAction::Sample { bundle } => assemble(&sample_batch(*bundle), Some(*bundle)),
-        CatalogReviewAction::Review { batch } => assemble(batch, None),
+        CatalogReviewAction::Sample { bundle } => {
+            assemble(&sample_batch(*bundle), Some(*bundle), MAX_ROWS)
+        }
+        CatalogReviewAction::Review { batch } => assemble(batch, None, MAX_ROWS),
     }
+}
+
+/// Same review with a caller-chosen row ceiling (the crawled bundle carries up
+/// to 5,000 rows). The default entry point above keeps the 100-row limit.
+pub(crate) fn review_rows_with_limit(
+    batch: &CatalogProvenanceBatch,
+    max_rows: usize,
+) -> Result<CatalogProvenanceReply, ProvenanceError> {
+    assemble(batch, None, max_rows)
 }
 
 pub fn sample_batch(kind: SampleBundleKind) -> CatalogProvenanceBatch {
@@ -272,8 +283,9 @@ impl SourceScope {
 fn assemble(
     batch: &CatalogProvenanceBatch,
     bundle: Option<SampleBundleKind>,
+    max_rows: usize,
 ) -> Result<CatalogProvenanceReply, ProvenanceError> {
-    if batch.rows.len() > MAX_ROWS {
+    if batch.rows.len() > max_rows {
         return Err(ProvenanceError {
             code: "input_limit_exceeded",
         });

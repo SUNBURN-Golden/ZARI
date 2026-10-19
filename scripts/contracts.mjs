@@ -28,6 +28,9 @@ const roots = [
   'NormalizedCatalogField',
   'SnapshotBinding',
   'LayoutEditCommand',
+  'CatalogBundle',
+  'CatalogBundleReview',
+  'CatalogBundleBuild',
 ];
 const files = ['schema.json', 'dto.ts', 'validators.mjs', 'validators.d.mts'];
 const mode = process.argv[2];
