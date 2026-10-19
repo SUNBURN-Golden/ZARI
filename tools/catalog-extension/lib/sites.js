@@ -9,7 +9,6 @@ export const SITES = {
   ohou: {
     key: 'ohou',
     hosts: ['ohou.se', 'store.ohou.se'],
-    robotsHost: 'ohou.se',
     pathPrefix: '/',
     // 2026-10-15 observation: robots.txt answered 403 to a non-browser client.
     denyPrefixes: [],
@@ -18,7 +17,6 @@ export const SITES = {
   '29cm': {
     key: '29cm',
     hosts: ['www.29cm.co.kr'],
-    robotsHost: 'www.29cm.co.kr',
     pathPrefix: '/',
     denyPrefixes: ['/embed/', '/home/embed/', '/my-page/', '/order/', '/auth/', '/inbox/', '/content/post/preview'],
     product: [/^\/products\/(\d+)(?:\/|$)/, /^\/catalog\/(\d+)(?:\/|$)/],
@@ -26,7 +24,6 @@ export const SITES = {
   ikea: {
     key: 'ikea',
     hosts: ['www.ikea.com'],
-    robotsHost: 'www.ikea.com',
     pathPrefix: '/kr/',
     denyPrefixes: ['/kr/ko/search/', '/kr/ko/compare/', '/kr/ko/profile/', '/kr/ko/shoppingcart/', '/kr/ko/checkout/', '/kr/ko/favourites/'],
     // The article number is the trailing 8 digits of the slug: ...-12345678

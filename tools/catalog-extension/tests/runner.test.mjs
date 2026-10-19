@@ -47,6 +47,11 @@ describe('the extension only runs what the bot sends, inside the allowlist', () 
     const e = env({ [url]: { text: fixture('robots', 'ikea.txt') } });
     expect(await handleJob({ id: 'r', kind: 'robots', url }, e)).toMatchObject({ type: 'result', kind: 'robots', status: 200, host: 'www.ikea.com' });
   });
+  it('reads robots.txt on every allowlisted host — each host answers its own', async () => {
+    const url = 'https://store.ohou.se/robots.txt';
+    const e = env({ [url]: { text: 'User-agent: *\nAllow: /\n' } });
+    expect(await handleJob({ id: 'r2', kind: 'robots', url }, e)).toMatchObject({ type: 'result', kind: 'robots', status: 200, host: 'store.ohou.se' });
+  });
 });
 
 describe('block / login / captcha pages report blocked and extract nothing', () => {

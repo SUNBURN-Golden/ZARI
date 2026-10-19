@@ -21,7 +21,9 @@ export async function handleJob(job, env) {
   if (!url || !site) return fail('out_of_scope');
 
   if (job.kind === 'robots') {
-    if (url.pathname !== '/robots.txt' || url.search || url.hostname !== site.robotsHost) return fail('out_of_scope');
+    // robots.txt is per host (RFC 9309): each allowlisted host answers its
+    // own, so a job may ask for it on any of them — store.ohou.se included.
+    if (url.pathname !== '/robots.txt' || url.search) return fail('out_of_scope');
   } else {
     if (!isVisitable(job.url)) return fail('out_of_scope');
     if (job.kind === 'product' && !productKey(job.url)) return fail('out_of_scope');

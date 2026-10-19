@@ -2,7 +2,6 @@ export type SiteKey = 'ohou' | '29cm' | 'ikea';
 export interface SiteConfig {
   key: SiteKey;
   hosts: string[];
-  robotsHost: string;
   pathPrefix: string;
   denyPrefixes: string[];
   product: RegExp[];
