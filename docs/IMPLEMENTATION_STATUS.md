@@ -1,3 +1,25 @@
+# 2026-10-20 — ZARI-z-local-delivery 설치·업데이트·사용 안내와 로컬 제품 인계
+
+정본은 GitHub issue #118, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-local-delivery`이다. 관찰한 base SHA는 `3e76e96512a50cd13167587d7539d38454501813`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문은 각 z-노드와 동일하다. 이 전달은 z-local-delivery만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- `docs/delivery/LOCAL_DELIVERY.md`: 지원 브라우저·기기 표(Chromium 검증, Firefox 부분, WebKit 미검증, 전화·전용 GPU UNQUALIFIED), 설치·빌드 명령, 앱 껍데기(SW 무대→승격·이전 빌드 보존·`builtAt` 다운그레드 방지)와 IndexedDB migration(v1→v6 일지) 두 겹 업데이트 경로, 실패 경로표, 기존 데이터 업그레이드 결과, 검수 명령, 실제 범위와 장기 미구현의 구분.
+- `docs/delivery/release-candidate/`: `manifest.json`(소스·toolchain·저장 형식·지원 대상·미해결 gap·관측 dist 해시, `releaseState NOT_AUTHORIZED`, `sourceCommit`은 전달 PR이 채울 값으로 null)과 `index.md`. `scripts/check-release-candidate.mjs`가 manifest를 저장소 pin(DB_VERSION·schema·exportVersion·BUILD_ID·fixture 수·toolchain·분모 포인터·gap)과 비교하고 `--dist`로 방금 빌드한 산출물과 대조한다.
+- 실제 브라우저 스펙 `apps/web/tests/browser/local-delivery.spec.ts` 4개: 처음 설치(저장·복원·호환 `ok`·일지 `없음`), 실제 행을 실은 v1→v6 업그레이드(일지 `1→2,…,5→6`, 채택 snapshot 그대로), 신형 DB(v70) 거절과 `newer_database` 보고·행 보존, 연결 유지 중 아무것도 적용하지 않는 차단된 업그레이드.
+- 저장소 수정(인계 경로의 실제 구멍): Dexie 4는 저장소가 선언보다 새 버전이어도 `db.open()`이 오류 없이 연다(`verno`는 선언값). `repository.open()`이 `backendDB().version`으로 신형 DB를 `migration_blocked`으로 거절하고, `versionchange`로 닫힌 탭은 `movedToNewer` 펜스로 열기·쓰기를 막는다. `repository.onVersionChange`는 이제 App이 연결해 `role="alert"` 새로고침 안내(`db-version-notice`)를 보이고, 프로젝트 목록의 저장소 오류도 `describeStoreFailure`로 읽힌다. 새 색 토큰 없음.
+- `docs/qualification/z-denominator.json` 갱신: z-product-qualification `MERGED`(PR 117), z-local-delivery `IN_PROGRESS`(issue 118, review BLOCKED). `check-z-denominator.mjs`와 `zQualification.test.ts`를 새 상태에 맞췄다. 16단계 분모는 그대로다.
+- 채택 기록: `docs/adr/SP-z-local-delivery.md`, `design/DECISIONS.md` Dz-local-delivery, `docs/PRODUCT_COMPLETION_EVOLUTION_KO.md`·`design/SPATIAL_WORKSPACE.md` 노드 노트, `docs/PERSISTENCE.md` §22, `docs/FRONTEND.md` §24.
+- `contract_change=NO`: Rust·프로토콜·스키마·DB version·`BUILD_ID`·fixture·생성 계약 변경 없음. `.aiops/**`, `docs/aiops/**`, `.github/**`, `SOURCE_MANIFEST.json`은 그대로다. 새 의존성은 없다.
+
+이 머신에서 실행한 검증(Node v24.19.0, CARGO_BUILD_JOBS=4), 최종 트리: cargo fmt/clippy/test(241), fixture_runner 28+124, cargo tree, wasm:build, contracts:check(124), typecheck, lint, npm test(51 files/413, 새 4개 포함), build×2(같은 buildId `b2040d4a0970b60c`·13 digest 일치 — 이 호스트에서 결정적), release-manifest(`errors: []`), design-tokens 41/41, product-contract, qualification, review-package, z-denominator, release-candidate(기본·--dist 모두), 전체 Chromium 143/143, local-delivery spec firefox 4/4(webkit은 호스트 의존성 부족 UNVERIFIED), parity(124) 전부 exit 0. 이 세션은 커밋·push하지 않았다. GitHub Actions는 아직 실행하지 않았다.
+
+하지 않은 것: release·배포·공개, 승인 baseline, 실기기 검증, 실제 판매처·결제, 남은 프로그램 노드(없음). 전화·전용 GPU·실제 사이트·앱 URL 읽기는 UNQUALIFIED다. dist digest 비교는 같은 소스·도구의 재현 검사이지 다른 머신의 바이트 보증이 아니다. 상세는 `docs/evidence/ZARI-z-local-delivery.md`.
+
+다음: 감독자가 커밋하고 `Refs #118` ready PR을 연다. CI 초록 + 독립 검토 2회 뒤 머지한다.
+
 # 2026-10-20 — ZARI-z-product-qualification 정리 제품 확장 전체 여정 qualification
 
 정본은 GitHub issue #116, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-product-qualification`이다. 관찰한 base SHA는 `abb0a474caac7233e4a30e31c479770f67b1b3b3`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

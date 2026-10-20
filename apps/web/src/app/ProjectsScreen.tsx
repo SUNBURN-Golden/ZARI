@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'react-aria-components';
 import { EXAMPLE_NAME, isExampleName } from '../features/onboarding/guide';
+import { describeStoreFailure } from '../features/privacy/connections';
 import { emptyProjectForm, sampleProjectForm } from '../features/project/draft';
 import { isZipMagic, stagePortableBundle } from '../features/project/portable';
 import {
@@ -305,7 +306,7 @@ export function ProjectsScreen() {
           </h2>
           {error && (
             <p role="alert" className="notice notice-error" data-testid="projects-error">
-              {error}
+              {describeStoreFailure(error)}
             </p>
           )}
           {busy && (

@@ -212,6 +212,14 @@ const QUARANTINE_BYTES = 10 * 1024 * 1024;
 export class ProjectRepository {
   private queue: Promise<unknown> = Promise.resolve();
   private known = new Map<string, string>();
+  /**
+   * Set when a newer build asked this connection to close. Once set, this tab
+   * refuses further opens and writes: Dexie reopens a closed connection on the
+   * next operation and Dexie 4 can open a stored-newer database without
+   * error, so without this fence an old build would write into the newer
+   * schema. Reload picks up the newer build; nothing is deleted.
+   */
+  private movedToNewer = false;
   /** Called when another tab needs this connection closed for an upgrade. */
   onVersionChange: (() => void) | null = null;
   constructor(
@@ -221,12 +229,20 @@ export class ProjectRepository {
     // A newer build in another tab asks this connection to close. We close and
     // surface a reload prompt — we never delete or block the database.
     this.db.on('versionchange', () => {
+      this.movedToNewer = true;
       this.db.close();
       this.onVersionChange?.();
     });
   }
   private enqueue<T>(work: () => Promise<T>): Promise<T> {
-    const run = this.queue.then(work, work);
+    const guarded = () => {
+      if (this.movedToNewer)
+        return Promise.reject(
+          new StoreError('migration_blocked', 'storage moved to a newer version'),
+        );
+      return work();
+    };
+    const run = this.queue.then(guarded, guarded);
     this.queue = run.then(
       () => undefined,
       () => undefined,
@@ -235,7 +251,14 @@ export class ProjectRepository {
   }
   async open(): Promise<void> {
     try {
+      if (this.movedToNewer)
+        throw new StoreError('migration_blocked', 'storage moved to a newer version');
       await this.db.open();
+      // Dexie 4 opens a database stored at a newer version without error
+      // (`db.verno` stays the declared version). The backend version is the
+      // truth `compatibility()` reads; refuse to run on it, writes included.
+      if (Math.round(this.db.backendDB().version / 10) > DB_VERSION)
+        throw new StoreError('migration_blocked', 'stored database is newer than this build');
       await this.recordMigration();
     } catch (error) {
       throw storeError(error);

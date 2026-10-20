@@ -432,6 +432,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 실기기 검증·실제 판매처·결제·클라우드·출시·화면 exact-set 승인은 아니다.
 - 되돌리기: 이 결정, 여정 스펙, 분모·검수 패키지 문서와 검사 스크립트를 걷어 낸다. 저장 데이터와 계약은 바뀌지 않으므로 되돌릴 데이터가 없다.
 
+## Dz-local-delivery — 설치·업데이트·사용 안내와 로컬 제품 인계 / 채택
+
+- ID: Dz-local-delivery
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-local-delivery만 다룬다.
+- 문제: 설치·업데이트·저장 migration이 인계 단위로 검증된 적이 없고, PERSISTENCE §6가 요구하는 versionchange 새로고침 안내가 연결되지 않았다. "출시 후보"와 승인·배포·release의 구분도 문서로 고정해야 한다.
+- 변경 대상: [docs/adr/SP-z-local-delivery.md](../docs/adr/SP-z-local-delivery.md), `apps/web/src/app/App.tsx`(versionchange 안내 연결)·`ProjectsScreen.tsx`(저장소 오류 표기), `apps/web/tests/browser/local-delivery.spec.ts`, `apps/web/tests/unit/localDelivery.test.ts`, `docs/delivery/LOCAL_DELIVERY.md`, `docs/delivery/release-candidate/`(manifest·index), `scripts/check-release-candidate.mjs`, `docs/qualification/z-denominator.json`, `scripts/check-z-denominator.mjs`, `apps/web/tests/unit/zQualification.test.ts`, PERSISTENCE·FRONTEND 절, 단위·브라우저 시험. Rust·프로토콜·스키마·DB version·`BUILD_ID`·fixture·생성 계약은 바꾸지 않는다.
+- 검토한 대안: (A) 인계 문서 + release candidate 묶음 + 실제 브라우저 저장·업그레이드 스펙 + 분모 갱신 + versionchange 안내 연결. (B) 문서만 쓰고 업데이트 경로는 기존 coverage에 맡김. (C) 업데이트를 별도 앱 화면이나 런타임 리포트로 구현.
+- 선택: A. B는 "기존 데이터 업데이트 확인"과 versionchange 안내의 실증이 빠진다. C는 새 화면이 또 다른 미검증 표면이 된다. 안내는 이미 있는 `repository.onVersionChange` 경로의 연결일 뿐이다.
+- 조건: 업데이트 실패·차단·거절은 어떤 행도 지우거나 다시 쓰지 않는다. unknown을 pass/0으로 승격하지 않는다. 처음 설치는 일지가 없고 업그레이드는 일지를 남긴다. release candidate는 release가 아니며 공개 배포·화면 채택·release는 별도 근거로만 표시한다. 새 색 토큰·대비 조합은 없다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 안내는 기존 `notice notice-error` 토큰 쌍을 쓰고 `role="alert"`다. 별도 런타임 비용은 없다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 실기기 검증·실제 판매처·결제·클라우드·출시·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 안내 연결, 전달 문서·manifest·검사 스크립트를 걷어 낸다. 저장 형식과 계약은 바뀌지 않으므로 되돌릴 데이터가 없다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

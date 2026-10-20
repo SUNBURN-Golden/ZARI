@@ -95,10 +95,9 @@ function main() {
     ['physical-phone', 'UNQUALIFIED'],
     ['discrete-gpu', 'UNQUALIFIED'],
     ['real-product-sites', 'UNQUALIFIED'],
-    ['z-local-delivery', 'NOT_STARTED'],
     ['new-capture-acceptance', 'PENDING'],
     ['release', 'NOT_AUTHORIZED'],
-    ['independent-review-z-product-qualification', 'BLOCKED'],
+    ['independent-review-z-local-delivery', 'BLOCKED'],
     ['app-catalog-url-read', 'UNQUALIFIED'],
   ]) {
     const gap = gaps.get(id);
@@ -133,27 +132,19 @@ function main() {
       }
       if (!existsSync(join(ROOT, node.deliveryEvidence))) fail(`${node.id} evidence missing`);
     } else if (node.node_state === 'IN_PROGRESS') {
-      if (node.id !== 'z-product-qualification') fail(`IN_PROGRESS ${node.id}`);
+      if (node.id !== 'z-local-delivery') fail(`IN_PROGRESS ${node.id}`);
       if (node.deliveryCommit !== null || node.mergeCommit !== null || node.pullRequest !== null) {
         fail('in-progress pointers');
       }
       if (!existsSync(join(ROOT, node.deliveryEvidence))) fail('in-progress evidence missing');
-    } else if (node.node_state === 'NOT_STARTED') {
-      if (node.id !== 'z-local-delivery') fail(`NOT_STARTED ${node.id}`);
-      if (node.qualification_state !== 'UNQUALIFIED') fail('not-started qualification');
-      if (
-        node.deliveryCommit !== null ||
-        node.mergeCommit !== null ||
-        node.pullRequest !== null ||
-        node.issue !== null ||
-        node.deliveryEvidence !== null
-      ) {
-        fail('not-started pointers');
-      }
     } else {
-      fail(`${node.id} state`);
+      fail(`${node.id} state ${node.node_state}`);
     }
   }
+  if (ledger.nodes.filter((node) => node.node_state === 'MERGED').length !== 20)
+    fail('merged count');
+  if (ledger.nodes.some((node) => node.node_state === 'NOT_STARTED'))
+    fail('a NOT_STARTED node remains');
 
   const hits = [];
   walk(join(ROOT, 'apps/web/src'), hits);
@@ -161,7 +152,7 @@ function main() {
   if (hits.length > 0) fail(`runtime projection in ${hits.join(', ')}`);
 
   console.log(
-    'z denominator 21=20 program+1 amendment; merged 19; in-progress 1; not-started 1; capture PENDING; release NOT_AUTHORIZED; runtime hits 0',
+    'z denominator 21=20 program+1 amendment; merged 20; in-progress 1; not-started 0; capture PENDING; release NOT_AUTHORIZED; runtime hits 0',
   );
 }
 

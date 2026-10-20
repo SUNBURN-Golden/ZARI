@@ -11,9 +11,9 @@ describe('z-product-qualification denominator projection', () => {
     expect(ledger.denominator).toBe(21);
     expect(ledger.nodes).toHaveLength(21);
     const self = ledger.nodes.find((entry) => entry.id === 'z-product-qualification');
-    expect(self).toMatchObject({ node_state: 'IN_PROGRESS', issue: 116 });
+    expect(self).toMatchObject({ node_state: 'MERGED', issue: 116, pullRequest: 117 });
     const next = ledger.nodes.find((entry) => entry.id === 'z-local-delivery');
-    expect(next).toMatchObject({ node_state: 'NOT_STARTED', qualification_state: 'UNQUALIFIED' });
+    expect(next).toMatchObject({ node_state: 'IN_PROGRESS', issue: 118 });
     for (const node of ledger.nodes) expect(node.node_state).not.toBe('DONE');
 
     execFileSync(
@@ -53,8 +53,9 @@ describe('z-product-qualification denominator projection', () => {
       encoding: 'utf8',
     });
     expect(output).toContain('denominator 21');
+    expect(output).toContain('merged 20');
     expect(output).toContain('in-progress 1');
-    expect(output).toContain('not-started 1');
+    expect(output).toContain('not-started 0');
     expect(output).toContain('NOT_AUTHORIZED');
   });
 

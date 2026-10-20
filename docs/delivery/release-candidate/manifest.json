@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "task": "ZARI-z-local-delivery",
+  "issue": 118,
+  "planCommit": "0847d1b065627938acfad3a941de79e357570e43",
+  "observedBase": "3e76e96512a50cd13167587d7539d38454501813",
+  "sourceCommit": null,
+  "label": "release candidate — not a release",
+  "releaseState": "NOT_AUTHORIZED",
+  "captureAcceptance": "PENDING",
+  "qualificationState": "PARTIAL",
+  "developmentMergeCertifiesPhysicalFacts": false,
+  "developmentMergeCertifiesDevice": false,
+  "developmentMergeCertifiesAcceptance": false,
+  "developmentMergeCertifiesRelease": false,
+  "syntheticCatalog": true,
+  "toolchain": {
+    "node": "24.19.0",
+    "nodeEngines": ">=24 <25",
+    "npm": "11.9.0",
+    "npmEngines": ">=11 <12",
+    "rust": "1.98.1",
+    "wasmBindgen": "0.2.128"
+  },
+  "storage": {
+    "dbVersion": 6,
+    "schemaVersion": 1,
+    "exportVersion": 1,
+    "journalChain": [
+      "1->2",
+      "2->3",
+      "3->4",
+      "4->5",
+      "5->6"
+    ]
+  },
+  "domainBuildId": "zari-domain-7",
+  "fixtures": {
+    "total": 124,
+    "bootstrap": 28
+  },
+  "supportedTargets": {
+    "verified": [
+      "Chromium on this host: install, save/reload, v1->v6 upgrade, newer-db refusal, blocked upgrade, offline revisit",
+      "Firefox on this host: install/save/reload subset (see evidence)"
+    ],
+    "emulated": [
+      "390 CSS px viewport, forced-colors, keyboard-only (desktop emulation, not a physical device)"
+    ],
+    "unqualified": [
+      "physical phone",
+      "discrete GPU (headless runs use software GL)",
+      "real product sites",
+      "app catalog URL read (off by the z-privacy-offline guard; owner decision to enable)"
+    ]
+  },
+  "requiredGaps": [
+    {
+      "id": "physical-phone",
+      "state": "UNQUALIFIED",
+      "nextAction": "Run the same install/update/upgrade flows on a physical phone."
+    },
+    {
+      "id": "discrete-gpu",
+      "state": "UNQUALIFIED",
+      "nextAction": "Repeat WebGL-dependent paths on a discrete GPU."
+    },
+    {
+      "id": "real-product-sites",
+      "state": "UNQUALIFIED",
+      "nextAction": "The catalog crawler was never run against a real site."
+    },
+    {
+      "id": "new-capture-acceptance",
+      "state": "PENDING",
+      "nextAction": "A durable exact-set user decision; this node registers no captures."
+    },
+    {
+      "id": "release",
+      "state": "NOT_AUTHORIZED",
+      "nextAction": "A separate user release decision. This node does not authorize release."
+    },
+    {
+      "id": "independent-review-z-local-delivery",
+      "state": "BLOCKED",
+      "nextAction": "Two independent read-only reviews on the supervisor's final head, then CI."
+    },
+    {
+      "id": "app-catalog-url-read",
+      "state": "UNQUALIFIED",
+      "nextAction": "App URL reading is off in this build; enabling is an owner decision."
+    }
+  ],
+  "dist": {
+    "buildId": "b2040d4a0970b60c",
+    "builtAt": "2026-10-20T03:44:34.712Z",
+    "note": "Observed on the builder machine. builtAt changes every build; file digests and buildId are content-derived.",
+    "files": {
+      "assets/bundleWorker-_HBCexPd.js": "7610853fcb08380f351cb2808d73ad7bce7750475dde104a83ccb7be4477670d",
+      "assets/bundleWorker-_HBCexPd.js.map": "6ba3e41df2535b48a8336b9a9704387eb67a45f1b93ef3783e8a675dbee061f3",
+      "assets/entry-BzR_wgWs.js": "e14c3a904156f072388d7cd78a985fae6ffd3c748d1686505dd70399d8669314",
+      "assets/entry-BzR_wgWs.js.map": "42082654309a812f476c276c52cce3dae3c0a93ce846810d25d31fbe34923d40",
+      "assets/index-4pfv2X_6.js": "de5556cf11daa6f507dd06d75572160c61206962d20b0a0e5f9ea28e957bd6a1",
+      "assets/index-4pfv2X_6.js.map": "9c29a1c2ba3fceb8de557a902de8ecb9cc5fe5a98a998a5a81f36a28ce245b3d",
+      "assets/index-CcZqZK-G.css": "f59b564c88b6e28e0803f4967fd11ef24fa365dfb8da3a569def88d20dd90874",
+      "assets/SpatialView-Q_pa6lTz.js": "9cae8ca661ebf42cb80e1a62ab4d4e88da6108933c3e3ab162df3ad7c511ca89",
+      "assets/SpatialView-Q_pa6lTz.js.map": "390bd802874c58fddb02e35e35cf49b2816464750d02d8d1ee7de73a065f8b2d",
+      "assets/zari_wasm_bg-BIGzMeiz.wasm": "e9ce4ea4e4f1514f430cf36c4c8ddd831a72ee35c650aa8017333ef4ec9deb5d",
+      "favicon.svg": "da58f74a071d53e846e6df7313ab26e7386649306ce2dd810befae4696818256",
+      "index.html": "4c215a647cdb6f1baadd79f0f4daccbf30ba01f6d350d76463dd1f8f10d8d009",
+      "sw.js": "2b395c36daee6b3a1fd04cd6e54c38b56f5fc4a45fa562fbbff59b6a1e4359ba"
+    }
+  }
+}
