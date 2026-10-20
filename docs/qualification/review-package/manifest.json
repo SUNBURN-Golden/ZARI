@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "task": "ZARI-z-product-qualification",
+  "status": "draft-review",
+  "approved": false,
+  "approval": "USER ONLY. This package is review material; nothing here is an approved baseline or a release.",
+  "planRevision": "1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21",
+  "catalogDigest": "249cfb4185353ecb69c140ba6e7830b8670dd07708efa1d8cf0d5cee6e96be81",
+  "evidenceClass": "synthetic",
+  "evidenceNote": "합성 데모 카탈로그로 만든 계획이다. 실제 상품·실제 판매처·실기기 증거가 아니다.",
+  "sourceCommit": "b8fdc2463042b898c83de3d5b1030f32580067b2",
+  "sourceDirty": true,
+  "generatedBy": "apps/web/tests/browser/product-journey.spec.ts",
+  "captureCommand": "ZARI_REVIEW_DIR=<dir> npx playwright test apps/web/tests/browser/product-journey.spec.ts --project=chromium --workers=1",
+  "generatedAt": "2026-10-20T01:56:22.474Z",
+  "files": [
+    {
+      "path": "plan-package.html",
+      "sha256": "89269da1890cf8f526d3c8f3618eb6393b846560d6c92de1f1fb853a5c0ff626",
+      "bytes": 56110
+    },
+    {
+      "path": "zari-plan-1b018645bb5a.csv",
+      "sha256": "34dd19d4672d0f4563cf1dc6285e186ddf8ec1774ba78c2a64454953b7fb80a2",
+      "bytes": 10966
+    },
+    {
+      "path": "zari-bom-1b018645bb5a.csv",
+      "sha256": "249422e69128b12a28bcdf9da5cdc3dd541e5065e842b2e1187980b33bec5ea1",
+      "bytes": 2776
+    }
+  ]
+}

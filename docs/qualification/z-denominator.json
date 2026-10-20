@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "task": "ZARI-z-product-qualification",
+  "issue": 116,
+  "planCommit": "0847d1b065627938acfad3a941de79e357570e43",
+  "observedBase": "abb0a474caac7233e4a30e31c479770f67b1b3b3",
+  "denominator": 21,
+  "parts": { "program": 20, "ownerAmendment": 1 },
+  "projection": "handoff document only; not a runtime API",
+  "developmentMergeCertifiesPhysicalFacts": false,
+  "developmentMergeCertifiesDevice": false,
+  "developmentMergeCertifiesAcceptance": false,
+  "developmentMergeCertifiesRelease": false,
+  "optionalCannotWaiveRequired": true,
+  "captureAcceptance": "PENDING",
+  "releaseDefault": "NOT_AUTHORIZED",
+  "sixteenNodeDenominator": "docs/qualification/denominator.json",
+  "requiredGaps": [
+    {
+      "id": "physical-phone",
+      "state": "UNQUALIFIED",
+      "nextAction": "Run the same journey on a physical phone. A 390 CSS viewport is emulation."
+    },
+    {
+      "id": "discrete-gpu",
+      "state": "UNQUALIFIED",
+      "nextAction": "Repeat WebGL-dependent paths on a discrete GPU. Headless SwiftShader is software GL."
+    },
+    {
+      "id": "real-product-sites",
+      "state": "UNQUALIFIED",
+      "nextAction": "The catalog crawler was never run against a real site; real-product evidence is limited to user-declared imports."
+    },
+    {
+      "id": "z-local-delivery",
+      "state": "NOT_STARTED",
+      "nextAction": "The next program node; it is not dropped from the denominator because it is unfinished."
+    },
+    {
+      "id": "new-capture-acceptance",
+      "state": "PENDING",
+      "nextAction": "A durable exact-set user decision; this node registers no captures and borrows no acceptance."
+    },
+    {
+      "id": "release",
+      "state": "NOT_AUTHORIZED",
+      "nextAction": "A separate user release decision. This program does not authorize release."
+    },
+    {
+      "id": "independent-review-z-product-qualification",
+      "state": "BLOCKED",
+      "nextAction": "Two independent read-only reviews on the supervisor's final head, then CI."
+    },
+    {
+      "id": "app-catalog-url-read",
+      "state": "UNQUALIFIED",
+      "nextAction": "App URL reading is off in this build by the z-privacy-offline network guard; enabling is an owner decision."
+    }
+  ],
+  "nodes": [
+    { "id": "z-product-contract", "title": "정리→구매→실행→재정리의 확장 계약", "issue": 75, "pullRequest": 76, "deliveryCommit": "35250be9ec351f388a6c2567d5eedcc8f91ce131", "mergeCommit": "c4dce99c2d61d0b5d33ded4ca61c1120ea7a89a3", "deliveryEvidence": "docs/evidence/ZARI-z-product-contract.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-inventory-lifecycle", "title": "보유 물건·용기·수량의 생활 이력", "issue": 77, "pullRequest": 79, "deliveryCommit": "d64d32505adb6c0a13af046b3aef207572690b13", "mergeCommit": "8e065203a0c078451667d6f120b99ded4db61ea7", "deliveryEvidence": "docs/evidence/ZARI-z-inventory-lifecycle.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-catalog-provenance", "title": "실상품 출처·옵션·치수 검증 작업대", "issue": 80, "pullRequest": 81, "deliveryCommit": "5dd624e42fb4b871044fe1149268f337dee76464", "mergeCommit": "2252e929bd18677de2a93c11c350bf415ebb77db", "deliveryEvidence": "docs/evidence/ZARI-z-catalog-provenance.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-offer-bundles", "title": "판매 묶음·필수 부품·배송비의 정직한 BOM", "issue": 84, "pullRequest": 85, "deliveryCommit": "9c9fbb57256b2d5fa8c4fcb664b469224a5fdfb2", "mergeCommit": "de8e4f6f89282f62ad7202d3d72dae8e73771023", "deliveryEvidence": "docs/evidence/ZARI-z-offer-bundles.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-strategy-library", "title": "생활습관 기반 전략과 Recipe 라이브러리", "issue": 86, "pullRequest": 87, "deliveryCommit": "927f1a5da27603a9e48f016062f0e8dd4a522a83", "mergeCommit": "094367b3d18b799c0a5c7a01a5f3e9f34a0bd907", "deliveryEvidence": "docs/evidence/ZARI-z-strategy-library.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-pareto-comparison", "title": "비용·재사용·접근·불확실성 대안 비교", "issue": 88, "pullRequest": 89, "deliveryCommit": "61c8742383286da92f8326cb3c5c2639f30406e2", "mergeCommit": "b718a4813bc0dddfdbde3d51e0ae89fb4a056611", "deliveryEvidence": "docs/evidence/ZARI-z-pareto-comparison.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-incremental-replan", "title": "고정 배치를 지키는 부분 재정리", "issue": 90, "pullRequest": 91, "deliveryCommit": "585168729b92bc28f044a7e1705bed078867a59b", "mergeCommit": "ccd05227d4f8f7f4d8f6cfbecbe0ac902a734df8", "deliveryEvidence": "docs/evidence/ZARI-z-incremental-replan.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-search-diagnostics", "title": "해 없음·측정 부족·탐색 미완료의 구분", "issue": 92, "pullRequest": 93, "deliveryCommit": "180151355900203624c8799b2a4f5b75d9f2a19e", "mergeCommit": "346558c1b04d846b122dd4581cb88898b416aedd", "deliveryEvidence": "docs/evidence/ZARI-z-search-diagnostics.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-accessibility-workspace", "title": "측정부터 실행까지 키보드·모바일 접근성", "issue": 94, "pullRequest": 95, "deliveryCommit": "0da4686de3a0c9cc139de8019221d06e5ce48a36", "mergeCommit": "f67ce9d2b0eabcce27645ef47ac338127e94283e", "deliveryEvidence": "docs/evidence/ZARI-z-accessibility-workspace.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-portable-project", "title": "프로젝트 이식·검증된 가져오기", "issue": 96, "pullRequest": 97, "deliveryCommit": "9b4b49f171dd1fb18d7a2385173e9bcfe79d08c6", "mergeCommit": "8857c4f4a2f0d70f15b8edafc73c324c243b80bf", "deliveryEvidence": "docs/evidence/ZARI-z-portable-project.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-purchase-handoff", "title": "구매 링크·대체품 검토·구매 이후 연결", "issue": 98, "pullRequest": 99, "deliveryCommit": "c44533b97e6e29b53318c72d66134a91fd270a9d", "mergeCommit": "2bf7d4d427a0eb4c62c2ac2ee912756d89e27b0a", "deliveryEvidence": "docs/evidence/ZARI-z-purchase-handoff.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-execution-checklist", "title": "실행 체크리스트·막힘·되돌리기", "issue": 100, "pullRequest": 101, "deliveryCommit": "d0297ce9f18ef5a965090a15286bbd88f895c34f", "mergeCommit": "2cb3ceccd8753f755a8ef34ff471eccae35e019d", "deliveryEvidence": "docs/evidence/ZARI-z-execution-checklist.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-location-search", "title": "내 물건 찾기와 정리 후 위치 검색", "issue": 102, "pullRequest": 103, "deliveryCommit": "247897250456cc20f43084118340e5e6b57f88b3", "mergeCommit": "dca8fc401bea33966682b2fb98fe1a53c043c7e9", "deliveryEvidence": "docs/evidence/ZARI-z-location-search.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-feedback-reorganize", "title": "사용 피드백에서 다음 정리로 이어지는 루프", "issue": 104, "pullRequest": 105, "deliveryCommit": "c05703bf5d2ff090c920bc5dd58be0acacf0a417", "mergeCommit": "3274613051142b125e818f1dd912d310d959fbfd", "deliveryEvidence": "docs/evidence/ZARI-z-feedback-reorganize.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-print-share", "title": "도면·BOM·실행 가이드의 한 묶음 출력", "issue": 106, "pullRequest": 107, "deliveryCommit": "e706efa831b561363b06ed4b8360240634f340b3", "mergeCommit": "9803ee960cfc25c0279470f15f977ea120d4b67f", "deliveryEvidence": "docs/evidence/ZARI-z-print-share.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-performance-budget", "title": "실측 성능 예산과 WASM 병목 개선", "issue": 108, "pullRequest": 109, "deliveryCommit": "846365ff8005a5f092cdb180f6ab5051703d5dbb", "mergeCommit": "d533b408a7da44a6a4d84a94609935d16098c2c3", "deliveryEvidence": "docs/evidence/ZARI-z-performance-budget.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-privacy-offline", "title": "오프라인 수명과 사용자 데이터 통제", "issue": 110, "pullRequest": 111, "deliveryCommit": "0c7d56ac03f98ee35cb9c796c03f22abdb0d8d57", "mergeCommit": "48a2b0a47179046ad36cbec6602a87da6e8df179", "deliveryEvidence": "docs/evidence/ZARI-z-privacy-offline.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-guided-onboarding", "title": "처음 사용해도 완성하는 예제와 빈 화면", "issue": 112, "pullRequest": 113, "deliveryCommit": "6ed614ba142c2b8584803866c65ce633247c8bfc", "mergeCommit": "1cb98f2ae498264750cd2300dcf419b291cc89ca", "deliveryEvidence": "docs/evidence/ZARI-z-guided-onboarding.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-product-qualification", "title": "정리 제품 확장 전체 여정 qualification", "issue": 116, "pullRequest": null, "deliveryCommit": null, "mergeCommit": null, "deliveryEvidence": "docs/evidence/ZARI-z-product-qualification.md", "reviewPointer": null, "auditPointer": null, "node_state": "IN_PROGRESS", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-local-delivery", "title": "설치·업데이트·사용 안내와 로컬 제품 인계", "issue": null, "pullRequest": null, "deliveryCommit": null, "mergeCommit": null, "deliveryEvidence": null, "reviewPointer": null, "auditPointer": null, "node_state": "NOT_STARTED", "qualification_state": "UNQUALIFIED", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "program" },
+    { "id": "z-catalog-crawler", "title": "공개 상품 치수 자동 수집 봇과 읽기 전용 카탈로그 클라이언트", "issue": 114, "pullRequest": 115, "deliveryCommit": "9d7fe008a0e4aa2cfc5b0f62e5b16f74da2217c9", "mergeCommit": "abb0a474caac7233e4a30e31c479770f67b1b3b3", "deliveryEvidence": "docs/evidence/ZARI-z-catalog-crawler.md", "reviewPointer": null, "auditPointer": null, "node_state": "MERGED", "qualification_state": "PARTIAL", "acceptance_state": "PENDING", "release_state": "NOT_AUTHORIZED", "origin": "ownerAmendment" }
+  ]
+}

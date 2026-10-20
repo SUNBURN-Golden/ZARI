@@ -1,0 +1,1713 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>ZARI 계획 패키지 — 사용자 검수 (draft, 1b018645bb5a)</title>
+<style>
+/* ZARI design seed v0.1 — light only; imported by the Task 001 working app.
+ * Canonical semantic tokens. Visual approval remains pending.
+ * No external fonts, network imports, reset, or third-party package required.
+ */
+:root {
+  --zari-surface-app: #F6F5F1;
+  --zari-surface-panel: #FFFFFF;
+  --zari-surface-subtle: #ECEDE7;
+  --zari-text-primary: #202520;
+  --zari-text-secondary: #525C53;
+  --zari-text-muted: #626B62;
+  --zari-text-inverse: #FFFFFF;
+  --zari-border-subtle: #DDE2D8;
+  --zari-border-control: #788276;
+  --zari-accent: #36533E;
+  --zari-accent-hover: #294230;
+  --zari-accent-soft: #E7EEE5;
+  --zari-selection-ring: var(--zari-accent);
+  --zari-focus-ring: #295C77;
+  --zari-success: #2F623F;
+  --zari-success-soft: #EAF3E9;
+  --zari-warning: #79520E;
+  --zari-warning-soft: #FFF2D8;
+  --zari-danger: #9F3032;
+  --zari-danger-soft: #FBECEB;
+  --zari-info: #295C77;
+  --zari-info-soft: #EAF2F8;
+  /* SP-002 aliases. They name a meaning; they do not introduce a new palette. */
+  --zari-unknown: var(--zari-text-muted);
+  --zari-stale: var(--zari-warning);
+  --zari-preview: var(--zari-info);
+  --zari-canvas-bg: var(--zari-surface-subtle);
+  --zari-canvas-outline: var(--zari-text-secondary);
+  --zari-canvas-grid: var(--zari-border-subtle);
+  --zari-font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --zari-font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  --zari-text-xs: 0.8125rem;
+  --zari-text-sm: 0.875rem;
+  --zari-text-base: 1rem;
+  --zari-text-lg: 1.125rem;
+  --zari-text-xl: 1.5rem;
+  --zari-text-title: 2rem;
+  --zari-line-body: 1.55;
+  --zari-line-label: 1.4;
+  --zari-line-heading: 1.2;
+  --zari-weight-regular: 400;
+  --zari-weight-medium: 500;
+  --zari-weight-semibold: 600;
+  --zari-space-1: 0.25rem;
+  --zari-space-2: 0.5rem;
+  --zari-space-3: 0.75rem;
+  --zari-space-4: 1rem;
+  --zari-space-6: 1.5rem;
+  --zari-space-8: 2rem;
+  --zari-space-12: 3rem;
+  --zari-space-16: 4rem;
+  --zari-radius-control: 0.5rem;
+  --zari-radius-panel: 0.75rem;
+  --zari-radius-overlay: 1rem;
+  --zari-border-width: 1px;
+  --zari-focus-width: 2px;
+  --zari-focus-offset: 3px;
+  --zari-control-min-height: 2.75rem;
+  --zari-touch-min-height: 3rem;
+  --zari-panel-width: 18rem;
+  --zari-inspector-width: 20rem;
+  --zari-content-max: 100rem;
+  --zari-z-canvas: 0;
+  --zari-z-header: 10;
+  --zari-z-popover: 30;
+  --zari-z-modal: 50;
+  --zari-z-toast: 60;
+  --zari-shadow-raised: 0 2px 8px rgb(32 37 32 / 8%);
+  --zari-shadow-overlay: 0 12px 36px rgb(32 37 32 / 14%);
+  --zari-duration-fast: 120ms;
+  --zari-duration-base: 180ms;
+  --zari-duration-panel: 240ms;
+  --zari-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Opt-in utilities, not a global app reset. */
+.zari-ui {
+  color: var(--zari-text-primary);
+  background-color: var(--zari-surface-app);
+  font-family: var(--zari-font-ui);
+  font-size: var(--zari-text-base);
+  line-height: var(--zari-line-body);
+  letter-spacing: normal;
+}
+.zari-numeral {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.zari-focus-ring:focus-visible,
+.zari-focus-ring[data-focus-visible] {
+  outline: var(--zari-focus-width) solid var(--zari-focus-ring);
+  outline-offset: var(--zari-focus-offset);
+}
+
+/* Components must also disable spatial animation in their JS motion config.
+ * Business completion must never depend on transition/animation end events.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --zari-duration-fast: 0ms;
+    --zari-duration-base: 0ms;
+    --zari-duration-panel: 0ms;
+  }
+}
+@media (forced-colors: active) {
+  .zari-focus-ring:focus-visible,
+  .zari-focus-ring[data-focus-visible] {
+    outline-color: Highlight;
+  }
+}
+
+/* ZARI-005 project flow screens. Tokens come from tokens.css. */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.project-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 47.999rem) {
+  .project-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.project-list-panel {
+  background: var(--zari-surface-panel);
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  max-width: 44rem;
+}
+
+.project-list {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.project-list a {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.project-list a:hover {
+  border-color: var(--zari-accent);
+}
+
+.project-list a > span {
+  font-size: 0.8rem;
+  color: var(--zari-text-secondary);
+}
+
+.project-empty {
+  padding: 0.75rem 1rem;
+  color: var(--zari-text-secondary);
+}
+
+.session-status {
+  grid-column: 1 / -1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--zari-surface-subtle);
+  font-size: 0.85rem;
+}
+
+.session-status[data-save-state='error'],
+.session-status[data-save-state='conflict'],
+.session-status[data-save-state='unsupported'] {
+  background: var(--zari-danger-soft);
+  color: var(--zari-danger);
+}
+
+.session-status[data-save-state='saved'] {
+  background: var(--zari-success-soft);
+  color: var(--zari-success);
+}
+
+.measure-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.measure-field[data-focused='true'] .dimension-input {
+  outline: 2px solid var(--zari-focus-ring);
+  outline-offset: var(--zari-focus-offset);
+}
+
+.uncertainty-status {
+  grid-column: 1 / -1;
+  color: var(--zari-unknown);
+  font-size: var(--zari-text-xs);
+  line-height: var(--zari-line-label);
+}
+
+.detail-entry {
+  display: grid;
+  gap: var(--zari-space-2);
+  margin-top: var(--zari-space-4);
+}
+
+.next-facts {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+  max-width: 100%;
+  margin-top: var(--zari-space-3);
+  padding: var(--zari-space-3);
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+}
+
+.next-facts p,
+.next-facts-stale {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.next-facts-stale {
+  padding: var(--zari-space-2);
+  color: var(--zari-stale);
+  background: var(--zari-warning-soft);
+}
+
+.next-facts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.next-facts-list > li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.next-fact-row {
+  display: grid;
+  gap: var(--zari-space-1);
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--zari-touch-min-height);
+  padding: var(--zari-space-2);
+  overflow-wrap: anywhere;
+  width: 100%;
+  text-align: start;
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+  border: var(--zari-border-width) solid var(--zari-border-control);
+}
+
+.next-fact-row[data-priority='repairKnownFailure'] {
+  color: var(--zari-danger);
+}
+
+.next-fact-row[data-priority='requiredPhysicalUnknown'],
+.next-fact-row[data-priority='quantityCompleteness'] {
+  color: var(--zari-unknown);
+}
+
+.next-fact-row:focus-visible {
+  outline: 2px solid var(--zari-focus-ring);
+  outline-offset: var(--zari-focus-offset);
+}
+
+.detail-panel,
+.detail-sheet {
+  display: grid;
+  gap: var(--zari-space-3);
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+}
+
+.detail-panel {
+  padding-top: var(--zari-space-3);
+}
+
+.detail-sheet {
+  width: min(36rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--zari-space-4));
+  overflow: auto;
+  border: var(--zari-border-width) solid var(--zari-border-control);
+  border-radius: var(--zari-radius-overlay);
+  padding: var(--zari-space-4);
+  padding-bottom: max(var(--zari-space-4), env(safe-area-inset-bottom, 0px));
+}
+
+.detail-sheet::backdrop {
+  background: color-mix(in srgb, var(--zari-text-primary) 40%, transparent);
+}
+
+.detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--zari-space-3);
+}
+
+.detail-heading h3 {
+  margin: 0;
+  font-size: var(--zari-text-lg);
+  line-height: var(--zari-line-heading);
+}
+
+.detail-groups,
+.detail-fields {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+}
+
+.detail-fields {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.detail-fields li {
+  display: grid;
+  gap: var(--zari-space-1);
+}
+
+.detail-grid,
+.detail-bounds,
+.detail-fieldset {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
+
+.portable-panel {
+  display: grid;
+  gap: var(--zari-space-3);
+  min-width: 0;
+  margin-top: var(--zari-space-4);
+  padding: var(--zari-space-3);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+}
+
+.portable-panel legend {
+  padding: 0 var(--zari-space-2);
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+}
+
+.portable-choices {
+  display: grid;
+  gap: var(--zari-space-2);
+}
+
+.portable-choices label {
+  display: flex;
+  gap: var(--zari-space-2);
+  align-items: center;
+  min-height: var(--zari-touch-min-height);
+  min-width: 0;
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-sm);
+}
+
+.detail-editor input,
+.detail-editor select,
+.detail-editor textarea {
+  font: inherit;
+  font-size: var(--zari-text-base);
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-panel);
+  border: var(--zari-border-width) solid var(--zari-border-control);
+  border-radius: var(--zari-radius-control);
+  min-height: var(--zari-control-min-height);
+  padding: var(--zari-space-2);
+  max-width: 100%;
+}
+
+.detail-editor textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.text-pick[aria-pressed='true'] {
+  outline: var(--zari-focus-width) solid var(--zari-focus-ring);
+  outline-offset: var(--zari-focus-offset);
+}
+
+.normalized-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--zari-text-secondary);
+  padding-bottom: 0.5rem;
+  min-width: 5rem;
+  text-align: right;
+}
+
+.diagnostic-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* ZARI-006 plan view. */
+
+.plan-diagrams {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.plan-diagram {
+  width: 100%;
+  max-width: 26rem;
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.5rem;
+  background: var(--zari-surface-subtle);
+}
+
+.diagram-space {
+  fill: none;
+  stroke: var(--zari-canvas-outline);
+  stroke-width: 2;
+}
+
+.diagram-container {
+  fill: var(--zari-accent-soft);
+  stroke: var(--zari-accent);
+  stroke-width: 1.5;
+}
+
+.diagram-item {
+  fill: var(--zari-success-soft);
+  stroke: var(--zari-success);
+  stroke-width: 1;
+}
+
+.diagram-contained {
+  fill: var(--zari-success-soft);
+  stroke: var(--zari-success);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+.diagram-aperture {
+  fill: none;
+  stroke: var(--zari-canvas-outline);
+  stroke-width: 2;
+}
+
+.diagram-obstacle {
+  fill: none;
+  stroke: var(--zari-unknown);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 2;
+}
+
+.diagram-selection {
+  fill: none;
+  stroke: var(--zari-selection-ring);
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+.diagram-focus {
+  fill: none;
+  stroke: var(--zari-info);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 3;
+  pointer-events: none;
+}
+
+.diagram-overlay {
+  fill: none;
+  stroke: var(--zari-preview);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.diagram-unknown {
+  stroke: var(--zari-unknown);
+  stroke-dasharray: 4 3;
+}
+
+.diagram-label {
+  font-size: 14px;
+  fill: var(--zari-text-primary);
+}
+
+.plan-list {
+  list-style: none;
+  margin: 0.5rem 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.plan-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--zari-border-subtle);
+}
+
+.plan-list li[data-status='unknown'] {
+  color: var(--zari-text-secondary);
+}
+
+.plan-card {
+  display: grid;
+  gap: 0.125rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.5rem;
+  background: var(--zari-surface-panel);
+  cursor: pointer;
+}
+
+.plan-card[data-selected='true'] {
+  border-color: var(--zari-focus-ring);
+  outline: 2px solid var(--zari-focus-ring);
+  outline-offset: 1px;
+}
+
+.plan-card-title {
+  font-weight: 600;
+}
+
+/* Commerce columns make the BOM wider than a phone viewport; scroll the
+   table inside its section so the document itself never overflows.
+   `contain: inline-size` stops the table's intrinsic width from propagating
+   up to the grid track — a block-level scroll container still contributes
+   its content's min-content otherwise. */
+.table-scroll {
+  contain: inline-size;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.bom-table {
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bom-table th,
+.bom-table td {
+  border: 1px solid var(--zari-border-subtle);
+  padding: 0.375rem 0.75rem;
+  text-align: left;
+}
+
+.strategy-field {
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.strategy-option {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.strategy-library {
+  border: 1px solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.strategy-library h3,
+.strategy-library h4 {
+  margin: 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+
+.strategy-library p,
+.strategy-library li {
+  margin: 0;
+  color: var(--zari-text-secondary);
+}
+
+.strategy-library .strategy-library-pin {
+  color: var(--zari-text-primary);
+}
+
+.strategy-library .strategy-library-held {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--zari-warning);
+  background: var(--zari-warning-soft);
+  border-left: 2px solid var(--zari-warning);
+  padding: 0.5rem 0.75rem;
+}
+
+.strategy-library .strategy-library-held p {
+  color: var(--zari-warning);
+  background: transparent;
+  padding: 0;
+}
+
+.strategy-recipes {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pareto-compare {
+  border: 1px solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.pareto-compare h3,
+.pareto-compare h4 {
+  margin: 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+
+.pareto-compare p,
+.pareto-compare li,
+.pareto-compare td,
+.pareto-compare th {
+  margin: 0;
+  color: var(--zari-text-secondary);
+}
+
+.pareto-scroll {
+  contain: inline-size;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.move-nudge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  align-items: center;
+}
+
+.move-nudge-axis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+}
+
+.pareto-diff {
+  color: var(--zari-text-primary);
+  background: var(--zari-surface-subtle);
+}
+
+.pareto-held,
+.pareto-excluded {
+  color: var(--zari-warning);
+  background: var(--zari-warning-soft);
+  border-left: 2px solid var(--zari-warning);
+  padding: 0.5rem 0.75rem;
+}
+
+.pareto-held p,
+.pareto-excluded li {
+  color: var(--zari-warning);
+  background: transparent;
+}
+
+.incremental-replan {
+  border: 1px solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.incremental-replan h3 {
+  margin: 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+
+.incremental-replan p,
+.incremental-replan li {
+  margin: 0;
+  color: var(--zari-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.incremental-pins,
+.incremental-list {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0;
+  list-style: none;
+  max-width: 100%;
+}
+
+.incremental-pin {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  max-width: 100%;
+  color: var(--zari-text-primary);
+}
+
+.search-diagnostics {
+  border: 1px solid var(--zari-border-subtle);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.search-diagnostics h3,
+.search-diagnostics h4 {
+  margin: 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+
+.search-diagnostics p,
+.search-diagnostics li,
+.search-diagnostics td,
+.search-diagnostics th,
+.search-diagnostics caption {
+  margin: 0;
+  color: var(--zari-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+}
+
+.diagnostic-table th,
+.diagnostic-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--zari-border-subtle);
+}
+
+.diagnostic-checks {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  max-width: 100%;
+}
+
+/* ZARI-007 trustworthy editing. */
+
+.diagram-container[data-selected='true'],
+.diagram-item[data-selected='true'],
+.diagram-contained[data-selected='true'] {
+  stroke: var(--zari-selection-ring);
+  stroke-width: 3;
+}
+
+.diagram-ghost,
+.diagram-selection,
+.diagram-focus,
+.diagram-overlay,
+.dimension-line {
+  pointer-events: none;
+}
+
+.diagram-ghost {
+  fill: none;
+  stroke: var(--zari-preview);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  transition: none;
+}
+
+.notice-preview {
+  color: var(--zari-preview);
+  background: var(--zari-info-soft);
+  border-left: 2px solid var(--zari-preview);
+}
+
+.drag-phase-slot[data-shown='false'] {
+  visibility: hidden;
+}
+
+.plan-diagram[data-gesture='active'] {
+  touch-action: none;
+  user-select: none;
+}
+
+.plan-thumb {
+  width: 100%;
+  max-width: 10rem;
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.375rem;
+  background: var(--zari-surface-subtle);
+}
+
+.plan-thumb .diagram-label {
+  display: none;
+}
+
+.placement-pick {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.placement-pick:hover {
+  text-decoration: underline;
+}
+
+.plan-list li[data-selected='true'] {
+  background: var(--zari-surface-subtle);
+  outline: 2px solid var(--zari-focus-ring);
+  outline-offset: -2px;
+}
+
+.plan-detail[data-editable] {
+  border-radius: 0.5rem;
+}
+
+.plan-detail[data-editable]:focus-visible {
+  outline: 2px solid var(--zari-focus-ring);
+  outline-offset: 2px;
+}
+
+.edit-inspector {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed var(--zari-border-subtle);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 30rem;
+}
+
+.edit-inspector-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: end;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.edit-inspector-fields legend {
+  font-size: 0.8rem;
+  color: var(--zari-text-secondary);
+  padding: 0;
+}
+
+.edit-inspector-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.edit-inspector-field > span {
+  font-size: 0.75rem;
+  color: var(--zari-text-secondary);
+}
+
+.edit-inspector-field input,
+.edit-inspector-field select {
+  font: inherit;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.375rem;
+  min-width: 5.5rem;
+}
+
+.plan-screen {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.plan-workspace {
+  display: grid;
+  gap: var(--zari-space-4);
+  min-width: 0;
+}
+
+.workspace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  align-items: center;
+}
+
+.workspace-toolbar .button {
+  min-height: var(--zari-control-min-height);
+}
+
+.workspace-scope,
+.workspace-legend {
+  margin: 0;
+  font-size: var(--zari-text-sm);
+}
+
+.workspace-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-4);
+}
+
+.legend-selection {
+  outline: 2px solid var(--zari-selection-ring);
+  padding: 0 var(--zari-space-2);
+}
+
+.legend-focus,
+.legend-step {
+  outline: 1px dashed var(--zari-info);
+  padding: 0 var(--zari-space-2);
+}
+
+.guide-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  margin: var(--zari-space-2) 0;
+}
+
+.guide-nav .button {
+  min-height: var(--zari-control-min-height);
+}
+
+.guide-step {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.guide-step-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  align-items: center;
+  width: 100%;
+}
+
+.guide-step-row .button {
+  min-height: var(--zari-control-min-height);
+}
+
+.step-current {
+  outline: 1px dashed var(--zari-info);
+  outline-offset: 2px;
+}
+
+.plan-workspace-body {
+  display: grid;
+  gap: var(--zari-space-4);
+  min-width: 0;
+}
+
+.plan-stage,
+.workspace-inspector,
+.measure-workspace,
+.measure-diagram {
+  min-width: 0;
+}
+
+.plan-workspace[data-historical='true'] {
+  outline: 2px dashed var(--zari-stale);
+  outline-offset: 4px;
+}
+
+.measure-workspace {
+  display: grid;
+  gap: var(--zari-space-4);
+}
+
+.measure-diagram {
+  margin: 0;
+}
+
+.measure-diagram-caption,
+.measure-diagram-facts {
+  font-size: var(--zari-text-sm);
+}
+
+.measure-svg {
+  max-width: 100%;
+}
+
+.axis-facts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.text-pick {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  min-height: var(--zari-control-min-height);
+}
+
+.inspector-sheet {
+  width: min(100%, 24rem);
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  border: var(--zari-border-width) solid var(--zari-border-control);
+  border-radius: var(--zari-radius-overlay);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  padding: var(--zari-space-4);
+}
+
+.inspector-sheet::backdrop {
+  background: color-mix(in srgb, var(--zari-text-primary) 40%, transparent);
+}
+
+.normalized-value[data-historical='true'] {
+  color: var(--zari-stale);
+}
+
+.cavity-local {
+  margin: var(--zari-space-3) 0 0;
+}
+
+@media (min-width: 48rem) {
+  .measure-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem);
+    align-items: start;
+  }
+}
+
+@media (min-width: 75rem) {
+  .plan-workspace-body {
+    grid-template-columns: minmax(24rem, 1fr) minmax(16rem, 20rem);
+    align-items: start;
+  }
+}
+
+@media (max-width: 47.999rem) {
+  .plan-diagrams {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-thumb {
+    max-width: 8rem;
+  }
+
+  .edit-inspector {
+    max-width: none;
+  }
+
+  .edit-inspector-fields {
+    align-items: stretch;
+  }
+}
+
+@media (pointer: coarse) {
+  .move-nudge .button,
+  .edit-inspector-field input,
+  .detail-editor input,
+  .detail-editor select,
+  .detail-editor textarea,
+  .detail-entry .button,
+  .next-fact-row,
+  .next-facts .button {
+    min-height: var(--zari-touch-min-height);
+  }
+}
+
+.offer-quote,
+.purchase-handoff {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* z-execution-checklist: per-step card above the guide list. */
+.execution-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-panel);
+  background: var(--zari-surface-panel);
+  padding: var(--zari-space-3);
+  margin: var(--zari-space-2) 0 var(--zari-space-4);
+}
+.execution-card h3 {
+  margin: var(--zari-space-1) 0 var(--zari-space-2);
+}
+.execution-card h4 {
+  margin: var(--zari-space-3) 0 var(--zari-space-1);
+  font-size: var(--zari-text-base);
+}
+.execution-card .plan-list {
+  margin: var(--zari-space-1) 0 var(--zari-space-2);
+}
+.execution-card .execution-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--zari-space-2);
+  min-height: var(--zari-control-min-height);
+}
+.execution-card .form-actions .button {
+  min-height: var(--zari-control-min-height);
+}
+@media (pointer: coarse) {
+  .execution-card .execution-mark,
+  .execution-card .button,
+  .execution-card input {
+    min-height: var(--zari-touch-min-height);
+  }
+}
+@media (forced-colors: active) {
+  .execution-card {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+}
+.offer-quote form,
+.offer-quote label,
+.purchase-handoff form,
+.purchase-handoff label {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
+.inventory-panel input,
+.inventory-panel select,
+.location-panel input,
+.location-panel select,
+.feedback-panel input,
+.feedback-panel select,
+.offer-quote input,
+.offer-quote select,
+.purchase-handoff input,
+.purchase-handoff select {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: var(--zari-control-min-height);
+  padding: var(--zari-space-2);
+  border: var(--zari-border-width) solid var(--zari-border-control);
+  border-radius: var(--zari-radius-control);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-base);
+}
+.inventory-panel .button,
+.location-panel .button,
+.feedback-panel .button,
+.offer-quote .button,
+.purchase-handoff .button {
+  margin-top: var(--zari-space-2);
+}
+.location-panel .location-row-head,
+.location-panel .location-row-body {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.location-panel .location-row-body {
+  margin-top: var(--zari-space-1);
+}
+.location-panel .location-status {
+  display: inline-block;
+  padding: 0 var(--zari-space-2);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+}
+.location-panel .plan-list li {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--zari-space-1);
+}
+@media (pointer: coarse) {
+  .inventory-panel input,
+  .inventory-panel select,
+  .inventory-panel .button,
+  .location-panel input,
+  .location-panel select,
+  .location-panel .button,
+  .feedback-panel input,
+  .feedback-panel select,
+  .feedback-panel .button,
+  .offer-quote input,
+  .offer-quote select,
+  .offer-quote .button,
+  .purchase-handoff input,
+  .purchase-handoff select,
+  .purchase-handoff .button {
+    min-height: var(--zari-touch-min-height);
+  }
+}
+
+@media (forced-colors: active) {
+  .detail-panel,
+  .detail-sheet,
+  .inventory-panel,
+  .inventory-panel input,
+  .inventory-panel select,
+  .inventory-panel .button,
+  .location-panel,
+  .location-panel input,
+  .location-panel select,
+  .location-panel .button,
+  .location-panel .location-status,
+  .feedback-panel,
+  .feedback-panel input,
+  .feedback-panel select,
+  .feedback-panel .button,
+  .feedback-panel .feedback-badge,
+  .offer-quote,
+  .offer-quote input,
+  .offer-quote select,
+  .offer-quote .button,
+  .purchase-handoff,
+  .purchase-handoff input,
+  .purchase-handoff select,
+  .purchase-handoff .button,
+  .next-facts,
+  .next-fact-row,
+  .next-facts-stale,
+  .detail-editor input,
+  .detail-editor select,
+  .detail-editor textarea,
+  .uncertainty-status,
+  .text-pick[aria-pressed='true'] {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    outline-color: Highlight;
+  }
+  .diagram-space,
+  .diagram-container,
+  .diagram-item,
+  .diagram-contained,
+  .diagram-aperture,
+  .diagram-obstacle,
+  .diagram-overlay,
+  .diagram-ghost,
+  .dimension-line {
+    fill: none;
+    stroke: CanvasText;
+  }
+  .diagram-container,
+  .diagram-item,
+  .diagram-contained {
+    pointer-events: visible;
+  }
+  .diagram-selection,
+  .diagram-container[data-selected='true'],
+  .diagram-item[data-selected='true'],
+  .diagram-contained[data-selected='true'],
+  .legend-selection {
+    stroke: Highlight;
+    outline-color: Highlight;
+  }
+  .diagram-focus,
+  .legend-focus,
+  .legend-step,
+  .step-current,
+  .diagram-contained,
+  .diagram-obstacle,
+  .diagram-unknown,
+  .diagram-overlay {
+    stroke-dasharray: 4 3;
+  }
+  .plan-workspace[data-historical='true'],
+  .notice-stale {
+    outline: 2px dashed CanvasText;
+  }
+  .plan-list li[data-status='fail']::before {
+    content: '실패 ';
+  }
+  .plan-list li[data-status='unknown']::before {
+    content: '미확인 ';
+  }
+  .plan-list li[data-status='pass']::before {
+    content: '통과 ';
+  }
+  .spatial-label[data-selected='true'] {
+    outline: 2px solid Highlight;
+  }
+  .spatial-label[data-focus='true'] {
+    outline: 1px dashed CanvasText;
+  }
+}
+
+.spatial-stage {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
+
+.spatial-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  align-items: center;
+}
+
+.spatial-toolbar .button {
+  min-height: var(--zari-control-min-height);
+}
+
+.spatial-caption {
+  margin: 0;
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+  line-height: var(--zari-line-label);
+}
+
+.spatial-canvas-wrap {
+  position: relative;
+  height: 18rem;
+  background: var(--zari-canvas-bg);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  overflow: hidden;
+}
+
+.spatial-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.spatial-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spatial-label {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -120%);
+  padding: 0 var(--zari-space-1);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-sm);
+  line-height: var(--zari-line-label);
+  white-space: nowrap;
+}
+
+.feedback-panel form,
+.feedback-panel label {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
+.feedback-panel .feedback-entry-head,
+.feedback-panel .feedback-entry-body {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.feedback-panel .feedback-entry-body {
+  margin-top: var(--zari-space-1);
+}
+.feedback-panel .feedback-badge {
+  display: inline-block;
+  padding: 0 var(--zari-space-2);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-sm);
+}
+.feedback-panel .plan-list li {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--zari-space-1);
+}
+.feedback-panel .feedback-causes,
+.feedback-panel .feedback-moves,
+.feedback-panel .feedback-checks,
+.feedback-panel .feedback-preserved {
+  display: grid;
+  gap: var(--zari-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 100%;
+}
+.feedback-panel .feedback-causes li,
+.feedback-panel .feedback-moves li,
+.feedback-panel .feedback-checks li,
+.feedback-panel .feedback-preserved li,
+.feedback-panel .feedback-result p {
+  margin: 0;
+  color: var(--zari-text-secondary);
+  overflow-wrap: anywhere;
+}
+.feedback-panel .feedback-causes strong {
+  color: var(--zari-text-primary);
+}
+.feedback-panel .feedback-subhead {
+  margin: var(--zari-space-3) 0 0;
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-primary);
+}
+.feedback-panel .feedback-result {
+  display: grid;
+  gap: var(--zari-space-2);
+  min-width: 0;
+}
+
+/* z-privacy-offline: data management screen. Existing semantic tokens only. */
+.data-section {
+  margin-bottom: var(--zari-space-6);
+}
+.data-project-list,
+.data-scope-list,
+.data-connection-list,
+.data-photo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.data-project {
+  border: 1px solid var(--zari-border-subtle);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+.data-project h3 {
+  margin: 0 0 0.5rem;
+  font-size: var(--zari-text-base);
+}
+.data-scope-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--zari-border-subtle);
+}
+.data-scope-list > li > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+.data-scope-list span,
+.data-connection-list span,
+.data-photo-list span {
+  font-size: var(--zari-text-sm);
+  color: var(--zari-text-secondary);
+  overflow-wrap: anywhere;
+}
+.data-photo-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.data-connection-list li {
+  display: grid;
+  gap: 0.125rem;
+}
+.data-connection-list .data-kind {
+  color: var(--zari-text-primary);
+  font-weight: 600;
+}
+
+/* z-guided-onboarding: first-use guide, example/synthetic notices. Tokens only. */
+.onboarding {
+  grid-column: 1 / -1;
+  background: var(--zari-info-soft);
+  color: var(--zari-text-primary);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-panel);
+  padding: var(--zari-space-4);
+  margin-bottom: var(--zari-space-4);
+}
+.onboarding-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--zari-space-4);
+}
+.onboarding-head h3 {
+  margin: 0;
+  font-size: var(--zari-text-lg);
+}
+.onboarding-closed {
+  margin-top: var(--zari-space-2);
+  color: var(--zari-text-secondary);
+}
+.onboarding-steps,
+.onboarding-fields,
+.onboarding-errors {
+  padding-left: var(--zari-space-6);
+}
+.onboarding-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  list-style: none;
+  padding-left: 0;
+}
+.onboarding-help {
+  background: var(--zari-surface-panel);
+  border-radius: var(--zari-radius-control);
+  padding: var(--zari-space-3);
+  margin: var(--zari-space-3) 0;
+}
+.onboarding-errors {
+  background: var(--zari-danger-soft);
+  color: var(--zari-danger);
+  border-radius: var(--zari-radius-control);
+  padding: var(--zari-space-3) var(--zari-space-3) var(--zari-space-3) var(--zari-space-8);
+}
+.onboarding-example {
+  background: var(--zari-warning-soft);
+  color: var(--zari-warning);
+  border-left: 4px solid var(--zari-warning);
+  padding: var(--zari-space-3);
+  margin: var(--zari-space-3) 0;
+  font-size: var(--zari-text-sm);
+}
+.badge-example {
+  margin-left: var(--zari-space-2);
+  padding: 0 var(--zari-space-2);
+  background: var(--zari-warning-soft);
+  color: var(--zari-warning);
+  border: var(--zari-border-width) solid var(--zari-warning);
+  border-radius: var(--zari-radius-control);
+  font-size: var(--zari-text-xs);
+}
+.start-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--zari-space-4);
+  margin: var(--zari-space-4) 0;
+}
+@media (max-width: 47.999rem) {
+  .start-choices {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* z-catalog-crawler: image-free item drawings (tokens only; no image assets) */
+.shape-list {
+  display: grid;
+  gap: var(--zari-space-3);
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  list-style: none;
+  margin: var(--zari-space-3) 0 0;
+  padding: 0;
+}
+.shape-list > li {
+  background: var(--zari-surface-panel);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  border-radius: var(--zari-radius-panel);
+  color: var(--zari-text-primary);
+  display: grid;
+  gap: var(--zari-space-2);
+  padding: var(--zari-space-3);
+}
+.shape-meta {
+  color: var(--zari-text-secondary);
+  font-size: var(--zari-text-xs);
+  overflow-wrap: anywhere;
+}
+.item-shape {
+  align-items: end;
+  background: var(--zari-canvas-bg);
+  border-radius: var(--zari-radius-control);
+  display: grid;
+  gap: var(--zari-space-2);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: var(--zari-space-2);
+}
+.shape-svg {
+  height: 6rem;
+  max-width: 100%;
+  width: 100%;
+}
+.shape-body {
+  fill: var(--zari-canvas-bg);
+  stroke: var(--zari-canvas-outline);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.shape-hint {
+  fill: none;
+  stroke: var(--zari-canvas-outline);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.shape-caption {
+  color: var(--zari-text-primary);
+  font-size: var(--zari-text-xs);
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.item-shape-unknown {
+  background: var(--zari-warning-soft);
+  border-radius: var(--zari-radius-control);
+  color: var(--zari-warning);
+  font-size: var(--zari-text-sm);
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--zari-space-2) var(--zari-space-3);
+}
+@media (forced-colors: active) {
+  .shape-body,
+  .shape-hint {
+    stroke: CanvasText;
+  }
+  .shape-body {
+    fill: Canvas;
+  }
+}
+@media (max-width: 40rem) {
+  .item-shape {
+    grid-template-columns: 1fr;
+  }
+}
+
+</style>
+</head>
+<body class="zari-ui">
+<main class="print-surface">
+<table class="print-frame"><thead><tr><td><div class="print-head" data-testid="print-head"><strong>ZARI 계획 패키지</strong><span>계획 ID <code>1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21</code></span><span>단위 mm</span></div></td></tr></thead><tfoot><tr><td><div class="print-foot" data-testid="print-foot"><span>입력 dd988bd5f374 · 카탈로그 catalog-2025-01 (합성 데이터 — 실제 상품이 아닙니다) · 규칙 zari-domain-v2</span><span>포함 범위: 프로젝트 이름 제외 · 물건 이름 제외 · 구매 링크 제외 · 진행 기록 제외</span><span>미확인은 통과가 아닙니다 · 구매 전에 값·재고를 판매처에서 다시 확인</span></div></td></tr></tfoot><tbody><tr><td><section class="print-section" data-section="cover" data-revision="1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21"><h1>정리 계획</h1><dl class="print-facts"><dt>프로젝트</dt><dd>이름 숨김</dd><dt>계획 상태</dt><dd>채택한 계획 · 현재 입력으로 계산된 계획</dd><dt>정리 전략</dt><dd>최소 구매</dd><dt>물리 검토</dt><dd><span>조건부 — <span class="print-unknown">미확인</span></span><span> 항목이 남아 있음</span></dd><dt>구매 조건</dt><dd>구매 조건이 모두 확인됨</dd><dt>배정 현황</dt><dd><span>배정 3 · 임시 0 · 미배치 0 · 수량 <span class="print-unknown">미확인</span></span><span> 물건 0</span></dd><dt>카탈로그</dt><dd>합성 데이터 — 실제 상품이 아닙니다</dd></dl><h3>공간 안쪽 치수</h3><table class="print-table"><thead><tr><th scope="col">방향</th><th scope="col">치수</th></tr></thead><tbody><tr><td>폭</td><td><span>600 mm (오차 <span class="print-unknown">미확인</span></span><span>)</span></td></tr><tr><td>깊이</td><td><span>400 mm (오차 <span class="print-unknown">미확인</span></span><span>)</span></td></tr><tr><td>높이</td><td><span>300 mm (오차 <span class="print-unknown">미확인</span></span><span>)</span></td></tr></tbody></table><ul class="print-notes"><li>모든 길이는 mm입니다. 도면의 숫자는 Rust가 계산한 계획 좌표 그대로이며 화면 배율만 다릅니다.</li><li><span><span class="print-unknown">미확인</span></span><span>은 통과가 아니고 0도 아닙니다. 미배치 물건과 <span class="print-unknown">미확인</span></span><span> 검사는 생략하지 않고 모두 적습니다.</span></li><li>이 문서는 계획이며 실제 치수의 측정 증명이 아닙니다.</li></ul></section><section class="print-section print-drawing" data-section="drawing-top" data-revision="1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21"><h2>위에서 본 도면</h2><p class="print-meta">가로 x(폭), 세로 y(안쪽 깊이) · 단위 mm</p><svg class="print-svg" viewBox="-20 -420 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="위에서 본 도면, 단위 mm. 번호는 아래 표와 같습니다."><g transform="scale(1 -1)"><rect class="diagram-space" x="0" y="0" width="600" height="400"></rect><rect class="diagram-container" x="75" y="0" width="520" height="255"></rect><rect class="diagram-contained" x="93" y="148" width="190" height="100"></rect><rect class="diagram-contained" x="93" y="43" width="190" height="100"></rect><rect class="diagram-contained" x="288" y="48" width="300" height="200"></rect></g><text class="print-drawing-number" x="335" y="-127.5" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">1</text><text class="print-drawing-number" x="188" y="-198" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">2</text><text class="print-drawing-number" x="188" y="-93" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">3</text><text class="print-drawing-number" x="438" y="-148" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">4</text><text class="print-drawing-dim" x="300" y="15" font-size="16.666666666666668" text-anchor="middle">600 mm</text><text class="print-drawing-dim" x="-7" y="-200" font-size="16.666666666666668" text-anchor="middle" transform="rotate(-90 -7 -200)">400 mm</text></svg><table class="print-table print-legend"><caption>도면에 그린 것 4개 (치수 mm, 좌하단 기준 x·y)</caption><thead><tr><th scope="col">번호</th><th scope="col">이름</th><th scope="col">종류</th><th scope="col">x</th><th scope="col">y</th><th scope="col">가로</th><th scope="col">깊이</th></tr></thead><tbody><tr><td>1</td><td>Wide bin 520×255×220</td><td>수납함</td><td>75</td><td>0</td><td>520</td><td>255</td></tr><tr><td>2</td><td>물건 1</td><td>수납함 안 물건</td><td>93</td><td>148</td><td>190</td><td>100</td></tr><tr><td>3</td><td>물건 1 #2</td><td>수납함 안 물건</td><td>93</td><td>43</td><td>190</td><td>100</td></tr><tr><td>4</td><td>물건 2</td><td>수납함 안 물건</td><td>288</td><td>48</td><td>300</td><td>200</td></tr></tbody></table></section><section class="print-section print-drawing" data-section="drawing-front" data-revision="1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21"><h2>앞에서 본 도면</h2><p class="print-meta">가로 x(폭), 세로 z(높이) · 단위 mm</p><svg class="print-svg" viewBox="-16 -316 632 332" preserveAspectRatio="xMidYMid meet" role="img" aria-label="앞에서 본 도면, 단위 mm. 번호는 아래 표와 같습니다."><g transform="scale(1 -1)"><rect class="diagram-space" x="0" y="0" width="600" height="300"></rect><rect class="diagram-container" x="75" y="0" width="520" height="220"></rect><rect class="diagram-contained" x="93" y="20" width="190" height="80"></rect><rect class="diagram-contained" x="93" y="20" width="190" height="80"></rect><rect class="diagram-contained" x="288" y="20" width="300" height="50"></rect></g><text class="print-drawing-number" x="335" y="-110" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">1</text><text class="print-drawing-number" x="188" y="-60" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">2</text><text class="print-drawing-number" x="188" y="-60" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">3</text><text class="print-drawing-number" x="438" y="-45" font-size="16.666666666666668" text-anchor="middle" dominant-baseline="central">4</text><text class="print-drawing-dim" x="300" y="12" font-size="16.666666666666668" text-anchor="middle">600 mm</text><text class="print-drawing-dim" x="-5.6" y="-150" font-size="16.666666666666668" text-anchor="middle" transform="rotate(-90 -5.6 -150)">300 mm</text></svg><table class="print-table print-legend"><caption>도면에 그린 것 4개 (치수 mm, 좌하단 기준 x·y)</caption><thead><tr><th scope="col">번호</th><th scope="col">이름</th><th scope="col">종류</th><th scope="col">x</th><th scope="col">z</th><th scope="col">가로</th><th scope="col">높이</th></tr></thead><tbody><tr><td>1</td><td>Wide bin 520×255×220</td><td>수납함</td><td>75</td><td>0</td><td>520</td><td>220</td></tr><tr><td>2</td><td>물건 1</td><td>수납함 안 물건</td><td>93</td><td>20</td><td>190</td><td>80</td></tr><tr><td>3</td><td>물건 1 #2</td><td>수납함 안 물건</td><td>93</td><td>20</td><td>190</td><td>80</td></tr><tr><td>4</td><td>물건 2</td><td>수납함 안 물건</td><td>288</td><td>20</td><td>300</td><td>50</td></tr></tbody></table></section><section class="print-section" data-section="placements" data-revision="1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21"><h2>물건이 놓이는 곳</h2><table class="print-table" data-testid="print-placements"><caption>배치 1개 (x, y, z mm)</caption><thead><tr><th scope="col">이름</th><th scope="col">x</th><th scope="col">y</th><th scope="col">z</th><th scope="col">방향</th></tr></thead><tbody><tr><td>Wide bin 520×255×220</td><td>75</td><td>0</td><td>0</td><td>정면 0°</td></tr></tbody></table><table class="print-table" data-testid="print-assignments"><caption>물건별 위치 3건</caption><thead><tr><th scope="col">물건</th><th scope="col">위치</th></tr></thead><tbody><tr><td>물건 2</td><td>Wide bin 520×255×220 안 · 수납함 안 위치 (208, 43, 10) mm</td></tr><tr><td>물건 1</td><td>Wide bin 520×255×220 안 · 수납함 안 위치 (13, 143, 10) mm</td></tr><tr><td>물건 1 #2</td><td>Wide bin 520×255×220 안 · 수납함 안 위치 (13, 38, 10) mm</td></tr></tbody></table><table class="print-table" data-testid="print-unassigned"><caption>자리를 정하지 못한 물건</caption><thead><tr><th scope="col">물건</th><th scope="col">수량</th><th scope="col">이유</th></tr></thead><tbody><tr><td colspan="3">미배치 물건이 없습니다.</td></tr></tbody></table></section><section class="print-section" data-section="checks" data-revision="1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21"><h2>검사 결과</h2><p class="print-meta" data-testid="print-unknown-checks">미확인 검사 13건 — 통과로 읽지 마세요.</p><table class="print-table" data-testid="print-checks"><thead><tr><th scope="col">검사</th><th scope="col">필수</th><th scope="col">상태</th><th scope="col">사유 코드</th></tr></thead><tbody><tr data-status="pass"><td>방향</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>외형 치수</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>외형 치수</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>fact_unknown</td></tr><tr data-status="pass"><td>지지면</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>지지면</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>elevation_unknown</td></tr><tr data-status="pass"><td>내부 수용</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>내부 수용</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>cavity_unknown</td></tr><tr data-status="pass"><td>내부 수용</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>내부 수용</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>fact_unknown</td></tr><tr data-status="pass"><td>내부 수용</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>내부 수용</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>fact_unknown</td></tr><tr data-status="pass"><td>내부 수용</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>내부 수용</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>fact_unknown</td></tr><tr data-status="pass"><td>지지면</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>지지면</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>elevation_unknown</td></tr><tr data-status="pass"><td>방향</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>지지면</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>지지면</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>elevation_unknown</td></tr><tr data-status="pass"><td>방향</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>지지면</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>지지면</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>elevation_unknown</td></tr><tr data-status="pass"><td>방향</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>하중</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>하중</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>하중</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>반입 경로</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>반입 경로</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>fact_unknown</td></tr><tr data-status="unknown"><td>반입 경로</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>order_unverifiable</td></tr><tr data-status="pass"><td>사용 접근</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="unknown"><td>사용 접근</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>fact_unknown</td></tr><tr data-status="unknown"><td>사용 접근</td><td>필수</td><td><span><span class="print-unknown">미확인</span></span><span></span></td><td>fact_unknown</td></tr><tr data-status="pass"><td>호환</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>호환</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>재고</td><td></td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>가격</td><td></td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>배송</td><td></td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>예산</td><td>필수</td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>예산</td><td></td><td>확인됨</td><td></td></tr><tr data-status="pass"><td>수량 보존</td><td>필수</td><td>확인됨</td><td></td></tr></tbody></table></section><section class="print-section" data-section="bom" data-revision="1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21"><h2>구매 목록</h2><table class="print-table print-bom" data-testid="print-bom"><thead><tr><th scope="col">품목</th><th scope="col">필요(개)</th><th scope="col">재사용(개)</th><th scope="col">주문 팩</th><th scope="col">상품 소계</th><th scope="col">재고</th><th scope="col">배송</th><th scope="col">가격 확인</th><th scope="col">링크</th></tr></thead><tbody><tr><td>Wide bin 520×255×220</td><td>1</td><td>0</td><td>1</td><td>₩24,000</td><td>재고 있음</td><td>무료 배송</td><td>확인 시각 없음</td><td class="print-url">범위에서 제외</td></tr></tbody><tfoot><tr><th scope="row" colspan="4">상품 소계</th><td colspan="5">₩24,000</td></tr><tr><th scope="row" colspan="4">배송비 합계</th><td colspan="5">₩0</td></tr><tr><th scope="row" colspan="4">합계</th><td colspan="5">₩24,000</td></tr></tfoot></table><ul class="print-notes" data-testid="print-purchase-notes"><li>ZARI는 아무것도 구매하지 않았습니다. 이 목록은 구매 약속이 아닙니다.</li><li><span>가격·재고·배송은 입력한 출처 기준입니다. 확인 시각이 없거나 <span class="print-unknown">미확인</span></span><span>이면 지금 살 수 있다는 뜻이 아닙니다.</span></li><li>살 때는 판매처에서 값·재고·치수를 다시 확인하세요.</li></ul></section><section class="print-section" data-section="guide" data-revision="1b018645bb5a887f79465e14745914f54cc7137d11914eb0d782d3cdf8035a21"><h2>실행 순서</h2><table class="print-table" data-testid="print-steps"><thead><tr><th scope="col">단계</th><th scope="col">할 일</th><th scope="col">대상</th><th scope="col">먼저</th><th scope="col">조건</th><th scope="col">진행</th></tr></thead><tbody><tr><td>1</td><td>구매 의사를 표시합니다</td><td>판매 옵션 (Wide bin 520×255×220) / Wide bin 520×255×220</td><td></td><td></td><td>범위에서 제외</td></tr><tr><td>2</td><td>도착했다고 표시합니다</td><td>판매 옵션 (Wide bin 520×255×220) / Wide bin 520×255×220</td><td>1단계</td><td></td><td>범위에서 제외</td></tr><tr><td>3</td><td>칸을 비웠다고 표시합니다</td><td>작업할 칸</td><td></td><td></td><td>범위에서 제외</td></tr><tr><td>4</td><td>밖에서 내용물을 넣습니다</td><td>물건 1 / Wide bin 520×255×220</td><td>2단계, 3단계</td><td><span>내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span></span></td><td>범위에서 제외</td></tr><tr><td>5</td><td>밖에서 내용물을 넣습니다</td><td>물건 1 / Wide bin 520×255×220</td><td>2단계, 3단계</td><td><span>내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span></span></td><td>범위에서 제외</td></tr><tr><td>6</td><td>밖에서 내용물을 넣습니다</td><td>물건 2 / Wide bin 520×255×220</td><td>2단계, 3단계</td><td><span>내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 내부 수용: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span></span></td><td>범위에서 제외</td></tr><tr><td>7</td><td>수납함을 배치합니다</td><td>Wide bin 520×255×220</td><td>2단계, 3단계, 4단계, 5단계, 6단계</td><td><span>반입 경로: <span class="print-unknown">미확인</span></span><span> / 반입 경로: <span class="print-unknown">미확인</span></span><span> / 사용 접근: <span class="print-unknown">미확인</span></span><span> / 사용 접근: <span class="print-unknown">미확인</span></span><span> / 외형 치수: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span> / 지지면: <span class="print-unknown">미확인</span></span><span></span></td><td>범위에서 제외</td></tr></tbody></table></section></td></tr></tbody></table>
+</main>
+</body>
+</html>
