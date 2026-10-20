@@ -57,4 +57,12 @@ describe('z-product-qualification denominator projection', () => {
     expect(output).toContain('not-started 1');
     expect(output).toContain('NOT_AUTHORIZED');
   });
+
+  it('keeps the committed review package matching its recorded digests', () => {
+    const output = execFileSync('node', ['scripts/check-review-package.mjs'], {
+      encoding: 'utf8',
+    });
+    expect(output).toContain('files verified');
+    expect(output).toContain('approved false');
+  });
 });

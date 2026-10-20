@@ -12,7 +12,9 @@
 - `docs/qualification/review-package/`: 채택 snapshot에서 실제 출력 패널이 만든 검수용 패키지(합성 표기). `check-review-package.mjs`가 해시를 검증한다.
 - `contract_change=NO`: Rust·계약·fixture·앱 코드 변경 없음.
 
-이 머신에서 실행한 검증(Node v24.19.0, CARGO_BUILD_JOBS=4): cargo fmt/clippy/test, fixture_runner 28+124, cargo tree, wasm:build, contracts:check, typecheck, lint, npm test 408, build+release-manifest, design-tokens 41/41, test:parity(124) 전부 exit 0. 전체 Chromium 스위트 139/139 통과(새 journey 3 포함). journey spec은 firefox 3/3 통과; webkit은 호스트 의존성 부족으로 실행 불가(UNVERIFIED). `check-z-denominator`·`check-review-package`·`check-qualification`·`check-product-contract` exit 0.
+수정 1라운드(검토 지적 B1): 패키지 CSV가 CRLF 바이트로 해시된 뒤 커밋에서 LF로 정규화되어 `check-review-package.mjs`가 커밋된 head에서 실패했다. `writeReviewPackage`가 CSV를 LF로 정규화해 쓰고 해시하도록 고치고, `.gitattributes`에 `docs/qualification/review-package/** -text`(print-share 선례와 동일)를 추가해 기록 바이트가 그대로 커밋·체크아웃되게 했다. 패키지를 재생성해 같은 `planRevision 1b018645bb5a…`를 확인했고, `zQualification.test.ts`에 이 스크립트를 실행하는 vitest 케이스를 추가해 `npm test`가 이탈을 잡는다. `.github/workflows`는 건드리지 않는다.
+
+이 머신에서 실행한 검증(Node v24.19.0, CARGO_BUILD_JOBS=4): cargo fmt/clippy/test, fixture_runner 28+124, cargo tree, wasm:build, contracts:check, typecheck, lint, npm test 409, build+release-manifest, design-tokens 41/41, test:parity(124) 전부 exit 0. 전체 Chromium 스위트 139/139 통과(새 journey 3 포함). journey spec은 firefox 3/3 통과; webkit은 호스트 의존성 부족으로 실행 불가(UNVERIFIED). `check-z-denominator`·`check-review-package`·`check-qualification`·`check-product-contract` exit 0.
 
 하지 않은 것: z-local-delivery(다음 노드), 새 계약·명령, 승인 baseline, 출시, 실제 결제·판매처, 전화·전용 GPU 검증.
 

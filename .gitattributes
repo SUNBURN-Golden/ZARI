@@ -8,3 +8,5 @@ docs/RUST_ADDENDUM_KO.md -text
 SOURCE_MANIFEST.json -text
 # Print-share export fixtures are compared byte for byte with generated output.
 apps/web/tests/fixtures/print-share/** -text
+# Review-package digests in manifest.json are recorded over the exact bytes.
+docs/qualification/review-package/** -text

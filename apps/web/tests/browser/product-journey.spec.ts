@@ -143,8 +143,9 @@ async function writeReviewPackage(
   };
   record('plan-package.html', html);
   for (const csv of args.csvs) {
-    writeFileSync(join(out, csv.name), csv.text);
-    record(csv.name, csv.text);
+    const text = csv.text.replace(/\r\n/g, '\n');
+    writeFileSync(join(out, csv.name), text);
+    record(csv.name, text);
   }
   const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
     cwd: ROOT,

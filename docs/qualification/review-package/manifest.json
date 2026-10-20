@@ -8,11 +8,11 @@
   "catalogDigest": "249cfb4185353ecb69c140ba6e7830b8670dd07708efa1d8cf0d5cee6e96be81",
   "evidenceClass": "synthetic",
   "evidenceNote": "합성 데모 카탈로그로 만든 계획이다. 실제 상품·실제 판매처·실기기 증거가 아니다.",
-  "sourceCommit": "abb0a474caac7233e4a30e31c479770f67b1b3b3",
+  "sourceCommit": "b8fdc2463042b898c83de3d5b1030f32580067b2",
   "sourceDirty": true,
   "generatedBy": "apps/web/tests/browser/product-journey.spec.ts",
   "captureCommand": "ZARI_REVIEW_DIR=<dir> npx playwright test apps/web/tests/browser/product-journey.spec.ts --project=chromium --workers=1",
-  "generatedAt": "2026-10-20T00:31:34.414Z",
+  "generatedAt": "2026-10-20T01:56:22.474Z",
   "files": [
     {
       "path": "plan-package.html",
@@ -21,13 +21,13 @@
     },
     {
       "path": "zari-plan-1b018645bb5a.csv",
-      "sha256": "86cc253d9c633ddee4e2dd71afe9712c6ec43404e43bc9ca1f271c147200e0ab",
-      "bytes": 11047
+      "sha256": "34dd19d4672d0f4563cf1dc6285e186ddf8ec1774ba78c2a64454953b7fb80a2",
+      "bytes": 10966
     },
     {
       "path": "zari-bom-1b018645bb5a.csv",
-      "sha256": "c4550b9c4b3a2b777fb7f46acbe9fc1567c4f34720de504d0d87fd239bf09779",
-      "bytes": 2796
+      "sha256": "249422e69128b12a28bcdf9da5cdc3dd541e5065e842b2e1187980b33bec5ea1",
+      "bytes": 2776
     }
   ]
 }

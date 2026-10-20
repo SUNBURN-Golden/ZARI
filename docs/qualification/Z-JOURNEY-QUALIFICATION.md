@@ -36,7 +36,7 @@
 |---|---|---|
 | Chromium 1440(본 호스트) | 이 여정 검증 | 3/3 spec 통과 |
 | Chromium 390 에뮬레이션 | 부분(에뮬레이션) | 여정 내 넘침·forced-colors 단정 |
-| Firefox | UNVERIFIED | 이 호스트에 미설치(실행 시도 결과 참조) |
+| Firefox(본 호스트) | 이 여정 검증 | `npx playwright test product-journey.spec.ts --project=firefox` 3/3 통과 |
 | WebKit | UNVERIFIED | 이 호스트에 미설치(실행 시도 결과 참조) |
 | 실제 전화 | UNQUALIFIED | 하드웨어 없음. 390 CSS viewport는 에뮬레이션 |
 | 전용 GPU | UNQUALIFIED | Headless SwiftShader(software GL) |

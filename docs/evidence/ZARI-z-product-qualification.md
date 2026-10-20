@@ -16,7 +16,7 @@ A real-browser journey spec runs 측정→실상품 검토→대안→구매 준
 
 - `docs/adr/SP-z-product-qualification.md`, `design/DECISIONS.md`, `docs/PRODUCT_COMPLETION_EVOLUTION_KO.md`, `design/SPATIAL_WORKSPACE.md` (scoped notes only).
 - `docs/qualification/z-denominator.json`, `docs/qualification/Z-JOURNEY-QUALIFICATION.md`, `docs/qualification/review-package/` (`index.md`, `manifest.json`, `plan-package.html`, `zari-plan-*.csv`, `zari-bom-*.csv`).
-- `scripts/check-z-denominator.mjs`, `scripts/check-review-package.mjs`, `apps/web/tests/unit/zQualification.test.ts`, `apps/web/tests/browser/product-journey.spec.ts`, `docs/IMPLEMENTATION_STATUS.md`, this file.
+- `scripts/check-z-denominator.mjs`, `scripts/check-review-package.mjs`, `apps/web/tests/unit/zQualification.test.ts`, `apps/web/tests/browser/product-journey.spec.ts`, `docs/IMPLEMENTATION_STATUS.md`, `.gitattributes` (fix round 1: `docs/qualification/review-package/** -text`), this file.
 
 ## Acceptance mapping
 
@@ -42,7 +42,7 @@ A real-browser journey spec runs 측정→실상품 검토→대안→구매 준
 | `fixture_runner -- fixtures/bootstrap` / `-- fixtures` | exit 0; 28 / 124 cases |
 | `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked` | exit 0 |
 | `npm run contracts:check` | exit 0; "Contracts match Rust source; 124 fixture structures valid." |
-| `npm test` | exit 0, 50 files, 408 tests (incl. new `zQualification.test.ts`) |
+| `npm test` | exit 0, 50 files, 409 tests (incl. `zQualification.test.ts`; fix round 1 added the review-package digest case) |
 | `npm run lint` | exit 0 |
 | `npm run build`, `node scripts/check-release-manifest.mjs` | exit 0, `errors: []` |
 | `node scripts/check-design-tokens.mjs --self-test` | exit 0, 72 base tokens, 41/41 contrast cases |
@@ -51,9 +51,21 @@ A real-browser journey spec runs 측정→실상품 검토→대안→구매 준
 | `npx playwright test product-journey.spec.ts --project=firefox` | exit 0, 3 passed (27.2s) |
 | `npx playwright test product-journey.spec.ts --project=webkit` | **UNVERIFIED** — `browserType.launch: Host system is missing dependencies` |
 | `node scripts/check-z-denominator.mjs` | exit 0 |
-| `node scripts/check-review-package.mjs` | exit 0, 3 files verified, plan 1b018645bb5a |
+| `node scripts/check-review-package.mjs` | exit 0, 3 files verified, plan 1b018645bb5a (fix round 1 — see below; the earlier exit 0 held only on the pre-commit working tree) |
 | `node scripts/check-qualification.mjs` | exit 0 (16-node ledger unchanged) |
 | `node scripts/check-product-contract.mjs` | exit 0 |
+
+## Fix round 1 (review finding B1)
+
+Both reviewers found `node scripts/check-review-package.mjs` exits 1 on the committed head (`FAIL: zari-plan-1b018645bb5a.csv digest`). Root cause: `toCsv` emits `\r\n`, `writeReviewPackage` hashed and wrote the raw CRLF bytes, and `.gitattributes` `* text=auto eol=lf` normalized the CSVs to LF at commit — so recorded digests/byte counts (11047/2796) described pre-commit bytes, not the committed blobs (10966/2776). The earlier "exit 0" in this file was true only on the builder's uncommitted working tree.
+
+Fix applied, all within the node scope:
+
+- `product-journey.spec.ts` `writeReviewPackage` normalizes `\r\n` → `\n` before writing and hashing each CSV, so the packaged bytes are canonical LF.
+- `.gitattributes` gains `docs/qualification/review-package/** -text` (same precedent as `apps/web/tests/fixtures/print-share/**`), so the packaged bytes are committed and checked out exactly as hashed on any platform.
+- Package regenerated via `ZARI_REVIEW_DIR=docs/qualification/review-package npx playwright test product-journey.spec.ts --project=chromium --workers=1` (exit 0, 3 passed). Same `planRevision 1b018645bb5a887f…` and `catalogDigest`; `sourceCommit` now records head `b8fdc2463042b898c83de3d5b1030f32580067b2` with `sourceDirty: true`. Worktree CSVs are byte-identical to the LF blobs already committed (verified by `git show` + `diff`), so manifest digests match what the fix commit stores.
+- `zQualification.test.ts` gains a vitest case that runs `scripts/check-review-package.mjs`, so `npm test` catches digest drift on the committed bytes from now on. `.github/workflows` untouched (forbidden area).
+- `Z-JOURNEY-QUALIFICATION.md` device table: stale Firefox UNVERIFIED row corrected to 3/3 verified (evidence line above already recorded the run).
 
 ## Known limits
 
