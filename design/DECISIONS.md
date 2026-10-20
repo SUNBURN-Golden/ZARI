@@ -419,6 +419,19 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 - 사용자 승인 근거: 없음. 기존 토큰으로 계약을 맞춘 수정이다.
 - 되돌리기: 이 결정과 검사 확장을 걷어 낸다.
 
+## Dz-product-qualification — 정리 제품 확장 전체 여정 qualification / 채택
+
+- ID: Dz-product-qualification
+- 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-product-qualification만 다룬다. 같은 발화의 이후 z-노드(z-local-delivery)는 각 노드에서 구현한다.
+- 문제: 노드별 독립 테스트가 전부 통과해도 측정→실상품 검토→대안→구매 준비→실행→위치 검색→재정리가 하나의 스냅샷 위에서 끝까지 이어지는 근거는 없다. mock·합성·실상품·실기기 증거가 섞이고, 미완료 항목을 분모에서 빼면 남은 것만 완료로 보인다.
+- 변경 대상: [docs/adr/SP-z-product-qualification.md](../docs/adr/SP-z-product-qualification.md), `apps/web/tests/browser/product-journey.spec.ts`, `docs/qualification/z-denominator.json`, `docs/qualification/Z-JOURNEY-QUALIFICATION.md`, `docs/qualification/review-package/`(패키지 HTML·CSV·manifest·index), `scripts/check-z-denominator.mjs`, `scripts/check-review-package.mjs`, 단위 시험. Rust·프로토콜·스키마·DB version·`BUILD_ID`·fixture·생성 계약·앱 코드는 바꾸지 않는다.
+- 검토한 대안: (A) 하나의 실제 브라우저 여정 + 시나리오별 네 겹 증거(native·실제 WASM·저장·화면) + 별도 분모 문서 + 사용자 검수용 계획 패키지. (B) 기존 노드별 스펙만 모아 완료로 보고. (C) 여정을 앱 안의 새 화면이나 런타임 리포트로 구현.
+- 선택: A. B는 spec이 금지하는 "독립 테스트만으로 전체 완료 주장"이 된다. C는 새 화면이 또 다른 미검증 표면이 되고 런타임 상태 API는 금지다. 분모 문서는 인계용 별도 투영이지 앱·Rust의 중앙 상태가 아니다.
+- 조건: 전 과정 같은 accepted snapshot과 같은 `data-revision`만 완료 근거로 인정한다. unknown을 pass/0으로 승격하지 않는다. 미완료 항목(z-local-delivery, 전화·전용 GPU, 실제 사이트 수집, 캡처 수용, 출시)은 원래 분모에 남기고 지우지 않는다. 검수용 패키지는 실제 출력 패널이 채택 snapshot에서 만든 결과물이고 합성 자료는 합성이라고 쓴다. 새 색 토큰은 없다. Fable NONE과 비작성자 A2는 사용자가 정한 대로 독립 읽기 전용 검토 2회로 대체한다. 머지 권한은 감독자에게 위임된다.
+- 접근성·성능: 여정 스펙은 390px 넘침 없음·forced-colors·키보드 진입을 각 시나리오에서 확인한다. 검수 패키지는 텍스트 산출물이라 픽셀 기준이 아니다. 별도 런타임 비용은 없다.
+- 사용자 승인 근거: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST, 원문: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." 이 문장은 이 노드의 채택이다. 실기기 검증·실제 판매처·결제·클라우드·출시·화면 exact-set 승인은 아니다.
+- 되돌리기: 이 결정, 여정 스펙, 분모·검수 패키지 문서와 검사 스크립트를 걷어 낸다. 저장 데이터와 계약은 바뀌지 않으므로 되돌릴 데이터가 없다.
+
 ## 새 결정 기록 양식
 
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.

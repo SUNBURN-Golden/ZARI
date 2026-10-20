@@ -1,3 +1,23 @@
+# 2026-10-20 — ZARI-z-product-qualification 정리 제품 확장 전체 여정 qualification
+
+정본은 GitHub issue #116, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-product-qualification`이다. 관찰한 base SHA는 `abb0a474caac7233e4a30e31c479770f67b1b3b3`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.
+
+채택: JunTae Park (준태, 저장소 소유자), 2026-10-07 12:42 KST. 원문은 각 z-노드와 동일하다. 이 전달은 z-product-qualification만 구현한다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다.
+
+구현:
+
+- `apps/web/tests/browser/product-journey.spec.ts`: 실제 Worker·IndexedDB 위 한 여정(측정→실상품 검토→대안→구매 준비→실행→계획 패키지→위치 검색→재정리)을 같은 accepted snapshot·`data-revision`으로 단정. 부족 측정·품절(전량 outOfStock 카탈로그)→`out_of_stock` Fail·오류 import·미배정·취소·다중 탭 시나리오 포함.
+- `docs/qualification/z-denominator.json`: z-노드 분모 21(프로그램20+소유자 추가1) 별도 투영. IN_PROGRESS 1·NOT_STARTED 1·미완료 항목을 분모에서 지우지 않는다. `scripts/check-z-denominator.mjs` + `zQualification.test.ts`.
+- `docs/qualification/Z-JOURNEY-QUALIFICATION.md`: 여정 단계별·시나리오별 결과와 실제 기기 자격 표(전화·전용 GPU·실제 사이트 UNQUALIFIED).
+- `docs/qualification/review-package/`: 채택 snapshot에서 실제 출력 패널이 만든 검수용 패키지(합성 표기). `check-review-package.mjs`가 해시를 검증한다.
+- `contract_change=NO`: Rust·계약·fixture·앱 코드 변경 없음.
+
+이 머신에서 실행한 검증(Node v24.19.0, CARGO_BUILD_JOBS=4): cargo fmt/clippy/test, fixture_runner 28+124, cargo tree, wasm:build, contracts:check, typecheck, lint, npm test 408, build+release-manifest, design-tokens 41/41, test:parity(124) 전부 exit 0. 전체 Chromium 스위트 139/139 통과(새 journey 3 포함). journey spec은 firefox 3/3 통과; webkit은 호스트 의존성 부족으로 실행 불가(UNVERIFIED). `check-z-denominator`·`check-review-package`·`check-qualification`·`check-product-contract` exit 0.
+
+하지 않은 것: z-local-delivery(다음 노드), 새 계약·명령, 승인 baseline, 출시, 실제 결제·판매처, 전화·전용 GPU 검증.
+
+다음: 감독자가 커밋하고 `Refs #116` ready PR을 연다. CI 초록 + 독립 검토 2회 뒤 머지한다.
+
 # 2026-10-15 — ZARI-z-print-share 도면·BOM·실행 가이드의 한 묶음 출력
 
 정본은 GitHub issue #106, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-print-share`이다. 관찰한 base SHA는 `3274613051142b125e818f1dd912d310d959fbfd`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

@@ -300,3 +300,5 @@ runtime/client pin·activation·host·계정·비밀·유료/외부 연결·appr
 앱 구현·실물 실측·성능 결과·actual browser parity·User 화면 채택·독립 Fable PASS는 미수행이다.
 
 **z-guided-onboarding 채택 (2026-10-07).** 이 노트는 z-guided-onboarding만 다룬다. 같은 원문이다. 기록은 [Dz-guided-onboarding](../design/DECISIONS.md)와 [docs/adr/SP-z-guided-onboarding.md](adr/SP-z-guided-onboarding.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 합성 예제와 실제 시작의 분리, 측정 순서·입력 예시·오류 수정·지원 범위 안내, 문맥 도움말에서 실제 칸으로의 이동을 호스트에만 둔다. 이 노트는 다음 z-노드의 구현이 아니다.
+
+**z-product-qualification 채택 (2026-10-07).** 이 노트는 z-product-qualification만 다룬다. 같은 원문이다. 기록은 [Dz-product-qualification](../design/DECISIONS.md)와 [docs/adr/SP-z-product-qualification.md](adr/SP-z-product-qualification.md)이다. Fable NONE과 비작성자 A2는 독립 읽기 전용 검토 2회로 대체되고, 머지는 감독자에게 위임된다. 하나의 실제 브라우저 여정이 같은 accepted snapshot 위에서 측정→실상품 검토→대안→구매 준비→실행→위치 검색→재정리를 지나고, 시나리오별 native·실제 WASM·저장·화면 네 겹 증거를 고정한다. z-노드 분모는 [docs/qualification/z-denominator.json](qualification/z-denominator.json)의 별도 투영이고 미완료 항목은 지우지 않는다. 사용자 검수용 계획 패키지는 [docs/qualification/review-package/](qualification/review-package/)다. 이 노트는 z-local-delivery의 구현이 아니다.
