@@ -235,7 +235,25 @@ export class ZariDb extends Dexie {
   attachments!: Table<AttachmentRow, string>;
   metadata!: Table<MetadataRow, string>;
   constructor(name: string = DB_NAME) {
-    super(name);
+    // Dexie retries a native VersionError without a requested version, then
+    // may reconcile missing stores at storedVersion + 1. Refuse that fallback
+    // at the native open boundary, before any schema reconciliation can run.
+    // A preflight probe alone cannot protect against a concurrent upgrade.
+    const factory = Dexie.dependencies.indexedDB;
+    super(name, {
+      indexedDB: factory ? new Proxy(factory, {
+        get(target, key) {
+          if (key === 'open')
+            return (databaseName: string, version?: number) => {
+              if (version === undefined || version > DB_VERSION * 10)
+                throw new Dexie.VersionError('database open exceeds this build’s supported version');
+              return target.open(databaseName, version);
+            };
+          const member: unknown = Reflect.get(target, key, target);
+          return typeof member === 'function' ? member.bind(target) : member;
+        },
+      }) : undefined,
+    });
     this.version(1).stores({
       projects: 'projectId, updatedAt, status',
       inputs: '[projectId+inputRevision], projectId',

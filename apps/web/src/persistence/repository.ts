@@ -209,24 +209,101 @@ const QUARANTINE_BYTES = 10 * 1024 * 1024;
  * every mutation goes through `enqueue` so writes from this tab never race
  * each other. Cross-tab safety comes from the CAS on `projectRevision`.
  */
+/** Why the storage fence latched: a peer tab upgraded, or the stored database was already newer. */
+export type StorageFenceCause = 'peer_upgrade' | 'stored_newer';
+
 export class ProjectRepository {
   private queue: Promise<unknown> = Promise.resolve();
+  private opening: Promise<void> | null = null;
   private known = new Map<string, string>();
-  /** Called when another tab needs this connection closed for an upgrade. */
-  onVersionChange: (() => void) | null = null;
+  /**
+   * Set when a newer build asked this connection to close or this tab found
+   * a stored-newer database at open. Once set, this tab refuses further
+   * opens, reads and writes: Dexie reopens a closed connection on the next
+   * operation and Dexie 4 can open a stored-newer database without error —
+   * even extending its schema — so without this fence an old build would
+   * write into the newer schema. Reload picks up the newer build; nothing
+   * is deleted.
+   */
+  private movedToNewer = false;
+  /** Backend version observed when the fence latched, if this tab saw it. */
+  private fencedVersion: number | null = null;
+  /** Called when newer storage needs/already forced this connection closed. */
+  onVersionChange: ((cause: StorageFenceCause) => void) | null = null;
+  private upgradeIsBlocked = false;
+  /** An upgrade requested by this app is waiting for an older connection. */
+  onUpgradeBlockedChange: ((blocked: boolean) => void) | null = null;
+  get upgradeBlocked(): boolean {
+    return this.upgradeIsBlocked;
+  }
+  private setUpgradeBlocked(blocked: boolean): void {
+    if (this.upgradeIsBlocked === blocked) return;
+    this.upgradeIsBlocked = blocked;
+    this.onUpgradeBlockedChange?.(blocked);
+  }
   constructor(
     readonly db: ZariDb = new ZariDb(),
     private readonly now: () => string = () => new Date().toISOString(),
   ) {
     // A newer build in another tab asks this connection to close. We close and
     // surface a reload prompt — we never delete or block the database.
-    this.db.on('versionchange', () => {
-      this.db.close();
-      this.onVersionChange?.();
+    this.db.on('versionchange', () => this.fenceNewer(null, 'peer_upgrade'));
+    // Keep the pending open alive: IndexedDB resumes it when old tabs close.
+    // This is a wait state, not a newer-storage fence or a reason to delete data.
+    this.db.on('blocked', () => this.setUpgradeBlocked(true));
+  }
+  /**
+   * Fail closed on newer storage: latch the fence, close the connection
+   * Dexie would silently reopen, and surface the reload prompt. Stored rows
+   * are untouched — this tab does not open, read, or write the store again.
+   */
+  private fenceNewer(stored: number | null, cause: StorageFenceCause): void {
+    this.fencedVersion = stored;
+    this.movedToNewer = true;
+    this.db.close();
+    this.onVersionChange?.(cause);
+  }
+  /** True once fenced off newer storage; the UI disables storage mutations. */
+  get fenced(): boolean {
+    return this.movedToNewer;
+  }
+  /**
+   * Raw IndexedDB read of the stored backend version BEFORE Dexie opens the
+   * database. Dexie 4 opens a stored-newer database without error — and when
+   * declared stores are missing it extends the newer schema to add them,
+   * which is itself a write into a database this build must not touch.
+   * Returns 0 when the database does not exist; the abort keeps the probe
+   * from creating one.
+   */
+  private storedBackendVersion(): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.db.name);
+      request.onupgradeneeded = () => request.transaction?.abort();
+      request.onsuccess = () => {
+        const version = request.result.version;
+        request.result.close();
+        resolve(version);
+      };
+      request.onerror = () => {
+        if (request.error?.name === 'AbortError') resolve(0);
+        else reject(request.error);
+      };
+      request.onblocked = () =>
+        reject(new StoreError('migration_blocked', 'version probe blocked'));
     });
   }
+  /** The fence `enqueue` applies to writes, applied to direct read paths. */
+  private async assertCompatible(): Promise<void> {
+    if (this.movedToNewer)
+      throw new StoreError('migration_blocked', 'storage moved to a newer version');
+    if (!this.db.isOpen()) await this.ensureOpen();
+  }
   private enqueue<T>(work: () => Promise<T>): Promise<T> {
-    const run = this.queue.then(work, work);
+    const guarded = async () => {
+      await this.assertCompatible();
+      return work();
+    };
+    const run = this.queue.then(guarded, guarded);
     this.queue = run.then(
       () => undefined,
       () => undefined,
@@ -235,9 +312,42 @@ export class ProjectRepository {
   }
   async open(): Promise<void> {
     try {
-      await this.db.open();
+      await this.assertCompatible();
       await this.recordMigration();
     } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /** Shared first-access check for explicit opens, direct reads and writes. */
+  private async ensureOpen(): Promise<void> {
+    if (this.opening) return this.opening;
+    this.opening = this.openCompatible();
+    try {
+      await this.opening;
+    } finally {
+      this.opening = null;
+      this.setUpgradeBlocked(false);
+    }
+  }
+  private async openCompatible(): Promise<void> {
+    try {
+      // The stored backend version is the truth `compatibility()` reports.
+      // Probe it before Dexie touches the database so a newer store is never
+      // opened, schema-extended, or written by this build at all.
+      const stored = await this.storedBackendVersion();
+      if (stored > DB_VERSION * 10) {
+        this.fenceNewer(stored / 10, 'stored_newer');
+        throw new StoreError('migration_blocked', 'stored database is newer than this build');
+      }
+      await this.db.open();
+    } catch (error) {
+      // ZariDb refuses Dexie's unversioned retry after a native VersionError.
+      // The native versioned open has already rejected without modifying the
+      // database, including when a peer upgraded after our probe closed.
+      if (error instanceof Dexie.VersionError) {
+        const stored = await this.storedBackendVersion().catch(() => null);
+        this.fenceNewer(stored === null ? null : stored / 10, 'stored_newer');
+      }
       throw storeError(error);
     }
   }
@@ -316,6 +426,7 @@ export class ProjectRepository {
     });
   }
   async listProjects(): Promise<ProjectRow[]> {
+    await this.assertCompatible();
     try {
       const rows = await this.db.projects.orderBy('updatedAt').reverse().toArray();
       return rows.map(readProjectRow);
@@ -329,6 +440,7 @@ export class ProjectRepository {
    * is repaired or silently defaulted here.
    */
   async loadBundle(projectId: string): Promise<ProjectBundle> {
+    await this.assertCompatible();
     try {
       const corrupt: CorruptRecord[] = [];
       const rawProject = await this.db.projects.get(projectId);
@@ -825,6 +937,7 @@ export class ProjectRepository {
     });
   }
   async getCatalog(digest: string): Promise<CatalogRow | null> {
+    await this.assertCompatible();
     try {
       const row = await this.db.catalogs.get(digest);
       return row === undefined ? null : readCatalogRow(row);
@@ -838,6 +951,7 @@ export class ProjectRepository {
    * verifyRecord pass is what flags them as corrupt.
    */
   async listCatalogs(): Promise<CatalogRow[]> {
+    await this.assertCompatible();
     try {
       const rows = await this.db.catalogs.toArray();
       const readable: CatalogRow[] = [];
@@ -856,6 +970,7 @@ export class ProjectRepository {
   }
   /** The global owned-container library (normalized records only). */
   async listOwnedContainers(): Promise<OwnedContainerRow[]> {
+    await this.assertCompatible();
     try {
       const rows = await this.db.ownedContainers.toArray();
       const readable: OwnedContainerRow[] = [];
@@ -936,6 +1051,7 @@ export class ProjectRepository {
    * A malformed row is corrupt; it is not rewritten into an empty ledger.
    */
   async getInventoryLedger(projectId: string): Promise<InventoryLedgerRow | null> {
+    await this.assertCompatible();
     try {
       const raw = await this.db.inventoryLedgers.get(projectId);
       if (raw === undefined) return null;
@@ -984,6 +1100,7 @@ export class ProjectRepository {
    * Absent until the first recorded event. Not part of a PlanSnapshot.
    */
   async getPurchaseHandoff(projectId: string): Promise<PurchaseHandoffRow | null> {
+    await this.assertCompatible();
     try {
       const raw = await this.db.purchaseHandoffs.get(projectId);
       if (raw === undefined) return null;
@@ -1027,6 +1144,7 @@ export class ProjectRepository {
    * observation. A malformed row is corrupt; it is not rewritten empty.
    */
   async getLocationLog(projectId: string): Promise<LocationLogRow | null> {
+    await this.assertCompatible();
     try {
       const raw = await this.db.locationLogs.get(projectId);
       if (raw === undefined) return null;
@@ -1075,6 +1193,7 @@ export class ProjectRepository {
    * malformed row is corrupt; it is not rewritten empty.
    */
   async getFeedbackLog(projectId: string): Promise<FeedbackLogRow | null> {
+    await this.assertCompatible();
     try {
       const raw = await this.db.feedbackLogs.get(projectId);
       if (raw === undefined) return null;
@@ -1307,6 +1426,7 @@ export class ProjectRepository {
     });
   }
   async quarantined(): Promise<QuarantinePayload[]> {
+    await this.assertCompatible();
     try {
       const rows = await this.db.metadata.where('key').startsWith('quarantine:').toArray();
       return rows.map((row) => row.payload as QuarantinePayload);
@@ -1363,6 +1483,7 @@ export class ProjectRepository {
    * no orphan cleanup pass is needed.
    */
   async listAttachments(projectId: string): Promise<AttachmentRow[]> {
+    await this.assertCompatible();
     try {
       const rows = await this.db.attachments.where('projectId').equals(projectId).toArray();
       const readable: AttachmentRow[] = [];
@@ -1431,6 +1552,7 @@ export class ProjectRepository {
   async listPhotoMeta(
     projectId: string,
   ): Promise<{ attachmentId: string; name: string; mime: string; byteSize: number }[]> {
+    await this.assertCompatible();
     try {
       const out: { attachmentId: string; name: string; mime: string; byteSize: number }[] = [];
       await this.db.attachments
@@ -1455,6 +1577,7 @@ export class ProjectRepository {
     }
   }
   async getAttachment(attachmentId: string): Promise<AttachmentRow | null> {
+    await this.assertCompatible();
     try {
       const raw = await this.db.attachments.get(attachmentId);
       return raw === undefined ? null : readAttachmentRow(raw);
@@ -1481,6 +1604,7 @@ export class ProjectRepository {
    * zero, and is never repaired here.
    */
   async dataScope(projectId: string): Promise<ProjectDataScope> {
+    await this.assertCompatible();
     try {
       const photoRows = await this.db.attachments.where('projectId').equals(projectId).toArray();
       let photoBytes = 0;
@@ -1518,14 +1642,24 @@ export class ProjectRepository {
   }
   /**
    * PERSISTENCE §6 read-only compatibility check. It never opens a
-   * transaction that writes and never rewrites a row it flags.
+   * transaction that writes and never rewrites a row it flags. A fenced
+   * repository reports the refusal from the latch alone: reopening the
+   * newer database would let Dexie extend its schema, which is itself a
+   * write the fence exists to prevent.
    */
   async compatibility(): Promise<CompatibilityReport> {
+    const newerDatabase = (openedVersion: number | null): CompatibilityReport => ({
+      status: 'newer_database',
+      openedVersion,
+      supportedVersion: DB_VERSION,
+      schemaVersion: SCHEMA_VERSION,
+      journals: [],
+      newerSchemaRows: 0,
+      quarantined: 0,
+    });
     try {
-      await this.db.open();
-      // Dexie 4 may open a database stored at a newer version than this
-      // build declares. Report the stored version, not the declared one.
-      const stored = Math.round(this.db.backendDB().version / 10);
+      if (this.movedToNewer) return newerDatabase(this.fencedVersion);
+      await this.assertCompatible();
       const journals = (
         await this.db.metadata.where('key').startsWith('migration:').toArray()
       )
@@ -1542,8 +1676,8 @@ export class ProjectRepository {
         (await newer(await this.db.inputs.toArray())) +
         (await newer(await this.db.snapshots.toArray()));
       return {
-        status: stored > DB_VERSION ? 'newer_database' : newerSchemaRows > 0 ? 'newer_rows' : 'ok',
-        openedVersion: stored,
+        status: newerSchemaRows > 0 ? 'newer_rows' : 'ok',
+        openedVersion: Math.round(this.db.backendDB().version / 10),
         supportedVersion: DB_VERSION,
         schemaVersion: SCHEMA_VERSION,
         journals,
@@ -1552,16 +1686,7 @@ export class ProjectRepository {
       };
     } catch (error) {
       const failure = storeError(error);
-      if (failure.code === 'migration_blocked')
-        return {
-          status: 'newer_database',
-          openedVersion: null,
-          supportedVersion: DB_VERSION,
-          schemaVersion: SCHEMA_VERSION,
-          journals: [],
-          newerSchemaRows: 0,
-          quarantined: 0,
-        };
+      if (failure.code === 'migration_blocked') return newerDatabase(this.fencedVersion);
       throw failure;
     }
   }
@@ -1571,6 +1696,7 @@ export class ProjectRepository {
    * behind. Action progress is not part of the stage.
    */
   async readDuplicateStage(sourceId: string): Promise<DuplicateStage> {
+    await this.assertCompatible();
     const project = readProjectRow(await this.db.projects.get(sourceId));
     const rawDraft = await this.db.drafts.get(sourceId);
     const draft = rawDraft === undefined ? null : readDraftRow(rawDraft);
@@ -1789,6 +1915,7 @@ export class ProjectRepository {
     inputRevision: string,
     planSnapshotId: string,
   ): Promise<ActionProgressRow[]> {
+    await this.assertCompatible();
     try {
       const rows = await this.db.actionProgress.where('projectId').equals(projectId).toArray();
       return rows
