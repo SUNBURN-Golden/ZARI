@@ -230,6 +230,17 @@ export class ProjectRepository {
   private fencedVersion: number | null = null;
   /** Called when newer storage needs/already forced this connection closed. */
   onVersionChange: ((cause: StorageFenceCause) => void) | null = null;
+  private upgradeIsBlocked = false;
+  /** An upgrade requested by this app is waiting for an older connection. */
+  onUpgradeBlockedChange: ((blocked: boolean) => void) | null = null;
+  get upgradeBlocked(): boolean {
+    return this.upgradeIsBlocked;
+  }
+  private setUpgradeBlocked(blocked: boolean): void {
+    if (this.upgradeIsBlocked === blocked) return;
+    this.upgradeIsBlocked = blocked;
+    this.onUpgradeBlockedChange?.(blocked);
+  }
   constructor(
     readonly db: ZariDb = new ZariDb(),
     private readonly now: () => string = () => new Date().toISOString(),
@@ -237,6 +248,9 @@ export class ProjectRepository {
     // A newer build in another tab asks this connection to close. We close and
     // surface a reload prompt — we never delete or block the database.
     this.db.on('versionchange', () => this.fenceNewer(null, 'peer_upgrade'));
+    // Keep the pending open alive: IndexedDB resumes it when old tabs close.
+    // This is a wait state, not a newer-storage fence or a reason to delete data.
+    this.db.on('blocked', () => this.setUpgradeBlocked(true));
   }
   /**
    * Fail closed on newer storage: latch the fence, close the connection
@@ -312,6 +326,7 @@ export class ProjectRepository {
       await this.opening;
     } finally {
       this.opening = null;
+      this.setUpgradeBlocked(false);
     }
   }
   private async openCompatible(): Promise<void> {

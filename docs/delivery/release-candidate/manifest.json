@@ -92,8 +92,8 @@
     }
   ],
   "dist": {
-    "buildId": "d0b3763b11d9180c",
-    "builtAt": "2026-10-21T08:14:16.536Z",
+    "buildId": "8f4710817afdc756",
+    "builtAt": "2026-10-21T09:43:08.843Z",
     "note": "Observed on the builder machine. builtAt changes every build; file digests and buildId are content-derived.",
     "files": {
       "assets/bundleWorker-_HBCexPd.js": "7610853fcb08380f351cb2808d73ad7bce7750475dde104a83ccb7be4477670d",
@@ -101,13 +101,13 @@
       "assets/entry-BzR_wgWs.js": "e14c3a904156f072388d7cd78a985fae6ffd3c748d1686505dd70399d8669314",
       "assets/entry-BzR_wgWs.js.map": "42082654309a812f476c276c52cce3dae3c0a93ce846810d25d31fbe34923d40",
       "assets/index-CcZqZK-G.css": "f59b564c88b6e28e0803f4967fd11ef24fa365dfb8da3a569def88d20dd90874",
-      "assets/index-DeBNJpNK.js": "d5f1337cc0f33f2bd7d64e2020cf8f2df5e5a18e0c6754134516506fb768a6c9",
-      "assets/index-DeBNJpNK.js.map": "e0e5dbba7d6865874a6120a0aa9c53621724218a02663774dbde0e51af8cc43c",
-      "assets/SpatialView-Sh81WvI4.js": "ef4f9138b9f0bcaba5adce6fbe1cf11782f3779929ffe78ae34005d141a5a760",
-      "assets/SpatialView-Sh81WvI4.js.map": "0fede6ad2d9eb43757f65d2fde1cade4a5ef152287f88864a4a59934fa79c548",
+      "assets/index-D6PVl19A.js": "19663394e0c4658e74e343f488ab07d94f29dedb3ed764e11c6db2a45bcc34b2",
+      "assets/index-D6PVl19A.js.map": "9d1e236ea88ddb84e5eac9b284cb024504d42e2f21d208c3584d39954c4a1441",
+      "assets/SpatialView-BqHWMNaL.js": "56f2e9da8e2fb934847b9717f75e55f743222634a57196fbc3f0a0fb007dc456",
+      "assets/SpatialView-BqHWMNaL.js.map": "4b3970a70e832e41b3d09f534e55616ac407086e1478ea99d43353f5aad6dc65",
       "assets/zari_wasm_bg-BIGzMeiz.wasm": "e9ce4ea4e4f1514f430cf36c4c8ddd831a72ee35c650aa8017333ef4ec9deb5d",
       "favicon.svg": "da58f74a071d53e846e6df7313ab26e7386649306ce2dd810befae4696818256",
-      "index.html": "c1ff49b9a30db594496edf16bb7b31fe3842876d69ff1ae0eed5d397ff7d189a",
+      "index.html": "d0ee0bb46adc882508dfd4245c9d91a574476b44373a6464c4fd306e8c3975f1",
       "sw.js": "2b395c36daee6b3a1fd04cd6e54c38b56f5fc4a45fa562fbbff59b6a1e4359ba"
     }
   }

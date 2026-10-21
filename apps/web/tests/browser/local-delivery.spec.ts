@@ -367,6 +367,110 @@ test('update failure: a newer database is refused and every row is preserved', a
   expect(errors.filter((e) => !/Failed to load resource/.test(e))).toEqual([]);
 });
 
+for (const route of ['/', '/#/data']) {
+  test(`app upgrade waits with recovery guidance and resumes after closing the old tab on ${route}`, async ({ page, context }, testInfo) => {
+    const errors: string[] = [];
+    collectErrors(page, errors);
+    await seedSample(page);
+    const projectId = await projectIdOf(page);
+    const captured = await idbGetAll(page, Object.keys(V1_STORES));
+    const rows = Object.fromEntries(Object.entries(captured)
+      .filter(([name]) => name !== '__objectStoreNames')
+      .map(([name, records]) => [name, name === 'metadata'
+        ? (records as { key: string; payload: unknown }[]).map((row) =>
+          row.key === 'db:verno' ? { ...row, payload: { version: 1 } } : row)
+        : records]));
+    // Leave the app so its own connection closes. A real peer page holds
+    // v1 open without responding to versionchange; the app is the requester.
+    await page.goto('/tests/harness.html');
+    const peer = await context.newPage();
+    await peer.goto('/tests/harness.html');
+    await peer.evaluate(async ({ schema, rows }) => {
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.deleteDatabase('zari-local');
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+        request.onblocked = () => reject(new Error('previous application connection still open'));
+      });
+      const held = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('zari-local', 10);
+        request.onupgradeneeded = () => {
+          for (const [name, decl] of Object.entries(schema)) {
+            const store = request.result.createObjectStore(name, { keyPath: decl.keyPath });
+            for (const index of decl.indexes) store.createIndex(index, index);
+            for (const row of rows[name] ?? []) store.put(row);
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      (window as typeof window & { deliveryHeldDb: IDBDatabase }).deliveryHeldDb = held;
+    }, { schema: V1_STORES, rows });
+    await page.goto(route);
+    const notice = page.getByTestId('db-upgrade-blocked-notice');
+    await expect(notice).toHaveAttribute('role', 'alert');
+    await expect(notice).toContainText('다른 ZARI 탭을 닫고 다시 시도하세요');
+    await expect(notice).toContainText('자동으로 이어집니다');
+    await expect(page.getByTestId('db-version-notice')).toHaveCount(0);
+    if (route === '/') {
+      await expect(page.getByTestId('create-project')).toBeDisabled();
+      await expect(page.getByTestId('create-example')).toBeDisabled();
+    }
+    const whileBlocked = await peer.evaluate(async () => {
+      const held = (window as typeof window & { deliveryHeldDb: IDBDatabase }).deliveryHeldDb;
+      const rows: Record<string, unknown[]> = {};
+      for (const name of held.objectStoreNames) {
+        rows[name] = await new Promise<unknown[]>((resolve, reject) => {
+          const request = held.transaction(name).objectStore(name).getAll();
+          request.onsuccess = () => resolve(request.result as unknown[]);
+          request.onerror = () => reject(request.error);
+        });
+      }
+      return { version: held.version, stores: [...held.objectStoreNames], rows };
+    });
+    expect(whileBlocked.version).toBe(10);
+    expect(whileBlocked.stores).toEqual(Object.keys(V1_STORES).sort());
+    expect(whileBlocked.rows).toEqual(rows);
+    for (const width of [320, 390, 768, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await expect(notice).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+    await page.emulateMedia({ forcedColors: 'active' });
+    await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
+    await expect(notice).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('A');
+    await page.screenshot({ path: testInfo.outputPath('blocked-upgrade-DRAFT.png'), fullPage: true });
+    await page.evaluate(() => { document.documentElement.style.zoom = ''; });
+    await page.emulateMedia({ forcedColors: 'none' });
+
+    // Closing just the peer tab must finish the original pending open; no
+    // refresh, retry, deletion or extra application action is needed.
+    await peer.close();
+    await expect(notice).toHaveCount(0);
+    if (route === '/') {
+      await expect(page.getByTestId(`project-row-${projectId}`)).toBeVisible();
+      await expect(page.getByTestId('create-project')).toBeEnabled();
+      await page.evaluate(() => { location.hash = '#/data'; });
+    }
+    await expect(page.getByTestId('compat-report')).toHaveAttribute('data-status', 'ok');
+    await expect(page.getByTestId('compat-journal')).toContainText('1→2, 2→3, 3→4, 4→5, 5→6');
+    expect(await nativeVersion(page)).toBe(60);
+    const after = await idbGetAll(page, Object.keys(V1_STORES));
+    for (const store of Object.keys(V1_STORES)) {
+      if (store === 'metadata') {
+        // The data route reports compatibility without writing the open
+        // marker; the projects route calls open() and records version 6.
+        expect((after[store] ?? []).filter((row) => !(row as { key: string }).key.startsWith('migration:')))
+          .toEqual(route === '/#/data' ? rows[store] : captured[store]);
+      } else expect(after[store], `preserved ${store}`).toEqual(captured[store]);
+    }
+    expect(errors).toEqual([]);
+  });
+}
+
 test('a blocked upgrade applies nothing while an old connection holds', async ({ page }) => {
   const errors: string[] = [];
   collectErrors(page, errors);

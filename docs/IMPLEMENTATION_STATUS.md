@@ -1,3 +1,15 @@
+# 2026-10-21 — ZARI-z-local-delivery 검토 수정 3라운드 (Reviewer 1 B1)
+
+issue #118 / node z-local-delivery의 기존 작업을 전달 HEAD `8b9458c31a17dc33ff7699b7c1961fe1f1099d38`에서 이어 마무리했다. 원래 base `3e76e96512a50cd13167587d7539d38454501813`, plan pin `0847d1b065627938acfad3a941de79e357570e43`, 기존 채택은 그대로다. 산출물은 감독자가 여는 PR로 전달된다. 이 기록은 독립 검토 PASS나 GitHub CI 근거가 아니다.
+
+- B1: 종전 차단 시험은 다른 탭이 업그레이드를 요청한 경우였고, 이 앱의 v1→v6 요청이 구 탭에 막혔을 때는 안내가 없었다. `repository.ts`가 Dexie `blocked` 상태를 보관·통지하고 `App.tsx`가 `db-upgrade-blocked-notice` (`role="alert"`)로 다른 ZARI 탭을 닫으라고 안내한다. 늦게 구독해도 현재 상태를 읽는다. 구 연결이 닫히면 같은 요청이 이어지고 open 성공·실패 시 안내가 해제된다. 삭제·추가 open·자동 재시도는 없다.
+- 새 실제 브라우저 시험 2개는 `/`, `/#/data`에서 구 탭이 실제 v1 DB를 유지한 채 안내·생성 비활성·native version 10·store 집합·전체 캡처 행 보존을 확인한다. 구 탭만 닫으면 새로고침 없이 v6·다섯 migration 일지·기존 행이 복원되고 안내가 사라진다. 기존 채택 snapshot migration·신형 DB 거절·경합 회귀도 유지한다. 320/390/768/1280/1440px, 200% 확대, forced-colors, 키보드 및 콘솔 오류 없음 단정을 포함한다.
+- 디자인: 기존 `notice notice-error` semantic token/대비 쌍을 재사용했다. 새 토큰·색 쌍·route·승인 baseline은 없다. Dz-local-delivery, FRONTEND/PERSISTENCE, 설치 안내와 release candidate 관측 해시를 갱신했다. `contract_change=NO`; Rust·프로토콜·DB/schema/export 버전·BUILD_ID·생성 계약·fixture·의존성·CI·보존 원문은 그대로다.
+- 검증 완료: Rust fmt/clippy/test(260 통과, 기존 fixture emitter 1 ignored), bootstrap/full fixture 28/124, WASM feature tree, wasm:build/contracts:check(124), typecheck/lint, 단위 51 files/421 통과, production build와 release manifest(13 assets, errors 없음), candidate pin/dist 해시, 토큰 self-test 12 및 대비 41/41, 분모 16+21·review-package·product-contract 검사. Firefox delivery 9/9 통과. WebKit delivery 9건은 호스트 라이브러리 부족으로 앱 시작 전 launch 실패: UNVERIFIED.
+- 실행 환경 보정: 첫 Firefox 명령은 이전 runner가 이 worktree에서 남긴 Chromium/preview의 4173 점유로 시험 시작 전 exit 1이었다. 해당 이전 검증 process tree만 종료하고 test bundle을 다시 빌드한 뒤 Firefox 9/9를 확인했다. 중단한 이전 Chromium 실행은 근거로 세지 않는다. 시험 retry/skip·timeout/threshold 완화·다른 worktree 변경은 없다. 기존 runner의 초기 회귀 시험 8 통과/1 실패는 read-only data route의 `db:verno` 단정을 교정한 뒤 9/9 통과했다. 상세 실행 기록은 evidence의 round 3 표다.
+- 최종 검증 완료: 전체 `npm run test:browser -- --project=chromium` 148/148 통과(exit 0, 3.5m, delivery 9개 포함), `npm run test:parity` 2/2 통과 및 native/실제 Worker-WASM 124 fixture 일치(exit 0). 뒤이어 production 재빌드와 release-manifest 검사도 통과했고 13 digest·buildId `8f4710817afdc756`가 첫 production build와 일치했다. 최종 앱/시험 소스에서 수행했고 이후에는 문서만 정리했다. 보호 경로의 base 대비 diff와 기존 SPATIAL-001 캡처 diff는 없고 `git diff --check`도 통과했다. 정확한 명령·exit·횟수·로컬 DRAFT 캡처 해시는 `docs/evidence/ZARI-z-local-delivery.md`의 round 3 표와 `target/local-delivery-final/` 로그에 기록했다.
+- 하지 않은 것/다음: 전화·전용 GPU·실상품 사이트·앱 URL 읽기 자격, 화면 채택, 공개·배포·release는 미완료/미승인 그대로다. npm 실측 11.17.0은 engines 11.x 안이며 packageManager pin 11.9.0과 minor가 다르다. 감독자는 최종 커밋 exact HEAD의 독립 읽기 전용 검토 2회와 CI `bridge`를 수행한다. 이 빌더는 commit/push/PR/GitHub 변경을 하지 않는다.
+
 # 2026-10-21 — ZARI-z-local-delivery 검토 수정 2라운드 (Reviewer 2 R1/R2)
 
 issue #118 / node z-local-delivery만 수정했다. 관찰한 전달 HEAD는 `0be1865d3310e9ae5fa8033417f39f297bad306b`, 원래 base는 `3e76e96512a50cd13167587d7539d38454501813`, plan pin은 `0847d1b065627938acfad3a941de79e357570e43`다. 기존 채택은 유효하며 재채택하지 않았다. 산출물은 감독자가 여는 PR로 전달된다. 이 기록은 독립 검토 PASS나 CI 근거가 아니다.

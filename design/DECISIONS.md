@@ -436,6 +436,7 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 
 - ID: Dz-local-delivery
 - 상태: 채택. 사용자 결정 2026-10-07 12:42 KST. 이 기록은 z-local-delivery만 다룬다.
+- 검토 수정 3: 이 앱이 요청한 업그레이드가 구 탭에 막힌 경우에도 PERSISTENCE §6의 "다른 ZARI 탭을 닫고 다시 시도하세요"를 `role="alert"`로 연결한다. 대기 중 요청은 구 연결이 닫히면 계속되고 안내는 open 완료·실패 시 해제된다. 기존 notice semantic token과 대비 쌍을 재사용하며 새 화면 승인·저장 계약 변경은 없다.
 - 문제: 설치·업데이트·저장 migration이 인계 단위로 검증된 적이 없고, PERSISTENCE §6가 요구하는 versionchange 새로고침 안내가 연결되지 않았다. "출시 후보"와 승인·배포·release의 구분도 문서로 고정해야 한다.
 - 변경 대상: [docs/adr/SP-z-local-delivery.md](../docs/adr/SP-z-local-delivery.md), `apps/web/src/app/App.tsx`(versionchange 안내 연결)·`ProjectsScreen.tsx`(저장소 오류 표기), `apps/web/tests/browser/local-delivery.spec.ts`, `apps/web/tests/unit/localDelivery.test.ts`, `docs/delivery/LOCAL_DELIVERY.md`, `docs/delivery/release-candidate/`(manifest·index), `scripts/check-release-candidate.mjs`, `docs/qualification/z-denominator.json`, `scripts/check-z-denominator.mjs`, `apps/web/tests/unit/zQualification.test.ts`, PERSISTENCE·FRONTEND 절, 단위·브라우저 시험. Rust·프로토콜·스키마·DB version·`BUILD_ID`·fixture·생성 계약은 바꾸지 않는다.
 - 검토한 대안: (A) 인계 문서 + release candidate 묶음 + 실제 브라우저 저장·업그레이드 스펙 + 분모 갱신 + versionchange 안내 연결. (B) 문서만 쓰고 업데이트 경로는 기존 coverage에 맡김. (C) 업데이트를 별도 앱 화면이나 런타임 리포트로 구현.

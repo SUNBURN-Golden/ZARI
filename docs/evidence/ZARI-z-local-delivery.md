@@ -4,6 +4,7 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. N
 
 - Task: GitHub issue #118, node z-local-delivery, "설치·업데이트·사용 안내와 로컬 제품 인계".
 - Plan commit: `0847d1b065627938acfad3a941de79e357570e43`. Branch `astra/zari-z-local-delivery`.
+- Pinned task document: `.aiops/program.json` node `z-local-delivery`; common contract `docs/AIOPS_SPATIAL_EXECUTION_PLAN.md` §2. Context at that pin: MASTER_PROMPT §§7–14/24, RUST_ADDENDUM, BLUEPRINT, MEASUREMENT_COMPLETION_DESIGN_KO, PRODUCT_COMPLETION_EVOLUTION_KO, SPATIAL_INTERACTION_PLAN, SPATIAL_VIEW_CONTRACT, SPATIAL_VERIFICATION, AIOPS_SPATIAL_HANDOFF, DOMAIN_MODEL, WASM_PROTOCOL, PERSISTENCE, ARCHITECTURE, TEST_STRATEGY, DESIGN, design/DECISIONS and design/SPATIAL_WORKSPACE. The named `docs/aiops/` delegation/registration/expansion/draft/pending documents remain reference-only; no candidate or runtime activation is inferred. Current implementation and prior-node evidence/ADRs, especially z-product-qualification, supply the already-delivered capabilities reused here.
 - Observed base SHA: `3e76e96512a50cd13167587d7539d38454501813` (origin/main at branch creation).
 - Adoption: JunTae Park (준태), 2026-10-07 12:42 KST, verbatim: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." Recorded in `docs/adr/SP-z-local-delivery.md`, `design/DECISIONS.md` Dz-local-delivery, and z-local-delivery-only notes in `docs/PRODUCT_COMPLETION_EVOLUTION_KO.md` and `design/SPATIAL_WORKSPACE.md`. Fable NONE / A2 replaced by two independent reviews; merge delegated to the supervisor. `.aiops/**`, `docs/aiops/**`, `.github/workflows`, `SOURCE_MANIFEST.json`, `fixtures/` untouched.
 - `contract_change=NO`. No Rust, protocol, capability, schema, `DB_VERSION`, `SCHEMA_VERSION`, `exportVersion`, `BUILD_ID`, fixture, or generated-contract change. Host-side changes: repository first-access reads and queued writes share a compatibility check; `ZariDb` bounds native opens before Dexie reconciliation, including concurrent peer upgrades; incompatible storage is latched closed and compatibility reports from the latch; App distinguishes peer-upgrade and stored-newer reload prompts; ProjectsScreen disables incompatible-storage mutations and reads failures through `describeStoreFailure`.
@@ -33,8 +34,76 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. N
 | 16단계 기준+확장 범위 추적 | `denominator.json` 16 + `z-denominator.json` 21, `check-z-denominator.mjs` |
 | 공개 배포·화면 채택·release 별도 근거 표시 | manifest/ledger `NOT_AUTHORIZED`·`PENDING`·`UNQUALIFIED`; `sourceCommit` null |
 | versionchange reload prompt (PERSISTENCE §6) | `App.tsx` wiring + upgrade/refusal/race cases asserting `db-version-notice` |
+| This app's upgrade blocked by an old tab (PERSISTENCE §6) | two requester-side real-IDB browser cases on `/` and `/#/data`: accessible recovery notice, disabled creation while waiting, v1 version/store/row preservation, and v1→v6 continuation after closing the peer |
 
-## Fix round 2 — 2026-10-21 (Reviewer 2 R1 / R2)
+## Fix round 3 — 2026-10-21 (Reviewer 1 B1: requester-side blocked upgrade)
+
+Continued the partial round-3 work already present on supervisor delivery head `8b9458c31a17dc33ff7699b7c1961fe1f1099d38`. The observed task base remains `3e76e96512a50cd13167587d7539d38454501813` and the authoritative plan remains `0847d1b065627938acfad3a941de79e357570e43`. Pinned task contracts and the current prior-node evidence/ADRs were consulted before this scoped fix. Delivered via the PR opened by the supervisor; that PR records the final commit SHA. This is builder evidence, not an independent review PASS or GitHub CI result.
+
+B1 was valid: the prior blocked-upgrade case exercised a peer's upgrade request while this app released its connection. It did not cover this app being the requester behind an old connection. Dexie's `blocked` event was not surfaced, so the user saw a pending load with no §6 recovery instruction. `ProjectRepository` now retains a temporary blocked state and publishes its changes. `App` reads the retained state when subscribing and shows `db-upgrade-blocked-notice`, a top-level `role="alert"` using the existing `notice notice-error` semantic styles. It says to close other ZARI tabs and explains that closing their connections lets this pending update continue. The open remains pending and the notice clears when it settles, on either success or failure. This introduces no retry, timeout, deletion, migration change, or change to the permanent newer-storage fence.
+
+The two added browser cases hold a real v1 database open in a separate harness page and load the application on `/` and `/#/data`. They assert the accessible close-other-tabs notice, disabled project/example creation on the projects route, no newer-storage notice, and the exact native version 10, original store set and all captured rows while blocked. Closing the peer page resumes the same open without refresh or another application action. The notice disappears, native version becomes 60, all five migration journals appear, compatibility is `ok`, and captured rows are preserved. As in the existing contract, `open()` updates `db:verno` on the projects route; the read-only compatibility route keeps the seeded marker. Existing accepted-snapshot migration, refusal and race coverage is retained.
+
+Changed in this round: `apps/web/src/app/App.tsx`; `apps/web/src/persistence/repository.ts`; `apps/web/tests/browser/local-delivery.spec.ts`; `design/DECISIONS.md` (Dz-local-delivery-only implementation note); `docs/FRONTEND.md`; `docs/PERSISTENCE.md`; `docs/delivery/LOCAL_DELIVERY.md`; `docs/delivery/release-candidate/manifest.json` (script-generated dist section); `docs/IMPLEMENTATION_STATUS.md`; this evidence file. Design: existing semantic notice colors and layout, no new token/contrast pair, no approved-baseline change. `contract_change=NO`: Rust, protocol, generated DTOs, versions, capability/lease/axis contracts, snapshots, fixtures, dependencies and CI remain frozen.
+
+Development failure recorded: the initial `npm run typecheck && npm run lint && npx vite build --mode test && npx playwright test local-delivery.spec.ts --project=chromium --workers=1` passed typecheck/lint/build, then had **8 passed / 1 failed**. The direct-data-route regression incorrectly expected its read-only compatibility query to rewrite `db:verno` to 6. The assertion now explicitly checks the seeded marker on that route and the open marker on the projects route; all domain rows and migration journals remain fully compared. The corrected focused command `npx playwright test local-delivery.spec.ts --project=chromium --workers=1` passed **9/9**, exit 0. No test was deleted/skipped and no threshold, timeout or retry configuration changed.
+
+### Commands and results — round 3
+
+Every command inherited `export PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/bin:$HOME/.cargo/bin:$PATH CARGO_BUILD_JOBS=4`. Tools observed: Node v24.19.0, npm 11.17.0 (within engines 11.x; packageManager pin is 11.9.0), Rust 1.98.1, wasm-bindgen 0.2.128. Dependencies were already installed as supplied; no lockfile or dependency change. This continuation reran the required checks and completed browser/parity verification in the foreground. Logs and machine-readable results are local ignored artifacts under `target/local-delivery-final/` (`NN.log`, `results.json`).
+
+| Log | Exact command | Exit / result |
+|---|---|---|
+| 01 | `cargo fmt --all -- --check` | 0: pass |
+| 02 | `cargo clippy --workspace --all-targets --locked -- -D warnings` | 0: pass |
+| 03 | `cargo test --workspace --locked` | 0: 260 passed, 0 failed; 1 pre-existing ignored fixture emitter, unchanged |
+| 04 | `cargo run -p zari-core --locked --example fixture_runner -- fixtures/bootstrap` | 0: 28 bootstrap fixtures |
+| 05 | `cargo run -p zari-core --locked --example fixture_runner -- fixtures` | 0: 124 fixtures |
+| 06 | `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked` | 0: pass |
+| 07 | `npm run wasm:build` | 0: pass |
+| 08 | `npm run contracts:check` | 0: Rust contracts match; 124 fixture structures valid |
+| 09 | `npm run typecheck` | 0: pass |
+| 10 | `npm run lint` | 0: pass |
+| 11 | `npm test` | 0: 51 files / 421 passed, 0 failed |
+| 12 | `npm run build` | 0: Production build; 13 assets; buildId 8f4710817afdc756 |
+| 13 | `node scripts/check-release-manifest.mjs` | 0: 13 assets, errors: [] |
+| 14 | `node scripts/check-release-candidate.mjs --write` | 0: Script recorded 13 digests, buildId 8f4710817afdc756 |
+| 15 | `node scripts/check-release-candidate.mjs` | 0: Repository pins and required gaps match |
+| 16 | `node scripts/check-release-candidate.mjs --dist` | 0: 13 digests + buildId match production dist |
+| 17 | `node scripts/check-design-tokens.mjs --self-test` | 0: 12 self-tests; 41/41 contrast cases |
+| 18 | `node scripts/check-z-denominator.mjs` | 0: 21 nodes retained (20 merged, 1 in progress) |
+| 19 | `node scripts/check-qualification.mjs` | 0: 16 baseline stages retained |
+| 20 | `node scripts/check-review-package.mjs` | 0: 3 package files verified |
+| 21 | `node scripts/check-product-contract.mjs` | 0: 16 ids / 124 fixture expectations unchanged |
+| 22 | `npx vite build --mode test` | 0: Test build before the pre-launch port failure |
+| 23 | `npx playwright test local-delivery.spec.ts --project=firefox --workers=1` | 1: PRE-LAUNCH FAILURE: port 4173 occupied by earlier runner; no tests executed |
+| 24 | `npx vite build --mode test` | 0: Fresh test bundle after stopping the earlier runner |
+| 25 | `npx playwright test local-delivery.spec.ts --project=firefox --workers=1` | 0: 9 passed, 0 failed (25.4s) |
+| 26 | `npx playwright test local-delivery.spec.ts --project=webkit --workers=1` | 1: 9 browser-launch failures: missing host libraries; application UNVERIFIED |
+| 27 | `npm run test:browser -- --project=chromium` | 0: 148 passed, 0 failed (3.5m); includes all 9 delivery cases |
+| 28 | `npm run test:parity` | 0: 2 passed; 124 native / actual Chromium Worker-WASM fixtures agree |
+| 29 | `npm run build` | 0: Final production rebuild; same 13 digests and buildId |
+| 30 | `node scripts/check-release-manifest.mjs` | 0: 13 assets, errors: [] |
+| 31 | `node scripts/check-release-candidate.mjs --dist` | 0: Same 13 digests + buildId 8f4710817afdc756 match |
+| 32 | `git diff --check` | 0: No whitespace errors |
+| 33 | `git diff --exit-code -- docs/evidence/ZARI-SPATIAL-001-*.png` | 0: Prior SPATIAL-001 captures unchanged; no restore needed |
+
+The first Firefox command did not execute tests: an earlier runner still had this worktree's Chromium suite and Vite preview on port 4173. Its process tree was identified (root 3412799, Playwright 3434507, preview 3434575) and stopped without touching another worktree or application. That interrupted earlier Chromium run is not counted as verification. The fresh test build, Firefox run and full Chromium run above replace it. No test retry configuration, skip, timeout, threshold or server-reuse setting changed; no blind or automatic retry was used. No create-project worker-state flake occurred in the completed full suite.
+
+Browser evidence: preview origin `http://127.0.0.1:4173`, real IndexedDB and Worker/WASM. The nine delivery cases cover fresh install/save/reload, accepted-snapshot v1→v6 upgrade, stored-newer refusal, direct-data first access, both probe/open race routes, requester-side blocked upgrade on `/` and `/#/data`, and the original peer-side blocked request. New requester cases compare the native version, store set and every captured v1 row while held, then journals and rows after the peer closes. Both routes assert browser console/page errors `[]`. The notice remains visible without horizontal page overflow at 320/390/768/1280/1440 CSS px, forced colors and 200% zoom; Tab reaches navigation. Playwright uses reduced motion. These are desktop emulations; physical phone/GPU qualification is not inferred.
+
+Both new DRAFT captures were visually inspected: the whole instruction and keyboard focus remain readable in forced colors at 200% zoom (last viewport 1440×1000 CSS px). They are retained locally, not registered as an approved capture set:
+
+| Local ignored artifact | SHA-256 |
+|---|---|
+| `target/local-delivery-final/screenshots/local-delivery-app-upgrade-04727-closing-the-old-tab-on-data-chromium-DRAFT.png` | `eae3d00a8f73c21b2bdedf59cb3f823aea170192c6fe6a5bfd107c46eba2ba2b` |
+| `target/local-delivery-final/screenshots/local-delivery-app-upgrade-3e4aa-ter-closing-the-old-tab-on--chromium-DRAFT.png` | `238fe06629f760641bbc8f4e10d9c99aed992cdfe77663723a86ed379393b6cb` |
+
+Final scope checks also run after the documentation update (logs 34–37): `git diff --check`; `git diff --exit-code 3e76e96512a50cd13167587d7539d38454501813 -- AGENTS.md SOURCE_MANIFEST.json docs/MASTER_PROMPT_KO.md docs/RUST_ADDENDUM_KO.md docs/qualification/denominator.json crates fixtures apps/web/src/contracts .github .aiops docs/aiops package.json package-lock.json Cargo.lock design/baselines apps/web/src/styles playwright.config.ts`; `git diff --exit-code -- docs/evidence/ZARI-SPATIAL-001-*.png`; and `node scripts/check-release-candidate.mjs --dist`. Results: exit 0 each. Existing fixture expected outputs, snapshot digests/IDs, generated contracts, preserved prompts, governance/runtime/CI, dependencies, approved baselines and styles are unchanged. HEAD remains `8b9458c31a17dc33ff7699b7c1961fe1f1099d38`; the supervisor records the final deliverable commit in the PR. No application/test changes followed the full Chromium and parity runs.
+
+Deviations and limits: WebKit cannot launch because this host lacks libgtk-4, libsoup-3 and other browser libraries (see log 26); no host provisioning or later retry was performed. npm minor 11.17.0 differs from the packageManager pin but satisfies engines. Phone, discrete GPU, real product sites and app catalog URL reading remain UNQUALIFIED; screen acceptance stays PENDING, release NOT_AUTHORIZED. Dist reproducibility is same-source/same-toolchain evidence, not a cross-machine byte guarantee. `contract_change=NO`, no architecture deviation. Next: supervisor commits the deliverable, opens the PR, obtains two independent read-only reviews on that exact final head and green GitHub `bridge`. This builder performed no commit, push, PR or GitHub write.
+
+## Fix round 2 — 2026-10-21 (historical; requester guidance gap fixed in round 3)
 
 Started from the clean delivery head `0be1865d3310e9ae5fa8033417f39f297bad306b`. The original task base and plan pin above are unchanged. Delivered via the PR opened by the supervisor; the supervisor records the final commit SHA. This builder does not claim an independent review or GitHub CI result.
 

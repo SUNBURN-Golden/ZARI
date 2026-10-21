@@ -10,7 +10,7 @@ plan commit `0847d1b065627938acfad3a941de79e357570e43`다. release candidate
 | 대상 | 상태 | 근거 |
 |---|---|---|
 | Chromium(데스크톱, 이 검증 호스트) | 검증됨 | 설치·저장·복원·v1→v6 업그레이드·신형 DB 거절·차단된 업그레이드·오프라인 재방문이 실제 브라우저 스펙으로 통과 (`apps/web/tests/browser/local-delivery.spec.ts`, `privacy-offline.spec.ts`) |
-| Firefox(데스크톱, 이 호스트) | 부분 검증 | 전체 여정 스펙 3/3(기존 기록), 이 노드 저장·업그레이드·first-access·경합 스펙 7/7(이번 실행). Firefox 전체 스위트를 실행했다는 뜻은 아니다 |
+| Firefox(데스크톱, 이 호스트) | 부분 검증 | 전체 여정 스펙 3/3(기존 기록), 이 노드 저장·업그레이드·first-access·경합·구 탭 차단 안내 스펙 9/9(이번 실행). Firefox 전체 스위트를 실행했다는 뜻은 아니다 |
 | WebKit | 미검증 | 이 호스트에 브라우저 의존성이 없어 실행 불가. 미검증으로 남긴다 |
 | 390 CSS px·forced-colors·키보드 | 에뮬레이션 검증 | 데스크톱 에뮬레이션이지 실제 기기가 아니다 |
 | 실제 전화·전용 GPU | UNQUALIFIED | 실행한 적 없다. headless WebGL은 소프트웨어 GL이다 |
@@ -92,7 +92,7 @@ manifest는 스테이징하지 않는다(다운그레드 방지). 프로젝트 �
 | `record_corrupt` | 무관한 정상 행 + 격리 | 복구 보기·원시 내보내기 |
 | `persistence_failed:quota` | 더티 초안 + 마지막 커밋 | 내보내기·공간 확보·재시도 |
 | `revision_conflict` | 최신 내구 상태 + 로컬 초안 | 최신 열기·사본 저장·JSON 내보내기 |
-| 업그레이드 차단 | 요청이 적용되지 않고 보류 | 다른 탭을 닫고 다시 시도 |
+| 이 앱의 업그레이드 차단 | 요청이 적용되지 않고 보류 | 접근 가능한 alert로 "다른 ZARI 탭을 닫고 다시 시도하세요" 안내. 구 탭 연결이 닫히면 대기 중 요청이 자동으로 이어지고 안내가 사라짐 |
 
 ## 5. 기존 데이터 업그레이드 결과
 
@@ -107,6 +107,7 @@ manifest는 스테이징하지 않는다(다운그레드 방지). 프로젝트 �
 | 더 새로운 DB에 `#/data` 직접 진입 | 첫 읽기부터 거절, native version 70·store 집합·행 그대로 |
 | 사전 확인과 native open 사이 다른 탭이 v7으로 업그레이드 | 프로젝트 목록·데이터 화면 모두 거절, native version 70·store 집합·행 그대로; version 71로 조정하지 않음 |
 | 차단된 업그레이드 | 연결을 놓지 않는 동안 아무것도 적용되지 않고, 차단 해제 뒤에만 적용 — **삭제 없음** |
+| 이 앱이 v1→v6 업그레이드 요청 중 구 탭이 차단 (`/`, `/#/data`) | close-other-tabs alert 표시, 기다리는 동안 native version 10·v1 store 집합·전체 행 그대로; 구 탭을 닫으면 새로고침 없이 migration 완료, alert 사라짐, 호환 `ok`·일지·기존 행 보존 |
 
 완료 판정 1("업데이트 실패로 데이터가 지워지지 않는다")은 위 거절·경합·차단
 시나리오로 확인한다. 모든 미래 migration·기기의 보증은 아니다. 단위 수준에서는 `repository.test.ts`/`transfer.test.ts`의
