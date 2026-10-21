@@ -1,4 +1,19 @@
+# 2026-10-21 — ZARI-z-local-delivery 검토 수정 2라운드 (Reviewer 2 R1/R2)
+
+issue #118 / node z-local-delivery만 수정했다. 관찰한 전달 HEAD는 `0be1865d3310e9ae5fa8033417f39f297bad306b`, 원래 base는 `3e76e96512a50cd13167587d7539d38454501813`, plan pin은 `0847d1b065627938acfad3a941de79e357570e43`다. 기존 채택은 유효하며 재채택하지 않았다. 산출물은 감독자가 여는 PR로 전달된다. 이 기록은 독립 검토 PASS나 CI 근거가 아니다.
+
+- R1: 첫 읽기에서 false인 latch만 확인해 Dexie가 자동으로 열던 경로를 수정했다. 모든 직접 읽기와 쓰기 큐가 같은 비동기 first-open 호환 검사에 들어간다. `#/data` 직접 진입도 이 검사를 거친다. 동시 첫 접근은 opening promise를 공유한다.
+- R2: probe를 닫은 뒤 native open 전에 다른 탭이 신형 DB를 만들 수 있었다. `ZariDb`의 IndexedDB 어댑터가 버전 있는 native open만 허용하고, 지원 native version 60을 넘는 요청·Dexie의 버전 없는 fallback을 reconciliation 전에 거절한다. 더 새로운 DB에 store를 추가하는 version 71 조정이 실행되지 않는다. 진단용 재-probe가 실패해도 fence를 유지한다. native version 61도 60으로 반올림하지 않고 거절한다. IndexedDB API가 없는 경우의 기존 unavailable 동작은 유지한다. 저장소 버전·store/index·migration 선언은 그대로다.
+- 회귀: `localDelivery.test.ts`에 7건 추가(첫 읽기/쓰기, explicit open·compatibility·read·write의 probe/open 경합 4건, native 61); 이 파일 12건. 브라우저에는 직접 데이터 화면과 `/`·`/#/data`의 실제 native open 순서 경합 3건을 더해 7건이다. version 70·store 집합·프로젝트 및 미래 store 행이 같고, 거절 후 create도 저장되지 않음을 확인한다. 기존 설치·v1→v6·거절·차단 시험은 유지한다.
+- 디자인: 화면 코드·문구·토큰·대비 조합 변경 없음. 기존 alert·비활성 컨트롤을 재사용하며 320/390/768/1280/1440 CSS px, forced colors, 200% CSS zoom, Tab 탐색을 실제 Chromium/Firefox에서 확인했다. 실전화 검증은 아니다.
+- 이번 검증 환경: Node v24.19.0, npm 11.17.0(요구 engines 11.x), Rust 1.98.1, wasm-bindgen 0.2.128, `CARGO_BUILD_JOBS=4`. 모든 빌드·스위트는 직렬 foreground로 실행했다. Rust fmt/clippy/test(**260 passed**, 기존 fixture emitter 1건 ignored 유지), fixture_runner 28+124, cargo tree, wasm:build, contracts:check(124), typecheck, lint, npm test(**51 files / 421**), production build, release-manifest(13 assets·errors 없음), design-tokens(12 self-tests·41/41), z-denominator(21)·qualification(16)·review-package(3 files)·product-contract 모두 exit 0. candidate manifest는 스크립트로 재생성했고 첫 production build의 13 digest·buildId `d0b3763b11d9180c`와 일치했다.
+- 최종 브라우저/재현 검사: Firefox local-delivery **7/7**, exit 0. WebKit은 **7건 모두 호스트 라이브러리 부족으로 launch 실패**, exit 1, 앱 UNVERIFIED. 전체 `npm run test:browser -- --project=chromium` **146/146**(3.5m, 최종 앱/시험 트리), `npm run test:parity` **2/2**(124 native/실제 Worker-WASM fixtures 일치), 최종 `npm run build` + release-manifest + release-candidate `--dist` 모두 exit 0. 두 production build의 13 digest·buildId `d0b3763b11d9180c`가 같다. create-project flake는 관찰되지 않았고 재시도는 없었다.
+- 개발 중 첫 typecheck는 spy의 native Promise/Dexie PromiseExtended 차이로 exit 2였고 Dexie.Promise를 사용해 수정했다. 교정한 typecheck/lint와 전체 단위 suite는 통과했다. 실패 시험 삭제·skip·threshold/timeout 완화·자동 재시도 없음. 보호 경로 base 대비 diff가 없음을 확인했다. 정확한 명령/로그/경로별 한계는 `docs/evidence/ZARI-z-local-delivery.md`의 round 2 표다. 이전 round 1의 포괄적 보존 주장은 이 절로 대체한다.
+- 미완료/다음: 전화·GPU·실상품 사이트 UNQUALIFIED, WebKit UNVERIFIED, 공개·release NOT_AUTHORIZED, 화면 채택 PENDING. 감독자가 최종 SHA로 커밋하고 독립 읽기 전용 검토 2회와 CI `bridge`를 다시 수행한다. 이 빌더는 commit/push/PR/GitHub 변경을 하지 않는다.
+
 # 2026-10-21 — ZARI-z-local-delivery 검토 수정 1라운드 (R1)
+
+이 절은 이전 검증 기록이다. 검토 2에서 first-access 읽기·쓰기와 probe/open 경합의 보존 결함이 확인되어, 포괄적인 auto-open 차단 주장은 위 수정 2라운드로 대체한다.
 
 정본·base·채택 근거는 아래 전달 기록과 같다. 이번 세션은 `c79dbaa6488a0d6cccd0a9fa038d38cf7c2508fe`의 부분 수정에서 이어갔다. 산출물은 감독자가 여는 PR로 전달된다. 아래 2026-10-20 검증은 이전 실행 기록이며, 이번 수정의 근거는 이 절과 `docs/evidence/ZARI-z-local-delivery.md`다. 독립 검토 PASS나 CI 통과를 주장하지 않는다.
 

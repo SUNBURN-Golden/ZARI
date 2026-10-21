@@ -6,7 +6,7 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. N
 - Plan commit: `0847d1b065627938acfad3a941de79e357570e43`. Branch `astra/zari-z-local-delivery`.
 - Observed base SHA: `3e76e96512a50cd13167587d7539d38454501813` (origin/main at branch creation).
 - Adoption: JunTae Park (준태), 2026-10-07 12:42 KST, verbatim: "012·013·014·015·016 전부 채택한다. 게이트는 독립 리뷰 2회로 대체하고, user_merge도 네가 머지해라. 이후 z-노드도 같은 방식으로 끝까지 진행해." Recorded in `docs/adr/SP-z-local-delivery.md`, `design/DECISIONS.md` Dz-local-delivery, and z-local-delivery-only notes in `docs/PRODUCT_COMPLETION_EVOLUTION_KO.md` and `design/SPATIAL_WORKSPACE.md`. Fable NONE / A2 replaced by two independent reviews; merge delegated to the supervisor. `.aiops/**`, `docs/aiops/**`, `.github/workflows`, `SOURCE_MANIFEST.json`, `fixtures/` untouched.
-- `contract_change=NO`. No Rust, protocol, capability, schema, `DB_VERSION`, `SCHEMA_VERSION`, `exportVersion`, `BUILD_ID`, fixture, or generated-contract change. Host-side changes: the repository latches and closes on incompatible storage, fences subsequent reads/writes and auto-open paths, and reports compatibility without reopening; App distinguishes peer-upgrade and stored-newer reload prompts; ProjectsScreen disables incompatible-storage mutations and reads failures through `describeStoreFailure`.
+- `contract_change=NO`. No Rust, protocol, capability, schema, `DB_VERSION`, `SCHEMA_VERSION`, `exportVersion`, `BUILD_ID`, fixture, or generated-contract change. Host-side changes: repository first-access reads and queued writes share a compatibility check; `ZariDb` bounds native opens before Dexie reconciliation, including concurrent peer upgrades; incompatible storage is latched closed and compatibility reports from the latch; App distinguishes peer-upgrade and stored-newer reload prompts; ProjectsScreen disables incompatible-storage mutations and reads failures through `describeStoreFailure`.
 
 ## What changed
 
@@ -14,7 +14,7 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. N
 
 ## Changed paths
 
-- App/storage: `apps/web/src/app/App.tsx`, `apps/web/src/app/ProjectsScreen.tsx`, `apps/web/src/persistence/repository.ts`.
+- App/storage: `apps/web/src/app/App.tsx`, `apps/web/src/app/ProjectsScreen.tsx`, `apps/web/src/persistence/repository.ts`, `apps/web/src/persistence/db.ts` (native-open boundary; version/store declarations unchanged).
 - Tests: `apps/web/tests/browser/local-delivery.spec.ts`, `apps/web/tests/unit/localDelivery.test.ts`, `apps/web/tests/unit/zQualification.test.ts` (ledger state update).
 - Delivery: `docs/delivery/LOCAL_DELIVERY.md`, `docs/delivery/release-candidate/manifest.json`, `docs/delivery/release-candidate/index.md`, `scripts/check-release-candidate.mjs`.
 - Ledger: `docs/qualification/z-denominator.json`, `scripts/check-z-denominator.mjs`.
@@ -25,18 +25,71 @@ Delivered via the PR opened by the supervisor. This file is not a review PASS. N
 | Spec item | Where |
 |---|---|
 | 지원 브라우저/기기·빌드·업데이트·저장 migration 경로 정리 | `LOCAL_DELIVERY.md` §§1–4; migration §3.2 + failure table §4 |
-| 처음 설치와 기존 데이터 업데이트 확인 | `local-delivery.spec.ts` tests 1–2 (real browser) + `localDelivery.test.ts` (fresh DB, versionchange) + reuse of `repository.test.ts`/`transfer.test.ts` v1/v2 migration cases |
+| 처음 설치와 기존 데이터 업데이트 확인 | `local-delivery.spec.ts` named fresh-install / existing-data-upgrade cases (real browser) + `localDelivery.test.ts` (fresh DB, versionchange) + reuse of `repository.test.ts`/`transfer.test.ts` v1/v2 migration cases |
 | 장기 미구현과 실제 출시 범위 구분 | `LOCAL_DELIVERY.md` §7, `manifest.json` supportedTargets/requiredGaps, `z-denominator.json` |
 | 로컬 설치/검수 안내와 release candidate 묶음 | `docs/delivery/` + `check-release-candidate.mjs` |
-| 기존 데이터 업그레이드 결과 | `LOCAL_DELIVERY.md` §5 + spec tests 2–4 |
-| 업데이트 실패로 데이터가 지워지지 않는다 | spec tests 3 (newer DB refused, rows intact) + 4 (blocked upgrade applies nothing) |
+| 기존 데이터 업그레이드 결과 | `LOCAL_DELIVERY.md` §5 + named upgrade/refusal/blocked/race browser cases |
+| 업데이트 실패로 데이터가 지워지지 않는다 | named newer-DB refusal / blocked-upgrade / direct-data-route / native-open race browser cases; unit read-first/write-first and four deterministic open-boundary interleavings |
 | 16단계 기준+확장 범위 추적 | `denominator.json` 16 + `z-denominator.json` 21, `check-z-denominator.mjs` |
 | 공개 배포·화면 채택·release 별도 근거 표시 | manifest/ledger `NOT_AUTHORIZED`·`PENDING`·`UNQUALIFIED`; `sourceCommit` null |
-| versionchange reload prompt (PERSISTENCE §6) | `App.tsx` wiring + spec tests 2–4 asserting `db-version-notice` |
+| versionchange reload prompt (PERSISTENCE §6) | `App.tsx` wiring + upgrade/refusal/race cases asserting `db-version-notice` |
 
-## Fix round 1 — 2026-10-21
+## Fix round 2 — 2026-10-21 (Reviewer 2 R1 / R2)
 
-Continued the partial fix present at session start on `c79dbaa6488a0d6cccd0a9fa038d38cf7c2508fe`. The supervisor commits the final tree; no new HEAD SHA is claimed here. R1 was valid: rejecting initial `open()` alone left the connection and queue writable. The fix latches `movedToNewer`, closes the connection, guards direct reads as well as queued mutations, and retains a safe compatibility report from the latched version. A raw version probe runs before Dexie opens, preventing Dexie from adding missing declared stores to an already-newer database. The post-open version check remains as a race guard. No stored row is repaired, defaulted, deleted, or migrated by this refusal.
+Started from the clean delivery head `0be1865d3310e9ae5fa8033417f39f297bad306b`. The original task base and plan pin above are unchanged. Delivered via the PR opened by the supervisor; the supervisor records the final commit SHA. This builder does not claim an independent review or GitHub CI result.
+
+R1: `assertCompatible()` previously checked only an initially false latch. It now awaits the shared first-open check, as does the serialized mutation queue. Every direct repository read awaits that check before Dexie can auto-open; `compatibility()` uses the same path without writing the open marker. Concurrent first accesses share the opening promise.
+
+R2: a raw preflight alone cannot fence the actual open boundary. `ZariDb` supplies a bounded IndexedDB factory to Dexie: its declared native open at 60 is allowed, while an unversioned fallback or a request above 60 is refused before reconciliation. If a peer installs native 70 after the probe, the versioned native open fails without changing that database, Dexie's fallback is denied, and the repository latches closed. The diagnostic re-probe only reads the backend version; even if that diagnostic fails, the fence still latches. Missing IndexedDB retains Dexie's unavailable-API behavior. Native version comparisons no longer round 61 down to supported 60. No version/store/index/migration declaration changed.
+
+Preservation evidence is scoped to the tested paths, not a blanket guarantee for every possible future schema or device. Seven added unit regressions cover read-first, write-first, four deterministic probe/open interleavings (explicit open, compatibility, read, write), and native version 61. The local-delivery unit file now has 12 cases. Three added browser cases cover direct `#/data` first access and a real IndexedDB peer-open at 70 queued immediately before the application's native open at 60 on `/` and `/#/data`. They compare the exact native version, store set, project rows and future-store rows. Both race cases retain version 70 and two stores; no version-71 schema reconciliation or accepted create occurs. The original four install/migration/refusal/blocked cases remain intact.
+
+Changed in this round: `apps/web/src/persistence/{db,repository}.ts`; `apps/web/tests/unit/localDelivery.test.ts`; `apps/web/tests/browser/local-delivery.spec.ts`; `docs/PERSISTENCE.md`; `docs/delivery/LOCAL_DELIVERY.md`; `docs/delivery/release-candidate/manifest.json` (regenerated using its script); `docs/IMPLEMENTATION_STATUS.md`; this evidence file. No additional adoption was needed. No UI layout, copy, semantic tokens or contrast combinations changed; the existing alert and disabled mutation controls remain. No dependencies, thresholds, timeouts, CI or source prompts changed.
+
+### Commands and results — round 2
+
+Every command inherited `export PATH=$HOME/.local/opt/node-v24.19.0-linux-x64/bin:$HOME/.cargo/bin:$PATH CARGO_BUILD_JOBS=4`. Observed tools: Node v24.19.0, npm 11.17.0 (engines require 11.x), Rust 1.98.1, wasm-bindgen 0.2.128. Builds and suites ran sequentially in the foreground; no automatic retries. Logs for the complete verification are retained locally at `target/local-delivery-round2/01.log` through `29.log` (ignored artifacts).
+
+| Command | Result |
+|---|---|
+| `npx vitest run apps/web/tests/unit/localDelivery.test.ts apps/web/tests/unit/repository.test.ts` | exit 0, 27 passed (initial and corrected helper runs) |
+| `npm run typecheck` (initial regression helper) | exit 2: async spy returned native Promise rather than Dexie's PromiseExtended; fixed with Dexie.Promise, no type suppression |
+| `npm run typecheck` / `npm run lint` (corrected helper and complete verification) | exit 0 each |
+| `npx vite build --mode test && npx playwright test local-delivery.spec.ts --project=chromium --workers=1` | exit 0, 7 passed; preliminary focused run before the final missing-API/diagnostic fallback guard adjustment |
+| `cargo fmt --all -- --check` | exit 0 |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | exit 0 |
+| `cargo test --workspace --locked` | exit 0, **260 passed**, 0 failed; 1 pre-existing ignored fixture emitter (`emit_mc_fixtures`), unchanged |
+| `cargo run -p zari-core --locked --example fixture_runner -- fixtures/bootstrap` | exit 0, 28 cases |
+| `cargo run -p zari-core --locked --example fixture_runner -- fixtures` | exit 0, 124 cases |
+| `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked` | exit 0 |
+| `npm run wasm:build` | exit 0 |
+| `npm run contracts:check` | exit 0, contracts match Rust; 124 fixture structures valid |
+| `npm test` | exit 0, **51 files / 421 passed**, 0 failed |
+| `npm run build` | exit 0 twice; final post-browser production rebuild has the same 13 digests and buildId `d0b3763b11d9180c` |
+| `node scripts/check-release-manifest.mjs` | exit 0, 13 assets, `errors: []` |
+| `node scripts/check-release-candidate.mjs --write` | exit 0, 13 digests, buildId `d0b3763b11d9180c` |
+| `node scripts/check-release-candidate.mjs` | exit 0 |
+| `node scripts/check-release-candidate.mjs --dist` | exit 0 after both production builds; 13 digests and buildId match |
+| `node scripts/check-design-tokens.mjs --self-test` | exit 0, 12 self-tests, 41/41 contrast cases |
+| `node scripts/check-z-denominator.mjs` | exit 0, 21 nodes retained |
+| `node scripts/check-qualification.mjs` | exit 0, 16 baseline nodes retained |
+| `node scripts/check-review-package.mjs` | exit 0, 3 files verified |
+| `node scripts/check-product-contract.mjs` | exit 0, 16 ids / 124 fixtures unchanged |
+| `npx vite build --mode test` | exit 0, final application/test source before cross-browser checks |
+| `npx playwright test local-delivery.spec.ts --project=firefox --workers=1` | exit 0, **7 passed**, 0 failed (20.8s) |
+| `npx playwright test local-delivery.spec.ts --project=webkit --workers=1` | exit 1, **7 browser-launch failures**, host libraries missing (libgtk-4, libsoup-3, etc.); application **UNVERIFIED**; no retry or host changes |
+| `npm run test:browser -- --project=chromium` | exit 0, **146 passed**, 0 failed (3.5m, full final application/test tree); no create-project flake or retries |
+| `npm run test:parity` | exit 0, **2 passed**; 124 native / actual Chromium Worker-WASM fixtures agree |
+
+Final scope checks (exit 0 each): `git diff --check` and `git diff --exit-code 3e76e96512a50cd13167587d7539d38454501813 -- AGENTS.md SOURCE_MANIFEST.json docs/MASTER_PROMPT_KO.md docs/RUST_ADDENDUM_KO.md crates fixtures apps/web/src/contracts .github .aiops docs/aiops package.json package-lock.json Cargo.lock design/baselines apps/web/src/styles playwright.config.ts`. This proves existing fixture expectations, generated contracts, dependencies, preserved prompts, governance, CI, approved baselines and styles are unchanged. `git diff --exit-code -- docs/evidence/ZARI-SPATIAL-001-*.png` also exits 0; no prior capture was rewritten. `git rev-parse HEAD` remains `0be1865d3310e9ae5fa8033417f39f297bad306b`; final deliverable commit is assigned by the supervisor.
+
+Browser evidence: real Chromium and Firefox, real IndexedDB and Worker/WASM, preview origin `http://127.0.0.1:4173` (also recorded in `test-results/preview-origin.txt`). The three added cases collect browser console/page errors and assert `[]`; both interleavings use real native request ordering with no sleep, fake DB, application hook or schema mock. The direct-data-route alert is visible at 320/390/768/1280/1440 CSS px without horizontal overflow; forced colors and 200% CSS zoom retain the alert; Tab reaches a navigation link. The original sample-install/accepted-snapshot migration path still verifies saved input, all captured v1 rows, migration journals and the same accepted snapshot. These are desktop emulations, not phone qualification. Screenshots, if produced by existing suites, remain DRAFT evidence.
+
+Deviations/limits: the npm minor is 11.17.0 on this supplied toolchain (within required engines 11.x). WebKit cannot launch on this host; phone/GPU/real-product-site qualification stays open. The candidate digest comparison is same-source/same-toolchain evidence, not a cross-machine byte guarantee. The required independent reviews and GitHub `bridge` are the supervisor's next steps. No commit, push, PR or GitHub write by this builder.
+
+## Fix round 1 — 2026-10-21 (historical; incomplete fence, superseded by round 2)
+
+Continued the partial fix present at session start on `c79dbaa6488a0d6cccd0a9fa038d38cf7c2508fe`. The supervisor commits the final tree; no new HEAD SHA is claimed here. R1 was valid: rejecting initial `open()` alone left the connection and queue writable. The fix latches `movedToNewer`, closes the connection, guards direct reads as well as queued mutations, and retains a safe compatibility report from the latched version. A raw version probe protected explicit open and compatibility-first access. Reviewer 2 subsequently demonstrated that read-first/write-first access bypassed that probe and the post-open check ran too late to prevent Dexie schema reconciliation after a concurrent upgrade. The round-1 results below cover their listed paths only; they did not establish the broader preservation claim. Round 2 replaces those incomplete guards.
 
 The unit regression now attempts creation, deletion, list/bundle reads, repeated open and compatibility after refusal, asserts `db.isOpen() === false`, and reads raw IDB to confirm the original version, store set and project row. A fifth unit case covers compatibility as the first access followed by attempted creation. The browser refusal case checks create/example/import are disabled, attempts native button activation and keyboard activation, visits compatibility, and compares all captured store rows after refusal. The migration case now compares every captured v1-store row (metadata excludes only the newly added migration journals). At 390px with forced colors the refusal banner remains visible without horizontal overflow. Existing semantic notice styles are reused; no new tokens, contrast pairs, dependencies or domain calculations.
 
@@ -75,7 +128,7 @@ Initial typecheck in this session failed on nullable indexed store arrays in the
 | `npm run test:browser -- --project=chromium` (full suite, final application/test tree) | exit 0, **143 passed** / 0 failed (3.9m, 4 workers), incl. all 4 local-delivery tests; no create-project flake observed |
 | `npm run test:parity` | exit 0, 2 passed; 124 fixtures native vs browser WASM agree |
 
-## Browser evidence detail
+## Browser evidence detail — round 1 (historical paths only)
 
 `local-delivery.spec.ts`, real Chromium + real IndexedDB + real WASM Worker, preview build at `http://127.0.0.1:4173`:
 

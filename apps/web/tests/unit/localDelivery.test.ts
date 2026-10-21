@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { execFileSync } from 'node:child_process';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+import Dexie from 'dexie';
 import { emptyProjectForm } from '../../src/features/project/draft';
 import { DB_VERSION, ZariDb } from '../../src/persistence/db';
 import { ProjectRepository } from '../../src/persistence/repository';
@@ -158,6 +159,80 @@ it('compatibility() detects a newer database and fences the tab', async () => {
   const after = await rawStore(name);
   expect(after.version).toBe(DB_VERSION * 10 + 10);
   expect(after.projects).toEqual([{ projectId, name: 'newer-build row' }]);
+});
+
+for (const access of ['read', 'write'] as const) {
+  it(`${access}-first access refuses newer storage before Dexie can auto-open`, async () => {
+    const name = `test-${crypto.randomUUID()}`;
+    await seedNewerDatabase(name, crypto.randomUUID());
+    const before = await rawStore(name);
+    const repo = new ProjectRepository(new ZariDb(name));
+    const notify = vi.fn();
+    repo.onVersionChange = notify;
+    const operation = access === 'read'
+      ? repo.listProjects()
+      : repo.createProject('must not be saved', emptyProjectForm());
+    await expect(operation).rejects.toMatchObject({ code: 'migration_blocked' });
+    expect(repo.fenced).toBe(true);
+    expect(repo.db.isOpen()).toBe(false);
+    expect(notify).toHaveBeenCalledExactlyOnceWith('stored_newer');
+    await expect(repo.compatibility()).resolves.toMatchObject({ status: 'newer_database' });
+    await expect(repo.createProject('still refused', emptyProjectForm()))
+      .rejects.toMatchObject({ code: 'migration_blocked' });
+    expect(await rawStore(name)).toEqual(before);
+  });
+}
+
+for (const access of ['open', 'compatibility', 'read', 'write'] as const) {
+  it(`${access} refuses an upgrade between the probe and native open without schema reconciliation`, async () => {
+    const name = `test-${crypto.randomUUID()}`;
+    const repo = new ProjectRepository(new ZariDb(name));
+    const nativeOpen = repo.db.open.bind(repo.db);
+    let before: Awaited<ReturnType<typeof rawStore>> | undefined;
+    // Deterministic interleaving: the probe has released its raw connection;
+    // a peer installs v70 before Dexie's first native open at v60. Dexie must
+    // not retry without a version or add its missing stores at v71.
+    vi.spyOn(repo.db, 'open').mockImplementationOnce(() => Dexie.Promise.resolve(
+      seedNewerDatabase(name, crypto.randomUUID()),
+    ).then(async () => {
+      before = await rawStore(name);
+    }).then(nativeOpen));
+    if (access === 'compatibility') {
+      await expect(repo.compatibility()).resolves.toMatchObject({
+        status: 'newer_database', openedVersion: DB_VERSION + 1,
+      });
+    } else {
+      const operation = access === 'open' ? repo.open()
+        : access === 'read' ? repo.listProjects()
+          : repo.createProject('must not be saved', emptyProjectForm());
+      await expect(operation).rejects.toMatchObject({ code: 'migration_blocked' });
+    }
+    expect(before).toBeDefined();
+    expect(repo.fenced).toBe(true);
+    expect(repo.db.isOpen()).toBe(false);
+    await expect(repo.listProjects()).rejects.toMatchObject({ code: 'migration_blocked' });
+    await expect(repo.createProject('still refused', emptyProjectForm()))
+      .rejects.toMatchObject({ code: 'migration_blocked' });
+    expect(await rawStore(name)).toEqual(before);
+  });
+}
+
+it('a native version just above the supported boundary is also fenced', async () => {
+  const name = `test-${crypto.randomUUID()}`;
+  const db = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(name, DB_VERSION * 10 + 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('future');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  const before = await rawStore(name);
+  const repo = new ProjectRepository(new ZariDb(name));
+  await expect(repo.listProjects()).rejects.toMatchObject({ code: 'migration_blocked' });
+  expect(await repo.compatibility()).toMatchObject({
+    status: 'newer_database', openedVersion: DB_VERSION + 0.1,
+  });
+  expect(await rawStore(name)).toEqual(before);
 });
 
 it('release-candidate manifest matches the repository pins', () => {

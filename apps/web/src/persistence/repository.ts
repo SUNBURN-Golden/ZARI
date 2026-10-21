@@ -214,6 +214,7 @@ export type StorageFenceCause = 'peer_upgrade' | 'stored_newer';
 
 export class ProjectRepository {
   private queue: Promise<unknown> = Promise.resolve();
+  private opening: Promise<void> | null = null;
   private known = new Map<string, string>();
   /**
    * Set when a newer build asked this connection to close or this tab found
@@ -278,16 +279,14 @@ export class ProjectRepository {
     });
   }
   /** The fence `enqueue` applies to writes, applied to direct read paths. */
-  private assertCompatible(): void {
+  private async assertCompatible(): Promise<void> {
     if (this.movedToNewer)
       throw new StoreError('migration_blocked', 'storage moved to a newer version');
+    if (!this.db.isOpen()) await this.ensureOpen();
   }
   private enqueue<T>(work: () => Promise<T>): Promise<T> {
-    const guarded = () => {
-      if (this.movedToNewer)
-        return Promise.reject(
-          new StoreError('migration_blocked', 'storage moved to a newer version'),
-        );
+    const guarded = async () => {
+      await this.assertCompatible();
       return work();
     };
     const run = this.queue.then(guarded, guarded);
@@ -299,25 +298,41 @@ export class ProjectRepository {
   }
   async open(): Promise<void> {
     try {
-      this.assertCompatible();
+      await this.assertCompatible();
+      await this.recordMigration();
+    } catch (error) {
+      throw storeError(error);
+    }
+  }
+  /** Shared first-access check for explicit opens, direct reads and writes. */
+  private async ensureOpen(): Promise<void> {
+    if (this.opening) return this.opening;
+    this.opening = this.openCompatible();
+    try {
+      await this.opening;
+    } finally {
+      this.opening = null;
+    }
+  }
+  private async openCompatible(): Promise<void> {
+    try {
       // The stored backend version is the truth `compatibility()` reports.
       // Probe it before Dexie touches the database so a newer store is never
       // opened, schema-extended, or written by this build at all.
-      const stored = Math.round((await this.storedBackendVersion()) / 10);
-      if (stored > DB_VERSION) {
-        this.fenceNewer(stored, 'stored_newer');
+      const stored = await this.storedBackendVersion();
+      if (stored > DB_VERSION * 10) {
+        this.fenceNewer(stored / 10, 'stored_newer');
         throw new StoreError('migration_blocked', 'stored database is newer than this build');
       }
       await this.db.open();
-      // A peer tab may have upgraded between the probe and Dexie's open;
-      // recheck so this tab still fences instead of running on newer storage.
-      const opened = Math.round(this.db.backendDB().version / 10);
-      if (opened > DB_VERSION) {
-        this.fenceNewer(opened, 'stored_newer');
-        throw new StoreError('migration_blocked', 'stored database is newer than this build');
-      }
-      await this.recordMigration();
     } catch (error) {
+      // ZariDb refuses Dexie's unversioned retry after a native VersionError.
+      // The native versioned open has already rejected without modifying the
+      // database, including when a peer upgraded after our probe closed.
+      if (error instanceof Dexie.VersionError) {
+        const stored = await this.storedBackendVersion().catch(() => null);
+        this.fenceNewer(stored === null ? null : stored / 10, 'stored_newer');
+      }
       throw storeError(error);
     }
   }
@@ -396,7 +411,7 @@ export class ProjectRepository {
     });
   }
   async listProjects(): Promise<ProjectRow[]> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const rows = await this.db.projects.orderBy('updatedAt').reverse().toArray();
       return rows.map(readProjectRow);
@@ -410,7 +425,7 @@ export class ProjectRepository {
    * is repaired or silently defaulted here.
    */
   async loadBundle(projectId: string): Promise<ProjectBundle> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const corrupt: CorruptRecord[] = [];
       const rawProject = await this.db.projects.get(projectId);
@@ -907,7 +922,7 @@ export class ProjectRepository {
     });
   }
   async getCatalog(digest: string): Promise<CatalogRow | null> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const row = await this.db.catalogs.get(digest);
       return row === undefined ? null : readCatalogRow(row);
@@ -921,7 +936,7 @@ export class ProjectRepository {
    * verifyRecord pass is what flags them as corrupt.
    */
   async listCatalogs(): Promise<CatalogRow[]> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const rows = await this.db.catalogs.toArray();
       const readable: CatalogRow[] = [];
@@ -940,7 +955,7 @@ export class ProjectRepository {
   }
   /** The global owned-container library (normalized records only). */
   async listOwnedContainers(): Promise<OwnedContainerRow[]> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const rows = await this.db.ownedContainers.toArray();
       const readable: OwnedContainerRow[] = [];
@@ -1021,7 +1036,7 @@ export class ProjectRepository {
    * A malformed row is corrupt; it is not rewritten into an empty ledger.
    */
   async getInventoryLedger(projectId: string): Promise<InventoryLedgerRow | null> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const raw = await this.db.inventoryLedgers.get(projectId);
       if (raw === undefined) return null;
@@ -1070,7 +1085,7 @@ export class ProjectRepository {
    * Absent until the first recorded event. Not part of a PlanSnapshot.
    */
   async getPurchaseHandoff(projectId: string): Promise<PurchaseHandoffRow | null> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const raw = await this.db.purchaseHandoffs.get(projectId);
       if (raw === undefined) return null;
@@ -1114,7 +1129,7 @@ export class ProjectRepository {
    * observation. A malformed row is corrupt; it is not rewritten empty.
    */
   async getLocationLog(projectId: string): Promise<LocationLogRow | null> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const raw = await this.db.locationLogs.get(projectId);
       if (raw === undefined) return null;
@@ -1163,7 +1178,7 @@ export class ProjectRepository {
    * malformed row is corrupt; it is not rewritten empty.
    */
   async getFeedbackLog(projectId: string): Promise<FeedbackLogRow | null> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const raw = await this.db.feedbackLogs.get(projectId);
       if (raw === undefined) return null;
@@ -1396,7 +1411,7 @@ export class ProjectRepository {
     });
   }
   async quarantined(): Promise<QuarantinePayload[]> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const rows = await this.db.metadata.where('key').startsWith('quarantine:').toArray();
       return rows.map((row) => row.payload as QuarantinePayload);
@@ -1453,7 +1468,7 @@ export class ProjectRepository {
    * no orphan cleanup pass is needed.
    */
   async listAttachments(projectId: string): Promise<AttachmentRow[]> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const rows = await this.db.attachments.where('projectId').equals(projectId).toArray();
       const readable: AttachmentRow[] = [];
@@ -1522,7 +1537,7 @@ export class ProjectRepository {
   async listPhotoMeta(
     projectId: string,
   ): Promise<{ attachmentId: string; name: string; mime: string; byteSize: number }[]> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const out: { attachmentId: string; name: string; mime: string; byteSize: number }[] = [];
       await this.db.attachments
@@ -1547,7 +1562,7 @@ export class ProjectRepository {
     }
   }
   async getAttachment(attachmentId: string): Promise<AttachmentRow | null> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const raw = await this.db.attachments.get(attachmentId);
       return raw === undefined ? null : readAttachmentRow(raw);
@@ -1574,7 +1589,7 @@ export class ProjectRepository {
    * zero, and is never repaired here.
    */
   async dataScope(projectId: string): Promise<ProjectDataScope> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const photoRows = await this.db.attachments.where('projectId').equals(projectId).toArray();
       let photoBytes = 0;
@@ -1629,18 +1644,7 @@ export class ProjectRepository {
     });
     try {
       if (this.movedToNewer) return newerDatabase(this.fencedVersion);
-      const stored = Math.round((await this.storedBackendVersion()) / 10);
-      if (stored > DB_VERSION) {
-        this.fenceNewer(stored, 'stored_newer');
-        return newerDatabase(stored);
-      }
-      await this.db.open();
-      const opened = Math.round(this.db.backendDB().version / 10);
-      if (opened > DB_VERSION) {
-        this.fenceNewer(opened, 'stored_newer');
-        return newerDatabase(opened);
-      }
-      this.assertCompatible();
+      await this.assertCompatible();
       const journals = (
         await this.db.metadata.where('key').startsWith('migration:').toArray()
       )
@@ -1677,7 +1681,7 @@ export class ProjectRepository {
    * behind. Action progress is not part of the stage.
    */
   async readDuplicateStage(sourceId: string): Promise<DuplicateStage> {
-    this.assertCompatible();
+    await this.assertCompatible();
     const project = readProjectRow(await this.db.projects.get(sourceId));
     const rawDraft = await this.db.drafts.get(sourceId);
     const draft = rawDraft === undefined ? null : readDraftRow(rawDraft);
@@ -1896,7 +1900,7 @@ export class ProjectRepository {
     inputRevision: string,
     planSnapshotId: string,
   ): Promise<ActionProgressRow[]> {
-    this.assertCompatible();
+    await this.assertCompatible();
     try {
       const rows = await this.db.actionProgress.where('projectId').equals(projectId).toArray();
       return rows

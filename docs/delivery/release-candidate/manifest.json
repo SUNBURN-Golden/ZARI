@@ -92,22 +92,22 @@
     }
   ],
   "dist": {
-    "buildId": "16ba680e28d482d3",
-    "builtAt": "2026-10-21T06:29:02.774Z",
+    "buildId": "d0b3763b11d9180c",
+    "builtAt": "2026-10-21T08:14:16.536Z",
     "note": "Observed on the builder machine. builtAt changes every build; file digests and buildId are content-derived.",
     "files": {
       "assets/bundleWorker-_HBCexPd.js": "7610853fcb08380f351cb2808d73ad7bce7750475dde104a83ccb7be4477670d",
       "assets/bundleWorker-_HBCexPd.js.map": "6ba3e41df2535b48a8336b9a9704387eb67a45f1b93ef3783e8a675dbee061f3",
       "assets/entry-BzR_wgWs.js": "e14c3a904156f072388d7cd78a985fae6ffd3c748d1686505dd70399d8669314",
       "assets/entry-BzR_wgWs.js.map": "42082654309a812f476c276c52cce3dae3c0a93ce846810d25d31fbe34923d40",
-      "assets/index-Bi0fp3ue.js": "6bf3bc799edb40da9ac73eb2f10808a7017daf5c49e002568ec9802b8134d056",
-      "assets/index-Bi0fp3ue.js.map": "1c036eff59abe1874321b3763fa43a3f319403be3d59c851cf8140dad307e51a",
       "assets/index-CcZqZK-G.css": "f59b564c88b6e28e0803f4967fd11ef24fa365dfb8da3a569def88d20dd90874",
-      "assets/SpatialView-CmghGQb4.js": "9d8de16d850319685d3b44379aa15943691761ee3b6bce5a5918d159fda3f077",
-      "assets/SpatialView-CmghGQb4.js.map": "e5e6e0ff4ba06e853b8f44bf906462444edc6fd3bde7ed33dd89190045c6b24c",
+      "assets/index-DeBNJpNK.js": "d5f1337cc0f33f2bd7d64e2020cf8f2df5e5a18e0c6754134516506fb768a6c9",
+      "assets/index-DeBNJpNK.js.map": "e0e5dbba7d6865874a6120a0aa9c53621724218a02663774dbde0e51af8cc43c",
+      "assets/SpatialView-Sh81WvI4.js": "ef4f9138b9f0bcaba5adce6fbe1cf11782f3779929ffe78ae34005d141a5a760",
+      "assets/SpatialView-Sh81WvI4.js.map": "0fede6ad2d9eb43757f65d2fde1cade4a5ef152287f88864a4a59934fa79c548",
       "assets/zari_wasm_bg-BIGzMeiz.wasm": "e9ce4ea4e4f1514f430cf36c4c8ddd831a72ee35c650aa8017333ef4ec9deb5d",
       "favicon.svg": "da58f74a071d53e846e6df7313ab26e7386649306ce2dd810befae4696818256",
-      "index.html": "42f409affecd40c147f5e1cfc21aff2896a4be0ff21463f8effb4d29e3201942",
+      "index.html": "c1ff49b9a30db594496edf16bb7b31fe3842876d69ff1ae0eed5d397ff7d189a",
       "sw.js": "2b395c36daee6b3a1fd04cd6e54c38b56f5fc4a45fa562fbbff59b6a1e4359ba"
     }
   }

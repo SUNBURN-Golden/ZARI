@@ -60,6 +60,100 @@ async function idbGetAll(page: Page, stores: string[]) {
   }, stores);
 }
 
+/** Seed before the application ever mounts, so no repository fence is set. */
+async function seedMinimalDatabase(page: Page, version: number) {
+  await page.goto('/tests/harness.html');
+  await page.evaluate(async (nativeVersion) => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('zari-local', nativeVersion);
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore('projects', { keyPath: 'projectId' })
+          .put({ projectId: 'future-project', name: 'preserve this row' });
+        request.result.createObjectStore('zariFuture', { keyPath: 'id' })
+          .put({ id: 'future', payload: 'preserve future bytes' });
+      };
+      request.onsuccess = () => {
+        request.result.close();
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }, version);
+}
+
+async function nativeVersion(page: Page) {
+  return page.evaluate(() => new Promise<number>((resolve, reject) => {
+    const request = indexedDB.open('zari-local');
+    request.onsuccess = () => {
+      const version = request.result.version;
+      request.result.close();
+      resolve(version);
+    };
+    request.onerror = () => reject(request.error);
+  }));
+}
+
+test('direct data route fences its first read without extending newer storage', async ({ page }) => {
+  const errors: string[] = [];
+  collectErrors(page, errors);
+  await seedMinimalDatabase(page, 70);
+  const before = await idbGetAll(page, ['projects', 'zariFuture']);
+  await page.goto('/#/data');
+  await expect(page.getByTestId('compat-report')).toHaveAttribute('data-status', 'newer_database');
+  await expect(page.getByTestId('db-version-notice')).toContainText('열지 않았고');
+  expect(await nativeVersion(page)).toBe(70);
+  expect(await idbGetAll(page, ['projects', 'zariFuture'])).toEqual(before);
+  for (const width of [320, 390, 768, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect(page.getByTestId('db-version-notice')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.emulateMedia({ forcedColors: 'active' });
+  await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
+  await expect(page.getByTestId('db-version-notice')).toBeVisible();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('A');
+  expect(errors).toEqual([]);
+});
+
+for (const route of ['/', '/#/data']) {
+  test(`peer upgrade after probe is refused at native open on ${route}`, async ({ page }) => {
+    const errors: string[] = [];
+    collectErrors(page, errors);
+    await seedMinimalDatabase(page, 10);
+    const before = await idbGetAll(page, ['projects', 'zariFuture']);
+    await page.addInitScript(() => {
+      const open = IDBFactory.prototype.open;
+      let injected = false;
+      IDBFactory.prototype.open = function (name: string, version?: number) {
+        if (name === 'zari-local' && version === 60 && !injected) {
+          injected = true;
+          // The repository's unversioned probe has finished. Queue the peer
+          // upgrade before the app's versioned open, using real IDB ordering.
+          // No sleeps or application schema mocks: Dexie receives the native
+          // VersionError and must not reconcile the two-store v70 database.
+          const peer = open.call(this, name, 70);
+          peer.onsuccess = () => peer.result.close();
+        }
+        return version === undefined ? open.call(this, name) : open.call(this, name, version);
+      };
+    });
+    await page.goto(route);
+    await expect(page.getByTestId('db-version-notice')).toContainText('열지 않았고');
+    if (route === '/') {
+      await expect(page.getByTestId('projects-error')).toContainText('새로운 저장 형식');
+      await expect(page.getByTestId('create-project')).toBeDisabled();
+      await page.getByTestId('create-project').evaluate((button: HTMLButtonElement) => button.click());
+      // In-document navigation retains the very repository that hit the race.
+      await page.evaluate(() => { location.hash = '#/data'; });
+    }
+    await expect(page.getByTestId('compat-report')).toHaveAttribute('data-status', 'newer_database');
+    expect(await nativeVersion(page)).toBe(70);
+    expect(await idbGetAll(page, ['projects', 'zariFuture'])).toEqual(before);
+    expect(errors).toEqual([]);
+  });
+}
+
 test('fresh install: create, save, reload, and a clean compatibility report', async ({
   page,
 }) => {

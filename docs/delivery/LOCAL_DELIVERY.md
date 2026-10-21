@@ -10,7 +10,7 @@ plan commit `0847d1b065627938acfad3a941de79e357570e43`다. release candidate
 | 대상 | 상태 | 근거 |
 |---|---|---|
 | Chromium(데스크톱, 이 검증 호스트) | 검증됨 | 설치·저장·복원·v1→v6 업그레이드·신형 DB 거절·차단된 업그레이드·오프라인 재방문이 실제 브라우저 스펙으로 통과 (`apps/web/tests/browser/local-delivery.spec.ts`, `privacy-offline.spec.ts`) |
-| Firefox(데스크톱, 이 호스트) | 부분 검증 | 전체 여정 스펙이 통과(`product-journey.spec.ts` 3/3). 이 노드의 저장·업그레이드 스펙은 별도로 실행한다(결과는 evidence에) |
+| Firefox(데스크톱, 이 호스트) | 부분 검증 | 전체 여정 스펙 3/3(기존 기록), 이 노드 저장·업그레이드·first-access·경합 스펙 7/7(이번 실행). Firefox 전체 스위트를 실행했다는 뜻은 아니다 |
 | WebKit | 미검증 | 이 호스트에 브라우저 의존성이 없어 실행 불가. 미검증으로 남긴다 |
 | 390 CSS px·forced-colors·키보드 | 에뮬레이션 검증 | 데스크톱 에뮬레이션이지 실제 기기가 아니다 |
 | 실제 전화·전용 GPU | UNQUALIFIED | 실행한 적 없다. headless WebGL은 소프트웨어 GL이다 |
@@ -76,6 +76,10 @@ manifest는 스테이징하지 않는다(다운그레드 방지). 프로젝트 �
 - 저장소가 이 빌드보다 새 버전이면 IndexedDB가 여는 것을 거절하고 앱은
   `migration_blocked`으로 보고한다. `#/data`는 `newer_database`와
   "열지 않았고 아무것도 바꾸지 않았습니다"를 보인다.
+  첫 읽기·쓰기 전에 호환을 검사하며, Dexie의 버전 없는 재열기도 native open
+  경계에서 차단한다. 사전 version 확인 뒤 다른 탭이 업그레이드해도 Dexie가
+  새 DB에 누락 store를 추가하지 않는다. `#/data` 직접 진입과 이 경합을 별도
+  회귀 시험으로 확인했다(검증한 경로·한계는 evidence 참조).
 - 더 새로운 `schemaVersion`의 행은 쓰기를 거절하고 바이트를 보존한다.
   손상 행은 고치지 않고 격리한다. 이 변경 주기에 파괴적 migration은 없다.
 
@@ -100,10 +104,12 @@ manifest는 스테이징하지 않는다(다운그레드 방지). 프로젝트 �
 | 처음 설치 | 생성→저장→재로드 복원; 호환 `ok`; 일지 `없음`; 오류 없음 |
 | v1→v6 업그레이드(실제 행: 프로젝트·초안·정규 입력·카탈로그·채택 snapshot) | 모든 행 보존, 일지 `1→2, 2→3, 3→4, 4→5, 5→6` 기록, 채택 계획·snapshot id 그대로 열림 |
 | 더 새로운 DB(v7) | `migration_blocked` 거절, `newer_database` 보고, 모든 행 보존 — **삭제 없음** |
+| 더 새로운 DB에 `#/data` 직접 진입 | 첫 읽기부터 거절, native version 70·store 집합·행 그대로 |
+| 사전 확인과 native open 사이 다른 탭이 v7으로 업그레이드 | 프로젝트 목록·데이터 화면 모두 거절, native version 70·store 집합·행 그대로; version 71로 조정하지 않음 |
 | 차단된 업그레이드 | 연결을 놓지 않는 동안 아무것도 적용되지 않고, 차단 해제 뒤에만 적용 — **삭제 없음** |
 
-완료 판정 1("업데이트 실패로 데이터가 지워지지 않는다")은 위 세·네 번째
-행으로 확인한다. 단위 수준에서는 `repository.test.ts`/`transfer.test.ts`의
+완료 판정 1("업데이트 실패로 데이터가 지워지지 않는다")은 위 거절·경합·차단
+시나리오로 확인한다. 모든 미래 migration·기기의 보증은 아니다. 단위 수준에서는 `repository.test.ts`/`transfer.test.ts`의
 v1·v2 출발 migration 케이스와 `localDelivery.test.ts`가 같은 보존을
 fake-indexeddb로 확인한다.
 
