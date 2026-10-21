@@ -165,6 +165,18 @@ test('existing data upgrade: a v1 database migrates to v6 keeping every row', as
     '1→2, 2→3, 3→4, 4→5, 5→6',
   );
 
+  const migrated = await idbGetAll(page, Object.keys(V1_STORES));
+  for (const store of Object.keys(V1_STORES)) {
+    if (store === 'metadata') {
+      const durable = (rows: unknown[]) => rows.filter(
+        (row) => !(row as { key: string }).key.startsWith('migration:'),
+      );
+      expect(durable(migrated[store] ?? [])).toEqual(durable(captured[store] ?? []));
+    } else {
+      expect(migrated[store], `migrated ${store}`).toEqual(captured[store]);
+    }
+  }
+
   // The upgraded rows keep working: the same draft and the same accepted plan.
   await page.goto(`/#/project/${projectId}/plan`);
   await expect(page.getByTestId('plan-context')).toHaveAttribute('data-context', 'installed', {
@@ -194,6 +206,17 @@ test('update failure: a newer database is refused and every row is preserved', a
   await seedSample(page);
   const projectId = await projectIdOf(page);
 
+  // Capture every durable row before the upgrade so preservation is checked
+  // row-for-row, not just by the presence of one project.
+  const before = await idbGetAll(page, Object.keys(V1_STORES).concat([
+    'attachments',
+    'inventoryLedgers',
+    'purchaseHandoffs',
+    'locationLogs',
+    'feedbackLogs',
+  ]));
+  expect((before.projects as unknown[]).length).toBeGreaterThan(0);
+
   // A newer build leaves a version-7 database behind (Dexie stores declared
   // version n at IDB version n*10, so v7 is 70). The versionchange event
   // closes this tab's connection and the prompt tells the user to reload.
@@ -214,6 +237,21 @@ test('update failure: a newer database is refused and every row is preserved', a
   await page.goto('/');
   await expect(page.getByTestId('projects-error')).toContainText('새로운 저장 형식');
   await expect(page.getByTestId('projects-error')).toContainText('데이터는 그대로');
+  await expect(page.getByTestId('db-version-notice')).toContainText('열지 않았고');
+
+  // Every storage mutation stays disabled while the repository is fenced.
+  await expect(page.getByTestId('create-project')).toBeDisabled();
+  await expect(page.getByTestId('create-example')).toBeDisabled();
+  await expect(page.getByTestId('import-project')).toBeDisabled();
+  await page.getByTestId('create-project').evaluate((button: HTMLButtonElement) => button.click());
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await expect(page).not.toHaveURL(/#\/project\//);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ forcedColors: 'active' });
+  await expect(page.getByTestId('db-version-notice')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
   await page.goto('/#/data');
   await expect(page.getByTestId('compat-report')).toHaveAttribute(
     'data-status',
@@ -221,12 +259,17 @@ test('update failure: a newer database is refused and every row is preserved', a
   );
 
   // The v7 database still holds every row the failed update never touched.
-  const rows = await idbGetAll(page, ['projects', 'drafts']);
-  expect(rows.__objectStoreNames).toContain('zariFuture');
+  const rows = await idbGetAll(page, Object.keys(before).filter((s) => s !== '__objectStoreNames'));
+  expect(rows.__objectStoreNames).toEqual(
+    expect.arrayContaining([...(before.__objectStoreNames as string[]), 'zariFuture']),
+  );
+  for (const store of Object.keys(before)) {
+    if (store === '__objectStoreNames') continue;
+    expect(rows[store], `store ${store} must be unchanged`).toEqual(before[store]);
+  }
   expect(
     (rows.projects as { projectId: string }[]).some((row) => row.projectId === projectId),
   ).toBe(true);
-  expect((rows.drafts as { projectId: string }[]).length).toBeGreaterThan(0);
   expect(errors.filter((e) => !/Failed to load resource/.test(e))).toEqual([]);
 });
 

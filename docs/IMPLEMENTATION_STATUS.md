@@ -1,3 +1,15 @@
+# 2026-10-21 — ZARI-z-local-delivery 검토 수정 1라운드 (R1)
+
+정본·base·채택 근거는 아래 전달 기록과 같다. 이번 세션은 `c79dbaa6488a0d6cccd0a9fa038d38cf7c2508fe`의 부분 수정에서 이어갔다. 산출물은 감독자가 여는 PR로 전달된다. 아래 2026-10-20 검증은 이전 실행 기록이며, 이번 수정의 근거는 이 절과 `docs/evidence/ZARI-z-local-delivery.md`다. 독립 검토 PASS나 CI 통과를 주장하지 않는다.
+
+- R1 원인: 처음부터 더 새로운 DB를 발견했을 때 오류만 던져 연결과 쓰기 큐가 살아 있었다. `repository.ts`는 이제 raw IDB version을 Dexie open 전에 확인하고, 호환 불가를 영구 latch한 뒤 연결을 닫는다. 후속 open·쓰기·직접 읽기(auto-open 포함)를 차단하고 호환 보고는 latch에서 반환한다. Dexie가 신형 DB에 누락 store를 추가하는 경로도 막는다. DB version·행·Rust·프로토콜·fixture·생성 계약은 변경하지 않는다.
+- `App.tsx`는 peer upgrade와 이미 신형인 저장소의 안내를 구분한다. `ProjectsScreen.tsx`는 거절 뒤 생성·예제·가져오기 등 변경 컨트롤을 비활성화한다. 기존 notice semantic token과 `role="alert"` 재사용, 새 색 쌍 없음.
+- 회귀: 단위 시험 5개(후속 create/delete/list/load/open 거절, 연결 닫힘, 원시 저장 내용·버전·store 보존, compatibility-first 경로 포함). 브라우저 4개는 기존 경로에 모든 캡처 행 비교(v1 migration에서는 새 일지만 제외), 거절 뒤 비활성 단추 활성화 시도·키보드·390px·forced-colors를 추가했다. release manifest는 스크립트로 관측 해시를 재기록했다.
+- 검증: `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`(241), `cargo run -p zari-core --locked --example fixture_runner -- fixtures/bootstrap`(28) 및 `-- fixtures`(124), `cargo tree -p zari-wasm --target wasm32-unknown-unknown -e features,no-dev --locked`, `npm run wasm:build`, `npm run contracts:check`(124), `npm run typecheck`, `npm run lint`, `npm test`(51 files/414), `npm run build` 두 번, `node scripts/check-release-manifest.mjs`(13 assets, errors 없음), `node scripts/check-release-candidate.mjs --write`/기본/`--dist`(13 해시 일치, buildId `16ba680e28d482d3`), `node scripts/check-design-tokens.mjs --self-test`(12 self-tests, 41/41), z-denominator/qualification/review-package/product-contract 검사 모두 exit 0.
+- 실제 브라우저: 전체 `npm run test:browser -- --project=chromium` 143/143, 최종 앱/시험 트리에서 exit 0(3.9m). `npx vite build --mode test` 후 `npx playwright test local-delivery.spec.ts --project=firefox --workers=1` 4/4, exit 0. 동일 WebKit 명령은 exit 1(4건 모두 host libraries 부족으로 launch 실패, 앱 실행 전): UNVERIFIED. `npm run test:parity` 2/2, native/실제 Worker WASM 124 fixture 일치, exit 0.
+- 실패 기록: 강화한 브라우저 단정의 nullable 배열로 첫 typecheck exit 2; 수정 후 전체 체인 통과. suite retry·skip·timeout/threshold 완화 없음. 보호 경로의 base 대비 `git diff --exit-code` exit 0. 배포·release·화면 승인 없음. 전화·전용 GPU 미검증, 다른 머신 dist 바이트 일치 보장 없음.
+- 다음: 감독자가 커밋한 최종 exact HEAD에 독립 검토 2회와 CI를 다시 수행한다. 이 빌더는 commit/push/GitHub 변경을 하지 않는다.
+
 # 2026-10-20 — ZARI-z-local-delivery 설치·업데이트·사용 안내와 로컬 제품 인계
 
 정본은 GitHub issue #118, plan commit `0847d1b065627938acfad3a941de79e357570e43`, 브랜치 `astra/zari-z-local-delivery`이다. 관찰한 base SHA는 `3e76e96512a50cd13167587d7539d38454501813`이다. 산출물은 감독자가 여는 PR로 전달된다. 이 문서는 검토 PASS가 아니다.

@@ -135,6 +135,13 @@ export function ProjectsScreen() {
    * never mounts. The create control stays disabled until that paint.
    */
   const [listSettled, setListSettled] = useState(false);
+  /**
+   * True once storage fenced itself off a newer database (or already was at
+   * mount). The repository rejects every open, read and write while fenced;
+   * this flag keeps the mutation controls disabled so a press cannot even
+   * attempt a write into a format this build does not understand.
+   */
+  const [incompatible, setIncompatible] = useState(() => repository.fenced);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<{
@@ -148,6 +155,11 @@ export function ProjectsScreen() {
     const rows = await repository.listProjects();
     setProjects(rows);
   }
+  function storeFailure(e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (message.includes('migration_blocked')) setIncompatible(true);
+    setError(message);
+  }
   useEffect(() => {
     let alive = true;
     void (async () => {
@@ -159,7 +171,7 @@ export function ProjectsScreen() {
         setListSettled(true);
       } catch (e) {
         if (!alive) return;
-        setError(e instanceof Error ? e.message : String(e));
+        storeFailure(e);
         setListSettled(true);
       }
     })();
@@ -174,7 +186,7 @@ export function ProjectsScreen() {
       const row = await repository.createProject('새 정리 프로젝트', emptyProjectForm());
       navigate(`#/project/${row.projectId}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      storeFailure(e);
       setBusy(false);
     }
   }
@@ -190,7 +202,7 @@ export function ProjectsScreen() {
       const row = await repository.createProject(EXAMPLE_NAME, sampleProjectForm());
       navigate(`#/project/${row.projectId}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      storeFailure(e);
       setBusy(false);
     }
   }
@@ -215,7 +227,7 @@ export function ProjectsScreen() {
         setError(`가져오기 실패: ${result.error}`);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      storeFailure(e);
     } finally {
       setBusy(false);
     }
@@ -239,7 +251,7 @@ export function ProjectsScreen() {
       if (result.status === 'rejected') setRejections(result.issues);
       else setError(`사본을 만들지 못했습니다: ${result.error}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      storeFailure(e);
     } finally {
       setBusy(false);
     }
@@ -252,7 +264,7 @@ export function ProjectsScreen() {
       setConfirmDelete(null);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      storeFailure(e);
     } finally {
       setBusy(false);
     }
@@ -366,7 +378,7 @@ export function ProjectsScreen() {
                   <Button
                     className="button button-quiet"
                     data-testid={`duplicate-${project.projectId}`}
-                    isDisabled={busy}
+                    isDisabled={busy || incompatible}
                     onPress={() => void duplicate(project.projectId)}
                   >
                     복제
@@ -374,7 +386,7 @@ export function ProjectsScreen() {
                   <Button
                     className="button button-quiet"
                     data-testid={`delete-${project.projectId}`}
-                    isDisabled={busy}
+                    isDisabled={busy || incompatible}
                     onPress={() => setConfirmDelete(project.projectId)}
                   >
                     삭제
@@ -430,7 +442,7 @@ export function ProjectsScreen() {
             <Button
               className="button button-primary"
               onPress={() => void create()}
-              isDisabled={busy || !listSettled}
+              isDisabled={busy || !listSettled || incompatible}
               data-testid="create-project"
               data-list-settled={listSettled ? 'true' : 'false'}
             >
@@ -439,14 +451,14 @@ export function ProjectsScreen() {
             <Button
               className="button button-secondary"
               onPress={() => void createExample()}
-              isDisabled={busy || !listSettled}
+              isDisabled={busy || !listSettled || incompatible}
               data-testid="create-example"
             >
               예제로 둘러보기
             </Button>
             <Button
               className="button button-secondary"
-              isDisabled={busy}
+              isDisabled={busy || incompatible}
               data-testid="import-project"
               onPress={() => fileRef.current?.click()}
             >
