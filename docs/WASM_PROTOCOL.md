@@ -48,6 +48,8 @@ Response events are tagged `ready`, `projectActivated`, `normalized`, `probeEval
 
 ## 2. Operation table
 
+Additive WASM free function `reviewCatalogBundle(text: string): string` runs Rust dimension-bundle review in the dedicated `bundleWorker.ts`; it is outside the Runtime command/event and capability lists, uses its own bounded bundle contract (10 MiB / 5,000 items), and does not change protocolVersion or BUILD_ID (see [SP-z-catalog-crawler](adr/SP-z-catalog-crawler.md)).
+
 Every command has `kind` and the fields below. Unknown commands and unavailable capabilities return operation_not_supported, not success/no-op.
 
 | kind | Payload / precondition | Outcome |

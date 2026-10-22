@@ -4,7 +4,7 @@
 
 사용자가 정한 방향은 **Apple식 정교함, 흔한 AI 템플릿 느낌 최소화**다. IKEA·Elfa는 수납 설계·구매 흐름의 참고 대상으로 유지한다. 여기서 Apple식은 Apple의 로고·에셋·UI를 복제한다는 뜻이 아니다.
 
-이 문서는 개발 기준이다. SP-001 이전의 CSS 값과 화면 명세는 초안이고, 로컬 앱에는 SP-001–016과 z-product-contract, z-inventory-lifecycle, z-catalog-provenance의 실행 가능한 UI가 있다. 승인된 화면 이미지와 Figma 원본은 아직 없고, 사용자 검증으로 승격된 baseline은 0개다. GitHub에 등록되었다고 화면이 승인된 것은 아니다.
+이 문서는 개발 기준이다. SP-001 이전의 CSS 값과 화면 명세는 초안이고, 관찰한 main `1aa3c1c`의 로컬 앱에는 SP-001–016과 z-product-contract부터 z-local-delivery까지의 z-노드 20개, 소유자 추가 z-catalog-crawler가 병합되어 있다. 판매 묶음·전략·대안·재정리·진단·접근성, 이식·구매 준비·실행·위치 검색·피드백·출력, 내 데이터(`#/data`)·첫 사용 안내·치수 번들 패널과 로컬 버전 알림까지 포함한다. 성능·qualification·인계의 실제 검증과 미측정은 IMPLEMENTATION_STATUS 및 각 evidence를 따른다. 승인된 화면 이미지와 Figma 원본은 아직 없고, 사용자 검증으로 승격된 baseline은 0개다. GitHub에 등록되었다고 화면이 승인된 것은 아니다.
 
 우선순위는 다음과 같다.
 1. 사용자의 명시적 결정, 제품의 사실성·안전·접근성 요구사항.
