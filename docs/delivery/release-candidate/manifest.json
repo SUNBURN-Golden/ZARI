@@ -81,11 +81,6 @@
       "nextAction": "A separate user release decision. This node does not authorize release."
     },
     {
-      "id": "independent-review-z-local-delivery",
-      "state": "BLOCKED",
-      "nextAction": "Two independent read-only reviews on the supervisor's final head, then CI."
-    },
-    {
       "id": "app-catalog-url-read",
       "state": "UNQUALIFIED",
       "nextAction": "App URL reading is off in this build; enabling is an owner decision."

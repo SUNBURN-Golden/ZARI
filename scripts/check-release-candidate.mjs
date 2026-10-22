@@ -137,7 +137,7 @@ function main() {
 
   const ledger = JSON.parse(read('docs/qualification/z-denominator.json'));
   const self = (ledger.nodes ?? []).find((node) => node.id === 'z-local-delivery');
-  if (!self || self.node_state !== 'IN_PROGRESS') fail('denominator node state');
+  if (!self || self.node_state !== 'MERGED') fail('denominator node state');
   if (self.deliveryEvidence !== 'docs/evidence/ZARI-z-local-delivery.md') fail('evidence pointer');
 
   const gaps = new Map((manifest.requiredGaps ?? []).map((gap) => [gap.id, gap.state]));
@@ -147,11 +147,11 @@ function main() {
     ['real-product-sites', 'UNQUALIFIED'],
     ['new-capture-acceptance', 'PENDING'],
     ['release', 'NOT_AUTHORIZED'],
-    ['independent-review-z-local-delivery', 'BLOCKED'],
     ['app-catalog-url-read', 'UNQUALIFIED'],
   ]) {
     if (gaps.get(id) !== state) fail(`required gap ${id}`);
   }
+  if (gaps.has('independent-review-z-local-delivery')) fail('obsolete independent review gap');
 
   for (const doc of [
     'docs/delivery/LOCAL_DELIVERY.md',

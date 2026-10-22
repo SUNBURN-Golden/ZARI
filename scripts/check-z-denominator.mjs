@@ -15,7 +15,10 @@ const HEX = /^[0-9a-f]{40}$/;
 const REVIEW_COMMENT = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/pull\/\d+#issuecomment-\d+$/;
 
 export function reviewPointerAllowed(value) {
-  return value === null || (typeof value === 'string' && REVIEW_COMMENT.test(value));
+  const isComment = (pointer) => typeof pointer === 'string' && REVIEW_COMMENT.test(pointer);
+  return value === null || isComment(value) || (
+    Array.isArray(value) && value.length === 2 && new Set(value).size === 2 && value.every(isComment)
+  );
 }
 
 export function assertNodeClaim(node) {
@@ -24,6 +27,13 @@ export function assertNodeClaim(node) {
   }
   if (!reviewPointerAllowed(node.reviewPointer) || node.auditPointer !== null) {
     throw new Error(`${node.id} invented pointer`);
+  }
+  if (node.node_state !== 'MERGED') throw new Error(`${node.id} must be MERGED`);
+  if (node.id === 'z-product-qualification' || node.id === 'z-local-delivery') {
+    const prefix = `https://github.com/SUNBURN-Golden/ZARI/pull/${node.pullRequest}#issuecomment-`;
+    if (!Array.isArray(node.reviewPointer) || !node.reviewPointer.every((url) => url.startsWith(prefix))) {
+      throw new Error(`${node.id} requires two review comments on its delivery PR`);
+    }
   }
 }
 
@@ -97,7 +107,6 @@ function main() {
     ['real-product-sites', 'UNQUALIFIED'],
     ['new-capture-acceptance', 'PENDING'],
     ['release', 'NOT_AUTHORIZED'],
-    ['independent-review-z-local-delivery', 'BLOCKED'],
     ['app-catalog-url-read', 'UNQUALIFIED'],
   ]) {
     const gap = gaps.get(id);
@@ -105,6 +114,7 @@ function main() {
       fail(`required gap ${id}`);
     }
   }
+  if (gaps.has('independent-review-z-local-delivery')) fail('obsolete independent review gap');
 
   if (!Array.isArray(ledger.nodes) || ledger.nodes.length !== 21) fail('node count');
   const programIds = new Set(program.nodes.map((node) => node.id));
@@ -124,27 +134,13 @@ function main() {
     if (node.acceptance_state !== 'PENDING' || node.release_state !== 'NOT_AUTHORIZED') {
       fail(`${node.id} axes`);
     }
-    if (node.node_state === 'MERGED') {
-      if (node.qualification_state !== 'PARTIAL') fail(`${node.id} qualification`);
-      if (!HEX.test(node.deliveryCommit) || !HEX.test(node.mergeCommit)) fail(`${node.id} sha`);
-      if (typeof node.pullRequest !== 'number' || typeof node.issue !== 'number') {
-        fail(`${node.id} numbers`);
-      }
-      if (!existsSync(join(ROOT, node.deliveryEvidence))) fail(`${node.id} evidence missing`);
-    } else if (node.node_state === 'IN_PROGRESS') {
-      if (node.id !== 'z-local-delivery') fail(`IN_PROGRESS ${node.id}`);
-      if (node.deliveryCommit !== null || node.mergeCommit !== null || node.pullRequest !== null) {
-        fail('in-progress pointers');
-      }
-      if (!existsSync(join(ROOT, node.deliveryEvidence))) fail('in-progress evidence missing');
-    } else {
-      fail(`${node.id} state ${node.node_state}`);
+    if (node.qualification_state !== 'PARTIAL') fail(`${node.id} qualification`);
+    if (!HEX.test(node.deliveryCommit) || !HEX.test(node.mergeCommit)) fail(`${node.id} sha`);
+    if (typeof node.pullRequest !== 'number' || typeof node.issue !== 'number') {
+      fail(`${node.id} numbers`);
     }
+    if (!existsSync(join(ROOT, node.deliveryEvidence))) fail(`${node.id} evidence missing`);
   }
-  if (ledger.nodes.filter((node) => node.node_state === 'MERGED').length !== 20)
-    fail('merged count');
-  if (ledger.nodes.some((node) => node.node_state === 'NOT_STARTED'))
-    fail('a NOT_STARTED node remains');
 
   const hits = [];
   walk(join(ROOT, 'apps/web/src'), hits);
@@ -152,7 +148,7 @@ function main() {
   if (hits.length > 0) fail(`runtime projection in ${hits.join(', ')}`);
 
   console.log(
-    'z denominator 21=20 program+1 amendment; merged 20; in-progress 1; not-started 0; capture PENDING; release NOT_AUTHORIZED; runtime hits 0',
+    'z denominator 21=20 program+1 amendment; merged 21; in-progress 0; not-started 0; capture PENDING; release NOT_AUTHORIZED; runtime hits 0',
   );
 }
 

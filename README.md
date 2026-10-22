@@ -4,7 +4,7 @@ Rust-first organization compiler. 공간·물건·생활습관을 정리 전략,
 
 ## 현재 구현 범위
 
-main에는 Task 001–010, SP-001–016, z-product-contract, z-inventory-lifecycle, z-catalog-provenance가 병합되어 있습니다. Task 001–009는 독립 감사(조건부 통과) 후 병합했습니다. Task 010(성능·접근성·브라우저 매트릭스 측정)과 유지보수 PR #30은 GitHub Actions 사용량 한도 기간에 사용자 지시로 CI와 독립 감사 없이 병합했습니다. 그 뒤 공간·측정·제품 노드와 상품 계약은 각 evidence에 적힌 검증으로 병합했습니다. 병합은 제품 적합성·베타 출시·배포를 뜻하지 않으며, 배포된 서비스는 없습니다.
+관찰한 main `1aa3c1c`에는 Task 001–010, SP-001–016, z-product-contract부터 z-local-delivery까지의 z-노드 20개와 소유자 추가 z-catalog-crawler가 병합되어 있습니다. 판매 묶음·전략·대안·부분 재정리·탐색 진단·접근성, 이식 묶음·구매 준비·실행 체크리스트·위치 검색·피드백 재정리·출력, 성능·내 데이터·첫 사용 안내·qualification·로컬 인계까지 포함합니다. 정확한 병합 포인터와 별도 자격 상태는 [z 분모](docs/qualification/z-denominator.json)와 구현 상태 기록을 함께 확인합니다(21개 모두 MERGED이며 qualification은 PARTIAL, 화면 수용은 PENDING, release는 NOT_AUTHORIZED). Task 001–009는 독립 감사(조건부 통과) 후 병합했습니다. Task 010(성능·접근성·브라우저 매트릭스 측정)과 유지보수 PR #30은 GitHub Actions 사용량 한도 기간에 사용자 지시로 CI와 독립 감사 없이 병합했습니다. 그 뒤 공간·측정·제품 노드와 상품 계약은 각 evidence에 적힌 검증으로 병합했습니다. 병합은 제품 적합성·베타 출시·배포를 뜻하지 않으며, 배포된 서비스는 없습니다.
 
 단일 직사각형 수납 공간을 대상으로 아래 흐름이 로컬 브라우저에서 동작합니다. 단위 정규화·배치 탐색·적합성 검증·BOM 계산은 Rust(WebAssembly, Web Worker)가 담당하고, React는 Rust 결과를 그대로 표시합니다.
 
@@ -93,4 +93,4 @@ Motion·Storybook·Impeccable·일반 DnD 기반은 도입하지 않았습니다
 
 ### 전체 제품 완성 후속 후보 — 2026-10-01 KST
 
-[측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. 그 16단계와 z-product-contract, z-inventory-lifecycle, z-catalog-provenance는 main에 병합되어 있습니다. z-offer-bundles는 판매 묶음과 확인된 배송비를 Rust 견적으로 구분한다. z-strategy-library는 저장된 전략의 Recipe 비교를 Rust 응답으로 둔다. 문장만 같은 결과는 하나고, 저장 전 선택은 핀이 아니다. z-pareto-comparison은 같은 입력의 구매비·재사용·접근·미확인을 Rust 응답으로 비교한다. 미확인은 0이 아니고, 다 쓴 탐색 예산은 전역 최적해가 아니다. 산출물은 감독자가 여는 PR로 전달된다. `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`가 비실행 전체 후보 정본이며, 최초 7단계 sidecar는 역사 checkpoint입니다. 화면 승인, 실제 기기 qualification, 런타임 활성화, 배포는 완료가 아닙니다.
+[측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. 그 16단계와 후속 z-노드의 현재 병합 범위는 위 “현재 구현 범위”에 기록했습니다. z-offer-bundles는 판매 묶음과 확인된 배송비를 Rust 견적으로 구분한다. z-strategy-library는 저장된 전략의 Recipe 비교를 Rust 응답으로 둔다. 문장만 같은 결과는 하나고, 저장 전 선택은 핀이 아니다. z-pareto-comparison은 같은 입력의 구매비·재사용·접근·미확인을 Rust 응답으로 비교한다. 미확인은 0이 아니고, 다 쓴 탐색 예산은 전역 최적해가 아니다. 산출물은 감독자가 여는 PR로 전달된다. `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`가 비실행 전체 후보 정본이며, 최초 7단계 sidecar는 역사 checkpoint입니다. 화면 승인, 실제 기기 qualification, 런타임 활성화, 배포는 완료가 아닙니다.
