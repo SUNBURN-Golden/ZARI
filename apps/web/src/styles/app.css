@@ -853,3 +853,151 @@ input::placeholder {
     outline-color: CanvasText;
   }
 }
+
+
+/* === ZARI Spatial CAD Studio Shell (Transformation 1) === */
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+body,
+.app-shell {
+  background-color: var(--zari-surface-app);
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--zari-border-control) 24%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
+  color: var(--zari-text-primary);
+  font-family: var(--zari-font-ui);
+}
+
+.app-shell,
+.zari-ui,
+main,
+.app-shell p,
+.app-shell li,
+.app-shell dd,
+.app-shell dt,
+.app-shell span,
+.app-shell label,
+.app-shell h1,
+.app-shell h2,
+.app-shell h3,
+.app-shell h4 {
+  min-width: 0;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+code,
+pre,
+.mono,
+.snapshot-id,
+[data-testid*="digest"],
+[data-testid*="sha"],
+[data-testid="snapshot-id"] {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+/* 48px Slim Studio Topbar */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--zari-z-popover);
+  min-height: 3rem;
+  padding: 0.375rem 1.25rem;
+  gap: 1rem;
+  background: var(--zari-surface-panel);
+  background: color-mix(in srgb, var(--zari-surface-panel) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  border-bottom: var(--zari-border-width) solid var(--zari-border-subtle);
+}
+
+.brand {
+  gap: 0.5rem;
+}
+
+.brand svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.brand span {
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand span::after {
+  content: "공간 스튜디오";
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.125rem 0.4375rem;
+  border-radius: var(--zari-radius-pill);
+  background: var(--zari-accent-soft);
+  color: var(--zari-accent);
+}
+
+.header-context {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem;
+  border-radius: var(--zari-radius-pill);
+  background: var(--zari-surface-subtle);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+}
+
+.header-context a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--zari-control-min-height);
+  padding: 0 0.75rem;
+  border-radius: var(--zari-radius-pill);
+  font-size: 0.8125rem;
+  font-weight: var(--zari-weight-medium);
+  color: var(--zari-text-primary);
+  text-decoration: none;
+}
+
+.header-context a:hover {
+  background: var(--zari-surface-panel);
+}
+
+/* De-emphasize dev probe link into a subtle utility chip */
+.header-context a[href="#/probe"] {
+  font-size: 0.75rem;
+  color: var(--zari-text-muted);
+  padding: 0 0.625rem;
+}
+
+.app-header .local-note {
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--zari-radius-pill);
+  background: var(--zari-surface-subtle);
+  border: var(--zari-border-width) solid var(--zari-border-subtle);
+  font-size: 0.75rem;
+  color: var(--zari-text-secondary);
+}
+
+.local-dot {
+  background: var(--zari-success);
+}
+
+.zari-ui.app-shell {
+  container-type: inline-size;
+}

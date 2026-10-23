@@ -439,6 +439,11 @@ function roleText(
   placement: Placement | undefined,
 ): string {
   if (selection.kind === 'itemInstance') return '내용물';
+  if (selection.kind === 'item') return '물건 외형 경계';
+  if (selection.kind === 'space') return '공간 외곽';
+  if (selection.kind === 'opening') return '입구 개구부';
+  if (selection.kind === 'obstacle') return '물리 장애물';
+  if (selection.kind === 'support') return '지지면';
   if (!placement) return selection.kind;
   if (placement.subject.kind === 'directItem') return '직접 배치';
   if (placement.subject.kind === 'ownedContainer') {

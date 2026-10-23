@@ -1174,7 +1174,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           입력 변경이 있습니다 — 지금 계산하면 마지막으로 저장된 입력 기준입니다.
         </p>
       )}
-      <section className="measurement-panel" aria-labelledby="plan-title">
+      <section className="measurement-panel studio-plan-command" aria-labelledby="plan-title">
         <div className="section-kicker">03 · 계획</div>
         <h2 id="plan-title">어떻게 정리할지 계산합니다.</h2>
         {usesSyntheticCatalog(state.form) && (
@@ -1280,7 +1280,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
       />
 
       {plan.alternatives.length > 0 && (
-        <section className="measurement-panel" aria-labelledby="alts-title">
+        <section className="measurement-panel studio-alts-stage" aria-labelledby="alts-title">
           <div className="section-kicker">후보</div>
           <h3 id="alts-title">검토된 계획 {plan.alternatives.length}개</h3>
           <p className="session-note">

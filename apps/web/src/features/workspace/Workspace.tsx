@@ -308,108 +308,118 @@ export function PlanWorkspace({
       onKeyUp={onZoomKeyUp}
     >
       <div className="workspace-toolbar" role="toolbar" aria-label="도면">
-        <button type="button" className="button button-quiet" aria-pressed={state.view === 'top'} data-testid="view-top" onClick={() => showPlane('top')}>
-          평면
-        </button>
-        <button type="button" className="button button-quiet" aria-pressed={state.view === 'front'} data-testid="view-front" onClick={() => showPlane('front')}>
-          정면
-        </button>
-        <button
-          type="button"
-          className="button button-quiet"
-          aria-pressed={state.view === 'spatial'}
-          data-testid="view-spatial"
-          onClick={() => {
-            setSpatialArmed(true);
-            setSpatialDown(null);
-            workspace.setView('spatial');
-          }}
-        >
-          입체
-        </button>
-        <button type="button" className="button button-quiet" data-testid="zoom-out" onClick={() => zoomClicked(1 / ZOOM_STEP)}>
-          축소
-        </button>
-        <button type="button" className="button button-quiet" data-testid="zoom-in" onClick={() => zoomClicked(ZOOM_STEP)}>
-          확대
-        </button>
-        <button type="button" className="button button-quiet" data-testid="zoom-fit" onClick={fitClicked}>
-          맞춤
-        </button>
-        <button
-          type="button"
-          className="button button-quiet"
-          aria-pressed={mode === 'move'}
-          data-testid="mode-move"
-          disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
-          onClick={() => enterMode('move')}
-        >
-          평면에서 이동
-        </button>
-        <button
-          type="button"
-          className="button button-quiet"
-          aria-pressed={mode === 'pan'}
-          data-testid="mode-pan"
-          onClick={() => enterMode('pan')}
-        >
-          화면 이동
-        </button>
-        {mode === 'move' && (
-          <>
-            <button type="button" className="button button-quiet" data-testid="mode-cancel" onClick={() => enterMode('move')}>
-              취소
-            </button>
-            <button
-              type="button"
-              className="button button-quiet"
-              data-testid="mode-coords"
-              onClick={() => {
-                if (band === 'compact') dialogRef.current?.showModal();
-                rootRef.current?.querySelector<HTMLInputElement>('[data-testid="move-x"]')?.focus();
-              }}
-            >
-              좌표 입력
-            </button>
-          </>
-        )}
-        <button type="button" className="button button-quiet" aria-pressed={state.layers.dimensions} data-testid="layer-dimensions" onClick={() => workspace.setLayer('dimensions', !state.layers.dimensions)}>
-          치수
-        </button>
-        <button type="button" className="button button-quiet" aria-pressed={state.layers.contents} data-testid="layer-contents" onClick={() => workspace.setLayer('contents', !state.layers.contents)}>
-          내용물
-        </button>
-        <button type="button" className="button button-quiet" aria-pressed={state.layers.checks} data-testid="layer-checks" onClick={() => workspace.setLayer('checks', !state.layers.checks)}>
-          검사
-        </button>
+        <div className="toolbar-group" role="group" aria-label="보기 방식">
+          <button type="button" className="button button-quiet" aria-pressed={state.view === 'top'} data-testid="view-top" onClick={() => showPlane('top')}>
+            평면
+          </button>
+          <button type="button" className="button button-quiet" aria-pressed={state.view === 'front'} data-testid="view-front" onClick={() => showPlane('front')}>
+            정면
+          </button>
+          <button
+            type="button"
+            className="button button-quiet"
+            aria-pressed={state.view === 'spatial'}
+            data-testid="view-spatial"
+            onClick={() => {
+              setSpatialArmed(true);
+              setSpatialDown(null);
+              workspace.setView('spatial');
+            }}
+          >
+            입체
+          </button>
+        </div>
+        <div className="toolbar-group" role="group" aria-label="배율">
+          <button type="button" className="button button-quiet" data-testid="zoom-out" onClick={() => zoomClicked(1 / ZOOM_STEP)}>
+            축소
+          </button>
+          <button type="button" className="button button-quiet" data-testid="zoom-in" onClick={() => zoomClicked(ZOOM_STEP)}>
+            확대
+          </button>
+          <button type="button" className="button button-quiet" data-testid="zoom-fit" onClick={fitClicked}>
+            맞춤
+          </button>
+        </div>
+        <div className="toolbar-group" role="group" aria-label="조작 모드">
+          <button
+            type="button"
+            className="button button-quiet"
+            aria-pressed={mode === 'move'}
+            data-testid="mode-move"
+            disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
+            onClick={() => enterMode('move')}
+          >
+            평면에서 이동
+          </button>
+          <button
+            type="button"
+            className="button button-quiet"
+            aria-pressed={mode === 'pan'}
+            data-testid="mode-pan"
+            onClick={() => enterMode('pan')}
+          >
+            화면 이동
+          </button>
+          {mode === 'move' && (
+            <>
+              <button type="button" className="button button-quiet" data-testid="mode-cancel" onClick={() => enterMode('move')}>
+                취소
+              </button>
+              <button
+                type="button"
+                className="button button-quiet"
+                data-testid="mode-coords"
+                onClick={() => {
+                  if (band === 'compact') dialogRef.current?.showModal();
+                  rootRef.current?.querySelector<HTMLInputElement>('[data-testid="move-x"]')?.focus();
+                }}
+              >
+                좌표 입력
+              </button>
+            </>
+          )}
+        </div>
+        <div className="toolbar-group" role="group" aria-label="표시 레이어">
+          <button type="button" className="button button-quiet" aria-pressed={state.layers.dimensions} data-testid="layer-dimensions" onClick={() => workspace.setLayer('dimensions', !state.layers.dimensions)}>
+            치수
+          </button>
+          <button type="button" className="button button-quiet" aria-pressed={state.layers.contents} data-testid="layer-contents" onClick={() => workspace.setLayer('contents', !state.layers.contents)}>
+            내용물
+          </button>
+          <button type="button" className="button button-quiet" aria-pressed={state.layers.checks} data-testid="layer-checks" onClick={() => workspace.setLayer('checks', !state.layers.checks)}>
+            검사
+          </button>
+        </div>
         <p className="workspace-scope" data-testid="workspace-scope">
           {historical ? '이전 계획 · 입력 변경' : '현재 계획'}
         </p>
       </div>
-      <p className="workspace-legend" data-testid="workspace-legend">
-        <span className="legend-selection">선택됨</span>
-        <span className="legend-focus">목록 강조</span>
-        <span className="legend-step">현재 단계 대상</span>
-      </p>
+      <div className="workspace-meta-strip">
+        <p className="workspace-legend" data-testid="workspace-legend">
+          <span className="legend-selection">선택됨</span>
+          <span className="legend-focus">목록 강조</span>
+          <span className="legend-step">현재 단계 대상</span>
+        </p>
+        <p className="session-note" data-testid="drag-quantum">
+          드래그는 1mm 단위 · 정확한 값은 좌표 입력
+        </p>
+        <p className="session-note" data-testid="move-step">
+          이동 단위 {stepMm} mm
+        </p>
+        <p
+          className="notice notice-preview drag-phase-slot"
+          data-testid="drag-phase"
+          data-shown={phase === 'preview' && !ghostCommand ? 'true' : 'false'}
+          aria-hidden={phase === 'preview' && !ghostCommand ? undefined : true}
+        >
+          검사 전
+        </p>
+      </div>
       <p className="visually-hidden" aria-live="polite" data-testid="selection-live">
         {selectionAnnouncement(state.selection, selectionLabel(content, state.selection))}
       </p>
       <p className="visually-hidden" aria-live="polite" data-testid="focus-live">
         {focusAnnouncement(state.focus)}
-      </p>
-      <p className="session-note" data-testid="drag-quantum">
-        드래그는 1mm 단위 · 정확한 값은 좌표 입력
-      </p>
-      <p className="session-note" data-testid="move-step">
-        이동 단위 {stepMm} mm
-      </p>
-      <p
-        className="notice notice-preview drag-phase-slot"
-        data-testid="drag-phase"
-        data-shown={phase === 'preview' && !ghostCommand ? 'true' : 'false'}
-        aria-hidden={phase === 'preview' && !ghostCommand ? undefined : true}
-      >
-        검사 전
       </p>
       {precheck && (
         <p className="notice notice-error" role="alert" data-testid="drag-precheck">

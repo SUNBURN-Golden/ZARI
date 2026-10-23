@@ -109,13 +109,18 @@ export function SpatialView({
 
   useEffect(() => {
     const media = window.matchMedia('(forced-colors: active)');
+    const darkMedia = window.matchMedia('(prefers-color-scheme: dark)');
     const update = () => {
       setForced(media.matches);
       clearTokenCache();
       engineRef.current?.refreshColors();
     };
     media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
+    darkMedia.addEventListener('change', update);
+    return () => {
+      media.removeEventListener('change', update);
+      darkMedia.removeEventListener('change', update);
+    };
   }, []);
 
   useEffect(() => {
@@ -168,46 +173,50 @@ export function SpatialView({
         입체
       </h3>
       <div className="spatial-toolbar" role="toolbar" aria-label="입체 보기">
-        {PRESETS.map((item) => (
+        <div className="toolbar-group" role="group" aria-label="시점">
+          {PRESETS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="button button-quiet"
+              aria-pressed={preset === item.id}
+              data-testid={`spatial-preset-${item.id}`}
+              onClick={() => setPreset(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="toolbar-group" role="group" aria-label="경계 및 내부">
           <button
-            key={item.id}
             type="button"
             className="button button-quiet"
-            aria-pressed={preset === item.id}
-            data-testid={`spatial-preset-${item.id}`}
-            onClick={() => setPreset(item.id)}
+            aria-pressed={hideFront}
+            data-testid="spatial-hide-front"
+            onClick={() => setHideFront((value) => !value)}
           >
-            {item.label}
+            앞면 경계 숨김
           </button>
-        ))}
-        <button
-          type="button"
-          className="button button-quiet"
-          aria-pressed={hideFront}
-          data-testid="spatial-hide-front"
-          onClick={() => setHideFront((value) => !value)}
-        >
-          앞면 경계 숨김
-        </button>
-        <button
-          type="button"
-          className="button button-quiet"
-          aria-pressed={hideTop}
-          data-testid="spatial-hide-top"
-          onClick={() => setHideTop((value) => !value)}
-        >
-          윗면 경계 숨김
-        </button>
-        <button
-          type="button"
-          className="button button-quiet"
-          aria-pressed={Boolean(canInterior && interior)}
-          data-testid="spatial-interior"
-          disabled={!canInterior}
-          onClick={() => setInterior((value) => !value)}
-        >
-          수납함 내부 보기
-        </button>
+          <button
+            type="button"
+            className="button button-quiet"
+            aria-pressed={hideTop}
+            data-testid="spatial-hide-top"
+            onClick={() => setHideTop((value) => !value)}
+          >
+            윗면 경계 숨김
+          </button>
+          <button
+            type="button"
+            className="button button-quiet"
+            aria-pressed={Boolean(canInterior && interior)}
+            data-testid="spatial-interior"
+            disabled={!canInterior}
+            onClick={() => setInterior((value) => !value)}
+          >
+            수납함 내부 보기
+          </button>
+        </div>
       </div>
       {!canInterior && (
         <p className="session-note" data-testid="spatial-interior-reason">
