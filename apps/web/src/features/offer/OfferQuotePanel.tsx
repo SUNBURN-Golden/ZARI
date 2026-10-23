@@ -192,7 +192,7 @@ export function OfferQuotePanel({
       )}
       {reply && panel !== 'error' && (
         <>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0} role="region" aria-label="묶음·배송비 계산 줄">
             <table className="bom-table" data-testid="offer-lines">
               <thead>
                 <tr>

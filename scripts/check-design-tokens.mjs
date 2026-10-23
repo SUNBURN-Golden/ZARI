@@ -5,15 +5,17 @@ import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-export function parseTokens(css) {
+export function parseTokenPalettes(css) {
   const clean = css.replace(/\/\*[\s\S]*?\*\//g, '');
   const blocks = [...clean.matchAll(/:root\s*\{([^}]*)\}/g)];
   assert.ok(blocks.length > 0, 'Missing :root block');
   const tokens = new Map();
-  const declarations = body => body.split(';').map(x => x.trim()).filter(Boolean).map(x => {
+  let darkTokens = null;
+  const declarations = body => body.split(';').map(x => x.trim()).filter(Boolean).flatMap(x => {
+    if (/^color-scheme\s*:\s*light\s+dark$/i.test(x)) return [];
     const m = x.match(/^(--zari-[a-z0-9-]+)\s*:\s*([\s\S]+)$/);
     assert.ok(m, `Unsupported token declaration: ${x}`);
-    return [m[1], m[2].trim()];
+    return [[m[1], m[2].trim()]];
   });
   for (const [name, value] of declarations(blocks[0][1])) {
     assert.ok(!tokens.has(name), `Duplicate base token: ${name}`);
@@ -22,14 +24,33 @@ export function parseTokens(css) {
   for (const match of clean.matchAll(/var\((--zari-[a-z0-9-]+)/g)) {
     assert.ok(tokens.has(match[1]), `Undefined token: ${match[1]}`);
   }
+  let prevEnd = (blocks[0].index ?? 0) + blocks[0][0].length;
   for (const block of blocks.slice(1)) {
+    const prefix = clean.slice(prevEnd, block.index ?? prevEnd);
+    prevEnd = (block.index ?? prevEnd) + block[0].length;
+    const isDark = /@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{\s*$/.test(prefix);
+    if (isDark) {
+      if (!darkTokens) darkTokens = new Map(tokens);
+      const seenDark = new Set();
+      for (const [name, value] of declarations(block[1])) {
+        assert.ok(tokens.has(name), `Unknown override: ${name}`);
+        assert.ok(!seenDark.has(name), `Duplicate dark token: ${name}`);
+        seenDark.add(name);
+        darkTokens.set(name, value);
+      }
+      continue;
+    }
     for (const [name, value] of declarations(block[1])) {
       assert.ok(tokens.has(name), `Unknown override: ${name}`);
       assert.ok(name.startsWith('--zari-duration-') && value === '0ms',
         `Review required for new token override: ${name}`);
     }
   }
-  return tokens;
+  return { light: tokens, dark: darkTokens };
+}
+
+export function parseTokens(css) {
+  return parseTokenPalettes(css).light;
 }
 
 /** Custom properties referenced by component CSS must be declared in tokens.css. */
@@ -86,6 +107,11 @@ function selfTest() {
     () => assert.throws(() => parseTokens(':root { --zari-a: #000000; --zari-a: #FFFFFF; }'), /Duplicate/),
     () => assert.throws(() => parseTokens(':root { --zari-a: var(--zari-missing); }'), /Undefined/),
     () => assert.throws(() => parseTokens(':root { --zari-a: #FFFFFF; } @media print { :root { --zari-a: #000000; } }'), /Review/),
+    () => {
+      const palettes = parseTokenPalettes(':root { --zari-a: #FFFFFF; } @media (prefers-color-scheme: dark) { :root { --zari-a: #161513; } }');
+      assert.equal(palettes.light.get('--zari-a'), '#FFFFFF');
+      assert.equal(palettes.dark?.get('--zari-a'), '#161513');
+    },
     () => assert.deepEqual(undeclaredCustomProperties('.a { color: var(--zari-text-primary); }', new Set(['--zari-text-primary'])), []),
     () => assert.deepEqual(
       undeclaredCustomProperties('.a { color: var(--surface, #fff); background: var(--zari-danger); }', new Set(['--zari-danger'])),
@@ -104,7 +130,8 @@ async function main() {
   const data = JSON.parse(await readFile(new URL('design/token-contrast-cases.json', root), 'utf8'));
   assert.equal(data.schemaVersion, 1);
   assert.ok(Array.isArray(data.cases) && data.cases.length > 0, 'Missing contrast cases');
-  const tokens = parseTokens(css), ids = new Set();
+  const { light: tokens, dark: darkTokens } = parseTokenPalettes(css);
+  const ids = new Set();
   const stylesDir = new URL('apps/web/src/', root);
   const componentCss = await componentStyles(stylesDir.pathname);
   for (const path of componentCss) {
@@ -120,8 +147,15 @@ async function main() {
     const passed = ratio >= item.minimum; // Never round before threshold comparison.
     if (!passed) failures++;
     console.log(`${passed ? 'PASS' : 'FAIL'} ${item.id}: ${ratio.toFixed(3)}:1 >= ${item.minimum}:1`);
+    if (darkTokens) {
+      const darkRatio = contrast(resolveColor(darkTokens, item.foreground), resolveColor(darkTokens, item.background));
+      const darkPassed = darkRatio >= item.minimum;
+      if (!darkPassed) failures++;
+      console.log(`${darkPassed ? 'PASS' : 'FAIL'} ${item.id} (dark): ${darkRatio.toFixed(3)}:1 >= ${item.minimum}:1`);
+    }
   }
-  console.log(`${tokens.size} base tokens; ${data.cases.length - failures}/${data.cases.length} contrast cases passed.`);
+  const totalCases = darkTokens ? data.cases.length * 2 : data.cases.length;
+  console.log(`${tokens.size} base tokens; ${totalCases - failures}/${totalCases} contrast cases passed.`);
   console.log('Scope: declared opaque token pairs, not rendered UI, whole CSS validity, or full WCAG conformance.');
   if (failures) process.exitCode = 1;
 }

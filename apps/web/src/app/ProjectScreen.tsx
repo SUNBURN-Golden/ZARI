@@ -685,6 +685,8 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
       >
         <div className="section-kicker">01 · 공간 치수</div>
         <h2 id="measure-title">공간을 측정해 주세요.</h2>
+        <div className="measure-workspace">
+          <div className="measure-column-main">
         <OnboardingPanel
           projectId={projectId}
           form={state.form}
@@ -705,50 +707,75 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           }}
           onCatalog={() => navigate('#/catalog')}
         />
-        <div className="measure-workspace">
-          <div>
-        <FieldGroup
-          session={session}
-          state={state}
-          fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('space.'))}
-          focused={focused}
-          setFocused={setFocused}
-          blocked={fieldBlock}
-        />
+        <div className="measure-field-grid">
+          <FieldGroup
+            session={session}
+            state={state}
+            fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('space.'))}
+            focused={focused}
+            setFocused={setFocused}
+            blocked={fieldBlock}
+          />
+        </div>
         <div className="section-kicker">02 · 물건 치수</div>
-        <FieldGroup
-          session={session}
-          state={state}
-          fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('items.'))}
-          focused={focused}
-          setFocused={setFocused}
-          blocked={fieldBlock}
-        />
+        <div className="measure-field-grid">
+          <FieldGroup
+            session={session}
+            state={state}
+            fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('items.'))}
+            focused={focused}
+            setFocused={setFocused}
+            blocked={fieldBlock}
+          />
+        </div>
         <p className="focus-context" data-testid="focus-context" aria-live="polite">
           {focused ? `${FIELD_LABELS[focused]}. ${fieldCaption(focused)}` : '\u00A0'}
         </p>
           </div>
-          <MeasurementDiagram
-            fieldPath={focused}
-            projection={
-              state.inputDigest
-                ? (readInputProjection(state.plan.projections, state.inputDigest)?.projection ?? null)
-                : null
-            }
-            projectionStatus={
-              state.inputDigest
-                ? (readInputProjection(state.plan.projections, state.inputDigest)?.status ?? 'absent')
-                : 'absent'
-            }
-            input={state.normalizedInput}
-            block={focused ? fieldBlock(focused) : null}
-            onActivateField={(fieldPath) => {
-              if ((MEASUREMENT_FIELDS as readonly string[]).includes(fieldPath)) {
-                setFocused(fieldPath as MeasurementField);
-                document.getElementById(fieldPath)?.focus();
+          <div className="measure-stage-column">
+            <MeasurementDiagram
+              fieldPath={focused}
+              projection={
+                state.inputDigest
+                  ? (readInputProjection(state.plan.projections, state.inputDigest)?.projection ?? null)
+                  : null
               }
-            }}
-          />
+              projectionStatus={
+                state.inputDigest
+                  ? (readInputProjection(state.plan.projections, state.inputDigest)?.status ?? 'absent')
+                  : 'absent'
+              }
+              input={state.normalizedInput}
+              block={focused ? fieldBlock(focused) : null}
+              onActivateField={(fieldPath) => {
+                if ((MEASUREMENT_FIELDS as readonly string[]).includes(fieldPath)) {
+                  setFocused(fieldPath as MeasurementField);
+                  document.getElementById(fieldPath)?.focus();
+                }
+              }}
+            />
+            <aside className="inspector studio-tech-tray" aria-labelledby="state-title">
+              <div className="studio-tech-head">
+                <div className="section-kicker">정규화 상태</div>
+                <h2 id="state-title">Rust가 확인한 값</h2>
+              </div>
+              <dl className="measurement-list studio-tech-dl">
+                <div><dt>프로젝트 리비전</dt><dd data-testid="project-revision">{state.projectRevision}</dd></div>
+                <div><dt>입력 리비전</dt><dd data-testid="input-revision">{state.inputRevision}</dd></div>
+                <div><dt>입력 다이제스트</dt><dd data-testid="input-digest">{state.inputDigest ? `${state.inputDigest.slice(0, 12)}…` : '없음'}</dd></div>
+                <div><dt>작업 컨텍스트</dt><dd data-testid="context-state">{state.context}</dd></div>
+                <div><dt>워커</dt><dd data-testid="worker-state">{state.worker}</dd></div>
+              </dl>
+              {state.staleInput && (
+                <p className="notice notice-stale" data-testid="stale-notice">저장되지 않은 입력 변경이 있습니다.</p>
+              )}
+              {state.integrity && (
+                <p className="session-note" data-testid="integrity-note">
+                  무결성 검사: {state.integrity.filter((i) => i.verified).length}/{state.integrity.length}개 기록 검증됨
+                </p>
+              )}
+            </aside>
+          </div>
         </div>
         {otherDiagnostics.length > 0 && (
           <ul className="diagnostic-list" data-testid="diagnostic-list">
@@ -768,7 +795,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
             원문은 저장되었습니다. 정규화된 입력과 근거는 이전 확인 값을 유지합니다.
           </p>
         )}
-        <div className="form-actions">
+        <div className="form-actions studio-commit-bar">
           <Button className="button button-primary" onPress={() => session.commit()} data-testid="commit-input">
             측정값 확인 · 저장
           </Button>
@@ -793,33 +820,16 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
         <PortablePanel projectId={projectId} />
       </section>
-      <CatalogAndOwned session={session} state={state} />
-      <InventoryPanel projectId={projectId} />
-      <LocationPanel
-        projectId={projectId}
-        input={state.normalizedInput}
-        snapshot={state.plan.acceptedSnapshot}
-      />
-      <PhotosPanel projectId={projectId} />
-      <aside className="inspector" aria-labelledby="state-title">
-        <div className="section-kicker">정규화 상태</div>
-        <h2 id="state-title">Rust가 확인한 값</h2>
-        <dl className="measurement-list">
-          <div><dt>프로젝트 리비전</dt><dd data-testid="project-revision">{state.projectRevision}</dd></div>
-          <div><dt>입력 리비전</dt><dd data-testid="input-revision">{state.inputRevision}</dd></div>
-          <div><dt>입력 다이제스트</dt><dd data-testid="input-digest">{state.inputDigest ? `${state.inputDigest.slice(0, 12)}…` : '없음'}</dd></div>
-          <div><dt>작업 컨텍스트</dt><dd data-testid="context-state">{state.context}</dd></div>
-          <div><dt>워커</dt><dd data-testid="worker-state">{state.worker}</dd></div>
-        </dl>
-        {state.staleInput && (
-          <p className="notice notice-stale" data-testid="stale-notice">저장되지 않은 입력 변경이 있습니다.</p>
-        )}
-        {state.integrity && (
-          <p className="session-note" data-testid="integrity-note">
-            무결성 검사: {state.integrity.filter((i) => i.verified).length}/{state.integrity.length}개 기록 검증됨
-          </p>
-        )}
-      </aside>
+      <div className="studio-aux-grid">
+        <CatalogAndOwned session={session} state={state} />
+        <InventoryPanel projectId={projectId} />
+        <LocationPanel
+          projectId={projectId}
+          input={state.normalizedInput}
+          snapshot={state.plan.acceptedSnapshot}
+        />
+        <PhotosPanel projectId={projectId} />
+      </div>
     </Shell>
   );
 }

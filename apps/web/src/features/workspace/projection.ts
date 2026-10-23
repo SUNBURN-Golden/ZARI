@@ -92,6 +92,12 @@ export function elementLabel(content: SnapshotContent, element: SpatialElement):
     const label = item?.label ?? target.itemId;
     return target.unitOrdinal > 0 ? `${label} #${target.unitOrdinal + 1}` : label;
   }
+  if (target.kind === 'item') {
+    const item = content.inputFacts.items.find((entry) => entry.id === target.itemId);
+    const label = item?.label ?? target.itemId;
+    return element.role === 'itemEnvelope' ? `${label} · 물건 외형 경계` : label;
+  }
+  if (target.kind === 'space') return '공간 외곽 경계';
   if (target.kind === 'opening') return '입구';
   if (target.kind === 'obstacle') return '장애물';
   if (target.kind === 'support') return '지지면';

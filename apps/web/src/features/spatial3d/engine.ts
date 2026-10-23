@@ -217,10 +217,13 @@ export class SpatialEngine {
     document.addEventListener('visibilitychange', this.onVisible);
     this.resizeObserver = new ResizeObserver(() => this.requestRender());
     this.resizeObserver.observe(root);
-    this.intersectionObserver = new IntersectionObserver((entries) => {
-      this.visible = entries.some((entry) => entry.isIntersecting);
-      if (this.visible) this.requestRender();
-    });
+    this.intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        this.visible = entries.some((entry) => entry.isIntersecting);
+        if (this.visible) this.requestRender();
+      },
+      { rootMargin: '320px 0px' },
+    );
     this.intersectionObserver.observe(root);
     liveEngines += 1;
     publishLive();
