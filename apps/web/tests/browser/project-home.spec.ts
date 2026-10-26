@@ -15,7 +15,10 @@ async function inspectHome(page: Page) {
   return page.evaluate(() => {
     const sheet = document.querySelector('.example-sheet')!;
     const title = sheet.querySelector('.sheet-title-block')!.getBoundingClientRect();
-    const context = sheet.querySelector('.sheet-context')!.getBoundingClientRect();
+    // Visible label bounds exclude the adjacent block border/padding.
+    const contextText = document.createRange();
+    contextText.selectNodeContents(sheet.querySelector('.sheet-context')!);
+    const context = contextText.getBoundingClientRect();
     const visibleSvg = [...sheet.querySelectorAll('svg')].filter(el => el.getBoundingClientRect().width > 0);
     const text = visibleSvg.flatMap(svg => [...svg.querySelectorAll('text')]);
     const minimumTextSize = Math.min(...text.map(el => {
