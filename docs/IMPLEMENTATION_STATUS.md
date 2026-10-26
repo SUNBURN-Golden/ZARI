@@ -1,6 +1,6 @@
 # 2026-10-26 — Redesign FIX PR4 overlap measurement
 
-The home context overlap test measures the visible text Range. Firefox rounds touching block edges across one another by 0.00003px at 601px; the actual text has an 11.85px gap. No application CSS, copy or numeric tolerance changes. Validation follows in [PR4 notes](redesign/PR4.md).
+The home context overlap test measures the visible text Range. Firefox rounds touching block edges across one another by 0.00003px at 601px; the actual text has an 11.85px gap. No application CSS, copy or numeric tolerance changes. Production build/typecheck/lint PASS; the revised overlap test **3/3 PASS** across Chromium/Firefox/WebKit. Details in [PR4 notes](redesign/PR4.md).
 
 # 2026-10-26 — Redesign FIX PR4
 
