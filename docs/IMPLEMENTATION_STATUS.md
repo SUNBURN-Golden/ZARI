@@ -1,3 +1,31 @@
+# 2026-10-26 — Redesign FIX PR5
+
+Fixed the six-workflow evidence gap, screenshot checklists, font ownership (all rename work in PR3), and permanent populated-list/context regressions. PR4 owns the real long-name overflow fix.
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR5 FIX notes](redesign/PR5.md).
+
+# 2026-10-26 — Redesign PR-5: historical BUILD-stage record (before FIX)
+
+Branch `redesign/zari/pr5-home-regressions`, stacked on PR-4 (`42b6064`). PR-1–PR-5 only; all branches are local. Node 24.19.0, existing npm 11.17.0 (engines 11.x; packageManager says 11.9.0), Rust 1.98.1 / wasm-bindgen 0.2.128. npm and Cargo commands ran offline, with no dependency or lock changes.
+
+Implemented four permanent home browser tests: light/dark at 320/390/600/601/768/800/801/1024/1199/1200/1280/1440; source-derived drawing proportions/facts, SVG text ≥12 rendered px, 44px targets, title-block overlap, heading/body fonts, Korean keep-all, section rhythm, keyboard focus, reduced motion, forced colors, axe and all 16 offline font assets. These now pass in Chromium, Firefox and WebKit (72 viewport/theme combinations in total). Print's static fixture now loads fonts.css on the app origin; its Korean PDF extraction assertion is unchanged. Its temporary PDF files are removed in finally; the three directories created by the earlier run were removed, with the original 12 retained.
+
+One integration correction is included in this PR: (1) paired CanvasText/Canvas colors for primary buttons in forced-colors mode, after Chrome exposed an inherited palette contrast problem and WebKit's ButtonText/ButtonFace pair produced 1.81:1. Font subset names/notices/hashes (**696,876 bytes**) are corrected in the first PR-3 font commit; PR-5 no longer changes font assets or decisions. The earlier PR-5 audit of 8,149 glyph outlines, cmaps and horizontal metrics remains historical preparation evidence.
+
+Final checks, all exit 0:
+
+- `npm run build`; `node scripts/check-release-manifest.mjs` (33 assets, 16 WOFF2, no errors); `npm test` (51 files / 427 passed); `npm run typecheck`; `npm run lint`; `node scripts/check-design-tokens.mjs --self-test` (13 checker self-tests, 88/88 light/dark contrast cases). Final production dist is restored after browser/parity test builds. Logs: ignored `test-results/redesign/pr5-final/`.
+- `npm run test:browser -- --project=chromium --workers=1 a11y.spec.ts project-home.spec.ts`: **7 passed**, final Canvas system-color correction, log `pr5/forced-colors-final.log`.
+- `npm run test:browser -- --project=firefox --project=webkit --workers=1 project-home.spec.ts`: **8 passed**, log `pr5/cross-engine-final.log`. The earlier 7-pass/1-fail WebKit ButtonFace attempt is retained separately.
+- `npm run test:browser -- --project=chromium --workers=1 print-share.spec.ts -g 'a long Korean package'`: **1 passed**, Korean PDF text/rows/IDs/units assertions retained, log `pr5/print-final.log`.
+- `npm run test:parity`: **2 passed; 124 native / actual Chromium Worker-WASM fixtures match**, log `pr5/parity.log`.
+
+Full Chromium regression is **not green**: `npm run test:browser -- --project=chromium --workers=2` finished **145 passed / 7 failed**, exit 1, 16.4m. The font-omitting print fixture failure was corrected and its focused check passed afterward. Six existing workflow tests remain unresolved: incremental-replan.spec.ts:23 (waited for idle, remained empty), guided-onboarding.spec.ts:169 (search running), plan.spec.ts:156 (tab crashed), plan.spec.ts:192 (timeout/page closed), print-share.spec.ts:61 and :213 (search running/timeouts). Earlier focused onboarding runs passed. Domain/session/search source, fixtures and data remain unchanged; host load average 114.46 and 13/15 GiB memory use were observed during failures, but causality is not established. No timeout/threshold weakening, skips or automatic retries were added; those six failures were not blindly rerun. A prior full attempt was stopped after the actionable forced-colors failure, then corrected. Initial test discovery required a JSON import attribute in the new Playwright test, which was fixed. Full log/report/traces are preserved in ignored `pr5/chromium-final.log`, `pr5/full-browser-report/` and `pr5/full-browser-artifacts/`.
+
+Preservation: every original ProjectsScreen Korean string remains (allowing the approved decorative-dot removal and whitespace reflow), every prior data-testid remains, and default-form/data/Rust/contracts/locks/source prompts are unchanged. Existing SPATIAL-001 evidence PNGs written by the broad suite were restored byte-for-byte; no baseline was promoted. App captures are draft report attachments. Twelve copy proposals and exact source line pointers are in `/workspace/rd-wt/logs/zari-copy-todo.md`; full labels/legacy card wording remain pending owner copy review, so the mockup word-count/short-sheet gates are not claimed.
+
+Limits/next: WebKit verifies all 16 staged font bytes but follows the repository's known WPE limitation and does not emulate offline reload; Chromium and Firefox perform the actual offline revisit. Full Firefox/WebKit workflows, physical devices/GPU, the unchanged full Rust unit/clippy suite, independent exact-HEAD review and CI are not claimed by this UI build stage. Investigate the six workflow failures with preserved traces before merge. PR-6/PR-7, push, remote PRs, merge, main updates, tags, deployment and app-baseline approval were not performed.
+
 # 2026-10-26 — Redesign FIX PR4 overlap measurement
 
 The home context overlap test measures the visible text Range. Firefox rounds touching block edges across one another by 0.00003px at 601px; the actual text has an 11.85px gap. No application CSS, copy or numeric tolerance changes. Production build/typecheck/lint PASS; the revised overlap test **3/3 PASS** across Chromium/Firefox/WebKit. Details in [PR4 notes](redesign/PR4.md).

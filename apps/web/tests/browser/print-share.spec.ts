@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -296,6 +296,8 @@ function pdfText(pdf: Buffer, pages: number, layout = true): string[] | null {
     return out;
   } catch {
     return null;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 }
 
@@ -510,7 +512,7 @@ async function renderPackage(pkg: PrintPackage): Promise<string> {
 
 function cssFiles(): string {
   const read = (name: string) => readFileSync(new URL(`../../src/styles/${name}`, import.meta.url), 'utf8');
-  return ['tokens.css', 'app.css', 'project.css', 'print.css'].map(read).join('\n');
+  return ['tokens.css', 'fonts.css', 'app.css', 'project.css', 'print.css'].map(read).join('\n');
 }
 
 test('a long Korean package spans pages without losing rows, ids, or units', async ({
@@ -520,6 +522,8 @@ test('a long Korean package spans pages without losing rows, ids, or units', asy
   test.setTimeout(120_000);
   const pkg = longPackage();
   const markup = await renderPackage(pkg);
+  // Keep the fixture on the app origin so its self-hosted font URLs resolve.
+  await page.goto('/');
   await page.setContent(
     `<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>${cssFiles()}</style></head>` +
       `<body data-print-open="true"><div id="root"><p>app</p></div>` +
