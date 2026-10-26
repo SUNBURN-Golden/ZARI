@@ -1,3 +1,9 @@
+# 2026-10-26 — Redesign FIX PR4
+
+Fixed structured example identity/front-view constants, added sheet-context overlap coverage in accessibility-workspace.spec.ts in this hero PR, and re-pinned the copy review ledger.
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR4 FIX notes](redesign/PR4.md).
+
 # 2026-10-26 — Redesign PR-4: drawing sheet home and test alignment
 
 Branch `redesign/zari/pr4-drawing-home`, stacked on PR-3. Replaced home launch-card nesting and decorative miniature scenes with ExampleSheet, visible title-block facts, two plain start rows and import beside the saved heading. Plan/front/compact plan render the bundled default-form.json at uniform 0.6/0.45/0.44 px/mm respectively; no domain calculation, data or persisted record changed. Removed the home dot pattern and pill styling; retained Korean studio/kicker/entry/disclosure wording as plain text, removing only approved decorative dots. All previous ProjectsScreen data-testid values remain. Updated affected accessibility/onboarding/portable selectors and focus-order assertions in this PR; SCREENS/COMPONENTS describe the new renderer. Finished replacing legacy literal radii with the approved semantic pair.
