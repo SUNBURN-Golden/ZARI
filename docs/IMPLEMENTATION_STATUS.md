@@ -1,3 +1,9 @@
+# 2026-10-26 — Redesign FIX PR3
+
+Fixed PR3 font blocker/major and minors: embedded renamed subsets, notices/manifest and corrected 696,876-byte total are folded into the first font commit; heading preload is relative; strong/body and all heading weights are explicit with synthesis disabled.
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR3 FIX notes](redesign/PR3.md).
+
 # 2026-10-26 — Redesign PR-3: self-hosted typography
 
 Branch `redesign/zari/pr3-self-hosted-fonts`, stacked on PR-2. Bundled 16 OFL WOFF2 subsets (696,876 bytes; FIX: embedded modified family names and hashes corrected within PR-3): IBM Plex Sans KR 600 headings, Pretendard 1.3.9 400/500 body with disjoint unicode-range blocks, IBM Plex Mono 400 numeral stack. Added font CSS/import, heading/body assignment, Korean keep-all/wrapping, licences, original hashes and subset manifest/provenance in public/fonts and REFERENCES. Full originals are not bundled; Python/fontTools is preparation tooling only, not a web build requirement. Preserved all Korean strings.
