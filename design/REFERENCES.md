@@ -37,3 +37,7 @@ Taste Skill·UI UX Pro Max·Base UI 등 이전 대화의 다른 후보를 추가
 - [W3C Reflow — 1.4.10](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html): 좁은 너비·확대에서 정보와 기능의 재배치. 2차원 도면의 예외가 일반 패널의 가로 넘침을 정당화하지 않는다.
 
 우리의 44/48px 컨트롤 목표, 초기 breakpoint와 모션 시간은 ZARI의 설계 제안이지 위 문서 전체를 그대로 옮긴 법적·인증 기준이 아니다. 토큰 일부의 통과를 WCAG 전체 준수라고 보고하지 않는다.
+
+## Self-hosted fonts — adopted 2026-10-26
+
+D-redesign-20261026 adopts IBM Plex Sans KR 600 (headings), Pretendard 1.3.9 400/500 (body) and IBM Plex Mono 400 (numbers/×/mm). All are SIL OFL 1.1; notices, exact original SHA-256 inputs, coverage and emitted hashes are in [public/fonts/README.md](../apps/web/public/fonts/README.md), [IBM licence](../apps/web/public/fonts/IBM-Plex-OFL.txt), [Pretendard licence](../apps/web/public/fonts/Pretendard-OFL.txt) and subsets.json. These are local WOFF2 assets with font-display: swap and no CDN. They supersede the earlier no-download/no-vendoring statement for these approved fonts only.

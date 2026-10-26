@@ -1,0 +1,114 @@
+[
+  {
+    "file": "plex-kr-600.woff2",
+    "bytes": 258900,
+    "sha256": "569b60f6fff917246bc4fc2d684e0106bef55210640f9eccd7b573a77496e9fa",
+    "glyphCoverage": 2506,
+    "embeddedFamily": "ZARI Draft Sans"
+  },
+  {
+    "file": "pretendard-400-base.woff2",
+    "bytes": 21348,
+    "sha256": "406e93a4ce7d1802d57395cf335e2bc6a71dbe86d9e605303dadfb33c5b0763d",
+    "glyphCoverage": 289,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-400-ko-1.woff2",
+    "bytes": 39588,
+    "sha256": "0a16ba153b0c928627485e95717ab7bf94411052baa03c6c4dfbd82725665d3c",
+    "glyphCoverage": 507,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-400-ko-2.woff2",
+    "bytes": 27684,
+    "sha256": "5851f5efcbed7ce48e44399c59ea8a04b19654e4c70271b4f8ab24a37ad5524a",
+    "glyphCoverage": 386,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-400-ko-3.woff2",
+    "bytes": 31924,
+    "sha256": "6ad705ceefa77bc54df001ac9d226e6f5d016e124604a8c3b7cf2a8660175b32",
+    "glyphCoverage": 418,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-400-ko-4.woff2",
+    "bytes": 43720,
+    "sha256": "c9583b3d2f756ecb9289bfa5b1b76d8ff2ebd6f90dca115b7faaf29079f1ebc1",
+    "glyphCoverage": 458,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-400-ko-5.woff2",
+    "bytes": 30780,
+    "sha256": "ab0b45420912897f821b462b0996844802b21d3ce0b40122208182853020a053",
+    "glyphCoverage": 392,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-400-ko-6.woff2",
+    "bytes": 18952,
+    "sha256": "229915080d487f9d6ac3dcc835a67beb5e2dcfd394b9aba322b381eb225e504c",
+    "glyphCoverage": 189,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-500-base.woff2",
+    "bytes": 21340,
+    "sha256": "d203702d9d7b2ece12485f4a9d4c747fa3a9d1c84f8b7906a329ccbab2ceab94",
+    "glyphCoverage": 289,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-500-ko-1.woff2",
+    "bytes": 39884,
+    "sha256": "7676f9f20383d8d689dedd2826b69db296e5b40a4bc086fa36e95dfd87b90470",
+    "glyphCoverage": 507,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-500-ko-2.woff2",
+    "bytes": 27780,
+    "sha256": "0cffc8d1582aadc1ccaf517c77c7eb9cbe54ccd95d0a14062cdf27b6786e9e8f",
+    "glyphCoverage": 386,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-500-ko-3.woff2",
+    "bytes": 32384,
+    "sha256": "591b241372ba3bfcb209beb291dd8fe570652d40c3ff2cc6cc0942442c15e30d",
+    "glyphCoverage": 418,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-500-ko-4.woff2",
+    "bytes": 43800,
+    "sha256": "f8bab7250ec326683f574d8a393591f45b982eb55ab009ccd21bb8f267947903",
+    "glyphCoverage": 458,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-500-ko-5.woff2",
+    "bytes": 30900,
+    "sha256": "b30ab22bd66acc1125a3a8d406ace57cc4c2c4c89b6ef988940742ca5c5c3c4c",
+    "glyphCoverage": 392,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "pretendard-500-ko-6.woff2",
+    "bytes": 19076,
+    "sha256": "2108855432c09c308c4f49862d618385ee7e5aff2dd8e84567c71bd6aec53469",
+    "glyphCoverage": 189,
+    "embeddedFamily": "ZARI Reading Sans"
+  },
+  {
+    "file": "plex-mono-400.woff2",
+    "bytes": 8816,
+    "sha256": "a7d74a20f429f4bef44eae1d47264d2b3d962a3403c1f059a09ac6b87d539c5e",
+    "glyphCoverage": 96,
+    "embeddedFamily": "ZARI Dimension Mono"
+  }
+]
