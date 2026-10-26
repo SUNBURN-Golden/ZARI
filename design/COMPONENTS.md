@@ -44,3 +44,7 @@ Storybook을 도입할 때 각 컴포넌트의 기본/초점/오류/미확인/�
 글자·간격·색상·border·radius·motion은 `apps/web/src/styles/tokens.css`를 참조한다. 토큰 변경 후 정의된 색상 쌍은 `node scripts/check-design-tokens.mjs`로 확인한다. 새 색상 조합은 contrast cases에 추가하고 렌더링도 검토한다.
 
 SVG 도면의 의미 있는 선은 `--zari-canvas-outline`, 선택은 `--zari-selection-ring`, 오류는 `--zari-danger` 등을 사용한다. 얇은 장식선과 안전 관련 검사 표시를 혼동하지 않는다. 작은 경계선의 실제 식별성은 별도 렌더링 검토가 필요하다.
+
+## ExampleSheet — home presentation (2026-10-26)
+
+Static read-only renderer for the bundled synthetic example only. Draws a plan at uniform 0.6 px/mm, front at 0.45 px/mm and compact plan at 0.44 px/mm; labels and title-block values read the same original JSON. It neither normalizes user input nor issues fit/safety verdicts. Existing full Korean field labels remain until copy approval. Numeric SVG text is accessible through named image roles and the visible facts list, never aria-hidden. At ≤800px the compact plan replaces the large drawing; below 1200px the title block follows the drawing and start rows move underneath.

@@ -273,6 +273,7 @@ test('project deletion removes every owned row in one transaction', async ({
   await expect(page.getByTestId('photo-list').locator('li img')).toHaveCount(1);
   const projectId = page.url().split('/').pop()!;
   await page.getByRole('link', { name: '프로젝트 목록' }).click();
+  await expect(page.getByRole('heading', { name: '보관된 공간 도면' })).toBeVisible();
   await page.getByTestId(`delete-${projectId}`).click();
   await expect(page.getByTestId('delete-confirm')).toBeVisible();
   await page.getByTestId('delete-confirm-yes').click();

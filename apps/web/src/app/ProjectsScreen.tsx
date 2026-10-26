@@ -18,6 +18,7 @@ import {
   repository,
 } from './sessionRegistry';
 import { navigate } from './router';
+import { ExampleSheet } from './ExampleSheet';
 
 const IMPORT_ISSUE_TEXT: Record<string, string> = {
   invalid_envelope: '보내기 파일 형식이 아닙니다.',
@@ -270,17 +271,18 @@ export function ProjectsScreen() {
     }
   }
   return (
-    <div className="zari-ui app-shell">
-      <header className="app-header">
+    <div className="zari-ui app-shell projects-shell">
+      <header className="app-header projects-header">
         <div className="brand" aria-label="ZARI">
           <svg viewBox="0 0 26 26" aria-hidden="true">
             <path d="M2 2H24V24H2Z M2 10H24 M11 10V24" />
           </svg>
           <span>ZARI</span>
         </div>
+        <span className="projects-studio-label">공간 스튜디오</span>
         <nav className="header-context" aria-label="화면 이동">
           <a href="#/catalog" onClick={(e) => { e.preventDefault(); navigate('#/catalog'); }}>
-            카탈로그 · 보유 수납함
+            카탈로그 보유 수납함
           </a>
           <a href="#/data" data-testid="nav-data" onClick={(e) => { e.preventDefault(); navigate('#/data'); }}>
             내 데이터
@@ -289,41 +291,16 @@ export function ProjectsScreen() {
             폭 확인 예제
           </a>
         </nav>
-        <div className="local-note">
-          <span aria-hidden="true" className="local-dot" />이 기기에만 저장
-        </div>
       </header>
-      <main className="studio-home-main">
-        <div className="page-intro studio-hero-head">
+      <main className="projects-home-main">
+        <div className="home-hero-head">
           <div>
-            <p className="section-kicker">공간 워크벤치 · 프로젝트</p>
             <h1>정리할 공간을 고르세요.</h1>
           </div>
-          <div className="studio-hero-actions">
-            <Button
-              className="button button-secondary studio-import-btn"
-              isDisabled={busy || incompatible}
-              data-testid="import-project"
-              onPress={() => fileRef.current?.click()}
-            >
-              파일에서 가져오기
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".json,.zip,application/json,application/zip"
-              data-testid="import-file"
-              hidden
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = '';
-                if (file) void stage(file);
-              }}
-            />
-          </div>
+
         </div>
         <section
-          className="project-list-panel studio-launcher-surface"
+          className="projects-content"
           aria-labelledby="projects-title"
           aria-busy={listSettled ? undefined : true}
         >
@@ -366,24 +343,10 @@ export function ProjectsScreen() {
               onCancel={() => setPending(null)}
             />
           )}
-          <div className="start-choices studio-hero-cards" data-testid="start-choices">
-            <div className="studio-launch-card studio-launch-primary">
-              <div className="studio-card-blueprint" aria-hidden="true">
-                <svg viewBox="0 0 240 88" className="blueprint-art">
-                  <rect x="14" y="12" width="212" height="64" rx="6" className="bp-grid-bg" />
-                  <path d="M52 24 L120 12 L188 24 L188 64 L120 76 L52 64 Z" className="bp-iso-room" />
-                  <path d="M52 24 L120 36 L188 24 M120 36 L120 76" className="bp-iso-axis" />
-                  <path d="M44 68 L114 80 M126 80 L196 68" className="bp-dim-line" />
-                </svg>
-                <span className="studio-blueprint-tag">새 공간 도면 · mm</span>
-              </div>
-              <div className="studio-card-copy">
-                <strong>내 공간으로 시작</strong>
-                <p className="session-note">
-                  빈 칸에서 시작합니다. 줄자로 잰 값만 넣으면 되고, 비워 둔 값은 “미측정”으로 남습니다.
-                </p>
-              </div>
-              <div className="form-actions studio-card-cta">
+          <div className="drafting-hero">
+            <ExampleSheet />
+            <div className="start-choices home-entry-rows" data-testid="start-choices">
+              <div className="home-entry">
                 <Button
                   className="button button-primary"
                   onPress={() => void create()}
@@ -393,28 +356,12 @@ export function ProjectsScreen() {
                 >
                   내 공간으로 시작
                 </Button>
-              </div>
-            </div>
-            <div className="studio-launch-card studio-launch-secondary">
-              <div className="studio-card-blueprint" aria-hidden="true">
-                <svg viewBox="0 0 240 88" className="blueprint-art">
-                  <rect x="14" y="12" width="212" height="64" rx="6" className="bp-grid-bg" />
-                  <rect x="44" y="20" width="152" height="48" rx="3" className="bp-iso-room" />
-                  <rect x="50" y="25" width="42" height="18" rx="2" className="bp-module-accent" />
-                  <rect x="96" y="25" width="42" height="18" rx="2" className="bp-module-accent" />
-                  <rect x="148" y="25" width="42" height="26" rx="2" className="bp-module-info" />
-                  <path d="M64 68 A20 20 0 0 1 84 48 L84 68 Z" className="bp-door-arc" />
-                </svg>
-                <span className="studio-blueprint-tag">예제 도면 체험 · 2D/3D</span>
-              </div>
-              <div className="studio-card-copy">
-                <strong>예제로 둘러보기</strong>
-                <p className="session-note" data-testid="example-disclosure">
-                  연습용 합성 데이터입니다. 상품·가격·재고는 실제가 아니며 구매할 수 없습니다. 내 프로젝트와
-                  따로 저장됩니다.
+                <p className="home-entry-label">새 공간 도면 mm</p>
+                <p className="session-note">
+                  빈 칸에서 시작합니다. 줄자로 잰 값만 넣으면 되고, 비워 둔 값은 “미측정”으로 남습니다.
                 </p>
               </div>
-              <div className="form-actions studio-card-cta">
+              <div className="home-entry">
                 <Button
                   className="button button-secondary"
                   onPress={() => void createExample()}
@@ -423,106 +370,127 @@ export function ProjectsScreen() {
                 >
                   예제로 둘러보기
                 </Button>
+                <p className="home-entry-label">예제 도면 체험 2D/3D</p>
+                <p className="session-note" data-testid="example-disclosure">
+                  연습용 합성 데이터입니다. 상품·가격·재고는 실제가 아니며 구매할 수 없습니다. 내 프로젝트와
+                  따로 저장됩니다.
+                </p>
               </div>
             </div>
           </div>
-          <div className="studio-gallery-header">
-            <span className="section-kicker">보관된 공간 도면</span>
-          </div>
-          <ul className="project-list" data-testid="project-list">
-            {(projects ?? []).map((project) => (
-              <li key={project.projectId} data-testid={`project-row-${project.projectId}`}>
-                <a
-                  href={`#/project/${project.projectId}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(`#/project/${project.projectId}`);
-                  }}
+          <section className="home-saved" aria-labelledby="saved-title">
+            <div className="home-saved-header">
+              <h2 id="saved-title">보관된 공간 도면</h2>
+              <div className="home-import-actions">
+                <Button
+                  className="button home-import-link"
+                  isDisabled={busy || incompatible}
+                  data-testid="import-project"
+                  onPress={() => fileRef.current?.click()}
                 >
-                  <div className="room-card-preview" aria-hidden="true">
-                    <svg viewBox="0 0 120 44" className="room-mini-svg">
-                      <rect x="6" y="6" width="108" height="32" rx="3" className="bp-iso-room" />
-                      <rect x="12" y="10" width="28" height="12" rx="1.5" className="bp-module-accent" />
-                      <rect x="44" y="10" width="28" height="12" rx="1.5" className="bp-module-info" />
-                      <line x1="6" y1="28" x2="114" y2="28" className="bp-dim-line" />
-                    </svg>
-                  </div>
-                  <div className="room-card-meta">
-                    <div className="room-card-title-row">
-                      <strong>{project.name}</strong>
-                      {isExampleName(project.name) && (
-                        <span className="badge-example" data-testid={`example-badge-${project.projectId}`}>
-                          예제 · 합성
-                        </span>
-                      )}
-                    </div>
-                    <span className="room-card-rev">
-                      리비전 {project.projectRevision} · 입력 리비전{' '}
-                      {project.currentInputRevision}
-                      {project.importedFrom ? ' · 가져옴' : ''}
-                    </span>
-                  </div>
-                </a>
-                <span className="project-row-actions">
-                  <Button
-                    className="button button-quiet"
-                    data-testid={`duplicate-${project.projectId}`}
-                    isDisabled={busy || incompatible}
-                    onPress={() => void duplicate(project.projectId)}
+                  파일에서 가져오기
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".json,.zip,application/json,application/zip"
+                  data-testid="import-file"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) void stage(file);
+                  }}
+                />
+              </div>
+            </div>
+            <ul className="project-list" data-testid="project-list">
+              {(projects ?? []).map((project) => (
+                <li key={project.projectId} data-testid={`project-row-${project.projectId}`}>
+                  <a
+                    href={`#/project/${project.projectId}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(`#/project/${project.projectId}`);
+                    }}
                   >
-                    복제
-                  </Button>
-                  <Button
-                    className="button button-quiet"
-                    data-testid={`delete-${project.projectId}`}
-                    isDisabled={busy || incompatible}
-                    onPress={() => setConfirmDelete(project.projectId)}
-                  >
-                    삭제
-                  </Button>
-                </span>
-                {confirmDelete === project.projectId && (
-                  <div className="recovery-panel" role="alert" data-testid="delete-confirm">
-                    <p>
-                      “{project.name}”을(를) 삭제합니다. 입력·스냅샷·사진까지 이
-                      프로젝트의 기록이 함께 지워지며 되돌릴 수 없습니다.
-                    </p>
-                    <div className="form-actions">
-                      <Button
-                        className="button button-secondary"
-                        data-testid="delete-confirm-yes"
-                        onPress={() => void remove(project.projectId)}
-                      >
-                        삭제
-                      </Button>
-                      <Button
-                        className="button button-quiet"
-                        onPress={() => setConfirmDelete(null)}
-                      >
-                        유지
-                      </Button>
+                    <div className="room-card-meta">
+                      <div className="room-card-title-row">
+                        <strong>{project.name}</strong>
+                        {isExampleName(project.name) && (
+                          <span className="badge-example" data-testid={`example-badge-${project.projectId}`}>
+                            예제 · 합성
+                          </span>
+                        )}
+                      </div>
+                      <span className="room-card-rev">
+                        리비전 {project.projectRevision} · 입력 리비전{' '}
+                        {project.currentInputRevision}
+                        {project.importedFrom ? ' · 가져옴' : ''}
+                      </span>
                     </div>
-                  </div>
-                )}
-              </li>
-            ))}
-            {projects !== null && projects.length === 0 && (
-              <li className="project-empty" data-testid="project-empty">
-                아직 프로젝트가 없습니다. 위 스튜디오 카드에서 시작 방법을 고르세요.
-              </li>
-            )}
-          </ul>
+                  </a>
+                  <span className="project-row-actions">
+                    <Button
+                      className="button button-quiet"
+                      data-testid={`duplicate-${project.projectId}`}
+                      isDisabled={busy || incompatible}
+                      onPress={() => void duplicate(project.projectId)}
+                    >
+                      복제
+                    </Button>
+                    <Button
+                      className="button button-quiet"
+                      data-testid={`delete-${project.projectId}`}
+                      isDisabled={busy || incompatible}
+                      onPress={() => setConfirmDelete(project.projectId)}
+                    >
+                      삭제
+                    </Button>
+                  </span>
+                  {confirmDelete === project.projectId && (
+                    <div className="recovery-panel" role="alert" data-testid="delete-confirm">
+                      <p>
+                        “{project.name}”을(를) 삭제합니다. 입력·스냅샷·사진까지 이
+                        프로젝트의 기록이 함께 지워지며 되돌릴 수 없습니다.
+                      </p>
+                      <div className="form-actions">
+                        <Button
+                          className="button button-secondary"
+                          data-testid="delete-confirm-yes"
+                          onPress={() => void remove(project.projectId)}
+                        >
+                          삭제
+                        </Button>
+                        <Button
+                          className="button button-quiet"
+                          onPress={() => setConfirmDelete(null)}
+                        >
+                          유지
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+              {projects !== null && projects.length === 0 && (
+                <li className="project-empty" data-testid="project-empty">
+                  아직 프로젝트가 없습니다. 위 스튜디오 카드에서 시작 방법을 고르세요.
+                </li>
+              )}
+            </ul>
+            <footer className="home-storage-notes" aria-label="저장소 및 사본 안내">
+              <p>
+                측정값은 이 기기의 브라우저 저장소에만 기록됩니다. 보내기가 유일한
+                백업입니다.
+              </p>
+              <p className="session-note" data-testid="duplicate-disclosure">
+                사본은 진행 기록을 비웁니다. 사진은 복사하지 않습니다. 보유품을 여러
+                프로젝트에 예약하지 않습니다.
+              </p>
+            </footer>
+          </section>
         </section>
-        <footer className="studio-footer-strip" aria-label="저장소 및 사본 안내">
-          <p>
-            측정값은 이 기기의 브라우저 저장소에만 기록됩니다. 보내기가 유일한
-            백업입니다.
-          </p>
-          <p className="session-note" data-testid="duplicate-disclosure">
-            사본은 진행 기록을 비웁니다. 사진은 복사하지 않습니다. 보유품을 여러
-            프로젝트에 예약하지 않습니다.
-          </p>
-        </footer>
       </main>
     </div>
   );

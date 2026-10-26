@@ -42,6 +42,7 @@ test('empty list: real start and synthetic example are separate choices', async 
   await page.goto('/');
   await expect(page.getByTestId('project-empty')).toContainText('아직 프로젝트가 없습니다');
   await expect(page.getByTestId('start-choices')).toBeVisible();
+  await expect(page.getByTestId('example-sheet')).toBeVisible();
   await expect(page.getByTestId('example-disclosure')).toContainText('실제가 아니며 구매할 수 없습니다');
   await expect(page.getByTestId('create-project')).toHaveText('내 공간으로 시작');
   await expect(page.getByTestId('create-example')).toHaveText('예제로 둘러보기');
@@ -49,6 +50,8 @@ test('empty list: real start and synthetic example are separate choices', async 
   await page.getByTestId('create-project').focus();
   await page.keyboard.press('Tab');
   await expect(page.getByTestId('create-example')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByTestId('import-project')).toBeFocused();
 
   // A real start has no example banner, no values and no badge.
   await page.getByTestId('create-project').click();

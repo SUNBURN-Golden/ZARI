@@ -106,7 +106,7 @@ test('keyboard only: create, measure, compute, compare, adopt, and open the guid
   await page.goto('/');
   await expect(page.getByTestId('create-project')).toHaveAttribute('data-list-settled', 'true');
   await staysVisible(page, 'create-project');
-  await expect(page.locator('.local-note')).toContainText('이 기기에만 저장');
+  await expect(page.getByTestId('example-sheet').locator('.local-note')).toContainText('이 기기에만 저장');
   await noHorizontalOverflow(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
 

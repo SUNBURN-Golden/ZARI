@@ -1013,3 +1013,8 @@ pre,
 .zari-ui.app-shell {
   container-type: inline-size;
 }
+
+/* Home uses plain drafting paper; the grid belongs inside its drawing sheet. */
+.projects-shell {
+  background-image: none;
+}
