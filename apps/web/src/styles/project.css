@@ -195,7 +195,7 @@
   max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--zari-space-4));
   overflow: auto;
   border: var(--zari-border-width) solid var(--zari-border-control);
-  border-radius: var(--zari-radius-overlay);
+  border-radius: var(--zari-radius-control);
   padding: var(--zari-space-4);
   padding-bottom: max(var(--zari-space-4), env(safe-area-inset-bottom, 0px));
 }
@@ -741,7 +741,7 @@
   width: 100%;
   max-width: 10rem;
   border: 1px solid var(--zari-border-subtle);
-  border-radius: 0.375rem;
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-subtle);
 }
 
@@ -819,7 +819,7 @@
   font: inherit;
   padding: 0.375rem 0.5rem;
   border: 1px solid var(--zari-border-subtle);
-  border-radius: 0.375rem;
+  border-radius: var(--zari-radius-control);
   min-width: 5.5rem;
 }
 
@@ -960,7 +960,7 @@
   max-height: calc(100vh - 2rem);
   overflow: auto;
   border: var(--zari-border-width) solid var(--zari-border-control);
-  border-radius: var(--zari-radius-overlay);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-panel);
   color: var(--zari-text-primary);
   padding: var(--zari-space-4);
@@ -1037,7 +1037,7 @@
   overflow-wrap: anywhere;
   box-sizing: border-box;
   border: var(--zari-border-width) solid var(--zari-border-subtle);
-  border-radius: var(--zari-radius-panel);
+  border-radius: var(--zari-radius-sheet);
   background: var(--zari-surface-panel);
   padding: var(--zari-space-3);
   margin: var(--zari-space-2) 0 var(--zari-space-4);
@@ -1431,7 +1431,7 @@
   background: var(--zari-info-soft);
   color: var(--zari-text-primary);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
-  border-radius: var(--zari-radius-panel);
+  border-radius: var(--zari-radius-sheet);
   padding: var(--zari-space-4);
   margin-bottom: var(--zari-space-4);
 }
@@ -1514,7 +1514,7 @@
 .shape-list > li {
   background: var(--zari-surface-panel);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
-  border-radius: var(--zari-radius-panel);
+  border-radius: var(--zari-radius-sheet);
   color: var(--zari-text-primary);
   display: grid;
   gap: var(--zari-space-2);
@@ -1603,7 +1603,7 @@
 .print-panel {
   box-shadow: var(--zari-shadow-raised);
   border-color: var(--zari-border-subtle);
-  border-radius: var(--zari-radius-panel);
+  border-radius: var(--zari-radius-sheet);
 }
 
 /* Soft tonal inner wells */
@@ -1655,7 +1655,7 @@
   max-width: 100%;
   margin: 0;
   padding: 1.5rem;
-  border-radius: var(--zari-radius-panel);
+  border-radius: var(--zari-radius-sheet);
   background: var(--zari-surface-panel);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
   box-shadow: var(--zari-shadow-raised);
@@ -1681,7 +1681,7 @@
   justify-content: space-between;
   gap: 0.875rem;
   padding: 1.25rem;
-  border-radius: var(--zari-radius-panel);
+  border-radius: var(--zari-radius-sheet);
   background: var(--zari-surface-subtle);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
   box-shadow: var(--zari-shadow-raised);
@@ -1764,7 +1764,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   padding: 0.25rem 0.5rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-panel);
   color: var(--zari-text-secondary);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
@@ -1806,7 +1806,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  border-radius: var(--zari-radius-panel);
+  border-radius: var(--zari-radius-sheet);
   background: var(--zari-surface-subtle);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
 }
@@ -1826,7 +1826,7 @@
   flex-shrink: 0;
   width: 4.75rem;
   height: 2.5rem;
-  border-radius: 0.375rem;
+  border-radius: var(--zari-radius-control);
   background: var(--zari-canvas-bg);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
   display: flex;
@@ -2065,7 +2065,7 @@
     position: static;
     min-height: 29rem;
     padding: 1rem 1.25rem;
-    border-radius: var(--zari-radius-panel);
+    border-radius: var(--zari-radius-sheet);
     background: var(--zari-canvas-bg);
     border: var(--zari-border-width) solid var(--zari-border-subtle);
     box-shadow: var(--zari-shadow-raised);
@@ -2120,7 +2120,7 @@
   align-items: baseline;
   gap: 0.375rem;
   padding: 0.125rem 0.5rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-panel);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
   font-size: 0.75rem;
@@ -2240,7 +2240,7 @@
 
 .studio-plan-command .strategy-library li {
   padding: 0.375rem 0.5rem;
-  border-radius: 0.375rem;
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-panel);
   font-size: 0.75rem;
 }
@@ -2339,7 +2339,7 @@
   gap: 0.375rem;
   padding: 0.375rem 0.5rem;
   margin-bottom: 0.5rem;
-  border-radius: var(--zari-radius-overlay);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-panel);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
   box-shadow: var(--zari-shadow-raised);
@@ -2351,7 +2351,7 @@
   align-items: center;
   gap: 0.1875rem;
   padding: 0.1875rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-subtle);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
 }
@@ -2359,7 +2359,7 @@
 .toolbar-group .button {
   min-height: var(--zari-control-min-height);
   padding: 0.25rem 0.6875rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   border: var(--zari-border-width) solid transparent;
   background: transparent;
   color: var(--zari-text-secondary);
@@ -2386,7 +2386,7 @@
   gap: 0.25rem 0.625rem;
   margin: 0 0.5rem 0.375rem 0;
   padding: 0.1875rem 0.5rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-subtle);
   font-size: 0.75rem;
 }
@@ -2417,7 +2417,7 @@
     padding: 1rem;
     background: var(--zari-surface-panel);
     border: var(--zari-border-width) solid var(--zari-border-subtle);
-    border-radius: var(--zari-radius-panel);
+    border-radius: var(--zari-radius-sheet);
     box-shadow: var(--zari-shadow-raised);
   }
 }
@@ -2580,7 +2580,7 @@ dialog.detail-sheet .detail-heading {
     overflow-y: auto;
     background: var(--zari-surface-panel);
     border: 1px solid var(--zari-border-subtle);
-    border-radius: var(--zari-radius-panel);
+    border-radius: var(--zari-radius-sheet);
     padding: 0.875rem;
     box-shadow: var(--zari-shadow-raised);
   }
@@ -3053,7 +3053,7 @@ dialog.detail-sheet .detail-heading {
     max-height: 29rem;
     padding: 1rem 1.25rem;
     gap: 0.625rem;
-    border-radius: var(--zari-radius-panel);
+    border-radius: var(--zari-radius-sheet);
     grid-template-rows: auto minmax(19rem, 1fr) auto;
   }
 

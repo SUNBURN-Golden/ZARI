@@ -247,6 +247,24 @@
       "foreground": "--zari-text-secondary",
       "background": "--zari-info-soft",
       "minimum": 4.5
+    },
+    {
+      "id": "primary-on-grid",
+      "foreground": "--zari-text-primary",
+      "background": "--zari-canvas-grid",
+      "minimum": 4.5
+    },
+    {
+      "id": "accent-on-grid",
+      "foreground": "--zari-accent",
+      "background": "--zari-canvas-grid",
+      "minimum": 4.5
+    },
+    {
+      "id": "muted-on-grid",
+      "foreground": "--zari-text-muted",
+      "background": "--zari-canvas-grid",
+      "minimum": 4.5
     }
   ]
 }

@@ -946,7 +946,7 @@ pre,
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 0.125rem 0.4375rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-accent-soft);
   color: var(--zari-accent);
 }
@@ -957,7 +957,7 @@ pre,
   align-items: center;
   gap: 0.25rem;
   padding: 0.1875rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-subtle);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
 }
@@ -967,7 +967,7 @@ pre,
   align-items: center;
   min-height: var(--zari-control-min-height);
   padding: 0 0.75rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   font-size: 0.8125rem;
   font-weight: var(--zari-weight-medium);
   color: var(--zari-text-primary);
@@ -987,7 +987,7 @@ pre,
 
 .app-header .local-note {
   padding: 0.25rem 0.625rem;
-  border-radius: var(--zari-radius-pill);
+  border-radius: var(--zari-radius-control);
   background: var(--zari-surface-subtle);
   border: var(--zari-border-width) solid var(--zari-border-subtle);
   font-size: 0.75rem;
