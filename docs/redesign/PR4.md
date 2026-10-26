@@ -20,3 +20,5 @@ Draft screenshot checklist (Playwright Chromium, ko-KR, DPR 1, reduced motion; v
 - [x] 1440px dark: `/workspace/rd-wt/logs/zari-shots/pr4/home-1440-dark.png`
 
 Capture source HEAD: `47ed940c1d12cf618eba92bf24abbaabe950248f`; app/source diff digest: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`; production buildId: `332582caea72d3a4`. `capture.json` includes browser/version/environment. Later evidence-only commits do not change the rendered app. Captures remain draft, without app-baseline approval. No push, remote git, merge, deployment or dependency changes.
+
+Firefox follow-up: at 601px, adjacent title/context block edges differ by -0.000030517578125px, while the visible context text starts 11.85px below the title. The overlap assertion now uses the context text Range instead of its padded border box, keeping strict zero-overlap assertions. This changes test measurement only. Measured evidence: zari-fix/pr5-final/context-measurement.json.

@@ -384,7 +384,11 @@ test('home sheet context does not overlap its title block or dimension labels', 
     for (const width of [320, 390, 600, 601, 768, 800, 801, 1024, 1199, 1200, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       const overlaps = await page.locator('.example-sheet').evaluate(sheet => {
-        const context = sheet.querySelector('.sheet-context')!.getBoundingClientRect();
+        // Measure visible text, not adjacent block borders whose coordinates
+        // can round across the same edge in Firefox. No overlap tolerance.
+        const contextText = document.createRange();
+        contextText.selectNodeContents(sheet.querySelector('.sheet-context')!);
+        const context = contextText.getBoundingClientRect();
         const candidates = [sheet.querySelector('.sheet-title-block')!, ...sheet.querySelectorAll('svg text')];
         return candidates.filter(el => {
           const box = el.getBoundingClientRect();
