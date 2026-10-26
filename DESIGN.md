@@ -29,7 +29,7 @@ ZARI는 홍보용 랜딩페이지나 일반 관리자 대시보드가 아니라,
 ## 2. 시각적 원칙
 
 ### 조용하되 비어 있지 않게
-따뜻한 중립색, 선명한 한국어, 정렬된 숫자, 절제된 강조색을 사용한다. 세련됨을 낮은 대비, 작은 글자, 끝없는 여백으로 대체하지 않는다. 작업 도구의 밀도를 유지하되 의미 없는 정보는 제거한다.
+차가운 제도 용지, 선명한 한국어, 정렬된 숫자, 기능적인 코발트 강조색을 사용한다. 2026-10-26 소유자 승인으로 이전 warm neutral/녹색 및 ivory/terracotta 방향을 대체한다(D-redesign-20261026). 세련됨을 낮은 대비, 작은 글자, 끝없는 여백으로 대체하지 않는다. 작업 도구의 밀도를 유지하되 의미 없는 정보는 제거한다.
 
 ### 공간이 주인공
 플래너 중앙은 도면에 배정한다. 좌측은 작업 문맥, 우측은 현재 선택 대상의 검사·속성에 사용한다. 장식용 실내 이미지와 무관한 KPI가 공간을 밀어내면 안 된다.
@@ -45,13 +45,14 @@ ZARI는 홍보용 랜딩페이지나 일반 관리자 대시보드가 아니라,
 
 ## 3. 공통 토큰 계약
 
-정식 값의 단일 소스는 [tokens.css](apps/web/src/styles/tokens.css)다. v0.1은 light 테마만 정의하며 dark 테마를 지원한다고 표시하지 않는다. 추후 dark 테마는 별도 전체 상태·대비 검증을 거친다.
+정식 값의 단일 소스는 [tokens.css](apps/web/src/styles/tokens.css)다. light와 prefers-color-scheme dark를 공식 지원한다. 이전 light-only 규칙은 D-redesign-20261026으로 superseded이며 실제 화면·상태 검증은 별도로 기록한다.
 
-- 색상: 중립 surface와 charcoal text, 절제된 녹색 accent. 성공·선택·미확인을 같은 색 하나로 표현하지 않는다.
-- 글자: 시스템 폰트 스택을 기본으로 한국어와 숫자의 실제 렌더링을 확인한다. 폰트 파일은 동봉하지 않는다. 특정 폰트의 번들링은 별도 검토다.
+- 색상: light 배경 #E7EEF6 / accent #1F4FC4, dark 배경 #0C1E36 / accent #8DB8FF. 코발트는 주 행동·치수·링크·포커스에 사용한다. 성공·선택·미확인을 같은 색 하나로 표현하지 않는다.
+- 글자: 제목 IBM Plex Sans KR 600, 본문 Pretendard 400/500, 숫자·×·mm만 IBM Plex Mono 400을 OFL 라이선스와 함께 직접 호스팅한다. font-display: swap과 fallback을 유지한다. 이전 시스템 전용·폰트 미동봉 규칙은 D-redesign-20261026으로 superseded다.
 - 본문·편집 입력: 기본 1rem. 라벨 0.875rem. 중요한 오류·가격을 작은 caption으로 축소하지 않는다.
 - 한국어 본문은 과도한 음수 자간을 사용하지 않는다. 문장 줄바꿈과 긴 상품명의 확대 표시를 확인한다.
 - 숫자·단위: tabular numerals를 사용하고, 표시 단위는 일관되게 붙인다. UI의 cm 표시가 정수 mm 계약을 변경하지 않는다.
+- 반경: 도면·패널 0, 컨트롤·포커스 6px. pill과 overlay 전용 반경은 사용하지 않는다.
 - 간격: 4·8·12·16·24·32·48·64px에 대응하는 rem 토큰. 예외는 이유를 남긴다.
 - 컨트롤: 기본 최소 높이 44px 상당의 rem, coarse pointer는 48px 상당. **ZARI의 사용성 목표**이며 WCAG 전체 충족을 뜻하지 않는다. 고정 높이로 확대된 텍스트를 자르지 않는다.
 - 선: 장식용 divider와 식별에 필요한 control border를 구분한다. 희미한 divider를 입력 경계나 중요한 도면 선에 재사용하지 않는다.
@@ -107,3 +108,7 @@ React Aria Components 1.21.1은 버튼·입력의 기본 동작에 쓰인다. th
 화면 제작 시 `design/SCREENS.md` → 핵심 컴포넌트 → 실제 상태 구현 → 코드 기반 캡처 → 검토의 순서로 진행한다. Playwright Chromium이 브라우저 검증을 실행한다. Storybook은 아직 없다.
 
 승인 없는 캡처를 baseline으로 승격하지 않는다. 토큰·화면 구조 변경은 [DECISIONS.md](design/DECISIONS.md), [REVIEW_CHECKLIST.md](design/REVIEW_CHECKLIST.md), [baseline 규칙](design/baselines/README.md)에 따라 남긴다.
+
+## 2026-10-26 redesign adoption
+
+Owner-approved mockup: `/workspace/redesign-2026-10/zari/mockup.html`; specification: `design.md` beside it. Adopt PR-1–PR-5 only, with local stacked branches from main `0fd20e6`. This supersedes any home colour-only limitation: the shared palette, radius and typography apply across the site; structural redesign is limited to projects home. Keep Korean product copy pending owner review. Preserved source prompts and domain/data contracts remain unchanged. The approved mockup does not promote application captures to approved baselines.

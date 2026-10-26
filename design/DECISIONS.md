@@ -14,9 +14,11 @@ DESIGN.md, semantic CSS 토큰, 핵심 화면·컴포넌트 명세, 검토 체�
 
 스크린샷만 저장하는 방식은 상호작용과 상태를 충분히 기록하지 못하므로 코드·명세와 연결한다. Figma가 생겨도 링크만 보관한 것을 원본 전체 백업으로 간주하지 않는다.
 
-## D003 — light 테마와 절제된 토큰 / 구현 초안
+## D003 — light 테마와 절제된 토큰 / superseded by D-redesign-20261026
 
-warm neutral, charcoal, muted green accent의 최소 토큰을 작성한다. 실제 화면 검토 전 값은 초안이다. 전면 glassmorphism·자동 dark theme·글꼴 파일 번들링은 포함하지 않는다. 대비 검사는 토큰 쌍 수준이며 전체 UI 승인이 아니다.
+Historical decision retained below; its light-only, green/warm palette and no-font-bundle constraints are superseded by owner approval on 2026-10-26.
+
+SUPERSEDED by D-redesign-20261026 (historical text): warm neutral, charcoal, muted green accent의 최소 토큰을 작성한다. 실제 화면 검토 전 값은 초안이다. 전면 glassmorphism·자동 dark theme·글꼴 파일 번들링은 포함하지 않는다. 대비 검사는 토큰 쌍 수준이며 전체 UI 승인이 아니다.
 
 ## D004 — 도구는 아직 설치하지 않음 / 후보 유지
 
@@ -451,3 +453,14 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.
 
 기존 결정을 조용히 덮어쓰기보다 supersedes 관계를 기록한다. 버전 충돌·글꼴 변경·토큰 전역 변경·컴포넌트 기반 교체는 새 결정을 남긴다.
+
+## D-redesign-20261026 — Drafting sheet redesign / adopted by owner
+
+- Authority: owner instruction dated 2026-10-26; approved `/workspace/redesign-2026-10/zari/mockup.html` and `design.md` §§2–6, limited to PR-1–PR-5.
+- Supersedes D003's light-only, warm/green palette and no-font-bundle constraints, and the later ivory/terracotta/system-heading styling. Earlier text remains historical. Any home colour-only restriction is superseded: shared site tokens/fonts change; home gets a drawing sheet, title block and two plain entry rows.
+- Light background/accent: #E7EEF6 / #1F4FC4; dark: #0C1E36 / #8DB8FF. Cobalt marks actions, dimensions, links and focus; no purple hue 245–320. Preserve separate pass/fail/unknown semantics.
+- Self-host OFL IBM Plex Sans KR 600 headings, Pretendard 400/500 body and IBM Plex Mono 400 for numbers/×/mm. No CDN. Commit licences, subset coverage and offline manifest evidence.
+- Radius: sheet/panel 0, controls/focus 6px. Desktop sheet/start rows at ≥1200px, one column below, plan-only drawing ≤800px. Source the synthetic example dimensions from default-form.json; no domain calculation moves from Rust.
+- Preserve Korean visible strings and all data-testid values. Record copy proposals separately; PR-6/PR-7 are out of scope. No external skill aesthetic overrides are adopted.
+- Verify contrast in both themes, Korean wrapping, 44px targets, reduced motion and actual browser rendering. Captures stay draft; mockup approval is not application-baseline approval.
+- Rollback: a later explicit decision may restore tokens/fonts/home presentation without modifying persisted records or source prompts. This task does not authorize publication, merge or remote git operations.
