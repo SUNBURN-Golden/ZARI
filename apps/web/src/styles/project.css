@@ -3432,3 +3432,13 @@ dialog.detail-sheet .detail-heading {
     fill: CanvasText;
   }
 }
+
+/* Use paired system colors for primary actions in forced-colors mode. */
+@media (forced-colors: active) {
+  .button.button-primary,
+  .button.button-primary:hover {
+    color: CanvasText;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+}
