@@ -1,10 +1,12 @@
 import example from '../features/project/default-form.json';
-import { EXAMPLE_NAME, FIELD_LABELS } from '../features/onboarding/guide';
+import { EXAMPLE_IDENTITY, FIELD_LABELS } from '../features/onboarding/guide';
 
 // This is a read-only rendering of the bundled synthetic example, not a fit
 // verdict or a user-input parser. Rust retains all domain/normalization work.
 const { interior, opening } = example.space;
-const [exampleTitle, exampleDisclosure] = EXAMPLE_NAME.split(' · ');
+const { title: exampleTitle, disclosure: exampleDisclosure } = EXAMPLE_IDENTITY;
+// Drawing coordinates are viewBox units, separate from physical mm.
+const FRONT = { x: 562, y: 132, scale: 0.45, wall: 10, dimensionY: 86, labelY: 300 } as const;
 const facts = [
   ['space.interior.width', interior.width],
   ['space.interior.depth', interior.depth],
@@ -43,21 +45,21 @@ function Plan({ compact = false }: { compact?: boolean }) {
 }
 
 export function ExampleSheet() {
-  const frontWidth = width * 0.45;
-  const frontHeight = height * 0.45;
+  const frontWidth = width * FRONT.scale;
+  const frontHeight = height * FRONT.scale;
   return (
     <figure className="example-sheet" aria-labelledby="example-sheet-name" data-testid="example-sheet">
       <div className="example-sheet-inner">
         {drawable && <>
           <svg className="sheet-desktop" viewBox="0 0 860 462" role="img" aria-labelledby="example-sheet-name" aria-describedby="example-sheet-facts">
             <Plan />
-            <rect className="sheet-wall sheet-ink" x={552} y={122} width={frontWidth+20} height={frontHeight+20} />
-            <rect className="sheet-front sheet-ink-thin" data-example-plane="front" x={562} y={132} width={frontWidth} height={frontHeight} />
-            <rect className="sheet-opening" x={562+Number(opening.left.text)*0.45} y={132+(height-Number(opening.bottom.text)-Number(opening.height.text))*0.45} width={Number(opening.width.text)*0.45} height={Number(opening.height.text)*0.45} />
-            <path className="sheet-extension" d={`M562 114 V76 M${562+frontWidth} 114 V76`} />
-            <path className="sheet-dimension" d={`M562 86 H${562+frontWidth} M556 92 L568 80 M${556+frontWidth} 92 L${568+frontWidth} 80`} />
-            <text className="sheet-number" x={562+frontWidth/2} y={76} textAnchor="middle">{interior.width.text}</text>
-            <text className="sheet-label" x={552} y={300}>{FIELD_LABELS['space.interior.height']} <tspan className="sheet-number">{interior.height.text}</tspan></text>
+            <rect className="sheet-wall sheet-ink" x={FRONT.x-FRONT.wall} y={FRONT.y-FRONT.wall} width={frontWidth+2*FRONT.wall} height={frontHeight+2*FRONT.wall} />
+            <rect className="sheet-front sheet-ink-thin" data-example-plane="front" x={FRONT.x} y={FRONT.y} width={frontWidth} height={frontHeight} />
+            <rect className="sheet-opening" x={FRONT.x+Number(opening.left.text)*FRONT.scale} y={FRONT.y+(height-Number(opening.bottom.text)-Number(opening.height.text))*FRONT.scale} width={Number(opening.width.text)*FRONT.scale} height={Number(opening.height.text)*FRONT.scale} />
+            <path className="sheet-extension" d={`M${FRONT.x} ${FRONT.y-18} V${FRONT.dimensionY-10} M${FRONT.x+frontWidth} ${FRONT.y-18} V${FRONT.dimensionY-10}`} />
+            <path className="sheet-dimension" d={`M${FRONT.x} ${FRONT.dimensionY} H${FRONT.x+frontWidth} M${FRONT.x-6} ${FRONT.dimensionY+6} L${FRONT.x+6} ${FRONT.dimensionY-6} M${FRONT.x+frontWidth-6} ${FRONT.dimensionY+6} L${FRONT.x+frontWidth+6} ${FRONT.dimensionY-6}`} />
+            <text className="sheet-number" x={FRONT.x+frontWidth/2} y={FRONT.dimensionY-10} textAnchor="middle">{interior.width.text}</text>
+            <text className="sheet-label" x={FRONT.x-FRONT.wall} y={FRONT.labelY}>{FIELD_LABELS['space.interior.height']} <tspan className="sheet-number">{interior.height.text}</tspan></text>
           </svg>
           <svg className="sheet-compact" viewBox="0 -6 400 282" role="img" aria-labelledby="example-sheet-name" aria-describedby="example-sheet-facts">
             <Plan compact />

@@ -373,3 +373,26 @@ test('cancelling a running calculation returns focus and keeps the measurement',
   });
   expect(errors.filter((error) => !/worker_timeout|search_stalled/.test(error))).toEqual([]);
 });
+
+
+test('home sheet context does not overlap its title block or dimension labels', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('example-sheet')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const width of [320, 390, 600, 601, 768, 800, 801, 1024, 1199, 1200, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const overlaps = await page.locator('.example-sheet').evaluate(sheet => {
+        const context = sheet.querySelector('.sheet-context')!.getBoundingClientRect();
+        const candidates = [sheet.querySelector('.sheet-title-block')!, ...sheet.querySelectorAll('svg text')];
+        return candidates.filter(el => {
+          const box = el.getBoundingClientRect();
+          return box.width > 0 && box.height > 0 && box.left < context.right && box.right > context.left && box.top < context.bottom && box.bottom > context.top;
+        }).map(el => el.textContent);
+      });
+      expect(overlaps, JSON.stringify({ width, colorScheme })).toEqual([]);
+      await noHorizontalOverflow(page);
+    }
+  }
+});
