@@ -1,3 +1,9 @@
+# 2026-10-26 — Redesign FIX PR2
+
+Fixed all four PR2 minors: distinct accessible hover colors, system-ui fallback, navy shadows, and explicit status-on-app/subtle cases (existing panel cases retained).
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR2 FIX notes](redesign/PR2.md).
+
 # 2026-10-26 — Redesign PR-2: semantic drafting tokens
 
 Branch `redesign/zari/pr2-drafting-tokens`, stacked on PR-1. Implemented the approved light/dark palette, heading/numeral font tokens, 0/6px radius tokens and migrated every old panel/overlay/pill radius reference. Added text/accent/muted-on-grid contrast cases (inverse-on-accent and border-on-panel already existed), dual theme-color metadata and cobalt favicon. Korean copy and domain/data contracts unchanged.
