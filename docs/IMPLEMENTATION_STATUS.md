@@ -1,5 +1,11 @@
 # 2026-10-26 — Redesign FIX PR4
 
+Fixed structured example identity/front-view constants, sheet-context overlap coverage in the hero test, re-pinned copy pointers, and long saved-name wrapping (overflow-wrap: anywhere on the shrinking flex item).
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR4 FIX notes](redesign/PR4.md).
+
+# 2026-10-26 — Redesign FIX PR4
+
 Fixed structured example identity/front-view constants, added sheet-context overlap coverage in accessibility-workspace.spec.ts in this hero PR, and re-pinned the copy review ledger.
 
 Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR4 FIX notes](redesign/PR4.md).
