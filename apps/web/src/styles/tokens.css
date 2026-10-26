@@ -14,7 +14,7 @@
   --zari-border-subtle: #C3D0DF;
   --zari-border-control: #6A7D99;
   --zari-accent: #1F4FC4;
-  --zari-accent-hover: #1F4FC4;
+  --zari-accent-hover: #153FA3;
   --zari-accent-soft: #E7EEF6;
   --zari-selection-ring: var(--zari-accent);
   --zari-focus-ring: #1F4FC4;
@@ -33,7 +33,7 @@
   --zari-canvas-bg: #F4F7FB;
   --zari-canvas-outline: #0E2240;
   --zari-canvas-grid: #DCE5EF;
-  --zari-font-ui: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --zari-font-ui: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
   --zari-font-heading: "IBM Plex Sans KR", var(--zari-font-ui);
   --zari-font-num: "IBM Plex Mono", ui-monospace, monospace;
   --zari-font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", "Segoe UI Mono", monospace;
@@ -73,8 +73,8 @@
   --zari-z-popover: 30;
   --zari-z-modal: 50;
   --zari-z-toast: 60;
-  --zari-shadow-raised: 0 2px 10px -2px rgba(30, 27, 24, 0.06), 0 1px 3px 0 rgba(30, 27, 24, 0.04);
-  --zari-shadow-overlay: 0 20px 48px -8px rgba(15, 13, 11, 0.22), 0 4px 14px -2px rgba(15, 13, 11, 0.10);
+  --zari-shadow-raised: 0 2px 10px -2px rgba(14, 34, 64, 0.06), 0 1px 3px 0 rgba(14, 34, 64, 0.04);
+  --zari-shadow-overlay: 0 20px 48px -8px rgba(12, 30, 54, 0.22), 0 4px 14px -2px rgba(12, 30, 54, 0.10);
   --zari-duration-fast: 140ms;
   --zari-duration-base: 180ms;
   --zari-duration-panel: 240ms;
@@ -93,7 +93,7 @@
     --zari-border-subtle: #24406A;
     --zari-border-control: #5F7A9E;
     --zari-accent: #8DB8FF;
-    --zari-accent-hover: #8DB8FF;
+    --zari-accent-hover: #B0CEFF;
     --zari-accent-soft: #0C1E36;
     --zari-focus-ring: #8DB8FF;
     --zari-info: #73B7DC;
@@ -107,8 +107,8 @@
     --zari-canvas-bg: #132A4A;
     --zari-canvas-outline: #E4ECF6;
     --zari-canvas-grid: #183356;
-    --zari-shadow-raised: 0 2px 12px -2px rgba(0, 0, 0, 0.45), 0 1px 3px 0 rgba(0, 0, 0, 0.35);
-    --zari-shadow-overlay: 0 24px 56px -8px rgba(0, 0, 0, 0.65), 0 6px 18px -2px rgba(0, 0, 0, 0.45);
+    --zari-shadow-raised: 0 2px 12px -2px rgba(4, 13, 28, 0.45), 0 1px 3px 0 rgba(4, 13, 28, 0.35);
+    --zari-shadow-overlay: 0 24px 56px -8px rgba(4, 13, 28, 0.65), 0 6px 18px -2px rgba(4, 13, 28, 0.45);
   }
 }
 
