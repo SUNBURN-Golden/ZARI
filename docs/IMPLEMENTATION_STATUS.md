@@ -1,3 +1,11 @@
+# 2026-10-26 — Redesign PR-3: self-hosted typography
+
+Branch `redesign/zari/pr3-self-hosted-fonts`, stacked on PR-2. Bundled 16 OFL WOFF2 subsets (696,876 bytes; FIX: embedded modified family names and hashes corrected within PR-3): IBM Plex Sans KR 600 headings, Pretendard 1.3.9 400/500 body with disjoint unicode-range blocks, IBM Plex Mono 400 numeral stack. Added font CSS/import, heading/body assignment, Korean keep-all/wrapping, licences, original hashes and subset manifest/provenance in public/fonts and REFERENCES. Full originals are not bundled; Python/fontTools is preparation tooling only, not a web build requirement. Preserved all Korean strings.
+
+Executed offline: `npm run build`, `node scripts/check-release-manifest.mjs`, `npm test` (427 passed), `npm run typecheck`, `npm run lint`, `node scripts/check-design-tokens.mjs --self-test` (88/88 contrast cases) passed. FontTools cmap checks confirmed all 2,350 KS X 1001 syllables in each Korean face. Production manifest contains all 16 fonts; CSS emits relative local font URLs. `npm run test:browser -- --project=chromium --workers=1 guided-onboarding.spec.ts -g 'empty list'`: 1 passed with real Worker/WASM and no collected console/page errors. Logs: ignored `test-results/redesign/pr3/`.
+
+Next: home structure and affected browser selectors. Cross-engine font rendering, physical devices and app-baseline approval remain unverified. No push/PR/merge/deployment.
+
 # 2026-10-26 — Redesign FIX PR2
 
 Fixed all four PR2 minors: distinct accessible hover colors, system-ui fallback, navy shadows, and explicit status-on-app/subtle cases (existing panel cases retained).

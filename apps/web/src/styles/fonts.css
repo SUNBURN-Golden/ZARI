@@ -1,0 +1,127 @@
+/* OFL self-hosted subsets. Source versions, coverage and licences: public/fonts/README.md. */
+@font-face {
+  font-family: "IBM Plex Sans KR";
+  src: url("/fonts/plex-kr-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-400-base.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-ABFF, U+D7B0-10FFFF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-400-ko-1.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AC00-B3FF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-400-ko-2.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+B400-BBFF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-400-ko-3.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+BC00-C3FF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-400-ko-4.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+C400-CBFF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-400-ko-5.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+CC00-D3FF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-400-ko-6.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+D400-D7AF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-500-base.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-ABFF, U+D7B0-10FFFF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-500-ko-1.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AC00-B3FF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-500-ko-2.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+B400-BBFF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-500-ko-3.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+BC00-C3FF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-500-ko-4.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+C400-CBFF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-500-ko-5.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+CC00-D3FF;
+}
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/pretendard-500-ko-6.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+D400-D7AF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/plex-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
