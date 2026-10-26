@@ -3284,6 +3284,10 @@ dialog.detail-sheet .detail-heading {
   flex-wrap: wrap;
   gap: var(--zari-space-2);
 }
+.room-card-title-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .room-card-rev {
   font-size: var(--zari-text-sm);
   color: var(--zari-text-muted);
