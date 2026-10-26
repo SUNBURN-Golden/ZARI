@@ -18,7 +18,7 @@ Status: proposed implementation refinement, documentation only. [DESIGN.md](../D
 
 ZARI is a workspace for organizing real objects in a measured space. Its visual identity comes from measurement-to-diagram, placement-to-evidence and plan-to-execution connections. Apple informs hierarchy, restraint and interaction clarity; IKEA and Elfa inform planning-to-purchase continuity. None supplies ZARI's visual assets, proprietary engine or implied functionality.
 
-Preserve warm neutral surfaces, dark readable text, restrained green brand actions, systematic alignment and thin meaningful physical outlines. Improve precision through relationships, not through smaller text, excessive empty space or decoration. A dense enough working viewport and a clearly labeled unknown are more valuable than an elaborate hero or perfect-looking room image.
+Preserve cool drafting-paper surfaces, dark readable text, functional cobalt brand actions, systematic alignment and thin meaningful physical outlines. Improve precision through relationships, not through smaller text, excessive empty space or decoration. A dense enough working viewport and a clearly labeled unknown are more valuable than an elaborate hero or perfect-looking room image.
 
 The defining interactions are:
 
@@ -29,13 +29,13 @@ The defining interactions are:
 - Edit input and immediately see that the previous plan is historical until reconciled.
 - Inspect a BOM quantity and trace it to placement IDs in the same snapshot.
 
-The product must not default to KPI-card rows, nested cards, pills around every status, giant gradient titles, generic purple/blue AI decoration, sparkle badges, glass panels, fake productivity metrics, oversized empty margins, shrunken desktop layouts on mobile or entrance animation on every element. A domain-relevant numeric summary is allowed when it helps a decision; it must have a defined source and meaning.
+The product must not default to KPI-card rows, nested cards, pills around every status, giant gradient titles, generic AI decoration (purple hue 245–320 is forbidden; functional cobalt dimensions/actions are approved), sparkle badges, glass panels, fake productivity metrics, oversized empty margins, shrunken desktop layouts on mobile or entrance animation on every element. A domain-relevant numeric summary is allowed when it helps a decision; it must have a defined source and meaning.
 
 ## 2. Typography and spacing
 
 ### Typography
 
-Use the existing system stack from `apps/web/src/styles/tokens.css`. Do not add webfont downloads or bundle a font merely to make the app appear more designed. Test Korean on the target OS/browser combinations; a system stack is a deliberate initial choice, not a claim that every OS renders identically.
+Use the semantic heading/body/numeral font stacks in `apps/web/src/styles/tokens.css`: self-hosted OFL IBM Plex Sans KR 600, Pretendard 400/500, IBM Plex Mono 400 for numbers/×/mm only. Use font-display: swap and retain OS fallbacks. Test Korean coverage and wrapping. The previous system-only/no-font-bundle rule is superseded by owner approval, D-redesign-20261026 (2026-10-26).
 
 | Role | Existing token / size | Usage |
 |---|---|---|
@@ -73,11 +73,11 @@ Keep one structural background per pane, not a card around each field. Use align
 
 ### Existing seed assessment
 
-The seed defines coherent warm surfaces, readable text, border/focus colors and a restrained accent. It also correctly distinguishes decorative grid/divider colors from meaningful control outlines. Its recorded token-pair tests cover declared opaque pairs only; no app rendering or complete accessibility claim follows.
+Historical seed assessment (superseded by D-redesign-20261026): the seed defined warm surfaces, readable text, border/focus colors and a restrained accent. It also correctly distinguishes decorative grid/divider colors from meaningful control outlines. Its recorded token-pair tests cover declared opaque pairs only; no app rendering or complete accessibility claim follows.
 
-Two gaps require a future token task: unknown/stale/disabled semantics are absent, and selection currently aliases the green accent while success is another green. Different variable names alone do not prevent a selected item being read as valid. Keep green accent for primary brand actions; move selection to the existing blue family and add non-color distinctions.
+Two gaps require a future token task: unknown/stale/disabled semantics are absent, and selection currently aliases the green accent while success is another green. Different variable names alone do not prevent a selected item being read as valid. This earlier green-action proposal is superseded: cobalt is the action/selection accent; non-color distinctions remain required.
 
-### Exact proposed token changes for implementation
+### Historical proposed token changes / superseded by D-redesign-20261026
 
 These are proposed CSS aliases to implement and test in the relevant UI task; they are not edits to the current token file. They deliberately reuse the existing palette rather than create a new design identity.
 
@@ -101,7 +101,7 @@ These are proposed CSS aliases to implement and test in the relevant UI task; th
 --zari-preview-outline: var(--zari-text-secondary);
 ```
 
-The existing values behind these aliases are blue `#295C77`, blue-soft `#EAF2F8`, secondary text `#525C53`, subtle surface `#ECEDE7`, control border `#788276`, warning `#79520E`, warning-soft `#FFF2D8`, and muted text `#626B62`. Retain green success `#2F623F` and its soft surface. Explicit aliases allow later tuning without code treating unknown as disabled or stale as physical warning.
+Historical values (superseded; use tokens.css): the values behind these aliases are blue `#295C77`, blue-soft `#EAF2F8`, secondary text `#525C53`, subtle surface `#ECEDE7`, control border `#788276`, warning `#79520E`, warning-soft `#FFF2D8`, and muted text `#626B62`. Retain green success `#2F623F` and its soft surface. Explicit aliases allow later tuning without code treating unknown as disabled or stale as physical warning.
 
 Reusing a base color does not merge semantics: warning is a condition requiring attention; stale is a relationship to newer input/context; unknown is missing evidence; disabled is an unavailable action. Each has distinct text/shape and independent state. Selection/focus may share blue because they are both interaction cues, but focus uses an external offset outline and selection marks the selected object/row. A selected object can simultaneously fail a check.
 
@@ -130,9 +130,9 @@ These are design targets derived from W3C guidance; token arithmetic alone canno
 
 | Element | Shape contract |
 |---|---|
-| Text input, select and normal button | Existing 0.5 rem control radius; rectangular proportions |
-| Standalone bounded panel | Existing 0.75 rem panel radius where it is actually a bounded surface |
-| Dialog/popover/mobile sheet | Existing 1 rem overlay radius; sheet may have square bottom corners against viewport edge |
+| Text input, select and normal button | 6px control radius; rectangular proportions (previous 0.5 rem superseded) |
+| Standalone bounded panel | 0 sheet/panel radius (previous 0.75 rem superseded) |
+| Dialog/popover/mobile sheet | 6px dialog controls, 0 sheet radius (previous 1 rem overlay superseded) |
 | Structural desktop pane | Square edge/divider permitted; no unnecessary surrounding rounded card |
 | Status row | Icon + text; not a pill by default |
 | Physical product geometry | Exact measured bounding shape/coordinates; UI radius must not shrink or round away physical extent |
@@ -236,7 +236,7 @@ If introduced, keep it local/CI-only initially, disable optional telemetry, and 
 
 ### Impeccable and other design-agent guidance
 
-Impeccable can provide optional critique after a manual review workflow proves useful. It is not a runtime dependency, architecture authority or mandatory gate. Its current README includes preferences against system-default fonts, while ZARI explicitly chooses a Korean system stack. Such preferences do not override this contract.
+Impeccable can provide optional critique after a manual review workflow proves useful. It is not a runtime dependency, architecture authority or mandatory gate. Its current README includes preferences against system-default fonts, while ZARI now chooses owner-approved self-hosted Korean fonts under D-redesign-20261026 (superseding its earlier system-stack choice). Such preferences do not override this contract.
 
 The current project also describes an engine/launcher download and source-writing initialization/live workflows. Therefore no default global installation, automatic updates, init-generated product/design rewrite or source-mutating live mode is part of v1. A later use must pin/review the tool, respect repository contracts, and distinguish suggestions from approved decisions. No Impeccable code or tool is installed in this phase. [Impeccable source repository](https://github.com/pbakaus/impeccable)
 
@@ -259,3 +259,7 @@ For a visual change:
 Do not use personal home photos or inventory in design evidence without explicit consent. Generated concept images are not application screenshots. Passing a color checker is not equivalent to browser/keyboard/screen-reader verification, and none of those alone establishes product usefulness.
 
 The UX Interaction Gate checks measurement-to-diagram linkage, provisional vs authoritative moves, distinct unknown/stale/selection states, consistent snapshot rendering, keyboard/single-pointer equivalents, compact layout and truthful saving/error recovery. Stop progression for a hidden hard failure, misleading green status, stale result presented as current, inaccessible primary flow or an unapproved baseline replacement. Notes about visual polish cannot excuse a broken invariant.
+
+## Adopted redesign override — 2026-10-26
+
+D-redesign-20261026 supersedes the historical warm ivory/terracotta/green, system-only and light-only rules above. Light background/accent are #E7EEF6/#1F4FC4; dark are #0C1E36/#8DB8FF. Shared typography/palette/radii apply site-wide, superseding home colour-only constraints. Sheet/panel radius is 0, controls 6px. Home structure follows the owner-approved drafting-sheet mockup, with existing Korean copy retained. No external skill preference is adopted. Dark mode is supported; token tests and actual app checks are separate evidence, and approved mockup status does not approve app baselines.
