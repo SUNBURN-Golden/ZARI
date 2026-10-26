@@ -18,7 +18,7 @@ DESIGN.md, semantic CSS 토큰, 핵심 화면·컴포넌트 명세, 검토 체�
 
 Historical decision retained below; its light-only, green/warm palette and no-font-bundle constraints are superseded by owner approval on 2026-10-26.
 
-warm neutral, charcoal, muted green accent의 최소 토큰을 작성한다. 실제 화면 검토 전 값은 초안이다. 전면 glassmorphism·자동 dark theme·글꼴 파일 번들링은 포함하지 않는다. 대비 검사는 토큰 쌍 수준이며 전체 UI 승인이 아니다.
+SUPERSEDED by D-redesign-20261026 (historical text): warm neutral, charcoal, muted green accent의 최소 토큰을 작성한다. 실제 화면 검토 전 값은 초안이다. 전면 glassmorphism·자동 dark theme·글꼴 파일 번들링은 포함하지 않는다. 대비 검사는 토큰 쌍 수준이며 전체 UI 승인이 아니다.
 
 ## D004 — 도구는 아직 설치하지 않음 / 후보 유지
 

@@ -1,8 +1,14 @@
+# 2026-10-26 — Redesign FIX PR1
+
+D003 body explicitly superseded. Fresh build/typecheck/lint/unit **427/427**/token self-test/manifest PASS. Local origin/main comparison and all four visually inspected Playwright captures: [PR1 FIX notes](redesign/PR1.md). Historical failure remains recorded below; it did not reproduce on the baseline. No app change or app-baseline approval. Next: PR2.
+
 # 2026-10-26 — Redesign PR-1: owner-approved design decisions
 
 Base `0fd20e6`, local branch `redesign/zari/pr1-design-decisions`. Adopted D-redesign-20261026 in DESIGN, DECISIONS and DESIGN_SYSTEM: drafting-paper/cobalt palette, official dark mode, self-hosted OFL heading/body/numeral fonts, two radii, shared site tokens and home structure. Historical decisions are marked superseded. `docs/longblack-structure-spec.md` is absent at this base. No application code, data, source prompts or baseline changed.
 
 Executed offline with Node 24.19.0 and the existing npm lock/dependencies: `npm run build`, `npm run typecheck`, `npm run lint`, `node scripts/check-design-tokens.mjs --self-test` passed. `npm test`: 426 passed / 1 failed, unchanged `session.test.ts` “a worker crash mid-search is interrupted, not a completed result”, timed out waiting for the session (last search=running). This Markdown-only diff cannot affect that path; no automatic retry or timeout/test weakening. Logs: ignored `test-results/redesign/pr1/`.
+
+FIX baseline comparison: local `origin/main` (`0fd20e6`) now passes all 427 unit tests with `--maxWorkers=1`, including the worker-crash case. The historical PR-1 failure was not reproduced on that base; its cause remains unproven. The six previously flagged browser workflows also pass on that base (5 + 1 selected tests; baseline onboarding is line 166). Logs: `/workspace/rd-wt/logs/zari-fix/base-{unit,six,guide-corrected}.log`. An initial onboarding name selector matched no tests and was corrected before that test ran.
 
 Browser rendering not run for this documentation-only PR. Next: PR-2 tokens, PR-3 fonts, PR-4 home plus affected tests, PR-5 expanded viewport/accessibility regression. Korean copy proposals remain deferred. No push, remote PR, merge, deployment, independent review or app-baseline approval.
 
