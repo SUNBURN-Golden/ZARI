@@ -1,3 +1,15 @@
+# 2026-10-26 — Redesign FIX PR2
+
+Fixed all four PR2 minors: distinct accessible hover colors, system-ui fallback, navy shadows, and explicit status-on-app/subtle cases (existing panel cases retained).
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR2 FIX notes](redesign/PR2.md).
+
+# 2026-10-26 — Redesign PR-2: semantic drafting tokens
+
+Branch `redesign/zari/pr2-drafting-tokens`, stacked on PR-1. Implemented the approved light/dark palette, heading/numeral font tokens, 0/6px radius tokens and migrated every old panel/overlay/pill radius reference. Added text/accent/muted-on-grid contrast cases (inverse-on-accent and border-on-panel already existed), dual theme-color metadata and cobalt favicon. Korean copy and domain/data contracts unchanged.
+
+Executed offline: `npm run build`, `node scripts/check-release-manifest.mjs`, `npm test` (51 files / 427 passed), `npm run typecheck`, `npm run lint`, `node scripts/check-design-tokens.mjs --self-test` (13 checker tests, 88/88 light/dark contrast cases) all passed. Logs: ignored `test-results/redesign/pr2/`. Browser rendering is deferred to home integration, so token arithmetic is not a full UI accessibility claim. Next: self-hosted fonts. No remote operations, merge or baseline promotion.
+
 # 2026-10-26 — Redesign FIX PR1
 
 D003 body explicitly superseded. Fresh build/typecheck/lint/unit **427/427**/token self-test/manifest PASS. Local origin/main comparison and all four visually inspected Playwright captures: [PR1 FIX notes](redesign/PR1.md). Historical failure remains recorded below; it did not reproduce on the baseline. No app change or app-baseline approval. Next: PR2.

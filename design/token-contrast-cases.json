@@ -247,6 +247,90 @@
       "foreground": "--zari-text-secondary",
       "background": "--zari-info-soft",
       "minimum": 4.5
+    },
+    {
+      "id": "primary-on-grid",
+      "foreground": "--zari-text-primary",
+      "background": "--zari-canvas-grid",
+      "minimum": 4.5
+    },
+    {
+      "id": "accent-on-grid",
+      "foreground": "--zari-accent",
+      "background": "--zari-canvas-grid",
+      "minimum": 4.5
+    },
+    {
+      "id": "muted-on-grid",
+      "foreground": "--zari-text-muted",
+      "background": "--zari-canvas-grid",
+      "minimum": 4.5
+    },
+    {
+      "id": "info-on-app",
+      "foreground": "--zari-info",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "info-on-subtle",
+      "foreground": "--zari-info",
+      "background": "--zari-surface-subtle",
+      "minimum": 4.5
+    },
+    {
+      "id": "success-on-app",
+      "foreground": "--zari-success",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "success-on-subtle",
+      "foreground": "--zari-success",
+      "background": "--zari-surface-subtle",
+      "minimum": 4.5
+    },
+    {
+      "id": "warning-on-app",
+      "foreground": "--zari-warning",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "warning-on-subtle",
+      "foreground": "--zari-warning",
+      "background": "--zari-surface-subtle",
+      "minimum": 4.5
+    },
+    {
+      "id": "danger-on-app",
+      "foreground": "--zari-danger",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "danger-on-subtle",
+      "foreground": "--zari-danger",
+      "background": "--zari-surface-subtle",
+      "minimum": 4.5
+    },
+    {
+      "id": "accent-hover-on-app",
+      "foreground": "--zari-accent-hover",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "accent-hover-on-panel",
+      "foreground": "--zari-accent-hover",
+      "background": "--zari-surface-panel",
+      "minimum": 4.5
+    },
+    {
+      "id": "accent-hover-on-grid",
+      "foreground": "--zari-accent-hover",
+      "background": "--zari-canvas-grid",
+      "minimum": 4.5
     }
   ]
 }

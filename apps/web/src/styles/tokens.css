@@ -1,23 +1,23 @@
-/* ZARI design seed v0.2 — Warm Ivory + Terracotta (Light) & Warm Obsidian (Dark).
+/* ZARI drafting paper (light) and blueprint navy (dark) — D-redesign-20261026.
  * Canonical semantic tokens checked by scripts/check-design-tokens.mjs.
- * No external fonts, network imports, reset, or third-party package required.
+ * Self-hosted OFL fonts only; no network imports, reset or third-party package required.
  */
 :root {
   color-scheme: light dark;
-  --zari-surface-app: #F7F4EE;
-  --zari-surface-panel: #FFFFFF;
-  --zari-surface-subtle: #EFECE4;
-  --zari-text-primary: #1E1B18;
-  --zari-text-secondary: #574F47;
-  --zari-text-muted: #6B6259;
-  --zari-text-inverse: #FFFFFF;
-  --zari-border-subtle: #E2DDD3;
-  --zari-border-control: #857B70;
-  --zari-accent: #8A4224;
-  --zari-accent-hover: #6E3219;
-  --zari-accent-soft: #F7EAE3;
+  --zari-surface-app: #E7EEF6;
+  --zari-surface-panel: #F4F7FB;
+  --zari-surface-subtle: #E7EEF6;
+  --zari-text-primary: #0E2240;
+  --zari-text-secondary: #44587A;
+  --zari-text-muted: #44587A;
+  --zari-text-inverse: #F4F7FB;
+  --zari-border-subtle: #C3D0DF;
+  --zari-border-control: #6A7D99;
+  --zari-accent: #1F4FC4;
+  --zari-accent-hover: #153FA3;
+  --zari-accent-soft: #E7EEF6;
   --zari-selection-ring: var(--zari-accent);
-  --zari-focus-ring: #8A4224;
+  --zari-focus-ring: #1F4FC4;
   --zari-success: #2D623E;
   --zari-success-soft: #EAF3E9;
   --zari-warning: #7A510D;
@@ -30,10 +30,12 @@
   --zari-unknown: var(--zari-text-muted);
   --zari-stale: var(--zari-warning);
   --zari-preview: var(--zari-info);
-  --zari-canvas-bg: #FAF8F3;
-  --zari-canvas-outline: #3A342E;
-  --zari-canvas-grid: #E6E1D6;
-  --zari-font-ui: -apple-system, BlinkMacSystemFont, system-ui, "Pretendard Variable", "Pretendard", "SUIT Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --zari-canvas-bg: #F4F7FB;
+  --zari-canvas-outline: #0E2240;
+  --zari-canvas-grid: #DCE5EF;
+  --zari-font-ui: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  --zari-font-heading: "IBM Plex Sans KR", var(--zari-font-ui);
+  --zari-font-num: "IBM Plex Mono", ui-monospace, monospace;
   --zari-font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", "Segoe UI Mono", monospace;
   --zari-text-xs: 0.8125rem;
   --zari-text-sm: 0.875rem;
@@ -56,10 +58,8 @@
   --zari-space-8: 2rem;
   --zari-space-12: 3rem;
   --zari-space-16: 4rem;
-  --zari-radius-control: 0.625rem;
-  --zari-radius-panel: 1rem;
-  --zari-radius-overlay: 1.25rem;
-  --zari-radius-pill: 9999px;
+  --zari-radius-control: 6px;
+  --zari-radius-sheet: 0;
   --zari-border-width: 1px;
   --zari-focus-width: 2px;
   --zari-focus-offset: 3px;
@@ -73,29 +73,29 @@
   --zari-z-popover: 30;
   --zari-z-modal: 50;
   --zari-z-toast: 60;
-  --zari-shadow-raised: 0 2px 10px -2px rgba(30, 27, 24, 0.06), 0 1px 3px 0 rgba(30, 27, 24, 0.04);
-  --zari-shadow-overlay: 0 20px 48px -8px rgba(15, 13, 11, 0.22), 0 4px 14px -2px rgba(15, 13, 11, 0.10);
-  --zari-duration-fast: 120ms;
+  --zari-shadow-raised: 0 2px 10px -2px rgba(14, 34, 64, 0.06), 0 1px 3px 0 rgba(14, 34, 64, 0.04);
+  --zari-shadow-overlay: 0 20px 48px -8px rgba(12, 30, 54, 0.22), 0 4px 14px -2px rgba(12, 30, 54, 0.10);
+  --zari-duration-fast: 140ms;
   --zari-duration-base: 180ms;
   --zari-duration-panel: 240ms;
-  --zari-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --zari-ease-standard: ease-out;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --zari-surface-app: #161513;
-    --zari-surface-panel: #1F1D1A;
-    --zari-surface-subtle: #282521;
-    --zari-text-primary: #F5F2EB;
-    --zari-text-secondary: #C2B9AD;
-    --zari-text-muted: #A49B8F;
-    --zari-text-inverse: #161513;
-    --zari-border-subtle: #38332E;
-    --zari-border-control: #8C8277;
-    --zari-accent: #E08B63;
-    --zari-accent-hover: #EE9E78;
-    --zari-accent-soft: #38251C;
-    --zari-focus-ring: #E08B63;
+    --zari-surface-app: #0C1E36;
+    --zari-surface-panel: #132A4A;
+    --zari-surface-subtle: #0C1E36;
+    --zari-text-primary: #E4ECF6;
+    --zari-text-secondary: #A3B6CF;
+    --zari-text-muted: #A3B6CF;
+    --zari-text-inverse: #0C1E36;
+    --zari-border-subtle: #24406A;
+    --zari-border-control: #5F7A9E;
+    --zari-accent: #8DB8FF;
+    --zari-accent-hover: #B0CEFF;
+    --zari-accent-soft: #0C1E36;
+    --zari-focus-ring: #8DB8FF;
     --zari-info: #73B7DC;
     --zari-info-soft: #1B2D38;
     --zari-success: #74C68B;
@@ -104,11 +104,11 @@
     --zari-warning-soft: #352812;
     --zari-danger: #F08284;
     --zari-danger-soft: #3A1D1E;
-    --zari-canvas-bg: #1A1816;
-    --zari-canvas-outline: #D8CFC2;
-    --zari-canvas-grid: #2D2925;
-    --zari-shadow-raised: 0 2px 12px -2px rgba(0, 0, 0, 0.45), 0 1px 3px 0 rgba(0, 0, 0, 0.35);
-    --zari-shadow-overlay: 0 24px 56px -8px rgba(0, 0, 0, 0.65), 0 6px 18px -2px rgba(0, 0, 0, 0.45);
+    --zari-canvas-bg: #132A4A;
+    --zari-canvas-outline: #E4ECF6;
+    --zari-canvas-grid: #183356;
+    --zari-shadow-raised: 0 2px 12px -2px rgba(4, 13, 28, 0.45), 0 1px 3px 0 rgba(4, 13, 28, 0.35);
+    --zari-shadow-overlay: 0 24px 56px -8px rgba(4, 13, 28, 0.65), 0 6px 18px -2px rgba(4, 13, 28, 0.45);
   }
 }
 
@@ -124,6 +124,7 @@
   overflow-wrap: break-word;
 }
 .zari-numeral {
+  font-family: var(--zari-font-num);
   font-variant-numeric: tabular-nums lining-nums;
 }
 .zari-focus-ring:focus-visible,
