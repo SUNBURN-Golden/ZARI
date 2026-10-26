@@ -1,4 +1,10 @@
-# 2026-10-26 — Redesign PR-5: regression coverage and final build record
+# 2026-10-26 — Redesign FIX PR5
+
+Fixed the six-workflow evidence gap, screenshot checklists, font ownership (all rename work in PR3), and permanent populated-list/context regressions. PR4 owns the real long-name overflow fix.
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR5 FIX notes](redesign/PR5.md).
+
+# 2026-10-26 — Redesign PR-5: historical BUILD-stage record (before FIX)
 
 Branch `redesign/zari/pr5-home-regressions`, stacked on PR-4 (`42b6064`). PR-1–PR-5 only; all branches are local. Node 24.19.0, existing npm 11.17.0 (engines 11.x; packageManager says 11.9.0), Rust 1.98.1 / wasm-bindgen 0.2.128. npm and Cargo commands ran offline, with no dependency or lock changes.
 
