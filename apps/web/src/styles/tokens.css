@@ -68,6 +68,32 @@
   --zari-panel-width: 18rem;
   --zari-inspector-width: 20rem;
   --zari-content-max: 100rem;
+  /* Owner-approved home rhythm; extra sheet height retains full Korean labels. */
+  --zari-home-max: 85rem;
+  --zari-home-inline-space: 2.5rem;
+  --zari-home-intro-space: 2.25rem;
+  --zari-home-title-size: 2.125rem;
+  --zari-home-title-compact: 1.625rem;
+  --zari-home-heading-size: 1.25rem;
+  --zari-home-body-size: 0.9375rem;
+  --zari-home-action-size: 1.0625rem;
+  /* SVG font sizes are viewBox units, scaled by the rendered SVG width. */
+  --zari-home-svg-label-size: 16px;
+  --zari-home-svg-number-size: 17px;
+  --zari-home-svg-compact-size: 18px;
+  --zari-home-entry-width: 22.5rem;
+  --zari-home-sheet-height: 37.5rem;
+  --zari-home-title-block-width: 22rem;
+  --zari-home-title-label-width: 8.25rem;
+  --zari-home-drawing-max: 47.5rem;
+  --zari-home-compact-drawing-max: 27.5rem;
+  --zari-home-saved-max: 57.5rem;
+  --zari-home-section-gap: 8.5rem;
+  --zari-home-section-gap-medium: 6.5rem;
+  --zari-home-section-gap-compact: 4.5rem;
+  --zari-home-section-bottom: 9.5rem;
+  --zari-home-action-height: 3.5rem;
+  --zari-home-action-height-compact: 3.25rem;
   --zari-z-canvas: 0;
   --zari-z-header: 10;
   --zari-z-popover: 30;

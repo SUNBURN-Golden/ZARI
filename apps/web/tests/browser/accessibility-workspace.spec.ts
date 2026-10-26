@@ -106,7 +106,7 @@ test('keyboard only: create, measure, compute, compare, adopt, and open the guid
   await page.goto('/');
   await expect(page.getByTestId('create-project')).toHaveAttribute('data-list-settled', 'true');
   await staysVisible(page, 'create-project');
-  await expect(page.locator('.local-note')).toContainText('이 기기에만 저장');
+  await expect(page.getByTestId('example-sheet').locator('.local-note')).toContainText('이 기기에만 저장');
   await noHorizontalOverflow(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
 
@@ -372,4 +372,31 @@ test('cancelling a running calculation returns focus and keeps the measurement',
     holder.__queued = [];
   });
   expect(errors.filter((error) => !/worker_timeout|search_stalled/.test(error))).toEqual([]);
+});
+
+
+test('home sheet context does not overlap its title block or dimension labels', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('example-sheet')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const width of [320, 390, 600, 601, 768, 800, 801, 1024, 1199, 1200, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const overlaps = await page.locator('.example-sheet').evaluate(sheet => {
+        // Measure visible text, not adjacent block borders whose coordinates
+        // can round across the same edge in Firefox. No overlap tolerance.
+        const contextText = document.createRange();
+        contextText.selectNodeContents(sheet.querySelector('.sheet-context')!);
+        const context = contextText.getBoundingClientRect();
+        const candidates = [sheet.querySelector('.sheet-title-block')!, ...sheet.querySelectorAll('svg text')];
+        return candidates.filter(el => {
+          const box = el.getBoundingClientRect();
+          return box.width > 0 && box.height > 0 && box.left < context.right && box.right > context.left && box.top < context.bottom && box.bottom > context.top;
+        }).map(el => el.textContent);
+      });
+      expect(overlaps, JSON.stringify({ width, colorScheme })).toEqual([]);
+      await noHorizontalOverflow(page);
+    }
+  }
 });

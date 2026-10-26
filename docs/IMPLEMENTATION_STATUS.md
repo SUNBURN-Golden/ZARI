@@ -1,3 +1,29 @@
+# 2026-10-26 — Redesign FIX PR4 overlap measurement
+
+The home context overlap test measures the visible text Range. Firefox rounds touching block edges across one another by 0.00003px at 601px; the actual text has an 11.85px gap. No application CSS, copy or numeric tolerance changes. Production build/typecheck/lint PASS; the revised overlap test **3/3 PASS** across Chromium/Firefox/WebKit. Details in [PR4 notes](redesign/PR4.md).
+
+# 2026-10-26 — Redesign FIX PR4
+
+Fixed structured example identity/front-view constants, sheet-context overlap coverage in the hero test, re-pinned copy pointers, and long saved-name wrapping (overflow-wrap: anywhere on the shrinking flex item).
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR4 FIX notes](redesign/PR4.md).
+
+# 2026-10-26 — Redesign FIX PR4
+
+Fixed structured example identity/front-view constants, added sheet-context overlap coverage in accessibility-workspace.spec.ts in this hero PR, and re-pinned the copy review ledger.
+
+Fresh build/typecheck/lint/unit **427/427**/tokens **110/110**/manifest PASS; four Playwright captures visually inspected. Details, dispositions and next work: [PR4 FIX notes](redesign/PR4.md).
+
+# 2026-10-26 — Redesign PR-4: drawing sheet home and test alignment
+
+Branch `redesign/zari/pr4-drawing-home`, stacked on PR-3. Replaced home launch-card nesting and decorative miniature scenes with ExampleSheet, visible title-block facts, two plain start rows and import beside the saved heading. Plan/front/compact plan render the bundled default-form.json at uniform 0.6/0.45/0.44 px/mm respectively; no domain calculation, data or persisted record changed. Removed the home dot pattern and pill styling; retained Korean studio/kicker/entry/disclosure wording as plain text, removing only approved decorative dots. All previous ProjectsScreen data-testid values remain. Updated affected accessibility/onboarding/portable selectors and focus-order assertions in this PR; SCREENS/COMPONENTS describe the new renderer. Finished replacing legacy literal radii with the approved semantic pair.
+
+Copy freeze: full existing FIELD_LABELS remain in five fact rows, with a 600px inner desktop sheet to fit them. New/shortened Korean view captions and label wording are deferred; existing full height label is reused. The mockup's exact word count and shorter sheet are therefore not claimed. Copy proposals (including the obsolete empty-state card reference) are in `/workspace/rd-wt/logs/zari-copy-todo.md`. The duplicate disclosure retains its testid and saved-section location; no new confirmation behavior was introduced.
+
+Executed offline: `npm run build`, `node scripts/check-release-manifest.mjs`, `npm test` (427 passed), `npm run typecheck`, `npm run lint`, `node scripts/check-design-tokens.mjs --self-test` (88/88 contrast cases) passed; final production/token/manifest checks repeated after stylesheet cleanup. `npm run test:browser -- --project=chromium --workers=1 accessibility-workspace.spec.ts guided-onboarding.spec.ts portable.spec.ts lifecycle.spec.ts local-delivery.spec.ts redesign-review-temp.spec.ts`: 31 passed. A temporary rendering review covered light/dark at 320/390/600/601/768/800/801/1024/1199/1200/1280/1440: no overflow, SVG text ≥12 rendered px, targets ≥44px. Visual inspection found old dots and a touching height label; corrected both, added overlap/pattern assertions, then the final temporary review passed all 24 combinations again (1 test). That temporary spec was removed; PR-5 will preserve expanded regression coverage.
+
+Draft screenshots: ignored `test-results/redesign/pr4/home-{390,1440}-{light,dark}.png`; logs in `pr4/` and `pr4-final/`. These captures are not approved app baselines. Next: permanent responsive/axe/font-offline tests and final regression/parity. No remote operations, merge, deployment or source-prompt changes.
+
 # 2026-10-26 — Redesign FIX PR3
 
 Fixed PR3 font blocker/major and minors: embedded renamed subsets, notices/manifest and corrected 696,876-byte total are folded into the first font commit; heading preload is relative; strong/body and all heading weights are explicit with synthesis disabled.

@@ -157,6 +157,10 @@ wide는 목록과 요약, compact는 의미 있는 행별 계층으로 재배치
 
 `#/projects`에서 내 공간/합성 예제를 고르고 `#/project/<id>`의 안내 패널로 이어진다. 측정 순서·입력 예시·오류 수정·지원 범위와 실제 칸 이동을 제공한다. 안내를 닫아도 입력이 남고, 도움말 열기/초점 이동은 계산이나 저장을 만들지 않는다. 예제는 이름·배너·구매 불가 문구로 구분한다. [Dz-guided-onboarding](DECISIONS.md)와 FRONTEND §26을 따른다. 승인된 화면은 아니다.
 
+### S15 home presentation — owner-approved redesign, 2026-10-26
+
+D-redesign-20261026 replaces the nested launch cards with a static drawing sheet sourced from `default-form.json`, a title block, two plain start rows and import beside the saved-project heading. Existing Korean wording is retained; decorative dots are removed only where the approved specification lists them. Full measurement field labels are reused until shorter/new copy is approved, so the title block is taller than the mockup. The old kicker text moves into the sheet and the studio label becomes plain header text. The duplicate disclosure remains with saved-project guidance. No saved records, Rust decisions or action behavior change. Application screenshots remain draft; copy proposals are logged outside the repository at `../logs/zari-copy-todo.md`.
+
 ## S16 — 치수 번들 카탈로그 (초안)
 
 `#/catalog`의 `BundlePanel`. 로컬 파일 → Rust 검토 → 명시 저장의 순서다. 진행·격리·사용 불가·저장을 글자로 보이며, 거절 시 기존 카탈로그를 유지한다. 이미지 대신 평면·정면·상자와 치수 미확인을 보이고 저장 후에도 미확인이다. 저장소 URL 읽기는 이 빌드에서 꺼져 있다고 쓴다. [Dz-catalog-crawler](DECISIONS.md)와 FRONTEND §27을 따른다. 승인된 화면은 아니다.

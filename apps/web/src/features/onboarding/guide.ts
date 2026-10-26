@@ -15,7 +15,11 @@ import { nextFactDestination, type NextFactsView } from '../project/nextFacts';
  */
 
 /** Example projects carry this prefix; the real "내 공간" start never does. */
-export const EXAMPLE_NAME = '예제 · 합성 데이터 (실제 상품 아님)';
+export const EXAMPLE_IDENTITY = {
+  title: '예제',
+  disclosure: '합성 데이터 (실제 상품 아님)',
+} as const;
+export const EXAMPLE_NAME = `${EXAMPLE_IDENTITY.title} · ${EXAMPLE_IDENTITY.disclosure}`;
 
 export function isExampleName(name: string | null | undefined): boolean {
   return typeof name === 'string' && name.startsWith(EXAMPLE_NAME);
