@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Button } from 'react-aria-components';
 import type { ProjectInput } from '../contracts/generated/dto';
 import { inputSourceKey, readInputProjection } from '../features/plan/projection';
@@ -22,6 +22,9 @@ import {
 } from '../features/project/draft';
 import type { ProjectSession, SessionSnapshot } from '../features/project/session';
 import type { AttachmentRow, CatalogRow, OwnedContainerRow } from '../persistence/db';
+import { JourneyBar } from '../features/onboarding/JourneyBar';
+import { journeyFromProject, normalizedAt } from '../features/onboarding/journey';
+import { MeasureIcon } from '../ui/MeasureIcon';
 import { OnboardingPanel } from '../features/onboarding/OnboardingPanel';
 import {
   EXAMPLE_NAME,
@@ -49,28 +52,6 @@ const UNKNOWN_REASON: Record<string, string> = {
   sourceMissing: '출처 없음',
   conflictingSources: '출처 충돌',
 };
-
-/** Read one normalized measurement fact for display; never recomputes. */
-function normalizedAt(input: ProjectInput | null, field: MeasurementField) {
-  if (!input) return null;
-  const parts = field.split('.');
-  if (parts[0] === 'space') {
-    let node: unknown = input.space;
-    for (const seg of parts.slice(1)) {
-      if (typeof node !== 'object' || node === null) return null;
-      node = (node as Record<string, unknown>)[seg];
-    }
-    return node as { state: string; value?: { nominal: number }; reason?: string };
-  }
-  const item = input.items.find((i) => i.id === parts[1]);
-  if (!item) return null;
-  const axis = parts.at(-1) as 'width' | 'depth' | 'height';
-  return item.dimensions.envelope[axis] as {
-    state: string;
-    value?: { nominal: number };
-    reason?: string;
-  };
-}
 
 function normalizedText(input: ProjectInput | null, field: MeasurementField): string {
   const fact = normalizedAt(input, field);
@@ -119,6 +100,7 @@ function FieldGroup({
             <DimensionField
               id={field}
               label={FIELD_LABELS[field]}
+              icon={<MeasureIcon field={field} />}
               value={measurement.text}
               unit={measurement.unit}
               onChange={(text) => session.edit(field, text)}
@@ -130,14 +112,6 @@ function FieldGroup({
             />
             <span className="normalized-value" data-testid={`normalized-${field}`} data-historical={blocked(field) ? 'true' : undefined}>
               {normalizedText(state.normalizedInput, field)}
-            </span>
-            <span
-              id={`uncertainty-${field}`}
-              className="uncertainty-status"
-              data-testid={`uncertainty-${field}`}
-              data-uncertainty={measurement.uncertainty.state}
-            >
-              {uncertaintyLabel(measurement.uncertainty)}
             </span>
             {blocked(field) && (
               <span className="session-note">{blocked(field) === 'invalid' ? '이전 확인 값' : '입력 변경 · 이전 측정'}</span>
@@ -463,6 +437,30 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     (listener) => session.subscribe(listener),
     () => session.snapshot,
   );
+  const advancedFields = MEASUREMENT_FIELDS.filter((f) => !f.startsWith('space.interior.'));
+  const [advancedOpen, setAdvancedOpen] = useState(() => {
+    try { return sessionStorage.getItem(`zari-measure-advanced:${projectId}`) === 'true'; }
+    catch { return false; }
+  });
+  const advancedSignature = JSON.stringify(advancedFields.map((f) => state.form ? getMeasurement(state.form, f).text : ''));
+  useEffect(() => {
+    if (isExampleName(state.name) || (state.form && advancedFields.some((f) => getMeasurement(state.form!, f).text.trim() !== '' || normalizedAt(state.normalizedInput, f)?.state === 'known'))) setAdvancedOpen(true);
+    // Asynchronously restored or sample values reveal themselves; a later manual close persists until values change.
+  }, [advancedSignature, state.name, state.status]);
+  useEffect(() => {
+    if (state.diagnostics.some((d) => { const f = fieldPathFor(d.fieldPath); return f && advancedFields.includes(f); })) setAdvancedOpen(true);
+  }, [state.diagnostics]);
+  const toggleAdvanced = () => {
+    setAdvancedOpen(!advancedOpen);
+    try { sessionStorage.setItem(`zari-measure-advanced:${projectId}`, String(!advancedOpen)); } catch { /* view state only */ }
+  };
+  const [pendingFocus, setPendingFocus] = useState<{ field: MeasurementField } | null>(null);
+  useLayoutEffect(() => {
+    if (pendingFocus) {
+      focusMeasurementInput(pendingFocus.field);
+      setPendingFocus(null);
+    }
+  }, [pendingFocus, advancedOpen]);
   const [exported, setExported] = useState<string | null>(null);
   const [copyPhotos, setCopyPhotos] = useState<string | null>(null);
   useEffect(() => {
@@ -489,6 +487,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
       workspace.setFocus({ kind: 'none' });
       return;
     }
+    if (!field.startsWith('space.interior.')) setAdvancedOpen(true);
     const entry = state.inputDigest
       ? readInputProjection(state.plan.projections, state.inputDigest)
       : null;
@@ -497,7 +496,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
   };
   const gotoField = (field: MeasurementField) => {
     setFocused(field);
-    focusMeasurementInput(field);
+    setPendingFocus({ field });
   };
   const fieldBlock = (field: MeasurementField): 'stale' | 'invalid' | null => {
     if (state.diagnostics.some((entry) => fieldPathFor(entry.fieldPath) === field)) return 'invalid';
@@ -514,7 +513,10 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     const field = MEASUREMENT_FIELDS.find((item) =>
       state.diagnostics.some((entry) => fieldPathFor(entry.fieldPath) === item),
     );
-    if (field) document.getElementById(field)?.focus();
+    if (field) {
+      if (!field.startsWith('space.interior.')) setAdvancedOpen(true);
+      setPendingFocus({ field });
+    }
   }, [state.diagnostics, state.inputRevision, state.saveState]);
   useEffect(() => {
     if (state.status !== 'ready' || state.worker !== 'ready') return;
@@ -529,6 +531,12 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     const target = session.takeDraftFocus();
     if (!target) return;
     const query = draftFocusQuery(target);
+    if (query.kind === 'id' && (MEASUREMENT_FIELDS as readonly string[]).includes(query.value)) {
+      const field = query.value as MeasurementField;
+      if (!field.startsWith('space.interior.')) setAdvancedOpen(true);
+      setPendingFocus({ field });
+      return;
+    }
     const element =
       query.kind === 'id'
         ? document.getElementById(query.value)
@@ -675,6 +683,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           </Button>
         </div>
       )}
+      <JourneyBar view={journeyFromProject(state)} onField={gotoField} measure />
       <section
         className="measurement-panel"
         aria-labelledby="measure-title"
@@ -687,6 +696,32 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         <h2 id="measure-title">공간을 측정해 주세요.</h2>
         <div className="measure-workspace">
           <div className="measure-column-main">
+        <div className="measure-field-grid">
+          <FieldGroup session={session} state={state} fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('space.interior.'))} focused={focused} setFocused={setFocused} blocked={fieldBlock} />
+        </div>
+        {/* copy-todo: progressive measurement disclosure. */}
+        <Button className="button button-quiet measure-advanced-toggle" data-testid="measure-advanced-toggle" aria-expanded={advancedOpen} aria-controls="measure-advanced" onPress={toggleAdvanced}>
+          더 정확하게
+        </Button>
+        <div id="measure-advanced" data-testid="measure-advanced" data-open={String(advancedOpen)} hidden={!advancedOpen}>
+          {/* copy-todo: optional opening label. */}
+          <h3 className="section-kicker">개구부 (선택)</h3>
+          <div className="measure-field-grid">
+            <FieldGroup session={session} state={state} fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('space.opening.'))} focused={focused} setFocused={setFocused} blocked={fieldBlock} />
+          </div>
+          <div className="section-kicker">02 · 물건 치수</div>
+          <div className="measure-field-grid">
+            <FieldGroup session={session} state={state} fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('items.'))} focused={focused} setFocused={setFocused} blocked={fieldBlock} />
+          </div>
+          {/* copy-todo: tolerance section title; existing status strings are preserved. */}
+          <h3 className="section-kicker">오차</h3>
+          <dl className="measurement-list">
+            {MEASUREMENT_FIELDS.map((field) => {
+              const measurement = state.form ? getMeasurement(state.form, field) : null;
+              return measurement && <div key={field}><dt>{FIELD_LABELS[field]}</dt><dd id={`uncertainty-${field}`} data-testid={`uncertainty-${field}`} data-uncertainty={measurement.uncertainty.state}>{uncertaintyLabel(measurement.uncertainty)}</dd></div>;
+            })}
+          </dl>
+        </div>
         <OnboardingPanel
           projectId={projectId}
           form={state.form}
@@ -702,32 +737,11 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           onField={(path) => {
             setDetailTarget({ path, token: Date.now() });
             if ((MEASUREMENT_FIELDS as readonly string[]).includes(path)) {
-              setFocused(path as MeasurementField);
+              gotoField(path as MeasurementField);
             }
           }}
           onCatalog={() => navigate('#/catalog')}
         />
-        <div className="measure-field-grid">
-          <FieldGroup
-            session={session}
-            state={state}
-            fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('space.'))}
-            focused={focused}
-            setFocused={setFocused}
-            blocked={fieldBlock}
-          />
-        </div>
-        <div className="section-kicker">02 · 물건 치수</div>
-        <div className="measure-field-grid">
-          <FieldGroup
-            session={session}
-            state={state}
-            fields={MEASUREMENT_FIELDS.filter((f) => f.startsWith('items.'))}
-            focused={focused}
-            setFocused={setFocused}
-            blocked={fieldBlock}
-          />
-        </div>
         <p className="focus-context" data-testid="focus-context" aria-live="polite">
           {focused ? `${FIELD_LABELS[focused]}. ${fieldCaption(focused)}` : '\u00A0'}
         </p>
@@ -749,32 +763,10 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
               block={focused ? fieldBlock(focused) : null}
               onActivateField={(fieldPath) => {
                 if ((MEASUREMENT_FIELDS as readonly string[]).includes(fieldPath)) {
-                  setFocused(fieldPath as MeasurementField);
-                  document.getElementById(fieldPath)?.focus();
+                  gotoField(fieldPath as MeasurementField);
                 }
               }}
             />
-            <aside className="inspector studio-tech-tray" aria-labelledby="state-title">
-              <div className="studio-tech-head">
-                <div className="section-kicker">정규화 상태</div>
-                <h2 id="state-title">Rust가 확인한 값</h2>
-              </div>
-              <dl className="measurement-list studio-tech-dl">
-                <div><dt>프로젝트 리비전</dt><dd data-testid="project-revision">{state.projectRevision}</dd></div>
-                <div><dt>입력 리비전</dt><dd data-testid="input-revision">{state.inputRevision}</dd></div>
-                <div><dt>입력 다이제스트</dt><dd data-testid="input-digest">{state.inputDigest ? `${state.inputDigest.slice(0, 12)}…` : '없음'}</dd></div>
-                <div><dt>작업 컨텍스트</dt><dd data-testid="context-state">{state.context}</dd></div>
-                <div><dt>워커</dt><dd data-testid="worker-state">{state.worker}</dd></div>
-              </dl>
-              {state.staleInput && (
-                <p className="notice notice-stale" data-testid="stale-notice">저장되지 않은 입력 변경이 있습니다.</p>
-              )}
-              {state.integrity && (
-                <p className="session-note" data-testid="integrity-note">
-                  무결성 검사: {state.integrity.filter((i) => i.verified).length}/{state.integrity.length}개 기록 검증됨
-                </p>
-              )}
-            </aside>
           </div>
         </div>
         {otherDiagnostics.length > 0 && (
@@ -809,16 +801,36 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           <Button className="button button-quiet" onPress={() => void download('standard')} data-testid="export-project">
             프로젝트보내기
           </Button>
-          <Button
-            className="button button-secondary"
-            onPress={() => navigate(`#/project/${projectId}/plan`)}
+          <a
+            className="button button-quiet"
+            href={`#/project/${projectId}/plan`}
+            onClick={(event) => { event.preventDefault(); navigate(`#/project/${projectId}/plan`); }}
             data-testid="goto-plan"
           >
             계획 검토 →
-          </Button>
+          </a>
         </div>
+        {state.staleInput && (
+          <p className="notice notice-stale" data-testid="stale-notice">저장되지 않은 입력 변경이 있습니다.</p>
+        )}
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
         <PortablePanel projectId={projectId} />
+        <details className="dev-info" data-testid="dev-info">
+          {/* copy-todo: developer metadata disclosure. */}
+          <summary>개발 정보</summary>
+              <dl className="measurement-list studio-tech-dl">
+                <div><dt>프로젝트 리비전</dt><dd data-testid="project-revision">{state.projectRevision}</dd></div>
+                <div><dt>입력 리비전</dt><dd data-testid="input-revision">{state.inputRevision}</dd></div>
+                <div><dt>입력 다이제스트</dt><dd data-testid="input-digest">{state.inputDigest ? `${state.inputDigest.slice(0, 12)}…` : '없음'}</dd></div>
+                <div><dt>작업 컨텍스트</dt><dd data-testid="context-state">{state.context}</dd></div>
+                <div><dt>워커</dt><dd data-testid="worker-state">{state.worker}</dd></div>
+              </dl>
+              {state.integrity && (
+                <p className="session-note" data-testid="integrity-note">
+                  무결성 검사: {state.integrity.filter((i) => i.verified).length}/{state.integrity.length}개 기록 검증됨
+                </p>
+              )}
+        </details>
       </section>
       <div className="studio-aux-grid">
         <CatalogAndOwned session={session} state={state} />

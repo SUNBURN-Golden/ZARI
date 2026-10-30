@@ -125,6 +125,10 @@ test('first use: guide points at the Rust next fact, help jumps to the real fiel
   await commitSaved(page);
   await expect(page.getByTestId('normalized-space.interior.height')).toHaveText('1800 mm');
   // Unmeasured optional fields stay unmeasured; nothing was defaulted to a value.
+  // C2: reveal optional input before role query, unless the guide already revealed it.
+  if (await page.getByTestId('measure-advanced-toggle').getAttribute('aria-expanded') !== 'true') {
+    await page.getByTestId('measure-advanced-toggle').click();
+  }
   await expect(page.getByRole('textbox', { name: '개구부 폭', exact: true })).toHaveValue('');
   await expect(page.getByTestId('normalized-space.opening.width')).toHaveText('미측정');
 

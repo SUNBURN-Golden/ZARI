@@ -1,3 +1,4 @@
+import { openViewOptions } from './helpers/viewOptions';
 import { test, expect, type Locator, type Page } from '@playwright/test';
 
 /**
@@ -358,6 +359,7 @@ test.describe('plane drag matches one Rust move', () => {
 
     // Front view does not drag a placement into a command.
     const held = await counts(page);
+    await openViewOptions(page.getByTestId('edit-section').getByTestId('plan-workspace'));
     await page.getByTestId('edit-section').getByTestId('view-front').click();
     const front = page.getByTestId('edit-section').getByTestId('plan-diagram-front');
     const frontBox = await front.boundingBox();
@@ -554,6 +556,7 @@ test.describe('plane drag matches one Rust move', () => {
     expect(await placementAt(detail)).toEqual(origin);
 
     await page.emulateMedia({ forcedColors: 'active' });
+    await openViewOptions(detail.getByTestId('plan-workspace'));
     const contents = detail.getByTestId('layer-contents');
     if ((await contents.getAttribute('aria-pressed')) === 'true') await contents.click();
     const colored = await selectedBox(detail);

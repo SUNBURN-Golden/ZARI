@@ -54,7 +54,7 @@ export function InspectorLayers({
       <h3 id={titleId}>대상</h3>
       {!selection && (
         <>
-          <p data-testid="inspector-prompt">대상을 선택하면 내용물과 근거를 볼 수 있습니다.</p>
+          <p data-testid="inspector-prompt">{/* copy-todo: empty inspector guidance. */}<svg className="measure-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2L16 11L10 12L8 18Z" fill="none" stroke="currentColor" /></svg> 도면에서 물건을 눌러 보세요</p>
           <CheckSummary content={content} />
         </>
       )}

@@ -1,3 +1,4 @@
+import { openViewOptions } from './helpers/viewOptions';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
@@ -232,6 +233,7 @@ test('plan selection, checks, BOM focus, and view changes do not request another
   };
   await page.getByTestId('zoom-fit').click();
   await fitBox('plan-diagram-top', 20);
+  await openViewOptions(page.getByTestId('plan-workspace'));
   await page.getByTestId('view-front').click();
   await page.getByTestId('zoom-fit').click();
   await fitBox('plan-diagram-front', 16);
@@ -246,6 +248,7 @@ test('plan selection, checks, BOM focus, and view changes do not request another
   const requests = await spatialCount(page, 'plan-workspace');
   const revision = await projectRevision(page, 'plan-workspace');
   await page.getByTestId('view-top').click();
+  await openViewOptions(page.getByTestId('plan-workspace'));
   await page.getByTestId('zoom-in').click();
   await page.getByTestId('zoom-out').click();
   await page.getByTestId('layer-dimensions').click();
@@ -346,6 +349,7 @@ test('a changed input keeps the previous plan visually historical', async ({ pag
   await expect(page.getByTestId('bom-table').or(page.getByTestId('no-purchase'))).toBeVisible();
   const requests = await spatialCount(page, 'plan-workspace');
   const revision = await projectRevision(page, 'plan-workspace');
+  await openViewOptions(page.getByTestId('plan-workspace'));
   await page.getByTestId('view-front').click();
   await page.getByTestId('layer-checks').click();
   expect(await spatialCount(page, 'plan-workspace')).toBe(requests);

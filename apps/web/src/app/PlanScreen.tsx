@@ -1,3 +1,7 @@
+import { JourneyBar } from '../features/onboarding/JourneyBar';
+import { journeyFromProject } from '../features/onboarding/journey';
+import { PlanSummary } from '../features/plan/PlanSummary';
+import { keyDifference } from '../features/plan/view';
 import {
   useEffect,
   useId,
@@ -127,7 +131,7 @@ function Inspector({
     return (
       <div className="edit-inspector" data-testid="inspector-empty">
         <p className="session-note">
-          도면이나 목록에서 배치를 선택하면 위치·방향을 고칠 수 있습니다.
+          {/* copy-todo: empty inspector guidance. */}<svg className="measure-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2L16 11L10 12L8 18Z" fill="none" stroke="currentColor" /></svg> 도면에서 물건을 눌러 보세요
         </p>
       </div>
     );
@@ -1164,11 +1168,8 @@ export function PlanScreen({ projectId }: { projectId: string }) {
         </div>
       )}
       <div className="plan-screen">
-      <div className="session-status" data-testid="plan-context" data-context={state.context}>
-        작업 컨텍스트: {state.context === 'installed' ? '준비됨' : state.context}
-        {state.context === 'degraded' &&
-          ` — 카탈로그 없이 계산할 수 없습니다 (${state.degradedReason ?? ''})`}
-      </div>
+      <JourneyBar view={journeyFromProject(state, 'plan')} />
+      {state.context === 'degraded' && <p className="notice notice-stale" role="alert">{/* copy-todo: visible degraded guidance. */}카탈로그 없이 계산할 수 없습니다 ({state.degradedReason ?? ''})</p>}
       {state.staleInput && (
         <p className="notice notice-stale" data-testid="stale-notice" role="alert">
           입력 변경이 있습니다 — 지금 계산하면 마지막으로 저장된 입력 기준입니다.
@@ -1183,7 +1184,6 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           </p>
         )}
         <p className="session-note">
-          계산은 워커 안의 Rust가 하고, 결과는 한 장의 스냅샷으로 고정됩니다.{' '}
           <a
             href={`#/project/${projectId}`}
             onClick={(e) => {
@@ -1224,7 +1224,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
 
         <div className="form-actions">
           <Button
-            className="button button-primary"
+            className={`button ${plan.alternatives.length > 0 ? 'button-secondary' : 'button-primary'}`}
             onPress={() => session.startSearch()}
             isDisabled={
               searching ||
@@ -1255,6 +1255,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
         <SearchStatus session={session} />
       </section>
 
+      {selected && <PlanSummary snapshot={selected} historical={state.staleInput || state.diagnostics.length > 0 || selected.content.versions.inputDigest !== state.inputDigest} />}
       <SearchDiagnosticPanel
         search={plan.search}
         selectedId={plan.selectedId}
@@ -1310,6 +1311,7 @@ export function PlanScreen({ projectId }: { projectId: string }) {
                     <span className="plan-card-title">
                       #{i + 1} {isNoPurchase(alt) ? '구매 없음' : '구매 포함'}
                     </span>
+                    <span className="candidate-difference" data-testid={`candidate-difference-${i}`}>{keyDifference(plan.alternatives, i)}</span>
                     <span className="session-note">
                       배치 {alt.content.placements.length} · {unassigned} ·{' '}
                       {moneyText(alt.content.costSummary.grandTotal)}
@@ -1455,6 +1457,16 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           )}
         </section>
       )}
+      <details className="dev-info" data-testid="plan-dev-info">
+        {/* copy-todo: developer metadata disclosure. */}
+        <summary>개발 정보</summary>
+      <div className="session-status" data-testid="plan-context" data-context={state.context}>
+        작업 컨텍스트: {state.context === 'installed' ? '준비됨' : state.context}
+        {state.context === 'degraded' &&
+          ` — 카탈로그 없이 계산할 수 없습니다 (${state.degradedReason ?? ''})`}
+      </div>
+        <p className="session-note">계산은 워커 안의 Rust가 하고, 결과는 한 장의 스냅샷으로 고정됩니다.</p>
+      </details>
       </div>
     </Shell>
   );

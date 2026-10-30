@@ -3305,3 +3305,66 @@ dialog.detail-sheet .detail-heading {
     white-space: normal;
   }
 }
+
+/* First-use draft: sticky guide coordinated with the existing container layout. */
+.journey-bar {
+  position: sticky;
+  top: var(--zari-space-16);
+  z-index: var(--zari-z-header);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--zari-space-2);
+  padding: var(--zari-space-2) var(--zari-space-3);
+  margin-bottom: var(--zari-space-4);
+  background: var(--zari-surface-panel);
+  color: var(--zari-text-primary);
+  border-bottom: var(--zari-border-width) solid var(--zari-border-subtle);
+  min-height: var(--zari-space-16);
+  box-sizing: border-box;
+}
+.journey-bar ol { display: flex; flex: 1; gap: var(--zari-space-3); margin: 0; padding: 0; list-style: none; }
+.journey-bar li { display: flex; align-items: center; gap: var(--zari-space-1); font-size: var(--zari-text-sm); }
+.journey-bar [data-state="current"] { color: var(--zari-accent); font-weight: var(--zari-weight-semibold); }
+.journey-bar [data-state="done"] { color: var(--zari-success); }
+.journey-number { font-variant-numeric: tabular-nums; }
+.journey-progress { font-size: var(--zari-text-xs); }
+.journey-bar .button { min-height: var(--zari-control-min-height); font-size: var(--zari-text-sm); }
+.measure-icon { display: inline-block; width: var(--zari-space-5); height: var(--zari-space-5); vertical-align: middle; flex-shrink: 0; margin-inline-end: var(--zari-space-2); }
+.measure-field[data-focused="true"] { outline: var(--zari-focus-width) solid var(--zari-selection-ring); outline-offset: var(--zari-focus-offset); border-radius: var(--zari-radius-control); }
+.measure-advanced-toggle { margin-block: var(--zari-space-3); }
+.dev-info { margin-block: var(--zari-space-4); color: var(--zari-text-secondary); font-size: var(--zari-text-sm); }
+.dev-info summary { cursor: pointer; padding: var(--zari-space-3); min-height: var(--zari-control-min-height); box-sizing: border-box; }
+.plan-summary { padding: var(--zari-space-4); margin-block: var(--zari-space-4); font-size: var(--zari-text-lg); font-weight: var(--zari-weight-semibold); color: var(--zari-text-primary); background: var(--zari-surface-panel); border-inline-start: var(--zari-focus-width) solid var(--zari-accent); }
+.candidate-difference { display: block; grid-column: 2; font-size: var(--zari-text-sm); font-weight: var(--zari-weight-semibold); color: var(--zari-accent); }
+.workspace-view-options { flex-basis: 100%; }
+.workspace-view-options:not([hidden]) { display: flex; flex-wrap: wrap; gap: var(--zari-space-2); }
+.coachmark { max-width: calc(100vw - var(--zari-space-8)); width: 28rem; box-sizing: border-box; padding: var(--zari-space-6); border: var(--zari-border-width) solid var(--zari-border-control); border-radius: var(--zari-radius-overlay); background: var(--zari-surface-panel); color: var(--zari-text-primary); box-shadow: var(--zari-shadow-overlay); z-index: var(--zari-z-modal); }
+.coachmark::backdrop { background: var(--zari-surface-app); opacity: 0.9; }
+.coachmark .measure-icon { width: var(--zari-space-12); height: var(--zari-space-12); }
+.studio-launch-secondary .button { min-height: var(--zari-touch-min-height); width: 100%; }
+.studio-launch-secondary .blueprint-art { width: min(15rem, 100%); }
+html { scroll-padding-top: 20rem; }
+@container (max-width: 61.999rem) {
+  .journey-bar { gap: var(--zari-space-1); height: 6rem; min-height: 6rem; }
+  .journey-bar ol { flex-basis: 100%; }
+  .journey-bar li { flex: 1; white-space: nowrap; }
+  .journey-bar li:not([aria-current]) .journey-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .journey-bar .journey-progress { flex: 1; }
+  .measure-workspace > .measure-stage-column > .measure-diagram { top: 10rem; z-index: var(--zari-z-canvas); height: 8rem; min-height: 8rem; max-height: 8rem; }
+  .measure-workspace > .measure-stage-column > .measure-diagram .measure-svg { height: 4rem; min-height: 4rem; max-height: 4rem; }
+}
+@media (forced-colors: active) {
+  .journey-bar [data-state="current"], .measure-field[data-focused="true"] { outline: var(--zari-focus-width) solid Highlight; }
+}
+/* Keep visual and keyboard order aligned with the new guided flow. */
+.plan-screen > * { order: 0 !important; }
+.measure-column-main > * { order: 0 !important; }
+.plan-screen > .journey-bar { flex-shrink: 0; }
+/* Fallback before the guide measures actual header/bar heights. */
+@container (min-width: 62rem) {
+  .measure-stage-column,
+  .plan-workspace-body > .workspace-inspector { top: 9rem; }
+  .plan-workspace-body > .workspace-inspector { max-height: calc(100dvh - 10rem); }
+}
+@media (min-width: 66rem) { html { scroll-padding-top: 10rem; } }

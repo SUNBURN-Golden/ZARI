@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
+import { Component, lazy, Suspense, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
 import type { LayoutEditCommand, SnapshotContent, SpatialProjection, SpatialTarget } from '../../contracts/generated/dto';
 import type { RectVm } from '../plan/projection';
 import { spaceFrame } from '../plan/projection';
@@ -133,6 +133,8 @@ export function PlanWorkspace({
   const [preview, setPreview] = useState<MmPoint | null>(null);
   const [phase, setPhase] = useState<'idle' | 'armed' | 'preview'>('idle');
   const [precheck, setPrecheck] = useState<string | null>(null);
+  const optionsId = useId();
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const renderStamp = useRef(0);
   renderStamp.current = performance.now();
@@ -312,9 +314,6 @@ export function PlanWorkspace({
           <button type="button" className="button button-quiet" aria-pressed={state.view === 'top'} data-testid="view-top" onClick={() => showPlane('top')}>
             평면
           </button>
-          <button type="button" className="button button-quiet" aria-pressed={state.view === 'front'} data-testid="view-front" onClick={() => showPlane('front')}>
-            정면
-          </button>
           <button
             type="button"
             className="button button-quiet"
@@ -330,65 +329,74 @@ export function PlanWorkspace({
           </button>
         </div>
         <div className="toolbar-group" role="group" aria-label="배율">
+          <button type="button" className="button button-quiet" data-testid="zoom-fit" onClick={fitClicked}>
+            맞춤
+          </button>
+        </div>
+        {/* copy-todo: accessible view options disclosure; each workspace has a unique target. */}
+        <button type="button" className="button button-quiet" data-testid="view-options-toggle" aria-expanded={optionsOpen} aria-controls={optionsId} onClick={() => setOptionsOpen(!optionsOpen)}>보기 옵션</button>
+        <div id={optionsId} className="workspace-view-options" data-testid="view-options" hidden={!optionsOpen}>
+          <div className="toolbar-group">
+          <button type="button" className="button button-quiet" aria-pressed={state.view === 'front'} data-testid="view-front" onClick={() => showPlane('front')}>
+            정면
+          </button>
           <button type="button" className="button button-quiet" data-testid="zoom-out" onClick={() => zoomClicked(1 / ZOOM_STEP)}>
             축소
           </button>
           <button type="button" className="button button-quiet" data-testid="zoom-in" onClick={() => zoomClicked(ZOOM_STEP)}>
             확대
           </button>
-          <button type="button" className="button button-quiet" data-testid="zoom-fit" onClick={fitClicked}>
-            맞춤
-          </button>
-        </div>
-        <div className="toolbar-group" role="group" aria-label="조작 모드">
-          <button
-            type="button"
-            className="button button-quiet"
-            aria-pressed={mode === 'move'}
-            data-testid="mode-move"
-            disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
-            onClick={() => enterMode('move')}
-          >
-            평면에서 이동
-          </button>
-          <button
-            type="button"
-            className="button button-quiet"
-            aria-pressed={mode === 'pan'}
-            data-testid="mode-pan"
-            onClick={() => enterMode('pan')}
-          >
-            화면 이동
-          </button>
-          {mode === 'move' && (
-            <>
-              <button type="button" className="button button-quiet" data-testid="mode-cancel" onClick={() => enterMode('move')}>
-                취소
-              </button>
-              <button
-                type="button"
-                className="button button-quiet"
-                data-testid="mode-coords"
-                onClick={() => {
-                  if (band === 'compact') dialogRef.current?.showModal();
-                  rootRef.current?.querySelector<HTMLInputElement>('[data-testid="move-x"]')?.focus();
-                }}
-              >
-                좌표 입력
-              </button>
-            </>
-          )}
-        </div>
-        <div className="toolbar-group" role="group" aria-label="표시 레이어">
-          <button type="button" className="button button-quiet" aria-pressed={state.layers.dimensions} data-testid="layer-dimensions" onClick={() => workspace.setLayer('dimensions', !state.layers.dimensions)}>
-            치수
-          </button>
-          <button type="button" className="button button-quiet" aria-pressed={state.layers.contents} data-testid="layer-contents" onClick={() => workspace.setLayer('contents', !state.layers.contents)}>
-            내용물
-          </button>
-          <button type="button" className="button button-quiet" aria-pressed={state.layers.checks} data-testid="layer-checks" onClick={() => workspace.setLayer('checks', !state.layers.checks)}>
-            검사
-          </button>
+          </div>
+          <div className="toolbar-group" role="group" aria-label="조작 모드">
+            <button
+              type="button"
+              className="button button-quiet"
+              aria-pressed={mode === 'move'}
+              data-testid="mode-move"
+              disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
+              onClick={() => enterMode('move')}
+            >
+              평면에서 이동
+            </button>
+            <button
+              type="button"
+              className="button button-quiet"
+              aria-pressed={mode === 'pan'}
+              data-testid="mode-pan"
+              onClick={() => enterMode('pan')}
+            >
+              화면 이동
+            </button>
+            {mode === 'move' && (
+              <>
+                <button type="button" className="button button-quiet" data-testid="mode-cancel" onClick={() => enterMode('move')}>
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  data-testid="mode-coords"
+                  onClick={() => {
+                    if (band === 'compact') dialogRef.current?.showModal();
+                    rootRef.current?.querySelector<HTMLInputElement>('[data-testid="move-x"]')?.focus();
+                  }}
+                >
+                  좌표 입력
+                </button>
+              </>
+            )}
+          </div>
+          <div className="toolbar-group" role="group" aria-label="표시 레이어">
+            <button type="button" className="button button-quiet" aria-pressed={state.layers.dimensions} data-testid="layer-dimensions" onClick={() => workspace.setLayer('dimensions', !state.layers.dimensions)}>
+              치수
+            </button>
+            <button type="button" className="button button-quiet" aria-pressed={state.layers.contents} data-testid="layer-contents" onClick={() => workspace.setLayer('contents', !state.layers.contents)}>
+              내용물
+            </button>
+            <button type="button" className="button button-quiet" aria-pressed={state.layers.checks} data-testid="layer-checks" onClick={() => workspace.setLayer('checks', !state.layers.checks)}>
+              검사
+            </button>
+          </div>
         </div>
         <p className="workspace-scope" data-testid="workspace-scope">
           {historical ? '이전 계획 · 입력 변경' : '현재 계획'}

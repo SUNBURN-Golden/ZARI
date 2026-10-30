@@ -1,3 +1,4 @@
+import { openViewOptions } from './helpers/viewOptions';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 /**
@@ -112,6 +113,7 @@ test('3D stays unloaded until requested, then shares selection with 2D, BOM, and
     note(testInfo, 'webgl', `fallback ${await fallback.getAttribute('data-reason')}`);
     await expect(page.getByTestId('plan-diagram-top')).toBeVisible();
     await expect(page.getByTestId('diagram-text-list')).toBeVisible();
+    await openViewOptions(page.getByTestId('plan-workspace'));
     await page.getByTestId('view-front').click();
     await expect(page.getByTestId('plan-diagram-front')).toBeVisible();
     await expect(page.getByTestId('plan-workspace')).toHaveAttribute('data-project-revision', revision ?? '');
@@ -196,6 +198,7 @@ test('3D stays unloaded until requested, then shares selection with 2D, BOM, and
   await expect.poll(async () => view.getAttribute('data-renders')).not.toBe(rendersBeforeCut);
   note(testInfo, 'cutaway-frame', `click-to-frame ${Date.now() - cutStarted}ms draw ${await view.getAttribute('data-frame-ms')}ms`);
   await expect(view).toHaveAttribute('data-hide-front', 'false');
+  await openViewOptions(page.getByTestId('plan-workspace'));
   await page.getByTestId('zoom-in').click();
   await expect(page.getByTestId('plan-workspace')).toHaveAttribute('data-spatial-requests', requests ?? '');
   await expect(page.getByTestId('plan-workspace')).toHaveAttribute('data-project-revision', revision ?? '');
@@ -291,8 +294,10 @@ test('disabled WebGL keeps plan, BOM, and 2D controls', async ({ page }) => {
   await expect(page.getByTestId('diagram-text-list')).toBeVisible();
   await page.locator('[data-testid^="diagram-pick-"]').first().click();
   await expect(page.getByTestId('inspector-name')).toBeVisible();
+  await openViewOptions(page.getByTestId('plan-workspace'));
   await page.getByTestId('view-front').click();
   await expect(page.getByTestId('plan-diagram-front')).toBeVisible();
+  await openViewOptions(page.getByTestId('plan-workspace'));
   await page.getByTestId('zoom-in').click();
   await expect(page.getByTestId('bom-table').or(page.getByTestId('no-purchase'))).toBeVisible();
   await expect(page.getByTestId('plan-workspace')).toHaveAttribute('data-project-revision', revision ?? '');

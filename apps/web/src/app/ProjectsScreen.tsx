@@ -1,3 +1,6 @@
+import { Coachmark } from '../features/onboarding/Coachmark';
+import { JourneyBar } from '../features/onboarding/JourneyBar';
+import { JOURNEY_IDLE_HOME } from '../features/onboarding/journey';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'react-aria-components';
 import { EXAMPLE_NAME, isExampleName } from '../features/onboarding/guide';
@@ -294,6 +297,7 @@ export function ProjectsScreen() {
         </div>
       </header>
       <main className="studio-home-main">
+        {projects?.length === 0 && <JourneyBar view={JOURNEY_IDLE_HOME} />}
         <div className="page-intro studio-hero-head">
           <div>
             <p className="section-kicker">공간 워크벤치 · 프로젝트</p>
@@ -301,7 +305,7 @@ export function ProjectsScreen() {
           </div>
           <div className="studio-hero-actions">
             <Button
-              className="button button-secondary studio-import-btn"
+              className="button button-quiet studio-import-btn"
               isDisabled={busy || incompatible}
               data-testid="import-project"
               onPress={() => fileRef.current?.click()}
@@ -375,12 +379,14 @@ export function ProjectsScreen() {
                   <path d="M52 24 L120 36 L188 24 M120 36 L120 76" className="bp-iso-axis" />
                   <path d="M44 68 L114 80 M126 80 L196 68" className="bp-dim-line" />
                 </svg>
-                <span className="studio-blueprint-tag">새 공간 도면 · mm</span>
+                {/* copy-todo: starting measurement guidance. */}
+                <span className="studio-blueprint-tag">줄자만 있으면 돼요</span>
               </div>
               <div className="studio-card-copy">
                 <strong>내 공간으로 시작</strong>
                 <p className="session-note">
-                  빈 칸에서 시작합니다. 줄자로 잰 값만 넣으면 되고, 비워 둔 값은 “미측정”으로 남습니다.
+                  {/* copy-todo: first three fields guidance. */}
+                  폭·깊이·높이 세 칸부터 채우면 됩니다. 모르는 칸은 비워 두세요.
                 </p>
               </div>
               <div className="form-actions studio-card-cta">
@@ -456,11 +462,8 @@ export function ProjectsScreen() {
                         </span>
                       )}
                     </div>
-                    <span className="room-card-rev">
-                      리비전 {project.projectRevision} · 입력 리비전{' '}
-                      {project.currentInputRevision}
-                      {project.importedFrom ? ' · 가져옴' : ''}
-                    </span>
+                    {/* copy-todo: imported project origin. */}
+                    {project.importedFrom && <span className="room-card-rev"> · 가져옴</span>}
                   </div>
                 </a>
                 <span className="project-row-actions">
@@ -524,6 +527,7 @@ export function ProjectsScreen() {
           </p>
         </footer>
       </main>
+      {listSettled && <Coachmark />}
     </div>
   );
 }

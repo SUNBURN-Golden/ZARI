@@ -303,3 +303,26 @@ export const EDIT_REJECTION_TEXT: Record<string, string> = {
   staging_width_insufficient: '작업 공간이 부족합니다',
   cyclic_blockers: '꺼낼 때 서로 막습니다',
 };
+
+/** Compare only like-for-like Rust instance counts, then exact integer costs. */
+export function keyDifference(alternatives: PlanSnapshot[], index: number): string {
+  // copy-todo: all candidate comparison labels below are placeholder copy.
+  if (index === 0) return '추천 · 첫 번째 후보';
+  const base = alternatives[0];
+  const candidate = alternatives[index];
+  if (!base || !candidate) return '비교 미확인';
+  const a = base.content.validation.assignmentCompleteness;
+  const b = candidate.content.validation.assignmentCompleteness;
+  const total = (c: typeof a) => c.assignedInstances + c.provisionalInstances + c.unassignedInstances;
+  if (a.unknownQuantityItems || b.unknownQuantityItems || a.provisionalInstances || b.provisionalInstances || total(a) !== total(b) || base.content.versions.inputDigest !== candidate.content.versions.inputDigest) return '비교 미확인';
+  const delta = b.assignedInstances - a.assignedInstances;
+  if (delta !== 0) return `1번보다 ${Math.abs(delta)}개 ${delta > 0 ? '더' : '덜'} 배정`;
+  if (isNoPurchase(candidate) !== isNoPurchase(base)) return isNoPurchase(candidate) ? '구매 없이 정리' : '구매 포함';
+  const firstCost = base.content.costSummary.grandTotal;
+  const cost = candidate.content.costSummary.grandTotal;
+  if (isNoPurchase(candidate) && isNoPurchase(base)) return '구매 없이 정리';
+  if (firstCost.state !== 'known' || cost.state !== 'known') return '비교 미확인';
+  const costDelta = BigInt(cost.value) - BigInt(firstCost.value);
+  if (costDelta !== 0n) return `₩${new Intl.NumberFormat('ko-KR').format(costDelta < 0n ? -costDelta : costDelta)} 더 ${costDelta < 0n ? '저렴' : '비쌈'}`;
+  return '같은 배정 수 · 같은 비용';
+}

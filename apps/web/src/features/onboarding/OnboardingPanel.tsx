@@ -105,13 +105,7 @@ export function OnboardingPanel({
                   ? '(계산기의 “다음에 확인할 사실” 첫 항목)'
                   : '(안내 순서 — 저장하면 계산기 목록으로 바뀝니다)'}
               </span>{' '}
-              <Button
-                className="button button-secondary"
-                data-testid="onboarding-goto-next"
-                onPress={() => goto(suggestion.field)}
-              >
-                이 칸으로 이동
-              </Button>
+
             </>
           ) : (
             '지금 안내할 필수 값이 없습니다.'

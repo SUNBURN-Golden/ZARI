@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type FocusEvent } from 'react';
+import { useLayoutEffect, useRef, type ReactNode, type FocusEvent } from 'react';
 import { FieldError, Input, Label, Text, TextField } from 'react-aria-components';
 
 type Unit = 'mm' | 'cm';
@@ -15,6 +15,7 @@ type DimensionFieldProps = {
   onBlur: () => void;
   /** Existing status element, such as the uncertainty line, announced with the field. */
   describedBy?: string;
+  icon?: ReactNode;
 };
 
 export function DimensionField({
@@ -29,6 +30,7 @@ export function DimensionField({
   onFocus,
   onBlur,
   describedBy,
+  icon,
 }: DimensionFieldProps) {
   const groupRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -51,7 +53,7 @@ export function DimensionField({
       isInvalid={Boolean(error)}
       validationBehavior="aria"
     >
-      <Label className="field-label">{label}</Label>
+      <Label className="field-label">{icon}{label}</Label>
       <div className="dimension-input" ref={groupRef} onFocus={onFocus} onBlur={keepFocus}>
         <Input
           inputMode="decimal"

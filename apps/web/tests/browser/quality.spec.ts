@@ -1,3 +1,4 @@
+import { openViewOptions } from './helpers/viewOptions';
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -312,6 +313,7 @@ test('plan keyboard, zoom, motion, forced colors, and viewports stay inside the 
   await seededPlan(page);
   await page.getByTestId('accept-plan').click();
   await expect(page.locator('#accepted-guide').getByTestId('step-next')).toBeVisible();
+  await openViewOptions(page.getByTestId('plan-workspace'));
   await page.getByTestId('view-front').focus();
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('view-front')).toHaveAttribute('aria-pressed', 'true');
