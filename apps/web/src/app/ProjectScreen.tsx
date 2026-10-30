@@ -775,9 +775,6 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           >
             합성 샘플 값으로 바꾸기
           </Button>
-          <Button className="button button-quiet" onPress={() => void download('standard')} data-testid="export-project">
-            프로젝트보내기
-          </Button>
           <a
             className="button button-quiet"
             href={`#/project/${projectId}/plan`}
@@ -817,6 +814,11 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           focusedField={focused}
           detailTarget={detailTarget}
         />
+        <div className="form-actions">
+          <Button className="button button-quiet" onPress={() => void download('standard')} data-testid="export-project">
+            프로젝트보내기
+          </Button>
+        </div>
         <PortablePanel projectId={projectId} />
         <details className="dev-info" data-testid="dev-info">
           {/* copy-todo: developer metadata disclosure. */}

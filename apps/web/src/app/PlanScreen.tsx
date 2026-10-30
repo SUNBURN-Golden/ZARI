@@ -1212,16 +1212,6 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           </fieldset>
         )}
 
-        <StrategyLibraryPanel
-          state={plan.strategyLibraryState}
-          reply={plan.strategyLibrary}
-          error={plan.strategyLibraryError}
-          draftStrategy={state.form?.strategyChoice ?? null}
-          labels={new Map((state.form?.items ?? []).map((item) => [item.id, item.label]))}
-          onRetry={() => session.retryStrategyLibrary()}
-          onCommit={() => session.commit()}
-        />
-
         <div className="form-actions">
           <Button
             className={`button ${plan.alternatives.length > 0 ? 'button-secondary' : 'button-primary'}`}
@@ -1256,17 +1246,6 @@ export function PlanScreen({ projectId }: { projectId: string }) {
       </section>
 
       {selected && <PlanSummary snapshot={selected} historical={state.staleInput || state.diagnostics.length > 0 || selected.content.versions.inputDigest !== state.inputDigest} />}
-      <SearchDiagnosticPanel
-        search={plan.search}
-        selectedId={plan.selectedId}
-        state={plan.diagnosticState}
-        reply={plan.diagnostic}
-        error={plan.diagnosticError}
-        ignored={plan.diagnosticIgnored}
-        onCancel={() => session.cancelDiagnosis()}
-        onRetry={() => session.retryDiagnosis()}
-      />
-
       <ParetoPanel
         state={plan.paretoState}
         reply={plan.pareto}
@@ -1336,6 +1315,27 @@ export function PlanScreen({ projectId }: { projectId: string }) {
           )}
         </section>
       )}
+
+      <StrategyLibraryPanel
+        state={plan.strategyLibraryState}
+        reply={plan.strategyLibrary}
+        error={plan.strategyLibraryError}
+        draftStrategy={state.form?.strategyChoice ?? null}
+        labels={new Map((state.form?.items ?? []).map((item) => [item.id, item.label]))}
+        onRetry={() => session.retryStrategyLibrary()}
+        onCommit={() => session.commit()}
+      />
+
+      <SearchDiagnosticPanel
+        search={plan.search}
+        selectedId={plan.selectedId}
+        state={plan.diagnosticState}
+        reply={plan.diagnostic}
+        error={plan.diagnosticError}
+        ignored={plan.diagnosticIgnored}
+        onCancel={() => session.cancelDiagnosis()}
+        onRetry={() => session.retryDiagnosis()}
+      />
 
       <IncrementalPanel
         base={replanBase}

@@ -189,3 +189,49 @@ test('an accepted candidate from an older input directs the journey to a real co
   await page.getByTestId('journey-focus-next').click();
   await expect(page.getByTestId('compute-plan')).toBeFocused();
 });
+
+
+test('plan order, wrapping candidate facts and contextual move controls stay usable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByTestId('create-example').click();
+  await expect(page.getByTestId('worker-state')).toHaveText('ready');
+  await page.getByTestId('commit-input').click();
+  await expect(page.getByTestId('save-state')).toHaveAttribute('data-save-state', 'saved');
+  await page.getByTestId('goto-plan').click();
+  await page.getByTestId('compute-plan').click();
+  await expect(page.getByTestId('search-status')).toHaveAttribute('data-search', 'done');
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => scrollTo(0, 0));
+    const positions = await page.locator('.plan-screen > *').evaluateAll((elements) =>
+      elements.filter((el) => el.getBoundingClientRect().height > 0).map((el) => el.getBoundingClientRect().top));
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+    await noOverflow(page);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const card = page.getByTestId('plan-card-0');
+  // Exercise the longest uncertain accounting line without changing the Rust fixture.
+  await card.locator('.session-note').evaluate((el) => { el.textContent += ' · 수량 미확인 4294967295 · 가격 미확인'; });
+  for (const text of await card.locator('.plan-card-title,.candidate-difference,.session-note').all()) {
+    expect(await text.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const parent = el.closest('button')!.getBoundingClientRect();
+      return el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1 && box.bottom <= parent.bottom;
+    })).toBe(true);
+  }
+  const workspace = page.getByTestId('plan-workspace');
+  const toolbar = workspace.getByRole('toolbar', { name: '도면', exact: true });
+  await expect(toolbar.getByTestId('view-options')).toBeHidden();
+  await page.locator('.placement-pick').first().click();
+  await workspace.getByTestId('close-inspector').click();
+  await toolbar.getByTestId('mode-move').click();
+  await expect(toolbar.getByTestId('view-options')).toBeHidden();
+  await expect(toolbar.getByTestId('mode-cancel')).toBeVisible();
+  await toolbar.getByTestId('mode-coords').click();
+  await expect(workspace.getByTestId('move-x')).toBeFocused();
+  await workspace.getByTestId('close-inspector').click();
+  await toolbar.getByTestId('mode-cancel').click();
+  await expect(workspace).toHaveAttribute('data-canvas-mode', 'select');
+  await noOverflow(page);
+});

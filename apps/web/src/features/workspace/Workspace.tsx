@@ -334,6 +334,38 @@ export function PlanWorkspace({
             맞춤
           </button>
         </div>
+        {(placement || mode === 'move') && (
+          <div className="toolbar-group" role="group" aria-label="조작 모드">
+            <button
+              type="button"
+              className="button button-quiet"
+              aria-pressed={mode === 'move'}
+              data-testid="mode-move"
+              disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
+              onClick={() => enterMode('move')}
+            >
+              평면에서 이동
+            </button>
+            {mode === 'move' && (
+              <>
+                <button type="button" className="button button-quiet" data-testid="mode-cancel" onClick={() => enterMode('move')}>
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  data-testid="mode-coords"
+                  onClick={() => {
+                    if (band === 'compact') dialogRef.current?.showModal();
+                    rootRef.current?.querySelector<HTMLInputElement>('[data-testid="move-x"]')?.focus();
+                  }}
+                >
+                  좌표 입력
+                </button>
+              </>
+            )}
+          </div>
+        )}
         {/* copy-todo: accessible view options disclosure; each workspace has a unique target. */}
         <button type="button" className="button button-quiet" ref={optionsToggleRef} data-testid="view-options-toggle" aria-expanded={optionsOpen} aria-controls={optionsId} onClick={() => setOptionsOpen(!optionsOpen)}>보기 옵션</button>
         <div id={optionsId} className="workspace-view-options" data-testid="view-options" hidden={!optionsOpen} onKeyDown={(event) => {
@@ -358,40 +390,12 @@ export function PlanWorkspace({
             <button
               type="button"
               className="button button-quiet"
-              aria-pressed={mode === 'move'}
-              data-testid="mode-move"
-              disabled={!placement || editLocked || gestureBlocked || !moveAllowed}
-              onClick={() => enterMode('move')}
-            >
-              평면에서 이동
-            </button>
-            <button
-              type="button"
-              className="button button-quiet"
               aria-pressed={mode === 'pan'}
               data-testid="mode-pan"
               onClick={() => enterMode('pan')}
             >
               화면 이동
             </button>
-            {mode === 'move' && (
-              <>
-                <button type="button" className="button button-quiet" data-testid="mode-cancel" onClick={() => enterMode('move')}>
-                  취소
-                </button>
-                <button
-                  type="button"
-                  className="button button-quiet"
-                  data-testid="mode-coords"
-                  onClick={() => {
-                    if (band === 'compact') dialogRef.current?.showModal();
-                    rootRef.current?.querySelector<HTMLInputElement>('[data-testid="move-x"]')?.focus();
-                  }}
-                >
-                  좌표 입력
-                </button>
-              </>
-            )}
           </div>
           <div className="toolbar-group" role="group" aria-label="표시 레이어">
             <button type="button" className="button button-quiet" aria-pressed={state.layers.dimensions} data-testid="layer-dimensions" onClick={() => workspace.setLayer('dimensions', !state.layers.dimensions)}>

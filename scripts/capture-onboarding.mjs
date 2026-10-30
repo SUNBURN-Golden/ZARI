@@ -25,10 +25,17 @@ const metrics = {
   browser: 'Chromium',
   definitions: {
     firstFoldCtaCount: 'Visible buttons, links, role=button elements and disclosure summaries intersecting the initial viewport; includes disabled controls and diagram controls. Background controls occluded by the coachmark are excluded.',
+    firstFoldPrimaryCtaCount: 'Subset of firstFoldCtaCount carrying the button-primary class; total controls remain reported separately.',
     firstFoldInputCount: 'Visible text/number inputs and textareas intersecting the initial viewport; unit selects and strategy radios are counted separately.',
     defaultToolbarButtonCount: 'Visible buttons in the selected plan workspace toolbar with view options closed and no placement selected.',
     overflowPx: 'max(documentElement.scrollWidth, body.scrollWidth) - documentElement.clientWidth, clamped to zero.',
   },
+  ctaBudgetException: {
+    status: 'implementation draft; pending user visual review',
+    primaryBudget: 'One or two visually primary actions per screen.',
+    totalControlException: 'The 1–2 target does not cover all interactive controls: preserve the tested project/back navigation, explicit save/sample/plan actions and help disclosure, and independently selectable Rust comparison candidates with their condition disclosures. Export is moved below measurement help; strategy reference and search diagnosis follow candidate review. No controls or unknown facts are removed to meet a count.',
+  },
+  reviewScreenshots: [],
   captures: [],
 };
 const browser = await chromium.launch();
@@ -57,16 +64,18 @@ async function capture(page, screen, width, height, theme) {
       .filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
     return {
       firstFoldCtaCount: ctas.length,
+      firstFoldPrimaryCtaCount: ctas.filter((el) => el.classList.contains('button-primary')).length,
       firstFoldInputCount: inputs.length,
       firstFoldUnitSelectCount: [...document.querySelectorAll('select')].filter(visible).length,
       firstFoldRadioCount: [...document.querySelectorAll('input[type="radio"]')].filter(visible).length,
       defaultToolbarButtonCount: toolbarButtons.length,
-      overflowPx: Math.max(0, document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth,
+      overflowPx: Math.max(0, Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth),
       ctas: ctas.map(describe),
       inputs: inputs.map((el) => ({ id: el.id, label: el.getAttribute('aria-label') })),
     };
   });
   expect(measured.overflowPx, `${screen}/${width}/${theme}`).toBe(0);
+  expect(measured.firstFoldPrimaryCtaCount, `${screen}/${width}/${theme} primary budget`).toBeLessThanOrEqual(2);
   if (screen === 'plan') expect(measured.defaultToolbarButtonCount).toBe(4);
   metrics.captures.push({ screen, width, height, theme, screenshot, ...measured });
 }
@@ -94,7 +103,13 @@ try {
       await page.getByTestId('compute-plan').click();
       await expect(page.getByTestId('search-status')).toHaveAttribute('data-search', 'done', { timeout: 90000 });
       await expect(page.getByTestId('plan-summary')).toBeVisible();
+      await expect(page.getByTestId('pareto-compare')).toHaveAttribute('data-state', 'ready');
+      await expect(page.getByTestId('strategy-library')).toHaveAttribute('data-state', 'ready');
       await capture(page, 'plan', width, height, theme);
+      await page.getByTestId('alternatives-list').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      const candidateScreenshot = `plan-candidates-${width}x${height}-${theme}-draft.png`;
+      await page.screenshot({ path: join(output, candidateScreenshot), fullPage: false });
+      metrics.reviewScreenshots.push({ screen: 'plan-candidates', width, height, theme, screenshot: candidateScreenshot, position: 'scrolled to candidate list; excluded from first-fold metrics' });
       expect(errors).toEqual([]);
       await context.close();
       const coaching = await browser.newContext({ viewport: { width, height }, colorScheme: theme, reducedMotion: 'reduce', locale: 'ko-KR' });
@@ -107,7 +122,7 @@ try {
     }
   }
   await writeFile(join(output, 'metrics.json'), JSON.stringify(metrics, null, 2) + '\n');
-  console.log(`Saved ${metrics.captures.length} draft screenshots and metrics.json to ${output}`);
+  console.log(`Saved ${metrics.captures.length + metrics.reviewScreenshots.length} draft screenshots and metrics.json to ${output}`);
 } finally {
   await browser.close();
 }
