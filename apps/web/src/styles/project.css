@@ -3349,7 +3349,7 @@ html { scroll-padding-top: 20rem; }
   .journey-bar { gap: var(--zari-space-1); height: 6rem; min-height: 6rem; }
   .journey-bar ol { flex-basis: 100%; }
   .journey-bar li { flex: 1; white-space: nowrap; }
-  .journey-bar li:not([aria-current]) .journey-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .journey-bar .journey-label { font-size: var(--zari-text-xs); }
   .journey-bar .journey-progress { flex: 1; }
   .measure-workspace > .measure-stage-column > .measure-diagram { top: 10rem; z-index: var(--zari-z-canvas); height: 8rem; min-height: 8rem; max-height: 8rem; }
   .measure-workspace > .measure-stage-column > .measure-diagram .measure-svg { height: 4rem; min-height: 4rem; max-height: 4rem; }
@@ -3368,3 +3368,11 @@ html { scroll-padding-top: 20rem; }
   .plan-workspace-body > .workspace-inspector { max-height: calc(100dvh - 10rem); }
 }
 @media (min-width: 66rem) { html { scroll-padding-top: 10rem; } }
+
+/* First-time home: the two starts precede secondary navigation and file tools. */
+.home-secondary-nav { display: flex; flex-wrap: wrap; gap: var(--zari-space-4); padding-block: var(--zari-space-6); font-size: var(--zari-text-sm); }
+.home-secondary-tools { margin-block: var(--zari-space-4); font-size: var(--zari-text-sm); }
+.home-secondary-tools summary { cursor: pointer; min-height: var(--zari-control-min-height); padding-block: var(--zari-space-3); box-sizing: border-box; }
+.studio-hero-cards .studio-launch-card { padding: var(--zari-space-4); gap: var(--zari-space-3); background: var(--zari-surface-panel); box-shadow: none; }
+.studio-hero-cards .studio-card-copy p { margin: 0; }
+.studio-hero-cards .studio-card-cta .button { width: 100%; }

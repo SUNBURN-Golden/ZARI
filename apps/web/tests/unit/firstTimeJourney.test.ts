@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import type { PlanSnapshot, ProjectInput } from '../../src/contracts/generated/dto';
 import type { SessionSnapshot } from '../../src/features/project/session';
-import { emptyProjectForm } from '../../src/features/project/draft';
+import { emptyProjectForm, setMeasurementText, setMeasurementUnit } from '../../src/features/project/draft';
 import { journeyFromProject } from '../../src/features/onboarding/journey';
 import { planSummaryText } from '../../src/features/plan/PlanSummary';
 import { keyDifference } from '../../src/features/plan/view';
@@ -39,6 +39,45 @@ describe('honest journey progress', () => {
     expect(journeyFromProject(s).done).toEqual({ measure: false, items: false, plan: false });
     s.staleInput = false; s.diagnostics = [{ fieldPath: 'space.interior.width', code: 'invalid_number', reasonCode: 'invalid_number' }];
     expect(journeyFromProject(s).done.measure).toBe(false);
+  });
+  it('preserves confirmed space coverage while an item is edited, but never confirms changed facts', () => {
+    const s = state(); s.normalizedInput!.items = [];
+    s.normalizedForm = structuredClone(s.form);
+    s.staleInput = true;
+    s.form = setMeasurementText(s.form!, 'items.item-a.dimensions.envelope.width', '300');
+    expect(journeyFromProject(s).current).toBe('items');
+    expect(journeyFromProject(s).done.measure).toBe(true);
+    expect(journeyFromProject(s).progress).toEqual({ filled: 0, total: 6 });
+    s.form = setMeasurementUnit(s.form!, 'space.interior.width', 'cm');
+    expect(journeyFromProject(s).done.measure).toBe(false);
+    expect(journeyFromProject(s).progress).toEqual({ filled: 2, total: 5 });
+  });
+  it('only invalidates the diagnosed measurement when other raw facts still match', () => {
+    const s = state(); s.normalizedForm = structuredClone(s.form);
+    s.diagnostics = [{ fieldPath: 'space.space-1.interior.width', code: 'invalid_number', reasonCode: 'invalid_number' }];
+    const view = journeyFromProject(s);
+    expect(view.progress).toEqual({ filled: 2, total: 5 });
+    expect(view.cta).toEqual({ field: 'space.interior.width' });
+  });
+  it('points a filled unconfirmed step at the explicit save control without normalizing text itself', () => {
+    const s = state(); s.normalizedForm = null; s.staleInput = true;
+    for (const f of ['space.interior.width', 'space.interior.depth', 'space.interior.height'] as const)
+      s.form = setMeasurementText(s.form!, f, '600');
+    const view = journeyFromProject(s);
+    expect(view.done.measure).toBe(false);
+    expect(view.cta).toEqual({ testId: 'commit-input' });
+  });
+  it('targets compute for a missing, historical, or already accepted selection', () => {
+    const s = state(); s.context = 'installed'; s.inputDigest = 'current';
+    const selected = snapshot(); selected.content.versions.inputDigest = 'current';
+    s.plan.selectedId = selected.planSnapshotId; s.plan.alternatives = [selected];
+    expect(journeyFromProject(s, 'plan').cta).toEqual({ testId: 'accept-plan' });
+    s.plan.accepted = { inputRevision: '1', planSnapshotId: selected.planSnapshotId };
+    expect(journeyFromProject(s, 'plan').cta).toEqual({ testId: 'compute-plan' });
+    s.plan.accepted = null; s.staleInput = true;
+    expect(journeyFromProject(s, 'plan').cta).toEqual({ testId: 'compute-plan' });
+    s.staleInput = false; s.plan.alternatives = [];
+    expect(journeyFromProject(s, 'plan').cta).toEqual({ testId: 'compute-plan' });
   });
   it('disables plan focus when the actual computation target is unavailable', () => {
     const s = state(); s.context = 'degraded';

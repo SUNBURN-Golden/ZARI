@@ -64,7 +64,7 @@ test.describe('extension collector on a real DOM', () => {
   });
 });
 
-test('importing a bundle file draws items from W/D/H only, saves, reopens, with zero image or third-party requests', async ({ page, context, browserName }) => {
+test('importing a bundle file draws items from W/D/H only, saves, reopens, with zero image or third-party requests', async ({ page, context }) => {
   test.setTimeout(240_000);
   const errors: string[] = [];
   const seen: { url: string; method: string; type: string }[] = [];
@@ -117,24 +117,7 @@ test('importing a bundle file draws items from W/D/H only, saves, reopens, with 
     .poll(() => page.evaluate(async () => (await (await caches.open('zari-shell-meta')).match('active.json')) != null || (await (await caches.open('zari-shell-meta')).match('staged.json')) != null))
     .toBe(true);
   const url = page.url();
-  if (browserName === 'webkit') {
-    // C11: WPE offline navigation fails internally, as already qualified in
-    // privacy-offline/spatial3d. Verify every cached asset and retain the
-    // fresh-tab persisted-catalog assertion below; offline rendering is unverified.
-    const missing = await page.evaluate(async () => {
-      const scope = new URL('.', navigator.serviceWorker.controller!.scriptURL).href;
-      const meta = await caches.open('zari-shell-meta');
-      const hit = (await meta.match('staged.json')) ?? (await meta.match('active.json'));
-      if (!hit) return ['<no manifest>'];
-      const record = (await hit.json()) as { buildId: string; assets: string[] };
-      const cache = await caches.open(`zari-build-${record.buildId}`);
-      const absent: string[] = [];
-      for (const asset of record.assets)
-        if (!(await cache.match(new URL(asset, scope).href))) absent.push(asset);
-      return absent;
-    });
-    expect(missing).toEqual([]);
-  } else await context.setOffline(true);
+  await context.setOffline(true);
   const offline = await context.newPage();
   collectErrors(offline, errors);
   await offline.goto(url);

@@ -134,6 +134,7 @@ export function PlanWorkspace({
   const [phase, setPhase] = useState<'idle' | 'armed' | 'preview'>('idle');
   const [precheck, setPrecheck] = useState<string | null>(null);
   const optionsId = useId();
+  const optionsToggleRef = useRef<HTMLButtonElement>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const renderStamp = useRef(0);
@@ -334,8 +335,14 @@ export function PlanWorkspace({
           </button>
         </div>
         {/* copy-todo: accessible view options disclosure; each workspace has a unique target. */}
-        <button type="button" className="button button-quiet" data-testid="view-options-toggle" aria-expanded={optionsOpen} aria-controls={optionsId} onClick={() => setOptionsOpen(!optionsOpen)}>보기 옵션</button>
-        <div id={optionsId} className="workspace-view-options" data-testid="view-options" hidden={!optionsOpen}>
+        <button type="button" className="button button-quiet" ref={optionsToggleRef} data-testid="view-options-toggle" aria-expanded={optionsOpen} aria-controls={optionsId} onClick={() => setOptionsOpen(!optionsOpen)}>보기 옵션</button>
+        <div id={optionsId} className="workspace-view-options" data-testid="view-options" hidden={!optionsOpen} onKeyDown={(event) => {
+          if (event.key !== 'Escape') return;
+          event.preventDefault();
+          event.stopPropagation();
+          setOptionsOpen(false);
+          optionsToggleRef.current?.focus();
+        }}>
           <div className="toolbar-group">
           <button type="button" className="button button-quiet" aria-pressed={state.view === 'front'} data-testid="view-front" onClick={() => showPlane('front')}>
             정면

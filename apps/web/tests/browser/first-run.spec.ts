@@ -116,6 +116,11 @@ test('measurement disclosures reveal focused fields, preserve descriptions and p
   const workspace = page.getByTestId('plan-workspace');
   await expect(workspace.getByTestId('view-front')).toBeHidden();
   await openViewOptions(workspace);
+  await workspace.getByTestId('zoom-in').focus();
+  await page.keyboard.press('Escape');
+  await expect(workspace.getByTestId('view-options')).toBeHidden();
+  await expect(workspace.getByTestId('view-options-toggle')).toBeFocused();
+  await openViewOptions(workspace);
   for (const details of await page.locator('.dev-info').all()) await details.locator('summary').click();
   expect((await new AxeBuilder({ page }).include('main').analyze()).violations).toEqual([]);
   const ids = await page.locator('[id]').evaluateAll((els) => els.map((el) => el.id));
@@ -129,4 +134,58 @@ test('measurement disclosures reveal focused fields, preserve descriptions and p
   await noOverflow(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({ path: `/workspace/shots/zari-onboarding/plan-1440-${testInfo.project.name}-draft.png`, fullPage: true });
+});
+
+test('manual three-step entry keeps confirmed space progress and navigates to plan in one press', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const bar = page.getByTestId('journey-bar');
+  const describedBy = await bar.getAttribute('aria-describedby');
+  expect(describedBy).toBe('create-project');
+  await expect(page.locator(`[id="${describedBy}"]`)).toHaveCount(1);
+  expect((await new AxeBuilder({ page }).include('main').analyze()).violations).toEqual([]);
+  await page.getByTestId('create-project').click();
+  await expect(page.getByTestId('worker-state')).toHaveText('ready');
+  for (const [name, value] of [['공간 안쪽 폭', '600'], ['공간 안쪽 깊이', '450'], ['공간 안쪽 높이', '1800']] as const)
+    await page.getByRole('textbox', { name, exact: true }).fill(value);
+  await page.getByTestId('onboarding-goto-next').click();
+  await expect(page.getByTestId('commit-input')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(bar).toHaveAttribute('data-current', 'items');
+  await page.getByTestId('onboarding-goto-next').click();
+  const itemWidth = page.getByRole('textbox', { name: '물건 A 폭', exact: true });
+  await expect(itemWidth).toBeFocused();
+  for (const [name, value] of [['물건 A 폭', '300'], ['물건 A 깊이', '200'], ['물건 A 높이', '250']] as const) {
+    await page.getByRole('textbox', { name, exact: true }).fill(value);
+    await expect(bar).toHaveAttribute('data-current', 'items');
+    await expect(page.getByTestId('journey-step-measure')).toHaveAttribute('data-state', 'done');
+  }
+  await page.getByTestId('commit-input').click();
+  await expect(bar).toHaveAttribute('data-current', 'plan');
+  await page.getByTestId('onboarding-goto-next').click();
+  await expect(page).toHaveURL(/\/plan$/);
+  await expect(page.getByTestId('compute-plan')).toBeVisible();
+  await noOverflow(page);
+});
+
+test('an accepted candidate from an older input directs the journey to a real compute control', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  await page.getByTestId('create-example').click();
+  await expect(page.getByTestId('worker-state')).toHaveText('ready');
+  await page.getByTestId('commit-input').click();
+  await expect(page.getByTestId('save-state')).toHaveAttribute('data-save-state', 'saved');
+  await page.getByTestId('goto-plan').click();
+  await expect(page.getByTestId('plan-context')).toHaveAttribute('data-context', 'installed');
+  await page.getByTestId('compute-plan').click();
+  await expect(page.getByTestId('search-status')).toHaveAttribute('data-search', 'done');
+  await page.getByTestId('accept-plan').click();
+  await expect(page.getByTestId('accepted-badge')).toBeVisible();
+  await page.getByRole('link', { name: '← 치수로 돌아가기' }).click();
+  await page.getByRole('textbox', { name: '공간 안쪽 폭', exact: true }).fill('610');
+  await page.getByTestId('commit-input').click();
+  await expect(page.getByTestId('save-state')).toHaveAttribute('data-save-state', 'saved');
+  await page.getByTestId('goto-plan').click();
+  await page.getByTestId('journey-focus-next').click();
+  await expect(page.getByTestId('compute-plan')).toBeFocused();
 });

@@ -9,6 +9,7 @@ import type {
   ProtocolRequest,
 } from '../../src/contracts/generated/dto';
 import { readInputProjection } from '../../src/features/plan/projection';
+import { journeyFromProject } from '../../src/features/onboarding/journey';
 import { normalizedView, readEvidence } from '../../src/features/project/detailFacts';
 import { ProjectSession, type SessionSnapshot } from '../../src/features/project/session';
 import {
@@ -235,6 +236,24 @@ it('open runs real verifyRecord on stored records and installs project context',
   expect(state.corrupt).toEqual([]);
   // Project activation (not bootstrap) succeeded → real Rust contextId.
   await until(session, (s) => s.context === 'installed');
+});
+
+it('journey retains unrelated Rust-confirmed measurements through edits and normalization failures', async () => {
+  const { repo, controller } = world();
+  const projectId = await seedCommitted(repo);
+  const session = watch(new ProjectSession(repo, controller, projectId, 'test-build'));
+  await session.open();
+  const confirmed = await until(session, (s) => !s.staleInput && s.normalizedForm !== null);
+  expect(journeyFromProject(confirmed).done.measure).toBe(true);
+  session.edit('items.item-a.dimensions.envelope.width', 'abc');
+  expect(journeyFromProject(session.snapshot).done.measure).toBe(true);
+  expect(journeyFromProject(session.snapshot).done.items).toBe(true); // unchanged item B
+  session.commit();
+  await until(session, (s) => s.diagnostics.length > 0 && s.saveState === 'saved');
+  expect(journeyFromProject(session.snapshot).done.measure).toBe(true);
+  expect(session.snapshot.normalizedForm).toEqual(confirmed.normalizedForm);
+  session.edit('space.interior.width', 'abc');
+  expect(journeyFromProject(session.snapshot).done.measure).toBe(false);
 });
 
 it('a tampered stored input digest fails verifyRecord and is reported, never repaired', async () => {

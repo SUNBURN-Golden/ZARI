@@ -36,6 +36,7 @@ export function JourneyBar({ view, onField, measure = false }: {
     else {
       const target = document.querySelector<HTMLElement>(`[data-testid="${view.cta.testId}"]`);
       if (!target || target.matches(':disabled,[aria-disabled="true"]')) return;
+      if (view.cta.testId === 'goto-plan') { target.click(); return; }
       target.scrollIntoView({ block: 'center' });
       target.focus();
     }
@@ -70,7 +71,7 @@ export function JourneyBar({ view, onField, measure = false }: {
       {view.cta && <span data-testid="journey-cta">
         {/* copy-todo: reuse the existing help action; only one suggested next action. */}
         <Button className="button button-primary" data-testid={measure ? 'onboarding-goto-next' : 'journey-focus-next'} isDisabled={view.disabled} onPress={move}>
-          {measure ? view.cta && 'field' in view.cta ? view.current === 'items' ? '물건 크기 넣기' : '다음 칸 재기' : '배치 고르러 가기 →' : '다음 단계 보기'}
+          {measure ? view.cta && 'field' in view.cta ? view.current === 'items' ? '물건 크기 넣기' : '다음 칸 재기' : view.cta && 'testId' in view.cta && view.cta.testId === 'commit-input' ? '입력 확인하기' : '배치 고르러 가기 →' : '다음 단계 보기'}
         </Button>
       </span>}
     </nav>

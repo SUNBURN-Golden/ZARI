@@ -281,17 +281,6 @@ export function ProjectsScreen() {
           </svg>
           <span>ZARI</span>
         </div>
-        <nav className="header-context" aria-label="화면 이동">
-          <a href="#/catalog" onClick={(e) => { e.preventDefault(); navigate('#/catalog'); }}>
-            카탈로그 · 보유 수납함
-          </a>
-          <a href="#/data" data-testid="nav-data" onClick={(e) => { e.preventDefault(); navigate('#/data'); }}>
-            내 데이터
-          </a>
-          <a href="#/probe" onClick={(e) => { e.preventDefault(); navigate('#/probe'); }}>
-            폭 확인 예제
-          </a>
-        </nav>
         <div className="local-note">
           <span aria-hidden="true" className="local-dot" />이 기기에만 저장
         </div>
@@ -302,28 +291,6 @@ export function ProjectsScreen() {
           <div>
             <p className="section-kicker">공간 워크벤치 · 프로젝트</p>
             <h1>정리할 공간을 고르세요.</h1>
-          </div>
-          <div className="studio-hero-actions">
-            <Button
-              className="button button-quiet studio-import-btn"
-              isDisabled={busy || incompatible}
-              data-testid="import-project"
-              onPress={() => fileRef.current?.click()}
-            >
-              파일에서 가져오기
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".json,.zip,application/json,application/zip"
-              data-testid="import-file"
-              hidden
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = '';
-                if (file) void stage(file);
-              }}
-            />
           </div>
         </div>
         <section
@@ -372,18 +339,7 @@ export function ProjectsScreen() {
           )}
           <div className="start-choices studio-hero-cards" data-testid="start-choices">
             <div className="studio-launch-card studio-launch-primary">
-              <div className="studio-card-blueprint" aria-hidden="true">
-                <svg viewBox="0 0 240 88" className="blueprint-art">
-                  <rect x="14" y="12" width="212" height="64" rx="6" className="bp-grid-bg" />
-                  <path d="M52 24 L120 12 L188 24 L188 64 L120 76 L52 64 Z" className="bp-iso-room" />
-                  <path d="M52 24 L120 36 L188 24 M120 36 L120 76" className="bp-iso-axis" />
-                  <path d="M44 68 L114 80 M126 80 L196 68" className="bp-dim-line" />
-                </svg>
-                {/* copy-todo: starting measurement guidance. */}
-                <span className="studio-blueprint-tag">줄자만 있으면 돼요</span>
-              </div>
               <div className="studio-card-copy">
-                <strong>내 공간으로 시작</strong>
                 <p className="session-note">
                   {/* copy-todo: first three fields guidance. */}
                   폭·깊이·높이 세 칸부터 채우면 됩니다. 모르는 칸은 비워 두세요.
@@ -394,6 +350,7 @@ export function ProjectsScreen() {
                   className="button button-primary"
                   onPress={() => void create()}
                   isDisabled={busy || !listSettled || incompatible}
+                  id="create-project"
                   data-testid="create-project"
                   data-list-settled={listSettled ? 'true' : 'false'}
                 >
@@ -402,19 +359,7 @@ export function ProjectsScreen() {
               </div>
             </div>
             <div className="studio-launch-card studio-launch-secondary">
-              <div className="studio-card-blueprint" aria-hidden="true">
-                <svg viewBox="0 0 240 88" className="blueprint-art">
-                  <rect x="14" y="12" width="212" height="64" rx="6" className="bp-grid-bg" />
-                  <rect x="44" y="20" width="152" height="48" rx="3" className="bp-iso-room" />
-                  <rect x="50" y="25" width="42" height="18" rx="2" className="bp-module-accent" />
-                  <rect x="96" y="25" width="42" height="18" rx="2" className="bp-module-accent" />
-                  <rect x="148" y="25" width="42" height="26" rx="2" className="bp-module-info" />
-                  <path d="M64 68 A20 20 0 0 1 84 48 L84 68 Z" className="bp-door-arc" />
-                </svg>
-                <span className="studio-blueprint-tag">예제 도면 체험 · 2D/3D</span>
-              </div>
               <div className="studio-card-copy">
-                <strong>예제로 둘러보기</strong>
                 <p className="session-note" data-testid="example-disclosure">
                   연습용 합성 데이터입니다. 상품·가격·재고는 실제가 아니며 구매할 수 없습니다. 내 프로젝트와
                   따로 저장됩니다.
@@ -516,6 +461,43 @@ export function ProjectsScreen() {
             )}
           </ul>
         </section>
+        <details className="home-secondary-tools" open={projects === null || projects.length > 0 ? true : undefined}>
+          {/* copy-todo: secondary home tools, after the two start choices. */}
+          <summary tabIndex={projects === null ? -1 : undefined}>다른 작업</summary>
+          <div className="studio-hero-actions">
+            <Button
+              className="button button-quiet studio-import-btn"
+              isDisabled={busy || !listSettled || incompatible}
+              data-testid="import-project"
+              onPress={() => fileRef.current?.click()}
+            >
+              파일에서 가져오기
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,.zip,application/json,application/zip"
+              data-testid="import-file"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (file) void stage(file);
+              }}
+            />
+          </div>
+          <nav className="home-secondary-nav" aria-label="화면 이동">
+            <a href="#/catalog" onClick={(e) => { e.preventDefault(); navigate('#/catalog'); }}>
+              카탈로그 · 보유 수납함
+            </a>
+            <a href="#/data" data-testid="nav-data" onClick={(e) => { e.preventDefault(); navigate('#/data'); }}>
+              내 데이터
+            </a>
+            <a href="#/probe" onClick={(e) => { e.preventDefault(); navigate('#/probe'); }}>
+              폭 확인 예제
+            </a>
+          </nav>
+        </details>
         <footer className="studio-footer-strip" aria-label="저장소 및 사본 안내">
           <p>
             측정값은 이 기기의 브라우저 저장소에만 기록됩니다. 보내기가 유일한

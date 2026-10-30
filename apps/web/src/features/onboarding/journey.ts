@@ -1,5 +1,5 @@
 import type { ProjectInput } from '../../contracts/generated/dto';
-import { fieldPathFor, MEASUREMENT_FIELDS, type MeasurementField } from '../project/draft';
+import { fieldPathFor, getMeasurement, MEASUREMENT_FIELDS, type MeasurementField } from '../project/draft';
 import type { SessionSnapshot } from '../project/session';
 import { suggestedField } from './guide';
 
@@ -25,7 +25,7 @@ export interface JourneyView {
   current: JourneyStepId;
   done: Record<JourneyStepId, boolean>;
   progress: { filled: number; total: number } | null;
-  cta: { field: MeasurementField } | { testId: 'goto-plan' | 'compute-plan' | 'accept-plan' } | null;
+  cta: { field: MeasurementField } | { testId: 'goto-plan' | 'compute-plan' | 'accept-plan' | 'commit-input' } | null;
   disabled: boolean;
   historical: boolean;
   candidates?: number;
@@ -36,7 +36,16 @@ export const JOURNEY_IDLE_HOME: JourneyView = {
 };
 export function journeyFromProject(state: SessionSnapshot, screen: 'measure' | 'plan' = 'measure'): JourneyView {
   const historical = state.staleInput || state.diagnostics.length > 0;
-  const known = (f: MeasurementField) => !historical && normalizedAt(state.normalizedInput, f)?.state === 'known';
+  // A dirty draft does not invalidate unrelated confirmed measurements. Compare
+  // raw facts exactly; only Rust can turn changed text/units into known values.
+  const known = (f: MeasurementField) => {
+    if (state.diagnostics.some((d) => fieldPathFor(d.fieldPath) === f || f.startsWith(`${d.fieldPath}.`))) return false;
+    if (state.staleInput || state.diagnostics.length > 0) {
+      if (!state.form || !state.normalizedForm ||
+        JSON.stringify(getMeasurement(state.form, f)) !== JSON.stringify(getMeasurement(state.normalizedForm, f))) return false;
+    }
+    return normalizedAt(state.normalizedInput, f)?.state === 'known';
+  };
   const space = MEASUREMENT_FIELDS.filter((f) => f.startsWith('space.'));
   const interior = space.filter((f) => f.startsWith('space.interior.'));
   const items = MEASUREMENT_FIELDS.filter((f) => f.startsWith('items.'));
@@ -48,15 +57,23 @@ export function journeyFromProject(state: SessionSnapshot, screen: 'measure' | '
   const current = !done.measure ? 'measure' : !done.items ? 'items' : 'plan';
   const fields = current === 'measure' ? interior : items;
   const diagnostic = state.diagnostics.map((d) => fieldPathFor(d.fieldPath)).find((f) => f && fields.includes(f));
-  const suggestion = suggestedField(state.form, state.plan.nextFacts);
-  const nextSuggestion = current === 'items' && !suggestion?.field.startsWith('items.') ? null : suggestion;
+  const suggestion = historical ? null : suggestedField(state.form, state.plan.nextFacts);
+  const nextSuggestion = suggestion && !known(suggestion.field) &&
+    (current !== 'items' || suggestion.field.startsWith('items.')) ? suggestion : null;
   const field = diagnostic ?? nextSuggestion?.field ?? fields.find((f) => !known(f));
+  const hasText = (f: MeasurementField) => known(f) || (state.form && getMeasurement(state.form, f).text.trim() !== '');
+  const needsConfirmation = current !== 'plan' && !diagnostic && (current === 'measure'
+    ? interior.every(hasText)
+    : ['item-a', 'item-b'].some((id) => items.filter((f) => f.includes(id)).every(hasText)));
+  const selected = state.plan.alternatives?.find((a) => a.planSnapshotId === state.plan.selectedId);
+  const canAccept = !historical && selected && selected.content.versions.inputDigest === state.inputDigest &&
+    selected.planSnapshotId !== state.plan.accepted?.planSnapshotId;
   const busy = state.plan.search === 'running' || state.plan.search === 'cancelling' || state.plan.acceptState === 'saving';
   const disabled = busy || state.status !== 'ready' || state.worker !== 'ready' || state.conflict !== null ||
     (screen === 'plan' && (state.context !== 'installed' || state.plan.edit?.pending != null || state.plan.edit?.persist?.kind === 'saving'));
   const cta = screen === 'plan'
-    ? done.plan ? null : { testId: state.plan.selectedId ? 'accept-plan' as const : 'compute-plan' as const }
-    : current !== 'plan' && field ? { field } : done.plan ? null : { testId: 'goto-plan' as const };
+    ? done.plan ? null : { testId: canAccept ? 'accept-plan' as const : 'compute-plan' as const }
+    : needsConfirmation ? { testId: 'commit-input' as const } : current !== 'plan' && field ? { field } : done.plan ? null : { testId: 'goto-plan' as const };
   const progressFields = current === 'items' ? items : space;
   return { current, done, cta, disabled, historical, candidates: state.plan.alternatives?.length ?? 0,
     progress: current === 'plan' ? null : { filled: progressFields.filter(known).length, total: progressFields.length } };

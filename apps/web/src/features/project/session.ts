@@ -255,6 +255,8 @@ export interface SessionSnapshot {
   form: RawProjectInputDto | null;
   diagnostics: Diagnostic[];
   normalizedInput: ProjectInput | null;
+  /** Raw measurements paired with the last successful Rust normalization, view-only. */
+  normalizedForm: RawProjectInputDto | null;
   inputDigest: string | null;
   inputRevision: string;
   projectRevision: string;
@@ -380,6 +382,7 @@ export class ProjectSession {
       form: null,
       diagnostics: [],
       normalizedInput: null,
+      normalizedForm: null,
       inputDigest: null,
       inputRevision: '0',
       projectRevision: '0',
@@ -1069,6 +1072,7 @@ export class ProjectSession {
     const keepNormalized = diagnostics.length > 0;
     this.patch({
       diagnostics,
+      normalizedForm: !keepNormalized && normalized ? form : this.state.normalizedForm,
       normalizedInput: keepNormalized
         ? this.state.normalizedInput
         : (normalized ?? this.state.normalizedInput),
@@ -2871,6 +2875,7 @@ export class ProjectSession {
     );
     this.patch({
       form: this.form,
+      normalizedForm: null,
       normalizedInput: bundle.input?.input ?? this.state.normalizedInput,
       inputDigest: bundle.project.currentInputDigest,
       inputRevision: bundle.project.currentInputRevision,

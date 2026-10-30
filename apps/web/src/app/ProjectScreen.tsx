@@ -508,6 +508,9 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
   useReturnFocus(state.conflict !== null, 'conflict-reload');
   useReturnFocus(state.worker === 'failed', 'worker-retry');
   useEffect(() => {
+    // Focus invalid fields only after confirmation finishes. A stale diagnostic
+    // during saving must not steal focus from a storage recovery control.
+    if (state.saveState !== 'saved') return;
     const active = document.activeElement;
     if (!(active instanceof HTMLElement) || active.getAttribute('data-testid') !== 'commit-input') return;
     const field = MEASUREMENT_FIELDS.find((item) =>
@@ -722,26 +725,6 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
             })}
           </dl>
         </div>
-        <OnboardingPanel
-          projectId={projectId}
-          form={state.form}
-          diagnostics={state.diagnostics}
-          nextFacts={state.plan.nextFacts}
-          focused={focused}
-          example={isExampleName(state.name)}
-          onGoto={gotoField}
-        />
-        <NextFactsList
-          view={state.plan.nextFacts}
-          onRecompile={() => session.recompileNextFacts()}
-          onField={(path) => {
-            setDetailTarget({ path, token: Date.now() });
-            if ((MEASUREMENT_FIELDS as readonly string[]).includes(path)) {
-              gotoField(path as MeasurementField);
-            }
-          }}
-          onCatalog={() => navigate('#/catalog')}
-        />
         <p className="focus-context" data-testid="focus-context" aria-live="polite">
           {focused ? `${FIELD_LABELS[focused]}. ${fieldCaption(focused)}` : '\u00A0'}
         </p>
@@ -776,12 +759,6 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
             ))}
           </ul>
         )}
-        <DetailMeasure
-          session={session}
-          state={state}
-          focusedField={focused}
-          detailTarget={detailTarget}
-        />
         {state.diagnostics.length > 0 && state.saveState === 'saved' && (
           <p className="session-note" data-testid="normalize-held">
             원문은 저장되었습니다. 정규화된 입력과 근거는 이전 확인 값을 유지합니다.
@@ -814,6 +791,32 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           <p className="notice notice-stale" data-testid="stale-notice">저장되지 않은 입력 변경이 있습니다.</p>
         )}
         {exported && <p className="session-note" data-testid="exported-note">{exported === 'recovery' ? '복구' : '표준'}보내기 파일을 만들었습니다.</p>}
+        <OnboardingPanel
+          projectId={projectId}
+          form={state.form}
+          diagnostics={state.diagnostics}
+          nextFacts={state.plan.nextFacts}
+          focused={focused}
+          example={isExampleName(state.name)}
+          onGoto={gotoField}
+        />
+        <NextFactsList
+          view={state.plan.nextFacts}
+          onRecompile={() => session.recompileNextFacts()}
+          onField={(path) => {
+            setDetailTarget({ path, token: Date.now() });
+            if ((MEASUREMENT_FIELDS as readonly string[]).includes(path)) {
+              gotoField(path as MeasurementField);
+            }
+          }}
+          onCatalog={() => navigate('#/catalog')}
+        />
+        <DetailMeasure
+          session={session}
+          state={state}
+          focusedField={focused}
+          detailTarget={detailTarget}
+        />
         <PortablePanel projectId={projectId} />
         <details className="dev-info" data-testid="dev-info">
           {/* copy-todo: developer metadata disclosure. */}

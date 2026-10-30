@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
 // Vite's default preview port is 4173. Another app on this machine can already
 // be listening there. Reusing that server would run ZARI tests against the
 // other app, so reuseExistingServer stays off and the first free port at or
-// above 4173 is used. CI, where 4173 is free, still uses 4173.
+// above ZARI_PREVIEW_PORT (default 4173) is used. CI keeps its default.
 // Playwright loads this file in the runner and again in each worker, including
 // a worker restarted after the suite has been running. Reuse the stamped port
 // while something is still listening there. A dead stamp is probed again.
@@ -19,6 +19,7 @@ function previewOrigin(): string {
     const fs = require('node:fs');
     const net = require('node:net');
     const stamp = process.argv[1];
+    const firstPort = Number(process.argv[2]);
     function canListen(port) {
       return new Promise((resolve) => {
         const server = net.createServer();
@@ -32,11 +33,11 @@ function previewOrigin(): string {
         stamped = fs.readFileSync(stamp, 'utf8').trim();
       } catch {}
       const match = stamped.match(/^http:\\/\\/127\\.0\\.0\\.1:(\\d+)$/);
-      if (match && !(await canListen(Number(match[1])))) {
+      if (match && Number(match[1]) >= firstPort && !(await canListen(Number(match[1])))) {
         process.stdout.write(stamped);
         return;
       }
-      for (let port = 4173; port < 4193; port += 1) {
+      for (let port = firstPort; port < firstPort + 20; port += 1) {
         if (await canListen(port)) {
           const origin = 'http://127.0.0.1:' + port;
           fs.mkdirSync(require('node:path').dirname(stamp), { recursive: true });
@@ -48,7 +49,7 @@ function previewOrigin(): string {
       process.exit(1);
     })();
   `;
-  const origin = execFileSync(process.execPath, ['-e', script, stamp], { encoding: 'utf8' }).trim();
+  const origin = execFileSync(process.execPath, ['-e', script, stamp, process.env.ZARI_PREVIEW_PORT ?? '4173'], { encoding: 'utf8' }).trim();
   if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) throw new Error(`preview port probe failed: ${origin}`);
   return origin;
 }
