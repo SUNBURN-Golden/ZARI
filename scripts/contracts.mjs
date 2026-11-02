@@ -15,6 +15,8 @@ const roots = [
   'ProtocolRequest',
   'ProtocolResponse',
   'BootstrapProbeDto',
+  'EasyFitInput',
+  'EasyFitResult',
   'BootstrapProbeResult',
   'BootstrapFixture',
   'DomainFixture',

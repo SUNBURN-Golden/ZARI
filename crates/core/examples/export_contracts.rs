@@ -37,6 +37,8 @@ fn main() {
             "ProtocolRequest":schema::<ProtocolRequest>(),
             "ProtocolResponse":schema::<ProtocolResponse>(),
             "BootstrapProbeDto":schema::<BootstrapProbeDto>(),
+            "EasyFitInput":schema::<easy_fit::EasyFitInput>(),
+            "EasyFitResult":schema::<easy_fit::EasyFitResult>(),
             "BootstrapProbeResult":schema::<BootstrapProbeResult>(),
             "BootstrapFixture":schema::<BootstrapFixture>(),
             "DomainFixture":schema::<DomainFixture>(),

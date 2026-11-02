@@ -247,6 +247,24 @@
       "foreground": "--zari-text-secondary",
       "background": "--zari-info-soft",
       "minimum": 4.5
+    },
+    {
+      "id": "easy-success-on-app",
+      "foreground": "--zari-success",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "easy-warning-on-app",
+      "foreground": "--zari-warning",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
+    },
+    {
+      "id": "easy-danger-on-app",
+      "foreground": "--zari-danger",
+      "background": "--zari-surface-app",
+      "minimum": 4.5
     }
   ]
 }

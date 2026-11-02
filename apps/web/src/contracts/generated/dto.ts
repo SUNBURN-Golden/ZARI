@@ -1159,6 +1159,11 @@ export type DomainOperation =
   | 'queryNextFacts';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "EasyFitStatus".
+ */
+export type EasyFitStatus = 'fits' | 'tight' | 'doesNotFit' | 'unknown';
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "LayoutEditCommand".
  */
 export type LayoutEditCommand =
@@ -2635,6 +2640,8 @@ export interface ZariContractBundle {
   CatalogImportDto: CatalogImportDto;
   CatalogSnapshot: CatalogSnapshot;
   DomainFixture: DomainFixture;
+  EasyFitInput: EasyFitInput;
+  EasyFitResult: EasyFitResult;
   LayoutEditCommand: LayoutEditCommand;
   NormalizedCatalogField: NormalizedCatalogField;
   PlanSnapshot: PlanSnapshot;
@@ -3388,6 +3395,48 @@ export interface SearchCounters {
 export interface MeasurementGroupFormatRequest {
   fieldPath: string;
   unit: Unit;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "EasyFitInput".
+ */
+export interface EasyFitInput {
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  item: [string, string, string, ...string[]];
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  space: [string, string, string, ...string[]];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "EasyFitResult".
+ */
+export interface EasyFitResult {
+  accessCheck: string;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  axes: [EasyFitAxis, EasyFitAxis, EasyFitAxis, ...EasyFitAxis[]];
+  openingCheck: string;
+  status: EasyFitStatus;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "EasyFitAxis".
+ */
+export interface EasyFitAxis {
+  differenceCm?: string | null;
+  itemMm?: number | null;
+  label: string;
+  message: string;
+  needsConfirmation: boolean;
+  spaceMm?: number | null;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

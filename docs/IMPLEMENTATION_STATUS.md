@@ -2304,3 +2304,27 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 미완료·미검증: 실제 사이트 구조·실제 Chrome·native messaging·실제 R2, 앱의 저장소 URL 읽기 활성화(소유자 결정), 수집 수납함 안쪽의 지지면 결속 배치(내경·지지면 미확인 — 잠정 배치만 가능), 큰 번들(스냅샷 4 MiB 초과 거절).
 
 다음: 독립 검토 2회 후 감독자 병합. 다른 노드는 시작하지 않았다.
+
+## ZARI Easy Mode — 2026-11-02 사용자 지시 / review1 필수 수정
+
+작업 브랜치 `feat/easy-mode`, 시작 HEAD `0fd20e6`. review1의 필수 수정 1–5를 반영했다. [수정 대응·근거](evidence/easy-mode/README.md), [실측 metrics](evidence/easy-mode/metrics.json), [디자인 결정](../design/DECISIONS.md)의 D-easy-mode를 함께 본다.
+
+실제 변경:
+
+- 기본 입구는 쉬운 모드, 기존 화면은 전문가 모드다. 하단 링크로 전환하며 최근 모드를 별도 키에 기억한다. 전문가 직접 경로·기존 testid·IndexedDB 데이터 계약은 유지한다.
+- 첫 문장·시작하기·예제 링크, 질문 하나씩의 4단계, 뒤로가기, 물건 이름/치수·방 그림 선택·줄자 그림·cm 입력·단위 확인, localStorage 복원·손상·저장 실패 경로를 구현했다. 미확정 보조 문구는 copy-todo와 `design/EASY_COPY_CANDIDATES.md`에 표시했다.
+- Rust의 기존 evaluate_probe를 각 축에 재사용한다. 명목 크기의 3단계 판정·20mm 경계·방향별 차이를 Rust가 반환하며, 불완전하거나 유효하지 않은 입력은 unknown이다. 문 열기·설치·접근·오차는 미확인으로 남긴다. 상세 그림·표는 같은 응답을 표시한다. 프로젝트 protocol·스키마 version·DB version·보존 원문은 바꾸지 않았다.
+- 본문 18px·결과 32px·버튼 48px, 주요 행동 하나의 하단 고정, 기존 semantic token, 포커스·스크린리더 레이블·reduced motion을 적용했다. 전문가 회귀는 기억된 전문가 모드로 실행하며 별도 context를 만드는 두 시험은 전문가 경로를 명시한다.
+- 실제 Playwright 9개를 추가했다. 390×844 / 1440×900의 light/dark, 8개 화면 상태로 PNG 32개와 측정 자료를 `/workspace/shots/zari-easy/`에 기록한다. `node scripts/easy-artifacts.mjs`로 metrics.json·copy-candidates.md와 커밋할 metrics 복사본을 생성한다.
+
+실측: 본문 최소 18px, 결과 32px, 버튼 최소 48px, 각 화면 주요 행동 1개, 가로 넘침 0px, axe 위반 0건. 실제 이미지로 390px light 측정 화면·dark 아슬아슬 결과·desktop light 결과를 확인했다. 새 success/warning/danger-on-app 대비를 포함해 88/88, checker 자체 시험 13개 통과. 모든 캡처는 draft다.
+
+초기 검증 기록: fmt·clippy·Rust 261 통과(1 ignored)·생성 계약 124 fixture 구조·typecheck·lint·vitest 427 통과. 최초 Chromium 전체 workers=2는 155 통과/기존 전문가 워커 대기 2 실패, 최초 Firefox 전체 workers=2는 150 통과/7 실패(새 좌표 비교 정밀도 4건 수정, 기존 검색 대기 3건)였다. 타임아웃·baseline·판정을 낮추지 않고 직렬 실행으로 동시 부하를 분리했다.
+
+최종 확인: Chromium 직렬 전체 157/157 통과 후 예제 공간을 유지하는 ‘다른 물건 해보기’에서도 예제 안내를 보존하도록 수정했다. 이 최종 코드의 쉬운 모드 9개를 Chromium·Firefox에서 실행해 18/18 통과했고 같은 경계 입력 8개의 native/Worker-WASM 전체 JSON이 일치했다. 기존 공통 fixture 124개 parity와 비정상 요청 검사 2개도 통과했다. 최종 vitest 51파일 427/427, typecheck·lint, clippy·fmt, build·production release manifest 검사를 통과했다. Node 24.22.1 / npm 11.21.1 / Rust 1.98.1 / wasm-bindgen 0.2.128 환경이다. 새로운 캡처의 source/PNG 해시는 metrics.json에 기록했다.
+
+Firefox 후속: 최초 전체 실행에서 남았던 guided-onboarding·incremental-replan·plan 검색 3건을 같은 최종 코드와 기존 timeout으로 workers=1에서 실행해 3/3 통과했다. 최종 Firefox 전체를 한 번에 재실행한 결과는 아니며, 최초 전체 결과와 수정 후 9개/후속 3개 결과를 구분한다. 실패를 숨기는 자동 retry 설정은 추가하지 않았다.
+
+미완료·미검증: WebKit은 host 라이브러리가 없어 launch 불가이고 두 의존성 설치 경로 모두 패키지 서버 오류로 실패했다. 실제 모바일 기기·수동 스크린리더·보조 문구 및 화면 사용자 승인은 미검증이다. 검색 이름은 물건 종류 선택 보조이며 실상품·실측 치수를 꾸며 제공하지 않는다. 이 결과는 한 물건의 명목 크기 확인이고 설치 검증·회전 배치·BOM 확정이 아니다.
+
+다음: 독립 non-author exact-HEAD 검토, copy-todo와 draft 화면의 사용자 검토, WebKit 의존성이 갖춰진 host 검증. push·main 변경·merge·배포는 수행하지 않았다.

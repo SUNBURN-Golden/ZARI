@@ -2,6 +2,8 @@
 
 ## 상태와 적용 범위
 
+2026-11-02 사용자 지시의 쉬운 모드는 별도 입구 계약이다. 기본 입구는 문장 하나·시작하기와 4단계 질문이며, 기존 작업대는 전문가 모드로 보존한다. 쉬운 모드의 본문 18px 이상·결과 32px 이상·단추 48px 이상·하단 고정 행동·390px·light/dark 검증이 아래 v0.1의 밀도·light 전용 제안에 우선한다. 현재 warm ivory/terracotta·warm obsidian semantic token을 재사용한다. 화면 승인은 여전히 미확정이며 자세한 범위는 [결정 기록](design/DECISIONS.md)의 D-easy-mode를 따른다.
+
 사용자가 정한 방향은 **Apple식 정교함, 흔한 AI 템플릿 느낌 최소화**다. IKEA·Elfa는 수납 설계·구매 흐름의 참고 대상으로 유지한다. 여기서 Apple식은 Apple의 로고·에셋·UI를 복제한다는 뜻이 아니다.
 
 이 문서는 개발 기준이다. SP-001 이전의 CSS 값과 화면 명세는 초안이고, 관찰한 main `1aa3c1c`의 로컬 앱에는 SP-001–016과 z-product-contract부터 z-local-delivery까지의 z-노드 20개, 소유자 추가 z-catalog-crawler가 병합되어 있다. 판매 묶음·전략·대안·재정리·진단·접근성, 이식·구매 준비·실행·위치 검색·피드백·출력, 내 데이터(`#/data`)·첫 사용 안내·치수 번들 패널과 로컬 버전 알림까지 포함한다. 성능·qualification·인계의 실제 검증과 미측정은 IMPLEMENTATION_STATUS 및 각 evidence를 따른다. 승인된 화면 이미지와 Figma 원본은 아직 없고, 사용자 검증으로 승격된 baseline은 0개다. GitHub에 등록되었다고 화면이 승인된 것은 아니다.

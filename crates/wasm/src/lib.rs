@@ -1,5 +1,17 @@
 use wasm_bindgen::prelude::*;
 
+/// Read-only nominal size check, independent of project storage and protocol identity.
+#[wasm_bindgen(js_name = evaluateEasyFit)]
+pub fn evaluate_easy_fit(text: &str) -> Result<String, JsError> {
+    if text.len() > 4096 {
+        return Err(JsError::new("input_too_large"));
+    }
+    let input: zari_core::easy_fit::EasyFitInput =
+        serde_json::from_str(text).map_err(|_| JsError::new("invalid_easy_input"))?;
+    serde_json::to_string(&zari_core::easy_fit::evaluate_easy_fit(&input))
+        .map_err(|_| JsError::new("easy_result_failed"))
+}
+
 #[wasm_bindgen]
 pub struct Runtime(zari_core::Runtime);
 

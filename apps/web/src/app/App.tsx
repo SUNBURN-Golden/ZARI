@@ -8,8 +8,34 @@ import { ProjectsScreen } from './ProjectsScreen';
 import { useHashRoute } from './router';
 import { repository } from './sessionRegistry';
 import type { StorageFenceCause } from '../persistence/repository';
+import { EasyMode } from '../features/easy/EasyMode';
+import { MODE_KEY } from '../features/easy/state';
+import { navigate } from './router';
 
 export function App() {
+  const hash = useHashRoute();
+  const [mode, setMode] = useState(() => {
+    if (location.hash === '#/easy') return 'easy';
+    if (location.hash && location.hash !== '#/') return 'expert';
+    try { return localStorage.getItem(MODE_KEY) === 'expert' ? 'expert' : 'easy'; }
+    catch { return 'easy'; }
+  });
+  useEffect(() => {
+    if (hash === '#/easy') setMode('easy');
+    else if (location.hash && location.hash !== '#/') setMode('expert');
+  }, [hash]);
+  useEffect(() => {
+    try { localStorage.setItem(MODE_KEY, mode); } catch { /* Current mode remains usable. */ }
+  }, [mode]);
+  const change = (next: 'easy' | 'expert') => {
+    setMode(next);
+    navigate(next === 'easy' ? '#/easy' : '#/projects');
+  };
+  if (mode === 'easy') return <EasyMode onExpert={() => change('expert')} />;
+  return <><ExpertApp /><footer className="expert-mode-footer"><a href="#/easy" onClick={(e) => { e.preventDefault(); change('easy'); }}>쉬운 모드</a></footer></>;
+}
+
+function ExpertApp() {
   const hash = useHashRoute();
   /**
    * PERSISTENCE §6: another tab holding a newer build asks this connection

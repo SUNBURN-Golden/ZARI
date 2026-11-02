@@ -3,6 +3,7 @@ pub mod catalog;
 pub mod catalog_bundle;
 pub mod catalog_provenance;
 pub mod completion;
+pub mod easy_fit;
 pub mod edit;
 pub mod eligibility;
 pub mod eval_continue;

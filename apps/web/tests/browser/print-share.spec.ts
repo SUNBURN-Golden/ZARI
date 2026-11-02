@@ -20,7 +20,7 @@ import { collectErrors, watchNetwork } from './product-setup';
 const PROJECT_NAME = '새 정리 프로젝트';
 
 async function planWithCards(page: Page) {
-  await page.goto('/');
+  await page.goto('/#/projects');
   await page.getByTestId('create-project').click();
   await expect(page.getByTestId('worker-state')).toHaveText('ready', { timeout: 30000 });
   await page.getByTestId('fill-sample').click();
@@ -177,7 +177,7 @@ test('a drawing from another plan blocks every output and nothing is downloaded'
   test.setTimeout(120_000);
   const errors: string[] = [];
   collectErrors(page, errors);
-  await page.goto('/');
+  await page.goto('/#/projects');
   await page.getByTestId('create-project').click();
   await expect(page.getByTestId('worker-state')).toHaveText('ready', { timeout: 30000 });
   await page.getByTestId('fill-sample').click();

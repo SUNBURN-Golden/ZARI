@@ -1,5 +1,15 @@
 # ZARI 디자인 결정 기록
 
+## D-easy-mode — 초보자 기본 입구 / 2026-11-02 사용자 지시 구현 초안
+
+사용자 지시와 review1 필수 수정 1–5를 근거로 쉬운 모드를 기본 입구로 둔다. 기존 작업대는 전문가 모드이고 직접 경로·testid·기존 저장은 유지한다. 최근 모드와 versioned 임시 입력은 별도 localStorage 키에 기록하며, 전문가 회귀 테스트는 기억된 전문가 모드로 시작한다. 과거 baseline·캡처 시나리오 해시는 바꾸지 않는다.
+
+본문 18px·결과 32px·단추 48px 이상, 고정 주요 행동 하나, 보라색 없는 기존 semantic token, 방/줄자 자체 SVG, 질문 하나와 뒤로가기를 사용한다. dark는 현재 토큰의 대비와 이번 쉬운 화면에서 검증하며 기존 v0.1의 light 전용 제안보다 사용자 지시가 우선한다. 새 success/warning/danger-on-app 조합을 대비 사례에 추가한다.
+
+판정은 기존 Rust evaluate_probe를 각 축에 재사용하고 명목 크기의 fits/tight(0–20mm 포함)/doesNotFit를 Rust에서 집계한다. 입력 누락·유효하지 않은 값은 unknown이다. 설치·문 열기·접근·오차는 따로 미확인으로 남긴다. 수량은 물건 하나이며 회전·탐색·구매·BOM을 계산했다고 주장하지 않는다. 상세 그림·표는 같은 Rust 응답을 표시한다. 이 독립적인 읽기 전용 계산은 카탈로그 번들 검토와 같이 전용 Worker/WASM export를 사용하고 기존 프로젝트 protocol·DB는 변경하지 않는다.
+
+기본 문구는 사용자 예시이고 보조 문구는 `data-copy-todo="supporting-copy"`와 [문구 후보](EASY_COPY_CANDIDATES.md)에 표시한다. 모든 새 캡처는 draft이고 사용자 시각 승인·독립 exact-HEAD 감사·배포·merge 완료를 뜻하지 않는다. 실제 검증 결과는 IMPLEMENTATION_STATUS.md와 easy-mode evidence에 기록한다.
+
 ## D001 — 독자적 작업 화면 / 방향 확정
 
 근거: 사용자가 Apple식 정교함과 흔한 바이브코딩 템플릿 느낌 최소화를 요청했다. IKEA·Elfa는 수납 설계·구매 흐름의 레퍼런스로 유지한다.

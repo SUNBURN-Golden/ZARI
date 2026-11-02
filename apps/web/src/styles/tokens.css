@@ -68,6 +68,11 @@
   --zari-panel-width: 18rem;
   --zari-inspector-width: 20rem;
   --zari-content-max: 100rem;
+  --zari-easy-content-max: 36rem;
+  --zari-easy-header-max: 44rem;
+  --zari-easy-label-width: 4rem;
+  --zari-easy-welcome-width: 20rem;
+  --zari-easy-illustration-width: 9rem;
   --zari-z-canvas: 0;
   --zari-z-header: 10;
   --zari-z-popover: 30;

@@ -1,0 +1,696 @@
+{
+  "capturedAt": "2026-11-02T13:12:22.010Z",
+  "status": "draft",
+  "browser": "Chromium",
+  "scope": "Rendered automated checks; no user visual approval or screen reader certification.",
+  "sources": [
+    {
+      "file": "apps/web/src/app/App.tsx",
+      "sha256": "a9527d7618a7ac9bb2565b6a67897b81bf4f4b981c6e1719dc8564a06b9bea81"
+    },
+    {
+      "file": "apps/web/src/features/easy/EasyMode.tsx",
+      "sha256": "2fd89d465aea0a25aa1f0572f8076bc667bc5745ce5398051e9f0450ea042a0a"
+    },
+    {
+      "file": "apps/web/src/features/easy/easy.css",
+      "sha256": "85aac82d0d47bbf70dbaabd7ee24341b4ee9805e0f3fee5dc91fe208a5cf1892"
+    },
+    {
+      "file": "apps/web/src/features/easy/state.ts",
+      "sha256": "c77185884530fbaa56f08e4eeba709d9830b0682fbc94ec26d38017e8e6a44c1"
+    },
+    {
+      "file": "apps/web/src/styles/tokens.css",
+      "sha256": "1469ac3cc12293c0aca8829b57ba9b1b9fbef9509657fb2158a7a226c495e281"
+    },
+    {
+      "file": "apps/web/src/worker/easyWorker.ts",
+      "sha256": "ce2f6c5b158e04e07c224008417360deba2dc3bc649cb42a302945b84bbbf599"
+    },
+    {
+      "file": "crates/core/src/easy_fit.rs",
+      "sha256": "2b18136cb15ff6eef3f92ed2810c57848e3177a7e73bbd36cc8ab1cd030effaf"
+    },
+    {
+      "file": "crates/wasm/src/lib.rs",
+      "sha256": "f3ea0523b25dd3c2d723c61837d828ef102737930f0350f3e66da45594d47ca5"
+    },
+    {
+      "file": "apps/web/tests/browser/easy-mode.spec.ts",
+      "sha256": "efd50d58f464a28fb4f1d8edc21b9ecb5388e6d8c65946ce6618e385e0151642"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "1440x900-dark-item.png",
+      "sha256": "50c605cc426c54c03d555699b268dfde969a3afe3f41cfb47be1734817eebc4c"
+    },
+    {
+      "file": "1440x900-dark-result-details.png",
+      "sha256": "ac9ea014dc0a6c59f8a8cce205fd60090f423af06a02e46bc78d6ee52a238171"
+    },
+    {
+      "file": "1440x900-dark-result-fails.png",
+      "sha256": "6556afa67b2de0c661cba51a9bb5fff66106899c02c777183f0a2b3fc23ba095"
+    },
+    {
+      "file": "1440x900-dark-result-fits.png",
+      "sha256": "53a7ff3bb3490c7bf99329512865d558ff301450ed71e9b08e6543e199cf33a7"
+    },
+    {
+      "file": "1440x900-dark-result-tight.png",
+      "sha256": "61bf833dcd9d957908fb36a76017ee1185112b438392e764d4744b46a51e2eea"
+    },
+    {
+      "file": "1440x900-dark-room.png",
+      "sha256": "92e896038bc8646272f88d4ac2b21c5f87dc1be7c16b763e85b004e6b7890802"
+    },
+    {
+      "file": "1440x900-dark-space.png",
+      "sha256": "5fb10ab5c2d2146f321d705be4554acc47f0769dda5db08c4d6021b7dab16a95"
+    },
+    {
+      "file": "1440x900-dark-welcome.png",
+      "sha256": "46b9fd450fa8c8aada4d7cd4487fdae41a8fb5e9b253b76d4227f3fa7e71558c"
+    },
+    {
+      "file": "1440x900-light-item.png",
+      "sha256": "8f2541e4084ff0ade4c2992a603ad3377c78d18dc2cf01a13fe3e5d5de58e512"
+    },
+    {
+      "file": "1440x900-light-result-details.png",
+      "sha256": "7a2c560c1f742441e04d8b508641d8906ba4f3167508e95787c6186bd13f963b"
+    },
+    {
+      "file": "1440x900-light-result-fails.png",
+      "sha256": "3f1e68a1fe5a5bf95848f0830fe881474ad0c1a4da8c2ce852edead46cb1115f"
+    },
+    {
+      "file": "1440x900-light-result-fits.png",
+      "sha256": "b7b42568a577187cf789ee1e15f0f93a9cb45232bd3c7659538e0bb0610d8e63"
+    },
+    {
+      "file": "1440x900-light-result-tight.png",
+      "sha256": "b14d9daeb780858e013e26897d390fd23051b4fd0a8a7d6a9afd081146625875"
+    },
+    {
+      "file": "1440x900-light-room.png",
+      "sha256": "4ead3abd7969a51275c5555e23fc96bbd5a9fa3242b1e51dd0b6fa0184eba64d"
+    },
+    {
+      "file": "1440x900-light-space.png",
+      "sha256": "3e36c4ad837507104897cdb6609a368b9784ba820dd3d305c8a1e24ab0c8110c"
+    },
+    {
+      "file": "1440x900-light-welcome.png",
+      "sha256": "fe9a72cb32410ec225e5e304d8a51f8ee3ddf65ac29adae333b33e643678f87a"
+    },
+    {
+      "file": "390x844-dark-item.png",
+      "sha256": "882b5d41df9215796a84d24b929abf6807c029fea98b5b4e8caa1d02ef7b4a74"
+    },
+    {
+      "file": "390x844-dark-result-details.png",
+      "sha256": "36736f40965d8dd226c935710bddca04a64a391215442b907f462e860dd61789"
+    },
+    {
+      "file": "390x844-dark-result-fails.png",
+      "sha256": "e8f956dd8dab91fc433d807cadc0c5e3e8175bce994142f55f2f58fae0a947d8"
+    },
+    {
+      "file": "390x844-dark-result-fits.png",
+      "sha256": "2702f40939103c3874dcc1181b44cc0ae5d170d83b6caea076167fbdf7852fa3"
+    },
+    {
+      "file": "390x844-dark-result-tight.png",
+      "sha256": "abe9ce830bbdca6f6413bbfdb197b3c40183914cb2a57a1f0ac9873b8401ecd7"
+    },
+    {
+      "file": "390x844-dark-room.png",
+      "sha256": "2556842f28fc24ee713896a77d08d81627bc50923c2ec93a1d8cef427e545ecf"
+    },
+    {
+      "file": "390x844-dark-space.png",
+      "sha256": "aef74867729667ceb33861d9511f6ed3c5f03611d2f92273b4e55a8facc66fda"
+    },
+    {
+      "file": "390x844-dark-welcome.png",
+      "sha256": "3d4e85be718901028279cfa6b970449e2763fb242f030fad795d960d0aa47e7c"
+    },
+    {
+      "file": "390x844-light-item.png",
+      "sha256": "701bcd874fa3fa5217f888afb012be80aff63cc3fb326e3262de8b59105f0113"
+    },
+    {
+      "file": "390x844-light-result-details.png",
+      "sha256": "9f6f25293ed5a8d4198d0ed65829cd425a2359928ea34181d64f75e72c510530"
+    },
+    {
+      "file": "390x844-light-result-fails.png",
+      "sha256": "8e6d96fc9d85851720e1d21a1d91f9c577d7961419713166b727b38ba855b257"
+    },
+    {
+      "file": "390x844-light-result-fits.png",
+      "sha256": "128cc4e3eee81db010a9c5f074d18ae12affd503c4ca3e9fe7e0a08dc80eb21f"
+    },
+    {
+      "file": "390x844-light-result-tight.png",
+      "sha256": "bf8d59271e0db2550d51c9f10ab050787a51dea43b7070b5c96de87202b699c0"
+    },
+    {
+      "file": "390x844-light-room.png",
+      "sha256": "cdbb041d97aca07f7484bd4d229ae3f2e9a662f430e27fec06b98ad8922003c7"
+    },
+    {
+      "file": "390x844-light-space.png",
+      "sha256": "608db0ac7926e7d25a10253b6c257977d653155c9d3f4c79c0bcb55579b28887"
+    },
+    {
+      "file": "390x844-light-welcome.png",
+      "sha256": "c989b86234efdee2b128574e4533fb46d3af12914409c2e720592630a6c2eb85"
+    }
+  ],
+  "measurements": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "status": "draft",
+      "records": [
+        {
+          "screen": "welcome",
+          "minTextPx": 18,
+          "minButtonPx": 53.890625,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n물건이 들어갈지, 함께 확인해요.\n예제 보기\n시작하기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "item",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n1/4\n무엇을 넣을까요?\n물건 검색\n\n물건의 가장 긴 부분을 재 주세요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "room",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n2/4\n어디에 둘까요?\n거실\n주방\n방\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "space",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n3/4\n빈 공간을 재 주세요\n\n물건을 둘 곳의 안쪽을 재 주세요. 세로는 앞에서 뒤까지예요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n더 확인하기\n결과 보기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fits",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-details",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n\n입력한 방향 그대로 확인했어요. 돌려서 넣는 방법은 확인하지 않았어요.\n\n점선은 빈 공간, 실선은 물건이에요.\n\n크기 비교 (cm)\n방향\t물건\t빈 공간\n가로\t30\t40\n세로\t20\t30\n높이\t40\t50\n\n문 여는 공간·설치·접근·측정 오차는 아직 확인하지 않았어요. 여유 간격은 더하지 않았어요.\n\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-tight",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n아슬아슬해요\n\n입력한 크기와 방향 기준이에요.\n\n가로 2cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fails",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n안 들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 3cm 모자라요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "status": "draft",
+      "records": [
+        {
+          "screen": "welcome",
+          "minTextPx": 18,
+          "minButtonPx": 53.890625,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n물건이 들어갈지, 함께 확인해요.\n예제 보기\n시작하기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "item",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n1/4\n무엇을 넣을까요?\n물건 검색\n\n물건의 가장 긴 부분을 재 주세요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "room",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n2/4\n어디에 둘까요?\n거실\n주방\n방\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "space",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n3/4\n빈 공간을 재 주세요\n\n물건을 둘 곳의 안쪽을 재 주세요. 세로는 앞에서 뒤까지예요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n더 확인하기\n결과 보기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fits",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-details",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n\n입력한 방향 그대로 확인했어요. 돌려서 넣는 방법은 확인하지 않았어요.\n\n점선은 빈 공간, 실선은 물건이에요.\n\n크기 비교 (cm)\n방향\t물건\t빈 공간\n가로\t30\t40\n세로\t20\t30\n높이\t40\t50\n\n문 여는 공간·설치·접근·측정 오차는 아직 확인하지 않았어요. 여유 간격은 더하지 않았어요.\n\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-tight",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n아슬아슬해요\n\n입력한 크기와 방향 기준이에요.\n\n가로 2cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fails",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 900,
+          "viewportHeight": 900,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n안 들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 3cm 모자라요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "status": "draft",
+      "records": [
+        {
+          "screen": "welcome",
+          "minTextPx": 18,
+          "minButtonPx": 53.890625,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n물건이 들어갈지, 함께 확인해요.\n예제 보기\n시작하기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "item",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n1/4\n무엇을 넣을까요?\n물건 검색\n\n물건의 가장 긴 부분을 재 주세요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "room",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n2/4\n어디에 둘까요?\n거실\n주방\n방\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "space",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n3/4\n빈 공간을 재 주세요\n\n물건을 둘 곳의 안쪽을 재 주세요. 세로는 앞에서 뒤까지예요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n더 확인하기\n결과 보기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fits",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-details",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n\n입력한 방향 그대로 확인했어요. 돌려서 넣는 방법은 확인하지 않았어요.\n\n점선은 빈 공간, 실선은 물건이에요.\n\n크기 비교 (cm)\n방향\t물건\t빈 공간\n가로\t30\t40\n세로\t20\t30\n높이\t40\t50\n\n문 여는 공간·설치·접근·측정 오차는 아직 확인하지 않았어요. 여유 간격은 더하지 않았어요.\n\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-tight",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n아슬아슬해요\n\n입력한 크기와 방향 기준이에요.\n\n가로 2cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fails",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n안 들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 3cm 모자라요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "status": "draft",
+      "records": [
+        {
+          "screen": "welcome",
+          "minTextPx": 18,
+          "minButtonPx": 53.890625,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n물건이 들어갈지, 함께 확인해요.\n예제 보기\n시작하기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "item",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n1/4\n무엇을 넣을까요?\n물건 검색\n\n물건의 가장 긴 부분을 재 주세요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "room",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n2/4\n어디에 둘까요?\n거실\n주방\n방\n다음\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "space",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n3/4\n빈 공간을 재 주세요\n\n물건을 둘 곳의 안쪽을 재 주세요. 세로는 앞에서 뒤까지예요.\n\n가로\ncm\n세로\ncm\n높이\ncm\n더 확인하기\n결과 보기\n전문가 모드",
+          "resultTextPx": null,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fits",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-details",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 10cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n\n입력한 방향 그대로 확인했어요. 돌려서 넣는 방법은 확인하지 않았어요.\n\n점선은 빈 공간, 실선은 물건이에요.\n\n크기 비교 (cm)\n방향\t물건\t빈 공간\n가로\t30\t40\n세로\t20\t30\n높이\t40\t50\n\n문 여는 공간·설치·접근·측정 오차는 아직 확인하지 않았어요. 여유 간격은 더하지 않았어요.\n\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-tight",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n아슬아슬해요\n\n입력한 크기와 방향 기준이에요.\n\n가로 2cm 남아요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        },
+        {
+          "screen": "result-fails",
+          "minTextPx": 18,
+          "minButtonPx": 48,
+          "primaryCount": 1,
+          "overflowPx": 0,
+          "fixedActions": true,
+          "actionBottom": 844,
+          "viewportHeight": 844,
+          "wordBreak": "keep-all",
+          "bodyText": "ZARI\n쉬운 모드\n뒤로가기\n4/4\n결과\n안 들어가요\n\n입력한 크기와 방향 기준이에요.\n\n가로 3cm 모자라요\n세로 10cm 남아요\n높이 10cm 남아요\n\n문 열기·설치·꺼내기는 따로 확인해 주세요.\n\n자세히 보기\n다른 물건 해보기\n처음으로\n전문가 모드",
+          "resultTextPx": 32,
+          "smallText": [],
+          "axeViolations": 0
+        }
+      ]
+    }
+  ]
+}
