@@ -35,3 +35,13 @@
 - WebKit 설치 파일은 받았으나 host의 libevent/gstreamer/avif/soup/manette/enchant가 없어 launch preflight가 실패했다. 저장소의 user-space provisioning과 표준 install-deps도 패키지 서버 HTTP 500/TLS 오류로 실패했다. WebKit 검증 완료로 보고하지 않는다.
 
 다음 작업은 독립 exact-HEAD 검토, 보조 문구와 화면의 사용자 검토, WebKit 의존성이 갖춰진 host의 검증이다. 실제 모바일 기기와 수동 스크린리더는 미검증이다.
+
+## review2 — 단계 제목의 키보드 포커스 (2026-11-02)
+
+검토 대상 HEAD `5722383`의 review2 필수 수정 1건을 반영했다. `.easy-main h1:focus { outline: none; }`을 제거해 제목에도 기존 `:focus-visible` semantic token을 적용한다. 계산·문구·저장 계약은 바꾸지 않았다.
+
+기존 손상/저장 실패·키보드 테스트를 보강했다. Enter로 시작·다음·결과·뒤로가기를 실행한 직후 제목이 실제 포커스를 가지며 `:focus-visible`, solid outline, 양수 두께, 투명하지 않은 색을 갖는지 검사한다. 비동기 결과 도착 뒤에도 같은 제목의 포커스를 검사하고 기존 Tab 이동 검사를 유지한다. 수정 전 코드에서는 첫 제목의 outline이 `none`이라 실패했다. 수정 후 Chromium·Firefox 각각 쉬운 모드 9개를 포함한 전체 157/157개가 통과했다(각각 12.3분·15.3분, workers=1, 자동 retry 없음). 기존 timeout·baseline·판정 기준은 유지했다.
+
+32장 캡처와 metrics.json·copy-candidates.md를 다시 생성했다. 실제 이미지로 390px light 물건 화면·1440px dark 결과 화면을 확인했고 별도 390px dark 키보드 화면에서도 제목의 2px 포커스 선과 3px offset을 확인했다(`/workspace/zari-easy-run/review2-keyboard-focus.png`). 본문 최소 18px, 버튼 최소 48px, 주요 행동 1개, 가로 넘침 0px, axe 위반 0건이다. 캡처는 draft다.
+
+최종 검증 결과와 남은 제약은 IMPLEMENTATION_STATUS.md의 review2 항목에 기록한다. WebKit launch preflight는 libevent·gstgl·gstcodecparsers·avif·soup·manette·enchant 라이브러리 부재로 실패했다. 사용자 화면 승인·수동 스크린리더·실제 모바일 검증 및 비작성자 exact-HEAD 검토는 별도다.

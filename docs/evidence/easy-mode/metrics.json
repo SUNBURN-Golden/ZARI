@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-02T13:12:22.010Z",
+  "capturedAt": "2026-11-02T13:22:16.663Z",
   "status": "draft",
   "browser": "Chromium",
   "scope": "Rendered automated checks; no user visual approval or screen reader certification.",
@@ -14,7 +14,7 @@
     },
     {
       "file": "apps/web/src/features/easy/easy.css",
-      "sha256": "85aac82d0d47bbf70dbaabd7ee24341b4ee9805e0f3fee5dc91fe208a5cf1892"
+      "sha256": "000ad99f277bf0ba6aff292f562fcf15a8cb5eda2a41de3f312bba60ab7e83ad"
     },
     {
       "file": "apps/web/src/features/easy/state.ts",
@@ -38,13 +38,13 @@
     },
     {
       "file": "apps/web/tests/browser/easy-mode.spec.ts",
-      "sha256": "efd50d58f464a28fb4f1d8edc21b9ecb5388e6d8c65946ce6618e385e0151642"
+      "sha256": "302b8ed0783ee8a39d24181f365eb17c3ab22c53886a4615345a2645cb9a96e0"
     }
   ],
   "screenshots": [
     {
       "file": "1440x900-dark-item.png",
-      "sha256": "50c605cc426c54c03d555699b268dfde969a3afe3f41cfb47be1734817eebc4c"
+      "sha256": "b09ae0318b439f39250e56ae7999d2b09710252e9bf0b8746ea37bef76b6d5a5"
     },
     {
       "file": "1440x900-dark-result-details.png",
@@ -64,7 +64,7 @@
     },
     {
       "file": "1440x900-dark-room.png",
-      "sha256": "92e896038bc8646272f88d4ac2b21c5f87dc1be7c16b763e85b004e6b7890802"
+      "sha256": "3bd4444d26c080e7a43421658e36fba520253b26357e5430123b581ca014f5bb"
     },
     {
       "file": "1440x900-dark-space.png",
@@ -72,11 +72,11 @@
     },
     {
       "file": "1440x900-dark-welcome.png",
-      "sha256": "46b9fd450fa8c8aada4d7cd4487fdae41a8fb5e9b253b76d4227f3fa7e71558c"
+      "sha256": "7fcaffdbb9286c6dee2dbbe9530bfbb2bf7927ff479089a7d5a485653b75ec98"
     },
     {
       "file": "1440x900-light-item.png",
-      "sha256": "8f2541e4084ff0ade4c2992a603ad3377c78d18dc2cf01a13fe3e5d5de58e512"
+      "sha256": "e97a500ba28f39d24269bb6c71ce69fa55e8df5c12bca18c6b2d387a5b006dbe"
     },
     {
       "file": "1440x900-light-result-details.png",
@@ -96,7 +96,7 @@
     },
     {
       "file": "1440x900-light-room.png",
-      "sha256": "4ead3abd7969a51275c5555e23fc96bbd5a9fa3242b1e51dd0b6fa0184eba64d"
+      "sha256": "a2e609436e676a7d39377f95eacedb35bf3b2764f40ef605f4ea3a332b9ae1fd"
     },
     {
       "file": "1440x900-light-space.png",
@@ -104,11 +104,11 @@
     },
     {
       "file": "1440x900-light-welcome.png",
-      "sha256": "fe9a72cb32410ec225e5e304d8a51f8ee3ddf65ac29adae333b33e643678f87a"
+      "sha256": "233182607c6a05395bfdd62b7233a611191195686b513aff96b8c595fe189c70"
     },
     {
       "file": "390x844-dark-item.png",
-      "sha256": "882b5d41df9215796a84d24b929abf6807c029fea98b5b4e8caa1d02ef7b4a74"
+      "sha256": "6619fafce15918dea0601a3f1fc9d98cc3651f7c8f8cca8805a3c6e64d7a0568"
     },
     {
       "file": "390x844-dark-result-details.png",
@@ -128,7 +128,7 @@
     },
     {
       "file": "390x844-dark-room.png",
-      "sha256": "2556842f28fc24ee713896a77d08d81627bc50923c2ec93a1d8cef427e545ecf"
+      "sha256": "0e040fbe68b572db1913c642ae1da3941cb68ce21788634fe19fc3bdd61ecf0d"
     },
     {
       "file": "390x844-dark-space.png",
@@ -136,11 +136,11 @@
     },
     {
       "file": "390x844-dark-welcome.png",
-      "sha256": "3d4e85be718901028279cfa6b970449e2763fb242f030fad795d960d0aa47e7c"
+      "sha256": "44fddac505229225c491a7d9943409f25ba39fd1b9edeaa8983a96adba849e0c"
     },
     {
       "file": "390x844-light-item.png",
-      "sha256": "701bcd874fa3fa5217f888afb012be80aff63cc3fb326e3262de8b59105f0113"
+      "sha256": "83fc1931f36146463328b1ad7c8cb074f3445c3cee73d1cec92ac374c9e46cbd"
     },
     {
       "file": "390x844-light-result-details.png",
@@ -160,7 +160,7 @@
     },
     {
       "file": "390x844-light-room.png",
-      "sha256": "cdbb041d97aca07f7484bd4d229ae3f2e9a662f430e27fec06b98ad8922003c7"
+      "sha256": "8bc6ca9427fe80cfce0fb7d6fec4a0bfdd70371cfaec22bc61fee339000daca9"
     },
     {
       "file": "390x844-light-space.png",
@@ -168,7 +168,7 @@
     },
     {
       "file": "390x844-light-welcome.png",
-      "sha256": "c989b86234efdee2b128574e4533fb46d3af12914409c2e720592630a6c2eb85"
+      "sha256": "65eae5f5bfefed1e86636bf7a5c189945d2d5d6fb4c76fb43ce595a4c3610788"
     }
   ],
   "measurements": [

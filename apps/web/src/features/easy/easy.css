@@ -11,7 +11,6 @@
 .easy-brand { font-weight: var(--zari-weight-semibold); letter-spacing: 0.12em; color: var(--zari-text-primary); }
 .easy-main { max-width: var(--zari-easy-content-max); margin: auto; padding: 0; }
 .easy-main h1 { font-size: var(--zari-text-title); line-height: var(--zari-line-heading); margin-bottom: var(--zari-space-6); }
-.easy-main h1:focus { outline: none; }
 .easy-progress { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--zari-space-6); color: var(--zari-text-secondary); }
 .easy-shell button, .easy-shell input, .easy-shell summary { min-height: var(--zari-touch-min-height); font-size: var(--zari-text-lg); }
 .easy-shell a { font-size: var(--zari-text-lg); }

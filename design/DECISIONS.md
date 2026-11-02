@@ -10,6 +10,8 @@
 
 기본 문구는 사용자 예시이고 보조 문구는 `data-copy-todo="supporting-copy"`와 [문구 후보](EASY_COPY_CANDIDATES.md)에 표시한다. 모든 새 캡처는 draft이고 사용자 시각 승인·독립 exact-HEAD 감사·배포·merge 완료를 뜻하지 않는다. 실제 검증 결과는 IMPLEMENTATION_STATUS.md와 easy-mode evidence에 기록한다.
 
+review2 수정: 단계 제목의 `outline: none` 예외를 제거해 기존 semantic focus token을 그대로 적용한다. 키보드로 다음·결과·뒤로가기를 실행한 직후 제목의 실제 포커스·focus-visible·선의 형태/두께/색을 검사하고, 비동기 결과 도착 뒤에도 포커스가 유지되는지 확인한다. 새 토큰·문구·저장 계약은 추가하지 않는다.
+
 ## D001 — 독자적 작업 화면 / 방향 확정
 
 근거: 사용자가 Apple식 정교함과 흔한 바이브코딩 템플릿 느낌 최소화를 요청했다. IKEA·Elfa는 수납 설계·구매 흐름의 레퍼런스로 유지한다.

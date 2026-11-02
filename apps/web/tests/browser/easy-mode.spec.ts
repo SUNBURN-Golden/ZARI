@@ -149,10 +149,37 @@ test('corrupt or unavailable local storage stays usable; keyboard focus is visib
   await page.goto('/');
   await page.getByRole('button', { name: '시작하기', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('heading', { name: '무엇을 넣을까요?' })).toBeFocused();
+  async function expectHeadingFocus(name: string) {
+    const heading = page.getByRole('heading', { name, exact: true });
+    await expect(heading).toBeFocused();
+    await expect(heading).toHaveCSS('outline-style', 'solid');
+    expect(await heading.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+    expect(await heading.evaluate((el) => parseFloat(getComputedStyle(el).outlineWidth))).toBeGreaterThan(0);
+    await expect(heading).not.toHaveCSS('outline-color', 'rgba(0, 0, 0, 0)');
+  }
+  async function activate(name: string) {
+    await page.getByRole('button', { name, exact: true }).focus();
+    await page.keyboard.press('Enter');
+  }
+  await expectHeadingFocus('무엇을 넣을까요?');
   await page.keyboard.press('Tab');
   const focus = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
   expect(focus).toBe('solid');
+  await dimensions(page, '물건', ['30', '20', '40']);
+  await activate('다음');
+  await expectHeadingFocus('어디에 둘까요?');
+  await activate('거실');
+  await activate('다음');
+  await expectHeadingFocus('빈 공간을 재 주세요');
+  await dimensions(page, '빈 공간', ['40', '30', '50']);
+  await activate('결과 보기');
+  await expectHeadingFocus('결과');
+  await expect(page.getByTestId('easy-result-title')).toHaveText('들어가요');
+  await expectHeadingFocus('결과');
+  for (const name of ['빈 공간을 재 주세요', '어디에 둘까요?', '무엇을 넣을까요?']) {
+    await activate('뒤로가기');
+    await expectHeadingFocus(name);
+  }
   await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('Full', 'QuotaExceededError'); }; });
   await page.reload();
   await expect(page.getByRole('alert')).toContainText('저장하지 못했어요');

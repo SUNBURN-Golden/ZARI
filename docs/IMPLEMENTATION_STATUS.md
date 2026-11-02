@@ -2328,3 +2328,19 @@ Firefox 후속: 최초 전체 실행에서 남았던 guided-onboarding·incremen
 미완료·미검증: WebKit은 host 라이브러리가 없어 launch 불가이고 두 의존성 설치 경로 모두 패키지 서버 오류로 실패했다. 실제 모바일 기기·수동 스크린리더·보조 문구 및 화면 사용자 승인은 미검증이다. 검색 이름은 물건 종류 선택 보조이며 실상품·실측 치수를 꾸며 제공하지 않는다. 이 결과는 한 물건의 명목 크기 확인이고 설치 검증·회전 배치·BOM 확정이 아니다.
 
 다음: 독립 non-author exact-HEAD 검토, copy-todo와 draft 화면의 사용자 검토, WebKit 의존성이 갖춰진 host 검증. push·main 변경·merge·배포는 수행하지 않았다.
+
+## ZARI Easy Mode — review2 필수 수정 (2026-11-02)
+
+브랜치 `feat/easy-mode`, 시작 HEAD `5722383`. `/workspace/zari-easy-run/review2.md`의 필수 수정은 단계 제목의 키보드 포커스 표시 1건이다. 제목의 outline 제거 규칙을 삭제해 기존 semantic focus token을 적용했다. 기존 Playwright 키보드 시험을 확장해 시작·다음·결과·뒤로가기 직후 제목의 포커스/선 표시와 비동기 계산 완료 뒤 포커스 유지를 확인한다. Rust 판정·저장·전문가 testid·문구 계약은 그대로다.
+
+수정 전 재현: 새 assertion이 첫 단계 제목의 `outline-style: none`을 검출해 실패했다(`/workspace/zari-easy-run/review2-focus-before.log`). 수정 후 Chromium·Firefox 각각 쉬운 모드 9개가 통과했고, 390px dark 키보드 캡처에서 제목의 2px solid 선과 3px offset을 실제 확인했다. [검증 근거](evidence/easy-mode/README.md), [갱신한 metrics](evidence/easy-mode/metrics.json)를 참고한다.
+
+1440×900·390×844 각각 light/dark의 32장 캡처, metrics.json 및 copy-candidates.md를 `/workspace/shots/zari-easy/`에 재생성했다. 실측 본문 최소 18px·결과 32px·버튼 최소 48px·주요 행동 각 1개·넘침 0px·axe 위반 0건이다. 390px light 물건 화면과 1440px dark 결과 화면을 이미지로 확인했다. 캡처는 draft다.
+
+완료한 검사: Rust fmt·clippy·전체 native tests·bootstrap fixture·WASM 의존성 트리, 생성 계약(124 fixture 구조)·typecheck·lint·Vitest 51파일 427개, 토큰 대비 88/88·자체 시험 13개. baseline·제품 계약·qualification·z 분모·review package·release candidate 무결성 검사도 통과했다.
+
+최종 브라우저 검증: `npx playwright test --project=chromium --workers=1 --grep-invert '@parity|@capture|@bench'` 157/157 통과(12.3분), 같은 명령의 Firefox 프로젝트 157/157 통과(15.3분). 두 전체 실행 모두 최종 앱·시험 코드로 수행했고 자동 retry는 없으며 timeout·baseline·판정 기준을 낮추지 않았다. 쉬운 모드의 같은 경계 입력 8개 native/Worker-WASM 전체 JSON 비교도 두 브라우저에서 통과했다.
+
+`npm run test:parity`는 공통 fixture 124개 비교·잘못된 요청 거부를 포함한 브라우저 검사 2개를 통과했다. `npm run build`와 `node scripts/check-release-manifest.mjs`도 통과했다(기존 chunk 크기 경고 있음, manifest errors 0). 갱신된 소스 9개·PNG 32개의 SHA-256, metrics의 저장소 복사본, copy-candidates.md 원문 일치도 확인했다. Node 24.22.1·Rust 1.98.1·wasm-bindgen 0.2.128 환경이다.
+
+미검증·제약: WebKit launch preflight는 libevent·gstgl·gstcodecparsers·avif·soup·manette·enchant 부재로 실패해 전체 suite를 실행하지 못했다. 실제 모바일·수동 스크린리더·사용자 화면/보조 문구 승인은 미검증이다. 다음은 비작성자 exact-HEAD 검토, copy-todo·draft 화면의 사용자 검토, 의존성이 갖춰진 host의 WebKit 검사다. push·main 변경·merge·배포는 수행하지 않았다.
