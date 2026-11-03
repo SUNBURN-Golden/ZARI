@@ -97,7 +97,7 @@ pub fn evaluate_easy_fit(input: &EasyFitInput) -> EasyFitResult {
             if delta < 0 {
                 format!("{label} {cm}cm 모자라요")
             } else {
-                format!("{label}으로 {cm}cm 남아요")
+                format!("{label}로 {cm}cm 남아요")
             }
         } else {
             unknown = true;
@@ -147,7 +147,7 @@ mod tests {
         };
         let result = evaluate_easy_fit(&input);
         assert_eq!(result.status, EasyFitStatus::Fits);
-        assert_eq!(result.axes[0].message, "가로으로 3cm 남아요");
+        assert_eq!(result.axes[0].message, "가로로 3cm 남아요");
         input.space[0] = "32".into();
         assert_eq!(evaluate_easy_fit(&input).status, EasyFitStatus::Tight);
         input.space[0] = "30".into();
