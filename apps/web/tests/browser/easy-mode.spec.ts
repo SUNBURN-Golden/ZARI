@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { EASY_KEY } from '../../src/features/easy/state';
 
-const shots = '/workspace/shots/zari-easy';
+const shots = process.env.ZARI_SHOTS_DIR ?? 'test-results/shots/zari-easy';
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block' });
 async function dimensions(page: Page, kind: string, values: string[]) {
   for (const [i, label] of ['가로', '세로', '높이'].entries()) {
