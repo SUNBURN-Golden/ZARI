@@ -92,6 +92,12 @@ export default defineConfig({
     locale: 'ko-KR',
     colorScheme: 'light',
     reducedMotion: 'reduce',
+    // Existing CAD contracts run in the remembered expert mode. Easy Mode
+    // tests explicitly use empty storage to exercise the new default entry.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: previewOriginUrl, localStorage: [{ name: 'zari.mode.v1', value: 'expert' }] }],
+    },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

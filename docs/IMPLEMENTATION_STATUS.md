@@ -2304,3 +2304,70 @@ JSON/중앙 포인터/고유 규칙 보존 검사는 통과했으며, Actions �
 미완료·미검증: 실제 사이트 구조·실제 Chrome·native messaging·실제 R2, 앱의 저장소 URL 읽기 활성화(소유자 결정), 수집 수납함 안쪽의 지지면 결속 배치(내경·지지면 미확인 — 잠정 배치만 가능), 큰 번들(스냅샷 4 MiB 초과 거절).
 
 다음: 독립 검토 2회 후 감독자 병합. 다른 노드는 시작하지 않았다.
+
+## ZARI Easy Mode — 2026-11-02 사용자 지시 / review1 필수 수정
+
+작업 브랜치 `feat/easy-mode`, 시작 HEAD `0fd20e6`. review1의 필수 수정 1–5를 반영했다. [수정 대응·근거](evidence/easy-mode/README.md), [실측 metrics](evidence/easy-mode/metrics.json), [디자인 결정](../design/DECISIONS.md)의 D-easy-mode를 함께 본다.
+
+실제 변경:
+
+- 기본 입구는 쉬운 모드, 기존 화면은 전문가 모드다. 하단 링크로 전환하며 최근 모드를 별도 키에 기억한다. 전문가 직접 경로·기존 testid·IndexedDB 데이터 계약은 유지한다.
+- 첫 문장·시작하기·예제 링크, 질문 하나씩의 4단계, 뒤로가기, 물건 이름/치수·방 그림 선택·줄자 그림·cm 입력·단위 확인, localStorage 복원·손상·저장 실패 경로를 구현했다. 미확정 보조 문구는 문구 검토 표시와 `design/EASY_COPY_CANDIDATES.md`에 표시했다.
+- Rust의 기존 evaluate_probe를 각 축에 재사용한다. 명목 크기의 3단계 판정·20mm 경계·방향별 차이를 Rust가 반환하며, 불완전하거나 유효하지 않은 입력은 unknown이다. 문 열기·설치·접근·오차는 미확인으로 남긴다. 상세 그림·표는 같은 응답을 표시한다. 프로젝트 protocol·스키마 version·DB version·보존 원문은 바꾸지 않았다.
+- 본문 18px·결과 32px·버튼 48px, 주요 행동 하나의 하단 고정, 기존 semantic token, 포커스·스크린리더 레이블·reduced motion을 적용했다. 전문가 회귀는 기억된 전문가 모드로 실행하며 별도 context를 만드는 두 시험은 전문가 경로를 명시한다.
+- 실제 Playwright 9개를 추가했다. 390×844 / 1440×900의 light/dark, 8개 화면 상태로 PNG 32개와 측정 자료를 `/workspace/shots/zari-easy/`에 기록한다. `node scripts/easy-artifacts.mjs`로 metrics.json·copy-candidates.md와 커밋할 metrics 복사본을 생성한다.
+
+실측: 본문 최소 18px, 결과 32px, 버튼 최소 48px, 각 화면 주요 행동 1개, 가로 넘침 0px, axe 위반 0건. 실제 이미지로 390px light 측정 화면·dark 아슬아슬 결과·desktop light 결과를 확인했다. 새 success/warning/danger-on-app 대비를 포함해 88/88, checker 자체 시험 13개 통과. 모든 캡처는 draft다.
+
+초기 검증 기록: fmt·clippy·Rust 261 통과(1 ignored)·생성 계약 124 fixture 구조·typecheck·lint·vitest 427 통과. 최초 Chromium 전체 workers=2는 155 통과/기존 전문가 워커 대기 2 실패, 최초 Firefox 전체 workers=2는 150 통과/7 실패(새 좌표 비교 정밀도 4건 수정, 기존 검색 대기 3건)였다. 타임아웃·baseline·판정을 낮추지 않고 직렬 실행으로 동시 부하를 분리했다.
+
+최종 확인: Chromium 직렬 전체 157/157 통과 후 예제 공간을 유지하는 ‘다른 물건 해보기’에서도 예제 안내를 보존하도록 수정했다. 이 최종 코드의 쉬운 모드 9개를 Chromium·Firefox에서 실행해 18/18 통과했고 같은 경계 입력 8개의 native/Worker-WASM 전체 JSON이 일치했다. 기존 공통 fixture 124개 parity와 비정상 요청 검사 2개도 통과했다. 최종 vitest 51파일 427/427, typecheck·lint, clippy·fmt, build·production release manifest 검사를 통과했다. Node 24.22.1 / npm 11.21.1 / Rust 1.98.1 / wasm-bindgen 0.2.128 환경이다. 새로운 캡처의 source/PNG 해시는 metrics.json에 기록했다.
+
+Firefox 후속: 최초 전체 실행에서 남았던 guided-onboarding·incremental-replan·plan 검색 3건을 같은 최종 코드와 기존 timeout으로 workers=1에서 실행해 3/3 통과했다. 최종 Firefox 전체를 한 번에 재실행한 결과는 아니며, 최초 전체 결과와 수정 후 9개/후속 3개 결과를 구분한다. 실패를 숨기는 자동 retry 설정은 추가하지 않았다.
+
+미완료·미검증: WebKit은 host 라이브러리가 없어 launch 불가이고 두 의존성 설치 경로 모두 패키지 서버 오류로 실패했다. 실제 모바일 기기·수동 스크린리더·보조 문구 및 화면 사용자 승인은 미검증이다. 검색 이름은 물건 종류 선택 보조이며 실상품·실측 치수를 꾸며 제공하지 않는다. 이 결과는 한 물건의 명목 크기 확인이고 설치 검증·회전 배치·BOM 확정이 아니다.
+
+다음: 독립 non-author exact-HEAD 검토, 문구 검토 표시와 draft 화면의 사용자 검토, WebKit 의존성이 갖춰진 host 검증. push·main 변경·merge·배포는 수행하지 않았다.
+
+## ZARI Easy Mode — review2 필수 수정 (2026-11-02)
+
+브랜치 `feat/easy-mode`, 시작 HEAD `5722383`. `/workspace/zari-easy-run/review2.md`의 필수 수정은 단계 제목의 키보드 포커스 표시 1건이다. 제목의 outline 제거 규칙을 삭제해 기존 semantic focus token을 적용했다. 기존 Playwright 키보드 시험을 확장해 시작·다음·결과·뒤로가기 직후 제목의 포커스/선 표시와 비동기 계산 완료 뒤 포커스 유지를 확인한다. Rust 판정·저장·전문가 testid·문구 계약은 그대로다.
+
+수정 전 재현: 새 assertion이 첫 단계 제목의 `outline-style: none`을 검출해 실패했다(`/workspace/zari-easy-run/review2-focus-before.log`). 수정 후 Chromium·Firefox 각각 쉬운 모드 9개가 통과했고, 390px dark 키보드 캡처에서 제목의 2px solid 선과 3px offset을 실제 확인했다. [검증 근거](evidence/easy-mode/README.md), [갱신한 metrics](evidence/easy-mode/metrics.json)를 참고한다.
+
+1440×900·390×844 각각 light/dark의 32장 캡처, metrics.json 및 copy-candidates.md를 `/workspace/shots/zari-easy/`에 재생성했다. 실측 본문 최소 18px·결과 32px·버튼 최소 48px·주요 행동 각 1개·넘침 0px·axe 위반 0건이다. 390px light 물건 화면과 1440px dark 결과 화면을 이미지로 확인했다. 캡처는 draft다.
+
+완료한 검사: Rust fmt·clippy·전체 native tests·bootstrap fixture·WASM 의존성 트리, 생성 계약(124 fixture 구조)·typecheck·lint·Vitest 51파일 427개, 토큰 대비 88/88·자체 시험 13개. baseline·제품 계약·qualification·z 분모·review package·release candidate 무결성 검사도 통과했다.
+
+최종 브라우저 검증: `npx playwright test --project=chromium --workers=1 --grep-invert '@parity|@capture|@bench'` 157/157 통과(12.3분), 같은 명령의 Firefox 프로젝트 157/157 통과(15.3분). 두 전체 실행 모두 최종 앱·시험 코드로 수행했고 자동 retry는 없으며 timeout·baseline·판정 기준을 낮추지 않았다. 쉬운 모드의 같은 경계 입력 8개 native/Worker-WASM 전체 JSON 비교도 두 브라우저에서 통과했다.
+
+`npm run test:parity`는 공통 fixture 124개 비교·잘못된 요청 거부를 포함한 브라우저 검사 2개를 통과했다. `npm run build`와 `node scripts/check-release-manifest.mjs`도 통과했다(기존 chunk 크기 경고 있음, manifest errors 0). 갱신된 소스 9개·PNG 32개의 SHA-256, metrics의 저장소 복사본, copy-candidates.md 원문 일치도 확인했다. Node 24.22.1·Rust 1.98.1·wasm-bindgen 0.2.128 환경이다.
+
+미검증·제약: WebKit launch preflight는 libevent·gstgl·gstcodecparsers·avif·soup·manette·enchant 부재로 실패해 전체 suite를 실행하지 못했다. 실제 모바일·수동 스크린리더·사용자 화면/보조 문구 승인은 미검증이다. 다음은 비작성자 exact-HEAD 검토, 문구 검토 표시·draft 화면의 사용자 검토, 의존성이 갖춰진 host의 WebKit 검사다. push·main 변경·merge·배포는 수행하지 않았다.
+
+
+## PR #129 시각 QA 수정 — 2026-11-03
+
+사용자 요청 1–4를 `feat/easy-mode`에서 반영했다. 예제·전문가 링크는 semantic touch token의 48px 이상 높이, inline-flex, 세로 가운데 정렬과 패딩을 갖는다. 초기 로드에서는 제목으로 포커스를 옮기지 않고 단계 변경 시 제목 포커스와 키보드 표시를 유지한다. 줄자 SVG는 본체·잠금 단추·눈금 띠·끝 고리를 그리며 한국어 aria-label과 설명을 제공한다. 빈 공간 화면의 ‘더 확인하기’를 제거했다. 결과의 부족한 방향만 700 굵기와 accent로 강조하고, 75rem 이상에서는 제목·결과·전문가 링크를 가운데 정렬한다. 입력 라벨은 왼쪽 정렬이다. 링크 패딩 추가 후 결과 화면에서 하단 링크가 고정 행동에 가리지 않도록 결과의 아래 여백도 조정했다.
+
+Playwright의 390px/1440px × light/dark 여정에 링크의 실제 높이·정렬·패딩 영역 hit-test, 초기 제목의 비포커스 상태, 줄자의 접근 가능한 이름, ‘더 확인하기’ 부재, 부족 문구의 굵기·accent, 데스크톱 제목/본문의 중앙 정렬 검사를 추가했다. Rust 계산·Worker·저장 형식·보존 프롬프트·기존 승인 상태는 변경하지 않았다.
+
+실행 완료: `npm run typecheck`, `npm run lint`, `npm test`(51파일 427개), `node scripts/check-design-tokens.mjs --self-test`(자체 시험 13개·대비 88/88). 링크 inline-flex의 부모 flex에 의한 blockification을 새 검사에서 검출해 부모를 텍스트 가운데 정렬로 수정했고, Chromium·Firefox 쉬운 모드 18/18이 통과했다. 이후 결과 아래 여백을 조정한 최종 소스의 전체 브라우저 검사는 진행 중이다.
+
+WebKit 준비: 초기 실행은 호스트 라이브러리 부재로 거절되었다. 표준 install-deps의 Debian HTTP 500과 apt HTTPS TLS 실패 후, curl HTTPS로 Debian package index와 누락 패키지 26개를 받고 SHA-256을 검사해 기존 저장소 방식의 사용자 캐시에 추출했다. 기존 시스템 Mesa 경로와 software GL로 WebKit page launch를 확인했다. 저장소의 의존성·Playwright 설정은 바꾸지 않았다.
+
+실제 이미지로 390px light 빈 공간의 줄자, 1440px light 첫 화면의 포커스 선 부재·정렬, 1440px dark 실패 결과의 강조를 확인했다. 캡처는 draft다. 전체 검사·최종 캡처 근거·남은 검증은 실행 종료 후 갱신한다.
+
+## PR #129 최종 문구 적용 — 2026-11-03
+
+브랜치 `feat/easy-mode`, 시작 HEAD `f0c054e`. 사용자 지정 `/workspace/shots/zari-easy/copy-argon-real.md`의 22행을 적용하고 [최종 문구](../design/EASY_COPY_CANDIDATES.md)에 예외를 함께 기록했다. 입력 도움·검색 질문·오류·예제·계산 중·결과·상세·접근 가능한 이름을 갱신했다. 방향별 여유와 잘못된 길이 안내는 Rust 응답에서 바꾸고 수치·판정·unknown 계약은 유지한다. 문구 검토용 DOM 속성을 제거했다.
+
+결과 버튼은 ‘다른 물건 해보기’와 ‘처음으로’다. 단위 확인 제목 ‘혹시 mm로 재셨나요?’는 유지하며 확인 상자에는 ‘cm로 잰 숫자가 맞는지 확인해 주세요.’와 ‘네, cm가 맞아요’ 버튼을 둔다. 결과에는 결과 안내 한 줄만 두고 상세 범위는 접힌 ‘자세히 보기’ 안에서만 표시한다. 추가 확인 문구는 표시하지 않는다. 줄자 SVG의 aria-label은 표의 마지막 문구와 정확히 일치한다.
+
+Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결과 안내 중복 방지·상세 범위의 접힘/펼침·줄자 레이블 검사를 보강했다. 기존 미커밋 시각 QA 수정은 보존하며 이번 커밋에서 분리했다. 커밋 대상 코드의 전체 브라우저 검사는 별도 detached worktree에서 실행하고, 캡처 출력 경로만 `/tmp/zari-copy-final/isolated-shots`로 분리했다.
+
+실행 완료: `npm run typecheck`, `npm run lint`, `npm test`(51파일 427개), `cargo fmt --all -- --check`, `cargo test -p zari-core --locked easy_fit`(대상 1개), `node scripts/check-design-tokens.mjs --self-test`(자체 시험 13개·대비 88/88). 분리한 커밋 대상 코드도 typecheck·lint와 test-mode Vite 빌드를 통과했다. 22행의 정적 문구와 사용자 예외, 줄자 레이블을 일회성 대조했다.
+
+검증 중 발견·수정: 첫 전체 브라우저 실행은 방 선택 오류 시험에 남은 이전 기대값 ‘둘 곳을 골라 주세요.’를 검출해 중단했고 ‘놓을 곳을 골라 주세요.’로 수정했다. 현 작업 사본의 Chromium·Firefox 쉬운 모드 18개는 통과했다. WebKit 9개는 실행 전 라이브러리 경로 검사에서 실패했다. 라이브러리는 캐시의 `sys/lib/libproxy/libpxbackend-1.0.so`에 이미 있었고 두 WebKit 번들의 `sys/lib`에 해당 파일의 상대 심볼릭 링크를 추가해 기본 WebKit launch와 페이지 표시를 확인했다. 저장소 의존성·Playwright 설정·timeout·baseline·retry 설정은 바꾸지 않았다. 캐시 수정 후 WebKit 쉬운 모드 9개도 통과했다. 현 작업 사본의 세 브라우저 쉬운 모드 총 27개와 각 브라우저의 8개 native/Worker-WASM 전체 JSON 대조가 통과했고, 분리한 커밋 대상 코드의 전체 브라우저 검사는 `npm run test:browser -- --workers=3`에서 466/471 통과, WebKit 기존 전문가 경로 5개 실패였다. 추적 자료 확인 뒤 workers=1로 진단한 5개 중 대기 시간 초과 4개는 통과했고, 카탈로그 오프라인 새 탭 재방문 1개는 WebKit 내부 오류를 재현했다. GTK headed 실행과 별도 사본의 서비스 워커 네트워크 회피 진단에서도 같은 오류였다. 서비스 워커 진단 변경은 폐기했고 저장소 앱에는 적용하지 않았다. 다른 기존 WebKit 오프라인 시험과 같은 캐시 검증 범위로 맞출지, 문구만 커밋하며 기존 실패를 기록할지 사용자 결정 대기 중이다.
+
+실제 이미지 확인: 현 작업 사본의 390px light 입력·결과와 1440px dark 상세 화면에서 최종 문구를 확인했다. 이 캡처에는 기존 미커밋 시각 QA 수정도 들어 있으며 화면 승인은 계속 draft다. 실제 모바일·수동 스크린리더·사용자 화면 baseline 승인·비작성자 exact-HEAD 검토는 미완료다. 다음 작업은 WebKit 검증 범위에 대한 사용자 결정 뒤 최종 검사와 커밋, 이후 비작성자 검토다. 사용자가 모든 검사의 통과를 요구했으므로 현재 커밋·push는 보류했다. merge·배포는 수행하지 않는다.

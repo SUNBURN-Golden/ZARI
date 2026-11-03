@@ -27,7 +27,7 @@ async function noHorizontalOverflow(page: Page) {
 }
 
 async function seededProject(page: Page) {
-  await page.goto('/');
+  await page.goto('/#/projects');
   await page.getByTestId('create-project').click();
   await expect(page.getByTestId('worker-state')).toHaveText('ready');
   await page.getByTestId('fill-sample').click();
@@ -48,7 +48,7 @@ for (const viewport of VIEWPORTS) {
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/');
+    await page.goto('/#/projects');
     await expect(page.getByTestId('create-project')).toBeVisible();
     await noHorizontalOverflow(page);
 
@@ -97,7 +97,7 @@ test('200% CSS zoom keeps critical flows reachable without horizontal scroll', a
 }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/#/projects');
   await page.evaluate(() => {
     document.documentElement.style.zoom = '200%';
   });
@@ -119,7 +119,7 @@ test.describe('reduced-motion both ways', () => {
   test('reduce zeroes motion tokens; nothing animates business state', async ({
     page,
   }) => {
-    await page.goto('/');
+    await page.goto('/#/projects');
     const motion = await page.evaluate(() => ({
       matches: matchMedia('(prefers-reduced-motion: reduce)').matches,
       fast: getComputedStyle(document.documentElement)
@@ -138,7 +138,7 @@ test.describe('reduced-motion both ways', () => {
   test('no-preference restores motion tokens', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'no-preference' });
     const page = await context.newPage();
-    await page.goto('/');
+    await page.goto('/#/projects');
     const motion = await page.evaluate(() => ({
       matches: matchMedia('(prefers-reduced-motion: reduce)').matches,
       fast: getComputedStyle(document.documentElement)
@@ -156,7 +156,7 @@ test('forced-colors active keeps controls legible and focus visible', async ({
 }) => {
   const context = await browser.newContext({ forcedColors: 'active' });
   const page = await context.newPage();
-  await page.goto('/');
+  await page.goto('/#/projects');
   const emulated = await page.evaluate(
     () => matchMedia('(forced-colors: active)').matches,
   );

@@ -3666,6 +3666,116 @@
       ],
       "title": "DomainOperation"
     },
+    "EasyFitAxis": {
+      "additionalProperties": false,
+      "properties": {
+        "differenceCm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "itemMm": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "needsConfirmation": {
+          "type": "boolean"
+        },
+        "spaceMm": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "message",
+        "needsConfirmation"
+      ],
+      "title": "EasyFitAxis",
+      "type": "object"
+    },
+    "EasyFitInput": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "space": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "item",
+        "space"
+      ],
+      "title": "EasyFitInput",
+      "type": "object"
+    },
+    "EasyFitResult": {
+      "additionalProperties": false,
+      "properties": {
+        "accessCheck": {
+          "type": "string"
+        },
+        "axes": {
+          "items": {
+            "$ref": "#/definitions/EasyFitAxis"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "openingCheck": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/EasyFitStatus"
+        }
+      },
+      "required": [
+        "status",
+        "axes",
+        "openingCheck",
+        "accessCheck"
+      ],
+      "title": "EasyFitResult",
+      "type": "object"
+    },
+    "EasyFitStatus": {
+      "enum": [
+        "fits",
+        "tight",
+        "doesNotFit",
+        "unknown"
+      ],
+      "title": "EasyFitStatus",
+      "type": "string"
+    },
     "EngineContext": {
       "additionalProperties": false,
       "properties": {
@@ -16778,6 +16888,12 @@
     "DomainFixture": {
       "$ref": "#/definitions/DomainFixture"
     },
+    "EasyFitInput": {
+      "$ref": "#/definitions/EasyFitInput"
+    },
+    "EasyFitResult": {
+      "$ref": "#/definitions/EasyFitResult"
+    },
     "LayoutEditCommand": {
       "$ref": "#/definitions/LayoutEditCommand"
     },
@@ -16813,6 +16929,8 @@
     "ProtocolRequest",
     "ProtocolResponse",
     "BootstrapProbeDto",
+    "EasyFitInput",
+    "EasyFitResult",
     "BootstrapProbeResult",
     "BootstrapFixture",
     "DomainFixture",
