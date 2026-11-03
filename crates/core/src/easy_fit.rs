@@ -97,11 +97,11 @@ pub fn evaluate_easy_fit(input: &EasyFitInput) -> EasyFitResult {
             if delta < 0 {
                 format!("{label} {cm}cm 모자라요")
             } else {
-                format!("{label} {cm}cm 남아요")
+                format!("{label}으로 {cm}cm 남아요")
             }
         } else {
             unknown = true;
-            format!("{label} 치수를 확인해 주세요")
+            format!("{label} 길이를 다시 적어 주세요.")
         };
         // A presentation hint only. Parsing and validity remain the engine's.
         let needs_confirmation = [&input.item[index], &input.space[index]]
@@ -145,7 +145,9 @@ mod tests {
             item: ["30".into(), "20".into(), "40".into()],
             space: ["33".into(), "23".into(), "43".into()],
         };
-        assert_eq!(evaluate_easy_fit(&input).status, EasyFitStatus::Fits);
+        let result = evaluate_easy_fit(&input);
+        assert_eq!(result.status, EasyFitStatus::Fits);
+        assert_eq!(result.axes[0].message, "가로으로 3cm 남아요");
         input.space[0] = "32".into();
         assert_eq!(evaluate_easy_fit(&input).status, EasyFitStatus::Tight);
         input.space[0] = "30".into();
@@ -155,7 +157,9 @@ mod tests {
         assert_eq!(result.status, EasyFitStatus::DoesNotFit);
         assert_eq!(result.axes[0].message, "가로 3cm 모자라요");
         input.space[1] = "".into();
-        assert_eq!(evaluate_easy_fit(&input).status, EasyFitStatus::Unknown);
+        let result = evaluate_easy_fit(&input);
+        assert_eq!(result.status, EasyFitStatus::Unknown);
+        assert_eq!(result.axes[1].message, "세로 길이를 다시 적어 주세요.");
         input.space[1] = "2000".into();
         let result = evaluate_easy_fit(&input);
         assert_eq!(result.status, EasyFitStatus::Unknown);

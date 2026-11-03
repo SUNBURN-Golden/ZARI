@@ -18,7 +18,7 @@
 
 ## 렌더링 근거
 
-1440×900, 390×844 각각 light/dark에서 welcome, item, room, space, result-fits, result-details, result-tight, result-fails를 측정하고 정확한 viewport 크기의 PNG를 기록한다. metrics.json은 실제 브라우저 수치와 소스/이미지 SHA-256을 포함하며 복사본을 이 폴더에 커밋한다. supporting-copy의 copy-todo 목록은 `design/EASY_COPY_CANDIDATES.md`와 산출물의 copy-candidates.md에 있다.
+1440×900, 390×844 각각 light/dark에서 welcome, item, room, space, result-fits, result-details, result-tight, result-fails를 측정하고 정확한 viewport 크기의 PNG를 기록한다. metrics.json은 실제 브라우저 수치와 소스/이미지 SHA-256을 포함하며 복사본을 이 폴더에 커밋한다. 최종 문구와 사용자 예외는 `design/EASY_COPY_CANDIDATES.md`와 산출물의 copy-candidates.md에 있다.
 
 실측: 본문 최소 18px, 결과 32px, 단추 최소 48px, 주요 행동 각 1개, 가로 넘침 0px, axe 위반 0건. 토큰 대비 88/88과 checker 자체 시험 13개 통과. 390px light 측정 화면, dark 아슬아슬 결과, desktop light 결과를 실제 이미지로 확인했다. 캡처는 모두 draft이며 사용자 시각 승인·수동 스크린리더 검증·전체 WCAG 인증은 아니다.
 
@@ -45,3 +45,7 @@
 32장 캡처와 metrics.json·copy-candidates.md를 다시 생성했다. 실제 이미지로 390px light 물건 화면·1440px dark 결과 화면을 확인했고 별도 390px dark 키보드 화면에서도 제목의 2px 포커스 선과 3px offset을 확인했다(`/workspace/zari-easy-run/review2-keyboard-focus.png`). 본문 최소 18px, 버튼 최소 48px, 주요 행동 1개, 가로 넘침 0px, axe 위반 0건이다. 캡처는 draft다.
 
 최종 검증 결과와 남은 제약은 IMPLEMENTATION_STATUS.md의 review2 항목에 기록한다. WebKit launch preflight는 libevent·gstgl·gstcodecparsers·avif·soup·manette·enchant 라이브러리 부재로 실패했다. 사용자 화면 승인·수동 스크린리더·실제 모바일 검증 및 비작성자 exact-HEAD 검토는 별도다.
+
+## 최종 문구 적용 — 2026-11-03
+
+사용자 지정 22행과 PR #129 예외를 적용했다. 최종 문구는 `design/EASY_COPY_CANDIDATES.md`, 실제 검사 결과와 캐시 경로 보정 기록은 IMPLEMENTATION_STATUS.md의 같은 날짜 최종 문구 항목을 따른다. 문구 확정과 화면 baseline 승인을 구분하며 기존 시각 QA 수정은 이번 문구 커밋에 포함하지 않는다.
