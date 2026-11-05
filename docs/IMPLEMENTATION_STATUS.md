@@ -2477,3 +2477,37 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   축·옵션·외경 독립 확인 및 비작성자 exact-HEAD review. 새 Rust/WASM 계산 변경은
   없으며 전체 browser/native parity는 이번 작업에서 재실행하지 않았다.
   push/merge/tag/branch 변경/앱 배포는 수행하지 않았다.
+
+### 2026-11-05 16:59 KST 승인 — DAISO 카테고리 단일 재개 시도
+
+- `d9f0e17`의 DeepSeek sibling을 재사용한
+  `tools/catalog-trial/trial-daiso-category.ts`를 추가했다. 기존 disabled flag를
+  자동 삭제하지 않고, 전용 backup이 있으면 재실행을 거절한다. 실제 headed
+  Chrome / DISPLAY=:12 / 지정 profile / default UA / no proxy·login과
+  image·media·font 차단을 유지했다. `/robots.txt`를 먼저 읽고 이후 DAISO 요청을
+  `/ds/`, `/pd/pdr/`와 새 robots 허용 교집합으로 제한했다.
+- robots **200**, User-agent `*`의 Crawl-delay **30초**. robots navigation
+  08:01:33.545Z → 승인 category navigation 08:02:03.548Z로 **30.003초** 간격이었다.
+  category **200** 뒤 10초 render 대기·600px scroll·추가 1초 대기에도 상품 없이
+  navigation/footer만 나타났다. `empty_page`로 즉시 중단하여
+  `/workspace/zari-fit-run/state/daiso.disabled`를 썼다. 추가 접근/재시도 없음.
+  방문은 robots 1개와 category 1개, detail **0**, DAISO **0개/치수 0개**,
+  이번 DeepSeek 호출 **0회**다. 두 판매처 수집 성공으로 기록하지 않는다.
+- `real-items.ds2-backup.json`을 먼저 보관했다. MUJI **9개/치수 9개**를 유지하고
+  상판 `59138`만 `categoryHint=other`로 바꿨다. 기존 Rust SpaceFit의 `bin` 필터로
+  적합성 후보에서 제외된다. 나머지 필드·다른 8개 항목의 동일성을 확인했다.
+  전부 unconfirmed이며 llm→low 변환과 literal evidence/range 검사를 유지했다.
+- Rust bundle tool이 9개 수용/거절 0인 **b-3f1f3dfb266282aa**를 생성했다.
+  승인된 `publish-file.ts`로 기존 `zari-catalog`에 게시했다. public latest와 새
+  bundle 모두 **200**, latest의 bundleId/digest 일치, 공개 bundle **4,459 bytes**가
+  로컬과 완전히 같다. 앱 배포는 수행하지 않았다.
+- 검증: 기존 trial/robots/publish/bundle-flow **41 tests / 5 files**와 신규 경로
+  제한 검사 **1 test / 1 file** 통과. `npm run typecheck`, Rust `space_fit`
+  **7 tests**, `node --check`, `git diff --check` 통과. 앱/Rust 구현 변경은 없고
+  실제 browser/native parity는 이번에 재실행하지 않았다.
+- 근거: `/workspace/zari-fit-run/DS2_RESULT.md`, `ds2-run.json`,
+  `ds2-publish-verification.json`, `ds2-page-2.txt`, `ds2-daiso-robots.txt`.
+  다음: DAISO는 사람 검토와 별도 명시적 재개 전까지 disabled 유지. MUJI 치수의
+  축/옵션/외경 독립 확인과 비작성자 exact-HEAD review는 미완료다. 사용자 지시로
+  현재 기능 branch를 Codex 명의로 commit하고 `sg feat/space-fit-mvp`에 push한다.
+  main push·merge·태그 변경·앱 배포는 수행하지 않는다.
