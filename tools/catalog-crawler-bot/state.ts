@@ -115,7 +115,6 @@ export function requeueStale(store: Store, nowMs: number, recrawlDays: number): 
       entry.state = 'pending';
       entry.attempts = 0;
     }
-    if (entry.state === 'failed' && entry.lastVisitedAt === null) entry.state = 'pending';
   }
 }
 

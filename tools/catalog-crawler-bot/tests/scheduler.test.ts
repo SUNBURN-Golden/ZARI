@@ -250,3 +250,13 @@ it.each(['https://mujikorea.co.kr/products/123', 'https://www.daisomall.co.kr/pd
   expect(result.channel.requests).toEqual([]);
   expect(loadStore(paths).hosts[new URL(url).hostname]?.disabled).toBeTruthy();
 });
+
+it('legacy failed entries with unknown last visit are fenced instead of automatically retried', async () => {
+  const paths=tempPaths();seed(paths,KALLAX);
+  const first=await run(paths,ikeaPages());expect(first.summary.itemsStored).toBeGreaterThan(0);
+  const store=loadStore(paths);const entry=store.queue.find((e)=>e.url===KALLAX)!;
+  entry.state='failed';entry.lastVisitedAt=null;saveStore(paths,store);
+  const next=await run(paths,ikeaPages(),fakeClock(T0+60*DAY));
+  expect(next.channel.requests).toEqual([]);
+  expect(loadStore(paths).queue.find((e)=>e.url===KALLAX)?.state).toBe('failed');
+});
