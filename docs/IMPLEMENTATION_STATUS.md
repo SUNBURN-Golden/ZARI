@@ -2371,3 +2371,76 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 검증 중 발견·수정: 첫 전체 브라우저 실행은 방 선택 오류 시험에 남은 이전 기대값 ‘둘 곳을 골라 주세요.’를 검출해 중단했고 ‘놓을 곳을 골라 주세요.’로 수정했다. 현 작업 사본의 Chromium·Firefox 쉬운 모드 18개는 통과했다. WebKit 9개는 실행 전 라이브러리 경로 검사에서 실패했다. 라이브러리는 캐시의 `sys/lib/libproxy/libpxbackend-1.0.so`에 이미 있었고 두 WebKit 번들의 `sys/lib`에 해당 파일의 상대 심볼릭 링크를 추가해 기본 WebKit launch와 페이지 표시를 확인했다. 저장소 의존성·Playwright 설정·timeout·baseline·retry 설정은 바꾸지 않았다. 캐시 수정 후 WebKit 쉬운 모드 9개도 통과했다. 현 작업 사본의 세 브라우저 쉬운 모드 총 27개와 각 브라우저의 8개 native/Worker-WASM 전체 JSON 대조가 통과했고, 분리한 커밋 대상 코드의 전체 브라우저 검사는 `npm run test:browser -- --workers=3`에서 466/471 통과, WebKit 기존 전문가 경로 5개 실패였다. 추적 자료 확인 뒤 workers=1로 진단한 5개 중 대기 시간 초과 4개는 통과했고, 카탈로그 오프라인 새 탭 재방문 1개는 WebKit 내부 오류를 재현했다. GTK headed 실행과 별도 사본의 서비스 워커 네트워크 회피 진단에서도 같은 오류였다. 서비스 워커 진단 변경은 폐기했고 저장소 앱에는 적용하지 않았다. 다른 기존 WebKit 오프라인 시험과 같은 캐시 검증 범위로 맞출지, 문구만 커밋하며 기존 실패를 기록할지 사용자 결정 대기 중이다.
 
 실제 이미지 확인: 현 작업 사본의 390px light 입력·결과와 1440px dark 상세 화면에서 최종 문구를 확인했다. 이 캡처에는 기존 미커밋 시각 QA 수정도 들어 있으며 화면 승인은 계속 draft다. 실제 모바일·수동 스크린리더·사용자 화면 baseline 승인·비작성자 exact-HEAD 검토는 미완료다. 다음 작업은 WebKit 검증 범위에 대한 사용자 결정 뒤 최종 검사와 커밋, 이후 비작성자 검토다. 사용자가 모든 검사의 통과를 요구했으므로 현재 커밋·push는 보류했다. merge·배포는 수행하지 않는다.
+
+## 2026-11-05 — Space Fit MVP 로컬 구현과 검증 (M1–M4 실물 수용은 미완료)
+
+- 요청/결정: `docs/design/space-fit.md` 전체와 §14를 기준으로
+  `feat/space-fit-mvp` worktree 안에서 구현했다. 축별 기본 여유 5mm, 혼합 최대
+  2종, 미확인 접힘, 서버 환경의 DeepSeek Flash, 비용 상한 기본 꺼짐을 적용했다.
+  보존 프롬프트·SOURCE_MANIFEST·main·원격·배포·태그는 변경하지 않았다.
+- 수집: 기존 Native Messaging 봇/Chrome 확장에 MUJI/Daiso 텍스트 파서를 추가했다.
+  공식 MUJI 링크의 현재 목적지는 `mujikorea.co.kr`, 다이소 기업 사이트의 몰
+  링크는 `www.daisomall.co.kr`임을 웹으로 확인한 뒤 정확한 호스트만 등록했다.
+  legacy MUJI alias/이미지 호스트/wildcard subdomain은 등록하지 않았다.
+  옵션·외경/내경/포장을 분리하며 URL을 포함한 사양 절은 버린다. 새 자료는 항상
+  `unconfirmed`이고 이미지 수집은 없다. 손으로 쓴 합성 HTML fixture로 검증했다.
+- 수집 차단: 다이소몰 HTTP 403에서 추가 접근을 중단했다. MUJI robots는 읽을 수
+  없어 `robots_unverified`다. 두 출처는 기본 비활성이며 운영자 검토/명시적 재개와
+  새 robots 확인 전에는 요청하지 않는다. 차단은 cooldown 이후에도 유지한다.
+  실패 작업(마지막 방문 시각이 없는 legacy 실패 포함)은 자동 재시도하지 않는다.
+- Rust: 새 `space_fit.rs`와 얇은 WASM session을 추가했다. 기존 cm 정수 mm 파서와
+  카탈로그 검증/digest를 재사용한다. 단일 상품 전수 검사, 허용된 upright0/90,
+  같은 제품 N×M×K 압축 격자, 2종·64개 이하의 바닥 행 조합을 생성한다.
+  K>1은 확인된 적층 maxUnits 범위만 생성하고 하중은 계속 unknown이다.
+  별도 압축 AABB/수량/바닥·방향·적층 검사 후 후보를 반환한다. 외경·내용물·설치·
+  개폐·접근·하중·방향·수량·오차 상태를 구분한다. 기본 5mm는 축 끝에서 한 번
+  남기는 검색 조건이며 제품 사이 간격은 0이다. 제조사 안전 여유가 아니다.
+- 성능/범위: 상품 최대 5,000개, 한 step 최대 1,000 node/100개 조합, Worker 상주
+  상태와 명시적 이어보기, 화면 조합 최대 2,000개다. 단일 후보와 각 조합 페이지는
+  결정론적으로 정렬한다. 미탐색 범위가 있으면 완료로 표시하지 않는다. 서로 다른
+  제품 적층, 일반 3D 전수 탐색, 전역 최적/전역 순위, 실제 모바일 p95는 달성한
+  것으로 주장하지 않는다. v1의 4 MiB snapshot/10 MiB bundle 한도를 유지한다.
+- 카탈로그: 기존 v1 R2 reader에 UTF-8 길이/hash 결속과 스트림 제한을 보강했다.
+  앱은 빌드 설정으로 고정한 public R2 bucket origin만 credentials omit / redirect
+  error / no-referrer GET으로 읽는다. 정상 번들은 별도 IndexedDB에 캐시하고
+  장애 시 같은 R2 base의 캐시를 Rust 재검토 후 쓴다. 원격 쓰기/판매처 fetch/AI
+  호출은 앱에 없다. 파일 가져오기는 dev/test 전용이다. v2 shard/release/철회
+  publisher, 실제 R2/CORS 연결은 이번에 완료하지 않았다.
+- 서버 AI: 봇의 낮은 신뢰도 짧은 사양에만 `deepseek-flash` fallback을 연결했다.
+  키는 `process.env.DEEPSEEK_API_KEY`만 읽고 출력/로그하지 않는다. 정확한 옵션,
+  외경 역할, 원문 evidence span, 축/단위/값, 제한 JSON을 확인한 뒤 기존 Rust
+  bundle tool로 검증한다. high confidence도 unconfirmed다. 30초/400 output token/
+  16 KiB 응답, run 내 최대 1,000개 cache와 실패 재호출 방지가 있다. `aiCostCap`
+  기본 null; 선택 상한은 검증된 단가를 요구하는 per-run 예약/사용량 계산이다.
+  durable 일/월 한도·cross-run cache·AI 조합 순위·실제 유료 호출은 미구현/미실행이다.
+- 화면: 첫 입구/`#/space-fit`는 가로·깊이·높이 cm와 단추 하나다. 딱 맞음/조합,
+  접힌 치수 확인 중, 더 보기/탐색 제한, 오류 초점·stale·취소·입력 보존을 구현했다.
+  새 `zari.space-fit.v1` 초안과 캐시는 기존 easy/프로젝트 저장과 분리했다.
+  `#/easy` 물건 비교·전문가 프로젝트를 보존했다. 도형은 같은 후보의 Rust 좌표를
+  투영한 개략 그림이며 새 PlanSnapshot 채택/견적/가이드 기능을 만들지 않았다.
+  기존 전문가 도면/BOM/가이드의 같은 snapshot 계약은 회귀 시험으로 유지했다.
+- 실행 검증:
+  - `cargo test --workspace --locked`: **268 passed, 1 ignored, 0 failed** (30 suites).
+  - `npm test` (`vitest run`): **458 passed / 54 files**.
+  - `npx playwright test --project=chromium --workers=1 --grep-invert '@parity|@capture|@bench'`:
+    **163 passed** (12.6분). 새 Space Fit 6개에 다중 페이지 native Rust ↔ 실제
+    browser Worker/WASM 전체 JSON 대조와 입력 수정 중 Worker 취소를 포함했다.
+  - 초기 workers=2 실행은 160 pass/2 fail였다. 잘못 옮긴 easy mode-memory 테스트
+    주소를 새 입구 계약에 맞게 수정했다. 기존 execution-checklist의 5초 Worker
+    제한 중단은 native/브라우저 동시 부하를 피한 serial 전체 실행에서 통과했다.
+    그 검사·생산 timeout·assertion을 삭제/완화하거나 자동 retry하지 않았다.
+  - `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`,
+    `npm run contracts:check`(124 fixture structures), `npm run typecheck`, `npm run lint` 통과.
+  - 실제 `npm run wasm:build` / test build와 별도 production build 통과. production
+    Chromium smoke에서 파일 입력 0개, 외부 요청 0개, 미설정 자료 오류/입력 유지 확인.
+    기존 대형 chunk 경고는 남아 있다.
+  - `node scripts/check-design-tokens.mjs --self-test`: **13 self-tests, 90/90 contrast cases**.
+    실제 320px(light/dark axe·keyboard·forced-colors), 390/1440px(light/dark) 검토에서
+    가로 넘침 없음/주요 단추 48px 확인. 캡처는 draft이며 승인 baseline으로 올리지 않았다.
+- 검증 산출물: 로컬 `test-results/space-fit-review/`의 draft 화면/metrics와
+  `test-results/space-fit-run/logs/`, 사용자 지정 `/workspace/zari-fit-run/RESULT.md`.
+- 미완료/다음: 허용 robots와 실제 옵션 URL/텍스트 확보 → 사람/독립 규칙의 세 축·옵션·
+  돌출 확인 → 실제 R2/CORS 설정 → 두 판매처 수집/확인/R2/검색 여정 → 사용자 사용 수용.
+  실제 휴대폰·Firefox/WebKit 전체 matrix·사용자 화면 승인·비작성자 exact-HEAD review는
+  미완료다. 사용자가 언급한 main의 WebKit `catalog-crawler:67` 실패는 여기서 재현하지
+  않았으며 그 테스트를 비활성화하지 않았다. M4·출시·배포 완료를 선언하지 않는다.
