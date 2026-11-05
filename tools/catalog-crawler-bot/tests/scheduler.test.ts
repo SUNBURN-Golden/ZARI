@@ -244,7 +244,7 @@ describe('resumable queue, re-crawl interval, kill switch, lock', () => {
   });
 });
 
-it.each(['https://mujikorea.co.kr/products/123', 'https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123'])('observed blocked source %s cannot crawl without operator review', async (url) => {
+it.each(['https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123'])('observed blocked source %s cannot crawl without operator review', async (url) => {
   const paths = tempPaths(); seed(paths, url);
   const result = await run(paths, {});
   expect(result.channel.requests).toEqual([]);

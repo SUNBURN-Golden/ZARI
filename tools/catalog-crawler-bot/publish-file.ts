@@ -1,7 +1,7 @@
 // Publish an already-built bundle file (e.g. a sample fixture) to R2.
 // Keys come from env ZARI_R2_ACCESS_KEY_ID / ZARI_R2_SECRET_ACCESS_KEY, or from
 // the file named by ZARI_R2_KEYS_FILE (default /home/box/.secrets/zari_r2_catalog,
-// lines ACCESS_KEY_ID=... / SECRET_ACCESS_KEY=...). Values are never printed.
+// lines ACCESS_KEY_ID= / SECRET_ACCESS_KEY= / ENDPOINT=). Values are never printed.
 // Usage: node publish-file.ts <bundle.json>
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,14 +11,13 @@ import { publishBundle, r2Setup } from './publish-r2.ts';
 
 const env: Record<string, string | undefined> = { ...process.env };
 const keysFile = env.ZARI_R2_KEYS_FILE ?? '/home/box/.secrets/zari_r2_catalog';
-if ((!env.ZARI_R2_ACCESS_KEY_ID || !env.ZARI_R2_SECRET_ACCESS_KEY) && existsSync(keysFile)) {
+if ((!env.ZARI_R2_ACCESS_KEY_ID || !env.ZARI_R2_SECRET_ACCESS_KEY || !env.ZARI_R2_ENDPOINT) && existsSync(keysFile)) {
   for (const line of readFileSync(keysFile, 'utf8').split('\n')) {
-    const m = /^(ACCESS_KEY_ID|SECRET_ACCESS_KEY)=(.+)$/.exec(line.trim());
-    if (m) env[`ZARI_R2_${m[1]}`] = m[2];
+    const m = /^(ACCESS_KEY_ID|SECRET_ACCESS_KEY|ENDPOINT)=(.+)$/.exec(line.trim());
+    if (m) env[`ZARI_R2_${m[1]}`] ??= m[2];
   }
 }
 env.ZARI_R2_ENABLED ??= '1';
-env.ZARI_R2_ENDPOINT ??= 'https://aa6bf084982ee841c3ea39b45895a15e.r2.cloudflarestorage.com';
 env.ZARI_R2_BUCKET ??= 'zari-catalog';
 
 const file = process.argv[2];

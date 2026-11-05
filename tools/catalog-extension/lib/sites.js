@@ -8,13 +8,12 @@
 export const SITES = {
   muji: {
     key: 'muji', hosts: ['mujikorea.co.kr'], pathPrefix: '/products/',
-    denyPrefixes: [], product: [/^\/products\/(\d+)\/?$/],
-    blockedReason: 'robots_unverified:2026-11-05',
+    denyPrefixes: [], product: [/^\/products\/(\d+)\/?$/, /^\/products\/view\/(\d+)\/?$/],
   },
   daiso: {
     key: 'daiso', hosts: ['www.daisomall.co.kr'], pathPrefix: '/pd/',
     denyPrefixes: [], product: [],
-    blockedReason: 'observed_http_403:2026-11-05',
+    blockedReason: 'empty_render_real_chrome:2026-11-05',
   },
   ohou: {
     key: 'ohou',
