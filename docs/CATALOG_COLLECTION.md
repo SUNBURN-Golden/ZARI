@@ -190,3 +190,31 @@ Navigation failures become terminal queue entries. There is no automatic retry.
 Actual two-source collection, dimensions verification and R2 publication have
 **not** been performed; these observations are not collection permission or
 end-to-end product qualification.
+
+### Server-only DeepSeek fallback
+
+`tools/catalog-crawler-bot/deepseek.ts` is called by the existing bot after rule
+extraction, for MUJI/Daiso short specification text only. `DEEPSEEK_API_KEY` is
+read exclusively from the server process environment. The adapter has no log
+calls, exposes no public HTTP listener, follows no redirects, invokes no tools,
+limits input to 1,024 characters and output to 400 tokens/16 KiB, and aborts at
+30 seconds. Failures return a fixed empty result with no automatic retry.
+
+Model `deepseek-flash` was verified against the official documentation on
+2026-11-05: https://api-docs.deepseek.com/api/list-models/ and
+https://api-docs.deepseek.com/updates/ . There is no fallback model. JSON must
+identify the exact option and an outer-size evidence span; labeled values and
+units must agree with that text, then the existing Rust bundle tool validates
+numbers/precision. Confidence never confirms dimensions. Model/prompt/hash are
+kept in the bot's private item record, outside the public v1 bundle.
+
+The optional bot config field `aiCostCap` defaults to `null` (off). To enable a
+**per-run** cap, provide `{ "limitUsd": <amount>, "inputUsdPerMillion": <verified
+current price>, "outputUsdPerMillion": <verified current price> }`. Invalid
+config stops setup. The adapter reserves a conservative input/output allowance
+before HTTP, accounts reported usage, and closes the cap on unknown usage.
+Failures keep their reservation. Calls are sequential; the cache (including
+failures) is bounded to 1,000 entries and lasts for one run. Durable daily/monthly
+accounting and cross-run AI cache are not implemented. Do not describe this
+option as a durable account-wide spend limit. No live paid API call was made
+for implementation tests; every HTTP call in tests is mocked.

@@ -3,6 +3,8 @@
 // and a fake extension: per-host pacing, run and daily caps, robots.txt,
 // block detection with persisted cooldown, kill switch.
 import { siteOfHost } from '../catalog-extension/lib/sites.js';
+import type { CrawledItem } from '../../apps/web/src/contracts/generated/dto.ts';
+import type { ExtractionResult } from './deepseek.ts';
 import type { Channel, Job, Reply } from './channel.ts';
 import { LIMITS } from './config.ts';
 import type { Config } from './config.ts';
@@ -39,6 +41,8 @@ export interface RunDeps {
   channel: Channel;
   clock: Clock;
   log: (line: string) => void;
+  /** Optional server-only fallback; never called by the web app. */
+  extractDimensions?: (item: CrawledItem) => Promise<ExtractionResult | null>;
   /** Called after every `config.publishEvery` pages (0 disables). */
   checkpoint?: (store: Store) => Promise<void>;
 }
@@ -214,7 +218,9 @@ export async function runCrawl(deps: RunDeps): Promise<RunSummary> {
         for (const raw of reply.items as unknown[]) {
           const item = raw as Record<string, unknown>;
           if (item && typeof item.id === 'string' && item.id.startsWith('crawl:') && item.source === entry.site) {
-            store.items[item.id] = { item, seenAt: at };
+            const extracted = deps.extractDimensions ? await deps.extractDimensions(item as unknown as CrawledItem) : null;
+            if (extracted) item.dimensions = extracted.dimensions;
+            store.items[item.id] = { item, seenAt: at, ...(extracted ? { extraction: { model: extracted.model, promptVersion: extracted.promptVersion, textHash: extracted.textHash, status: extracted.status } } : {}) };
             stored += 1;
           }
         }

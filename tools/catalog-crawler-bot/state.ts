@@ -34,6 +34,7 @@ export interface HostState {
 }
 
 export interface ItemRecord {
+  extraction?: { model: string; promptVersion: string; textHash: string; status: 'unconfirmed' };
   item: Record<string, unknown>;
   seenAt: string;
 }
