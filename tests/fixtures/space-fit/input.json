@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "inputRevision": "parity-1",
+  "space": [
+    "60",
+    "40",
+    "40"
+  ],
+  "catalog": {
+    "schemaVersion": 1,
+    "catalogVersion": "b-8fa7a0f7cc84a413",
+    "catalogDigest": "965cc4e0a4ca0899f8224a1ddafd0fa1ba6dddd8accf0525bc3e48fb3600f8a9",
+    "sourceKind": "imported",
+    "products": [
+      {
+        "id": "p-crawl:muji:123456:o1aa33fda",
+        "brand": {
+          "state": "known",
+          "value": "무인양품",
+          "provenance": {
+            "origin": "userDeclared",
+            "verification": "unverified",
+            "evidenceIds": [],
+            "ruleIds": [],
+            "inputRefs": [],
+            "observedAt": null
+          }
+        },
+        "name": "합성 수납함 (소형)",
+        "category": "bin",
+        "provenance": {
+          "origin": "userDeclared",
+          "verification": "unverified",
+          "evidenceIds": [],
+          "ruleIds": [],
+          "inputRefs": [],
+          "observedAt": null
+        }
+      },
+      {
+        "id": "p-crawl:muji:123456:oe920d1be",
+        "brand": {
+          "state": "known",
+          "value": "무인양품",
+          "provenance": {
+            "origin": "userDeclared",
+            "verification": "unverified",
+            "evidenceIds": [],
+            "ruleIds": [],
+            "inputRefs": [],
+            "observedAt": null
+          }
+        },
+        "name": "합성 수납함 (대형)",
+        "category": "bin",
+        "provenance": {
+          "origin": "userDeclared",
+          "verification": "unverified",
+          "evidenceIds": [],
+          "ruleIds": [],
+          "inputRefs": [],
+          "observedAt": null
+        }
+      }
+    ],
+    "variants": [
+      {
+        "id": "crawl:muji:123456:o1aa33fda",
+        "productId": "p-crawl:muji:123456:o1aa33fda",
+        "optionLabel": "o1aa33fda",
+        "dimensions": {
+          "outer": {
+            "width": {
+              "state": "known",
+              "value": {
+                "nominal": 200,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              },
+              "provenance": {
+                "origin": "userDeclared",
+                "verification": "unverified",
+                "evidenceIds": [
+                  "ev-crawl:muji:123456:o1aa33fda-outer"
+                ],
+                "ruleIds": [],
+                "inputRefs": [],
+                "observedAt": null
+              }
+            },
+            "depth": {
+              "state": "known",
+              "value": {
+                "nominal": 150,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              },
+              "provenance": {
+                "origin": "userDeclared",
+                "verification": "unverified",
+                "evidenceIds": [
+                  "ev-crawl:muji:123456:o1aa33fda-outer"
+                ],
+                "ruleIds": [],
+                "inputRefs": [],
+                "observedAt": null
+              }
+            },
+            "height": {
+              "state": "known",
+              "value": {
+                "nominal": 100,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              },
+              "provenance": {
+                "origin": "userDeclared",
+                "verification": "unverified",
+                "evidenceIds": [
+                  "ev-crawl:muji:123456:o1aa33fda-outer"
+                ],
+                "ruleIds": [],
+                "inputRefs": [],
+                "observedAt": null
+              }
+            }
+          },
+          "inner": {
+            "width": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "depth": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "height": {
+              "state": "unknown",
+              "reason": "notProvided"
+            }
+          },
+          "innerOffset": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "innerSupport": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "handles": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "lidState": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "cavityModel": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "cavityClearances": {
+            "left": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "right": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "front": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "back": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "top": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "betweenItems": {
+              "state": "unknown",
+              "reason": "notProvided"
+            }
+          }
+        },
+        "primitive": "openBin",
+        "allowedOrientations": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "mass": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "material": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "color": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "compatibility": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "mounting": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "stackability": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "handling": {
+          "left": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "right": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "top": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "pullExtraDepth": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "liftAboveRim": {
+            "state": "unknown",
+            "reason": "notProvided"
+          }
+        }
+      },
+      {
+        "id": "crawl:muji:123456:oe920d1be",
+        "productId": "p-crawl:muji:123456:oe920d1be",
+        "optionLabel": "oe920d1be",
+        "dimensions": {
+          "outer": {
+            "width": {
+              "state": "known",
+              "value": {
+                "nominal": 300,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              },
+              "provenance": {
+                "origin": "userDeclared",
+                "verification": "unverified",
+                "evidenceIds": [
+                  "ev-crawl:muji:123456:oe920d1be-outer"
+                ],
+                "ruleIds": [],
+                "inputRefs": [],
+                "observedAt": null
+              }
+            },
+            "depth": {
+              "state": "known",
+              "value": {
+                "nominal": 200,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              },
+              "provenance": {
+                "origin": "userDeclared",
+                "verification": "unverified",
+                "evidenceIds": [
+                  "ev-crawl:muji:123456:oe920d1be-outer"
+                ],
+                "ruleIds": [],
+                "inputRefs": [],
+                "observedAt": null
+              }
+            },
+            "height": {
+              "state": "known",
+              "value": {
+                "nominal": 150,
+                "uncertainty": {
+                  "state": "unknown"
+                }
+              },
+              "provenance": {
+                "origin": "userDeclared",
+                "verification": "unverified",
+                "evidenceIds": [
+                  "ev-crawl:muji:123456:oe920d1be-outer"
+                ],
+                "ruleIds": [],
+                "inputRefs": [],
+                "observedAt": null
+              }
+            }
+          },
+          "inner": {
+            "width": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "depth": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "height": {
+              "state": "unknown",
+              "reason": "notProvided"
+            }
+          },
+          "innerOffset": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "innerSupport": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "handles": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "lidState": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "cavityModel": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "cavityClearances": {
+            "left": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "right": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "front": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "back": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "top": {
+              "state": "unknown",
+              "reason": "notProvided"
+            },
+            "betweenItems": {
+              "state": "unknown",
+              "reason": "notProvided"
+            }
+          }
+        },
+        "primitive": "openBin",
+        "allowedOrientations": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "mass": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "material": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "color": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "compatibility": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "mounting": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "stackability": {
+          "state": "unknown",
+          "reason": "notProvided"
+        },
+        "handling": {
+          "left": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "right": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "top": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "pullExtraDepth": {
+            "state": "unknown",
+            "reason": "notProvided"
+          },
+          "liftAboveRim": {
+            "state": "unknown",
+            "reason": "notProvided"
+          }
+        }
+      }
+    ],
+    "offers": [
+      {
+        "id": "of-crawl:muji:123456:o1aa33fda",
+        "variantId": "crawl:muji:123456:o1aa33fda",
+        "sellerId": "seller-muji",
+        "url": {
+          "state": "known",
+          "value": "https://mujikorea.co.kr/products/123456",
+          "provenance": {
+            "origin": "userDeclared",
+            "verification": "unverified",
+            "evidenceIds": [
+              "ev-crawl:muji:123456:o1aa33fda-seller"
+            ],
+            "ruleIds": [],
+            "inputRefs": [],
+            "observedAt": "2026-11-05T00:00:00Z"
+          }
+        },
+        "packQuantity": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "packPrice": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "inventory": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "shipping": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "observedAt": "2026-11-05T00:00:00Z",
+        "bundleComponents": []
+      },
+      {
+        "id": "of-crawl:muji:123456:oe920d1be",
+        "variantId": "crawl:muji:123456:oe920d1be",
+        "sellerId": "seller-muji",
+        "url": {
+          "state": "known",
+          "value": "https://mujikorea.co.kr/products/123456",
+          "provenance": {
+            "origin": "userDeclared",
+            "verification": "unverified",
+            "evidenceIds": [
+              "ev-crawl:muji:123456:oe920d1be-seller"
+            ],
+            "ruleIds": [],
+            "inputRefs": [],
+            "observedAt": "2026-11-05T00:00:00Z"
+          }
+        },
+        "packQuantity": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "packPrice": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "inventory": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "shipping": {
+          "state": "unknown",
+          "reason": "sourceMissing"
+        },
+        "observedAt": "2026-11-05T00:00:00Z",
+        "bundleComponents": []
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-crawl:muji:123456:o1aa33fda-outer",
+        "sourceKind": "userDeclared",
+        "locator": "https://mujikorea.co.kr/products/123456",
+        "sourceField": "outer",
+        "note": "scope=outer; verificationScope=unverified; crawled; site=muji; confidence=High; unit=Some(Cm); category=; raw=[소형] 가로 20cm 깊이 15cm 높이 10cm",
+        "observedAt": "2026-11-05T00:00:00Z",
+        "confirmedBy": null
+      },
+      {
+        "id": "ev-crawl:muji:123456:o1aa33fda-seller",
+        "sourceKind": "userDeclared",
+        "locator": "https://mujikorea.co.kr/products/123456",
+        "sourceField": "seller",
+        "note": "scope=seller; verificationScope=unverified; crawled product link; price not collected as a fact",
+        "observedAt": "2026-11-05T00:00:00Z",
+        "confirmedBy": null
+      },
+      {
+        "id": "ev-crawl:muji:123456:oe920d1be-outer",
+        "sourceKind": "userDeclared",
+        "locator": "https://mujikorea.co.kr/products/123456",
+        "sourceField": "outer",
+        "note": "scope=outer; verificationScope=unverified; crawled; site=muji; confidence=High; unit=Some(Cm); category=; raw=[대형] 가로 30cm 깊이 20cm 높이 15cm",
+        "observedAt": "2026-11-05T00:00:00Z",
+        "confirmedBy": null
+      },
+      {
+        "id": "ev-crawl:muji:123456:oe920d1be-seller",
+        "sourceKind": "userDeclared",
+        "locator": "https://mujikorea.co.kr/products/123456",
+        "sourceField": "seller",
+        "note": "scope=seller; verificationScope=unverified; crawled product link; price not collected as a fact",
+        "observedAt": "2026-11-05T00:00:00Z",
+        "confirmedBy": null
+      }
+    ],
+    "ingestionVersion": "crawl-1",
+    "sourceObservations": [
+      {
+        "id": "obs-review",
+        "note": "출처 검토 가져오기. 확인은 승격되지 않는다.",
+        "observedAt": null
+      }
+    ]
+  },
+  "clearanceMm": [
+    5,
+    5,
+    5
+  ]
+}

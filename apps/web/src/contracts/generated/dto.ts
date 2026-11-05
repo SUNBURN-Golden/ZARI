@@ -240,7 +240,7 @@ export type LengthUnit = 'mm' | 'cm' | 'm';
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "CrawlSite".
  */
-export type CrawlSite = 'ohou' | '29cm' | 'ikea';
+export type CrawlSite = 'ohou' | '29cm' | 'ikea' | 'muji' | 'daiso';
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "CrawlSourceKind".
@@ -2651,6 +2651,8 @@ export interface ZariContractBundle {
   RawCatalogFieldDto: RawCatalogFieldDto;
   RawProjectInputDto: RawProjectInputDto;
   SnapshotBinding: SnapshotBinding;
+  SpaceFitInput: SpaceFitInput;
+  SpaceFitPage: SpaceFitPage;
   VerifiableRecordDto: VerifiableRecordDto;
 }
 /**
@@ -5618,4 +5620,104 @@ export interface SnapshotBinding {
   inputRevision: Revision;
   planSnapshotId: Digest;
   projectId: Id;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitInput".
+ */
+export interface SpaceFitInput {
+  catalog: CatalogSnapshot;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  clearanceMm?: [number, number, number, ...number[]];
+  inputRevision: string;
+  schemaVersion: number;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  space: [string, string, string, ...string[]];
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitPage".
+ */
+export interface SpaceFitPage {
+  catalogDigest: string;
+  combinations: SpaceFitCandidate[];
+  combinationsComplete: boolean;
+  inputRevision: string;
+  inspectedVariants: number;
+  missingDimensions: number;
+  nodes: number;
+  profile: string;
+  schemaVersion: number;
+  singles: SpaceFitCandidate[];
+  singlesComplete: boolean;
+  solverVersion: string;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  spaceMm: [number, number, number, ...number[]];
+  unavailableVariants: number;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitCandidate".
+ */
+export interface SpaceFitCandidate {
+  blocks: SpaceFitBlock[];
+  checks: SpaceFitChecks;
+  id: string;
+  occupiedVolumeMm3: string;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  remainingMm: [number, number, number, ...number[]];
+  unconfirmed: boolean;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitBlock".
+ */
+export interface SpaceFitBlock {
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  grid: [number, number, number, ...number[]];
+  name: string;
+  orientation: Orientation;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  originMm: [number, number, number, ...number[]];
+  quantity: string;
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  unitMm: [number, number, number, ...number[]];
+  urls: string[];
+  variantId: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitChecks".
+ */
+export interface SpaceFitChecks {
+  access: CheckStatus;
+  inner: CheckStatus;
+  installation: CheckStatus;
+  opening: CheckStatus;
+  orientation: CheckStatus;
+  outer: CheckStatus;
+  quantity: CheckStatus;
+  supportLoad: CheckStatus;
+  tolerance: CheckStatus;
 }

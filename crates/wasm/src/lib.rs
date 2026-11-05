@@ -54,3 +54,23 @@ pub fn review_catalog_bundle(text: &str) -> Result<String, JsError> {
     serde_json::to_string(&zari_core::catalog_bundle::review_bundle_text(text))
         .map_err(|e| JsError::new(&e.to_string()))
 }
+
+/// Each instance owns immutable catalog/input state; JS yields between steps.
+#[wasm_bindgen]
+pub struct SpaceFitSearch(zari_core::space_fit::SpaceFitSearch);
+#[wasm_bindgen]
+impl SpaceFitSearch {
+    #[wasm_bindgen(constructor)]
+    pub fn new(text: &str) -> Result<Self, JsError> {
+        if text.len() > 4 * 1024 * 1024 {
+            return Err(JsError::new("space_input_too_large"));
+        }
+        let input = serde_json::from_str(text).map_err(|_| JsError::new("space_input_invalid"))?;
+        zari_core::space_fit::SpaceFitSearch::new(input)
+            .map(Self)
+            .map_err(|e| JsError::new(&e))
+    }
+    pub fn step(&mut self, budget: u32) -> Result<String, JsError> {
+        serde_json::to_string(&self.0.step(budget)).map_err(|_| JsError::new("space_result_failed"))
+    }
+}

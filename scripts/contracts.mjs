@@ -15,6 +15,8 @@ const roots = [
   'ProtocolRequest',
   'ProtocolResponse',
   'BootstrapProbeDto',
+  'SpaceFitInput',
+  'SpaceFitPage',
   'EasyFitInput',
   'EasyFitResult',
   'BootstrapProbeResult',
