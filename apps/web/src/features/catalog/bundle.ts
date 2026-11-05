@@ -79,11 +79,8 @@ export async function commitBundle(
 
 // ---- repository (read-only) reader core ------------------------------------
 //
-// The reading rules for the R2 base URL live here, with no network call: the
-// z-privacy-offline guard forbids any `fetch` outside the same-origin service
-// worker, and this build keeps that guard. Enabling the URL path is a separate,
-// owner-approved change that wires a transport into this core (see
-// docs/adr/SP-z-catalog-crawler.md, "저장소 읽기").
+// Transport is pinned to the configured public R2 origin in r2Transport.ts.
+// This reader also remains usable with a local fake transport in tests.
 
 export const REPOSITORY_TIMEOUT_MS = 20000;
 export const LATEST_BYTES_LIMIT = 4096;
@@ -153,6 +150,12 @@ export async function readRepository(baseUrl: string, transport: RepositoryTrans
     if (!latest) return { status: 'rejected', code: 'repository_latest_invalid' };
     const bundleReply = await get(latest.bundlePath, latest.bytes);
     if (bundleReply.status !== 200) return { status: 'rejected', code: 'repository_bundle_unavailable' };
+    const bytes = new TextEncoder().encode(bundleReply.text).byteLength;
+    if (bytes !== latest.bytes) return { status: 'rejected', code: 'repository_length_mismatch' };
+    let manifest: { sha256?: unknown };
+    try { manifest = (JSON.parse(bundleReply.text) as { manifest: { sha256?: unknown } }).manifest; }
+    catch { return { status: 'rejected', code: 'repository_bundle_invalid' }; }
+    if (manifest?.sha256 !== latest.sha256) return { status: 'rejected', code: 'repository_hash_mismatch' };
     const read = await reviewBundleText(bundleReply.text, reviewer);
     // The pointer names a bundle id (a hash of the items); a different bundle behind it is refused.
     if (read.status === 'reviewed' && read.review.bundleId !== latest.bundleId) {

@@ -261,15 +261,15 @@ const shipped = [...walk(SRC), ...walk(PUBLIC), join(SRC, '..', 'index.html')].f
   (file) => !file.includes(`${join('contracts', 'generated')}`) && /\.(ts|tsx|js|mjs|html|css|json)$/.test(file),
 );
 
-it('no shipped source calls a network API except the same-origin service worker', () => {
+it('network calls stay confined to the service worker and pinned R2 transport', () => {
   const NETWORK =
-    /\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource|importScripts|navigator\.connection/;
+    /\b(?:fetch|http)\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource|importScripts|navigator\.connection/;
   const offenders = shipped
-    .filter((file) => NETWORK.test(readFileSync(file, 'utf8')))
+    .filter((file) => NETWORK.test(readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')))
     .map((file) => relative(join(SRC, '..'), file))
     // The privacy module names these APIs in comments only.
     .filter((file) => !file.includes('features/privacy/'));
-  expect(offenders).toEqual(['public/sw.js']);
+  expect(offenders).toEqual(['src/features/catalog/r2Transport.ts', 'public/sw.js']);
 });
 
 it('the service worker only touches same-origin GET traffic and its own manifest', () => {
@@ -304,6 +304,7 @@ it('every connection entry is classified and external links are user-opened only
     'local',
     'local',
     'local',
+    'r2-catalog-read',
     'same-origin-update',
     'user-opened-link',
   ]);

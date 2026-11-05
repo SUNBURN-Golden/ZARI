@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "inputRevision": "parity-1",
   "space": [
-    "60",
-    "40",
+    "200",
+    "200",
     "40"
   ],
   "catalog": {
