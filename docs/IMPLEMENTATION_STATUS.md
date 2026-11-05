@@ -2444,3 +2444,36 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   실제 휴대폰·Firefox/WebKit 전체 matrix·사용자 화면 승인·비작성자 exact-HEAD review는
   미완료다. 사용자가 언급한 main의 WebKit `catalog-crawler:67` 실패는 여기서 재현하지
   않았으며 그 테스트를 비활성화하지 않았다. M4·출시·배포 완료를 선언하지 않는다.
+
+### 2026-11-05 16:31 KST 승인 — headed Chrome / DeepSeek Flash 치수 수집
+
+- `tools/catalog-trial/trial-deepseek.ts`를 추가했다. 지정 Chrome profile,
+  DISPLAY=:12, 실제 headed Chrome/default UA/no proxy, 이미지·미디어·폰트 차단,
+  DOMContentLoaded 뒤 9초 렌더 대기, MUJI 4–8초 간격을 사용한다.
+  기존 adapter의 1,024자 제한 때문에 같은 `deepseek-flash` 모델로 12,000자 이하의
+  visible innerText를 JSON response_format으로 보낸다. 키는 env에서만 읽는다.
+- DAISO robots 200을 먼저 확인했다. `/ds/`와 `/pd/pdr/` 허용 및 30초 delay를
+  적용하고, navigation뿐 아니라 모든 허용된 DAISO 요청을 직렬 제한한다.
+  허용 검색 페이지에서 상품 링크를 발견하지 못해 상품 방문/AI 호출 없이 종료했다.
+  실행 뒤 보수적으로 `empty_page:no_product_links`로 분류하여 로컬
+  `/workspace/zari-fit-run/state/daiso.disabled`를 기록했다. 재시도하지 않았다.
+- 기존 MUJI 9개 중 치수 누락 4개를 productUrl로 재방문했다. 실제 DeepSeek 호출
+  **4회**, 네 항목 모두 literal evidence/0.5–300cm 검사를 통과했다. 원본 5개를
+  보존하여 **9 items / 9 with dims**, DAISO **0 / 0**이다. 모두 unconfirmed다.
+  로컬 real-items.v1.json에 원본을 보관하고 real-items.json을 갱신했다.
+- 새 추출은 real-items.json에 confidence `llm`과 evidence rawText를 기록한다.
+  Rust v1 계약에는 llm enum이 없어 bundle 입력 경계에서 `low`로 명시 변환한다
+  (치수 미확보는 unparsed). 따라서 새 네 항목은 fit 계산에서 계속 unknown이며,
+  자동 추출을 확인된 치수로 승격하지 않았다. 앱/공유 Rust 계약 변경은 없다.
+- 기존 Rust buildBundle로 9개 전부 수용/거절 0인 `b-cece21958d57f694`를 생성하고,
+  사용자 승인 범위에서 기존 publish-file.ts로 zari-catalog R2에 게시했다.
+  public latest.json **200**, 새 bundleId/digest 일치, bundle **200** 및 로컬과
+  공개 응답 **4,457 bytes 전체 일치**를 확인했다. 앱 배포는 수행하지 않았다.
+- 검증: trial/robots offline tests **13 passed / 3 files**, `npm run typecheck` 통과.
+  새 sanity test는 범위 경계, NaN/null, 허구/빈 evidence, 원문에 없는 값,
+  내경 거절 및 mm→cm를 포함한다. 네트워크/키 없이 실행한다.
+- 로컬 근거: `/workspace/zari-fit-run/ds-run.json`, `ds-publish-verification.json`,
+  `DS_RESULT.md`. 미완료/다음: DAISO 사람 검토 후 재개 판단, 새 MUJI 네 상품의
+  축·옵션·외경 독립 확인 및 비작성자 exact-HEAD review. 새 Rust/WASM 계산 변경은
+  없으며 전체 browser/native parity는 이번 작업에서 재실행하지 않았다.
+  push/merge/tag/branch 변경/앱 배포는 수행하지 않았다.
