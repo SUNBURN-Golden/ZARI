@@ -6,6 +6,10 @@
   "minimum_chrome_version": "120",
   "permissions": ["scripting", "nativeMessaging", "activeTab"],
   "host_permissions": [
+    "https://mujikorea.co.kr/products/*",
+    "https://mujikorea.co.kr/robots.txt",
+    "https://www.daisomall.co.kr/pd/*",
+    "https://www.daisomall.co.kr/robots.txt",
     "https://ohou.se/*",
     "https://store.ohou.se/*",
     "https://www.29cm.co.kr/*",

@@ -2,6 +2,7 @@
 // and *when*; every guardrail lives here so it is testable with a fake clock
 // and a fake extension: per-host pacing, run and daily caps, robots.txt,
 // block detection with persisted cooldown, kill switch.
+import { siteOfHost } from '../catalog-extension/lib/sites.js';
 import type { Channel, Job, Reply } from './channel.ts';
 import { LIMITS } from './config.ts';
 import type { Config } from './config.ts';
@@ -47,7 +48,13 @@ const dayOf = (ms: number): string => iso(ms).slice(0, 10);
 const QUEUE_CAP = 20000;
 
 function hostOf(store: Store, host: string, nowMs: number): HostState {
-  const state = (store.hosts[host] ??= emptyHost());
+  if (!store.hosts[host]) {
+    const initial = emptyHost();
+    const reason = siteOfHost(host)?.blockedReason;
+    if (reason) initial.disabled = { reason, at: iso(nowMs) };
+    store.hosts[host] = initial;
+  }
+  const state = store.hosts[host]!;
   if (state.daily.date !== dayOf(nowMs)) state.daily = { date: dayOf(nowMs), count: 0 };
   return state;
 }
@@ -93,7 +100,7 @@ export function applyBlock(host: HostState, reason: string, nowMs: number, confi
   host.consecutiveBlocks += 1;
   const hours = Math.min(LIMITS.cooldownMaxHours, config.blockCooldownHours * 2 ** (host.consecutiveBlocks - 1));
   host.cooldownUntil = iso(nowMs + hours * 3600000);
-  if (host.consecutiveBlocks >= 2) host.disabled = { reason: `repeated_block:${reason}`, at: iso(nowMs) };
+  host.disabled = { reason: `blocked:${reason}`, at: iso(nowMs) };
 }
 
 export async function runCrawl(deps: RunDeps): Promise<RunSummary> {
@@ -224,8 +231,9 @@ export async function runCrawl(deps: RunDeps): Promise<RunSummary> {
       } else {
         entry.attempts += 1;
         entry.lastVisitedAt = at;
-        entry.retryAfter = iso(clock.now() + 6 * 3600000);
-        if (entry.attempts >= 3) entry.state = 'failed';
+        entry.retryAfter = null;
+        entry.reason = code;
+        entry.state = 'failed';
       }
       log(`${at} ${entry.kind} ${entry.url} error ${code}`);
     }

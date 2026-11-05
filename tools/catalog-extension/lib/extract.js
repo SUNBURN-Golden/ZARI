@@ -1,6 +1,6 @@
 // Page snapshot → listing links and dimension-only items. Reads only the
 // snapshot fields the collector produces; there is no image data in it.
-import { normalizeUrl, productKey, siteOfHost, parseHttpsUrl } from './sites.js';
+import { normalizeUrl, productKey, siteOfHost, parseHttpsUrl, canonicalProductUrl } from './sites.js';
 import { parseDimensionBlocks } from './dimensions.js';
 import { SITE_PARSERS } from '../parsers/index.js';
 
@@ -16,7 +16,7 @@ export function extractListing(snapshot, pageUrl) {
     const key = productKey(href);
     const normalized = key && key.site === site.key ? normalizeUrl(href) : null;
     // Product URLs lose their query so one product has one queue entry.
-    if (normalized) out.add(normalized.split('?')[0]);
+    if (normalized) out.add(canonicalProductUrl(href));
     if (out.size >= MAX_LINKS) break;
   }
   return [...out];
@@ -96,8 +96,8 @@ export function extractProducts(snapshot, pageUrl, now = Date.now()) {
   ).trim().slice(0, 120);
   const category = (snapshot.breadcrumbs?.length ? snapshot.breadcrumbs.join(' > ') : String(product?.category ?? '')).slice(0, 200);
   const hint = categoryHintOf(category, name);
-  const blocks = parseDimensionBlocks(lines(snapshot));
-  const productUrl = normalized.split('?')[0];
+  const blocks = parseDimensionBlocks(parser.dimensionLines ? parser.dimensionLines(snapshot) : lines(snapshot));
+  const productUrl = canonicalProductUrl(pageUrl);
   const price = priceText(product, snapshot);
   const items = blocks.map((block) => {
     const optioned = block.optionLabel !== null;

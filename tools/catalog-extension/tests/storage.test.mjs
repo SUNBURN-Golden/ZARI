@@ -1,0 +1,29 @@
+import { describe, expect, it } from 'vitest';
+import { extractListing, extractProducts } from '../lib/extract.js';
+import { normalizeUrl, productKey } from '../lib/sites.js';
+import { snapshotFromHtml, fixture } from './html-snapshot.mjs';
+const urls = { muji: 'https://mujikorea.co.kr/products/123456', daiso: 'https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123456' };
+for (const [site, url] of Object.entries(urls)) describe(site, () => {
+  it('keeps options separate, refuses inner/package sizes, never confirms', () => {
+    const result = extractProducts(snapshotFromHtml(fixture(site, 'storage.html'), url), url);
+    expect(result.error).toBeNull();
+    expect(result.items).toHaveLength(2);
+    for (const item of result.items) {
+      expect(item.status).toBe('unconfirmed');
+      expect(item.dimensions.confidence).toBe('high');
+      expect(item.dimensions.width).not.toBe('99');
+      expect(item.productUrl).toBe(url);
+      expect(JSON.stringify(item)).not.toMatch(/image|thumbnail|cookie/i);
+    }
+    expect(result.items.map((i) => i.dimensions.width)).toEqual(['20', '30']);
+  });
+  it('does not infer W/D/H from an unlabeled triple', () => {
+    const result = extractProducts(snapshotFromHtml(fixture(site, 'ambiguous.html'), url), url);
+    expect(result.items[0].dimensions.width).toBeNull();
+  });
+  it('retains the product identity query during discovery', () => {
+    expect(productKey(url)).toEqual({ site, productId: '123456' });
+    expect(extractListing({ links: [url, url + '&utm_source=x'] }, url)).toEqual([url]);
+    expect(normalizeUrl(url.replace(new URL(url).hostname, 'evil.' + new URL(url).hostname))).toBeNull();
+  });
+});

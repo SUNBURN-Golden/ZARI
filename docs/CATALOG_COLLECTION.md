@@ -164,3 +164,29 @@ node tools/catalog-crawler-bot/cli.ts publish --yes
 - 수집한 변형은 "내 보유 수납함으로 복사"로 등록할 수 있다. 복사본은 카탈로그 근거(evidence) id를 들고 오지 않는다 — 출처 연결은 옵션 참조(`variantRef`)가 다이제스트 고정 스냅샷으로 유지한다. 내경·지지면은 항상 미확인이므로 물건을 안에 담는 지지면 결속 배치는 잠정(provisional) 배치로만 되고, 계산은 알 수 없음으로 남는다.
 - 내경은 항상 알 수 없다. 외경만으로는 물건이 들어가는지 계산할 수 없고, 계산은 알 수 없음으로 남는다.
 - 옵션 이름은 한글이면 해시 토큰이 id가 되고 이름은 항목 `name`의 괄호에만 남는다.
+
+## Space Fit MVP source observations — 2026-11-05
+
+Official host verification used the web, before changing the allowlist:
+- https://www.muji.com/kr/ and https://www.mujikorea.net/ redirect to
+  https://mujikorea.co.kr/. Only `mujikorea.co.kr` is added; legacy aliases,
+  asset hosts and wildcard subdomains are excluded. Storage listing observed:
+  `/products/category/24`. Product path fixtures are synthetic, not live evidence.
+- https://www.daiso.co.kr/ links to `https://www.daisomall.co.kr/`.
+  The mall returned HTTP 403; investigation stopped without bypass or retry.
+- MUJI robots could not be read using the web tool. Collection remains blocked
+  (`robots_unverified`); Daiso remains blocked (`observed_http_403`). The bot
+  initializes these sources disabled. `resume-host` requires operator review,
+  then a fresh readable/allowing robots response before any product request.
+
+The extension supports short text specification rows for MUJI/Daiso. Handwritten
+fixtures in `tests/fixtures/catalog-collection/{muji,daiso}` are synthetic and
+contain no images. Explicit outer W/D/H and option boundaries are required;
+packaging/inner sizes cannot become outer sizes. Every observation stays
+`unconfirmed`. Daiso's `pdNo` query is retained as product identity.
+
+Any block now persists until explicit operator resume, even after cooldown.
+Navigation failures become terminal queue entries. There is no automatic retry.
+Actual two-source collection, dimensions verification and R2 publication have
+**not** been performed; these observations are not collection permission or
+end-to-end product qualification.
