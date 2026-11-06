@@ -2,6 +2,9 @@
 // and *when*; every guardrail lives here so it is testable with a fake clock
 // and a fake extension: per-host pacing, run and daily caps, robots.txt,
 // block detection with persisted cooldown, kill switch.
+import { siteOfHost } from '../catalog-extension/lib/sites.js';
+import type { CrawledItem } from '../../apps/web/src/contracts/generated/dto.ts';
+import type { ExtractionResult } from './deepseek.ts';
 import type { Channel, Job, Reply } from './channel.ts';
 import { LIMITS } from './config.ts';
 import type { Config } from './config.ts';
@@ -38,6 +41,8 @@ export interface RunDeps {
   channel: Channel;
   clock: Clock;
   log: (line: string) => void;
+  /** Optional server-only fallback; never called by the web app. */
+  extractDimensions?: (item: CrawledItem) => Promise<ExtractionResult | null>;
   /** Called after every `config.publishEvery` pages (0 disables). */
   checkpoint?: (store: Store) => Promise<void>;
 }
@@ -47,7 +52,13 @@ const dayOf = (ms: number): string => iso(ms).slice(0, 10);
 const QUEUE_CAP = 20000;
 
 function hostOf(store: Store, host: string, nowMs: number): HostState {
-  const state = (store.hosts[host] ??= emptyHost());
+  if (!store.hosts[host]) {
+    const initial = emptyHost();
+    const reason = siteOfHost(host)?.blockedReason;
+    if (reason) initial.disabled = { reason, at: iso(nowMs) };
+    store.hosts[host] = initial;
+  }
+  const state = store.hosts[host]!;
   if (state.daily.date !== dayOf(nowMs)) state.daily = { date: dayOf(nowMs), count: 0 };
   return state;
 }
@@ -93,7 +104,7 @@ export function applyBlock(host: HostState, reason: string, nowMs: number, confi
   host.consecutiveBlocks += 1;
   const hours = Math.min(LIMITS.cooldownMaxHours, config.blockCooldownHours * 2 ** (host.consecutiveBlocks - 1));
   host.cooldownUntil = iso(nowMs + hours * 3600000);
-  if (host.consecutiveBlocks >= 2) host.disabled = { reason: `repeated_block:${reason}`, at: iso(nowMs) };
+  host.disabled = { reason: `blocked:${reason}`, at: iso(nowMs) };
 }
 
 export async function runCrawl(deps: RunDeps): Promise<RunSummary> {
@@ -207,7 +218,9 @@ export async function runCrawl(deps: RunDeps): Promise<RunSummary> {
         for (const raw of reply.items as unknown[]) {
           const item = raw as Record<string, unknown>;
           if (item && typeof item.id === 'string' && item.id.startsWith('crawl:') && item.source === entry.site) {
-            store.items[item.id] = { item, seenAt: at };
+            const extracted = deps.extractDimensions ? await deps.extractDimensions(item as unknown as CrawledItem) : null;
+            if (extracted) item.dimensions = extracted.dimensions;
+            store.items[item.id] = { item, seenAt: at, ...(extracted ? { extraction: { model: extracted.model, promptVersion: extracted.promptVersion, textHash: extracted.textHash, status: extracted.status } } : {}) };
             stored += 1;
           }
         }
@@ -224,8 +237,9 @@ export async function runCrawl(deps: RunDeps): Promise<RunSummary> {
       } else {
         entry.attempts += 1;
         entry.lastVisitedAt = at;
-        entry.retryAfter = iso(clock.now() + 6 * 3600000);
-        if (entry.attempts >= 3) entry.state = 'failed';
+        entry.retryAfter = null;
+        entry.reason = code;
+        entry.state = 'failed';
       }
       log(`${at} ${entry.kind} ${entry.url} error ${code}`);
     }

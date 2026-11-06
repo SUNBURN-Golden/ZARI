@@ -8,6 +8,7 @@ import { ProjectsScreen } from './ProjectsScreen';
 import { useHashRoute } from './router';
 import { repository } from './sessionRegistry';
 import type { StorageFenceCause } from '../persistence/repository';
+import { SpaceFit } from '../features/space-fit/SpaceFit';
 import { EasyMode } from '../features/easy/EasyMode';
 import { MODE_KEY } from '../features/easy/state';
 import { navigate } from './router';
@@ -15,13 +16,13 @@ import { navigate } from './router';
 export function App() {
   const hash = useHashRoute();
   const [mode, setMode] = useState(() => {
-    if (location.hash === '#/easy') return 'easy';
+    if (location.hash === '#/easy' || location.hash === '#/space-fit') return 'easy';
     if (location.hash && location.hash !== '#/') return 'expert';
     try { return localStorage.getItem(MODE_KEY) === 'expert' ? 'expert' : 'easy'; }
     catch { return 'easy'; }
   });
   useEffect(() => {
-    if (hash === '#/easy') setMode('easy');
+    if (hash === '#/easy' || hash === '#/space-fit') setMode('easy');
     else if (location.hash && location.hash !== '#/') setMode('expert');
   }, [hash]);
   useEffect(() => {
@@ -31,8 +32,9 @@ export function App() {
     setMode(next);
     navigate(next === 'easy' ? '#/easy' : '#/projects');
   };
+  if (hash === '#/space-fit' || ((!location.hash || hash === '#/') && mode === 'easy')) return <SpaceFit />;
   if (mode === 'easy') return <EasyMode onExpert={() => change('expert')} />;
-  return <><ExpertApp /><footer className="expert-mode-footer"><a href="#/easy" onClick={(e) => { e.preventDefault(); change('easy'); }}>쉬운 모드</a></footer></>;
+  return <><ExpertApp /><footer className="expert-mode-footer"><a href="#/easy" onClick={(e) => { e.preventDefault(); change('easy'); }}>쉬운 모드</a><a href="#/space-fit">빈 공간 수납함 찾기</a></footer></>;
 }
 
 function ExpertApp() {

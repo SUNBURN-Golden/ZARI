@@ -265,6 +265,12 @@
       "foreground": "--zari-danger",
       "background": "--zari-surface-app",
       "minimum": 4.5
+    },
+    {
+      "id": "space-fit-outline-on-app",
+      "foreground": "--zari-canvas-outline",
+      "background": "--zari-surface-app",
+      "minimum": 3
     }
   ]
 }

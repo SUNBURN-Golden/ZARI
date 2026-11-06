@@ -1,3 +1,4 @@
+import { createDimensionExtractor } from './deepseek.ts';
 // `node tools/catalog-crawler-bot/cli.ts <command>` — see docs/CATALOG_COLLECTION.md.
 import { existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -248,7 +249,7 @@ async function runCommand(ctx: CliContext, attach: boolean, noLoadExtension: boo
       out('확장이 연결되지 않았습니다. 확장 설치와 install-native-host를 확인하세요.');
       return 1;
     }
-    const summary = await runCrawl({ paths, config, channel, clock: ctx.clock, log: (line) => appendLog(paths, line) });
+    const summary = await runCrawl({ extractDimensions: createDimensionExtractor({ costCap: config.aiCostCap ?? undefined }), paths, config, channel, clock: ctx.clock, log: (line) => appendLog(paths, line) });
     out(`종료: ${summary.reason} · 방문 ${summary.pages}쪽 · 새 항목 ${summary.itemsStored}건 · 큐 추가 ${summary.queued}건${summary.blocked.length ? ` · 차단 신호 ${[...new Set(summary.blocked)].join(',')}` : ''}`);
     const built = buildLocal(paths, loadStore(paths), ctx.clock.now());
     out(built.bundleId ? `번들 ${built.bundleId} (${built.accepted}개${built.changed ? '' : ', 변경 없음'})` : `번들 없음: ${built.codes.join(',')}`);

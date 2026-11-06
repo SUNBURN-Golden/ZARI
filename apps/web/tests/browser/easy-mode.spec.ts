@@ -12,7 +12,7 @@ async function dimensions(page: Page, kind: string, values: string[]) {
   }
 }
 async function start(page: Page) {
-  await page.goto('/');
+  await page.goto('/#/easy');
   await page.getByRole('button', { name: '시작하기', exact: true }).click();
 }
 async function itemAndRoom(page: Page) {
@@ -59,7 +59,7 @@ for (const theme of ['light', 'dark'] as const) {
       test.setTimeout(90000);
       await page.setViewportSize(viewport);
       await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-      await page.goto('/');
+      await page.goto('/#/easy');
       await expect(page.getByTestId('easy-mode')).toBeVisible();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('물건이 들어갈지 함께 확인해요.');
       await expect(page.getByRole('heading', { level: 1 })).not.toBeFocused();
@@ -189,14 +189,18 @@ test('easy draft restore, validation, soft unit confirmation, result refresh and
   await expect(page.getByTestId('easy-mode')).toHaveCount(0);
   await page.goto('/');
   await expect(page.getByTestId('easy-mode')).toHaveCount(0);
+  await expect(page.getByTestId('create-project')).toBeVisible();
   await page.getByRole('link', { name: '쉬운 모드', exact: true }).click();
+  await expect(page.getByTestId('easy-mode')).toBeVisible();
   await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('빈 공간에 맞는 수납함을 찾아요');
+  await page.getByRole('link', { name: '물건 크기 비교', exact: true }).click();
   await expect(page.getByTestId('easy-mode')).toBeVisible();
 });
 
 test('corrupt or unavailable local storage stays usable; keyboard focus is visible', async ({ page }) => {
   await page.addInitScript(({ key }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, '{invalid'); }, { key: EASY_KEY });
-  await page.goto('/');
+  await page.goto('/#/easy');
   await page.getByRole('button', { name: '시작하기', exact: true }).focus();
   await page.keyboard.press('Enter');
   async function expectHeadingFocus(name: string) {
@@ -257,7 +261,7 @@ test('worker failure never becomes a fit and preserves the input', async ({ page
 });
 
 test('example is labelled, room choice is required, and home clears the draft', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/easy');
   await page.getByRole('link', { name: '예제 보기', exact: true }).click();
   await expect(page.getByText('연습 화면이에요. 내 물건은 직접 재서 적어 주세요.')).toBeVisible();
   await expect(page.getByRole('textbox', { name: '물건 가로' })).toHaveValue('30');

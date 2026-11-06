@@ -96,3 +96,24 @@ Motion·Storybook·Impeccable·일반 DnD 기반은 도입하지 않았습니다
 ### 전체 제품 완성 후속 후보 — 2026-10-01 KST
 
 [측정 완성 후보](docs/MEASUREMENT_COMPLETION_DESIGN_KO.md)의 SP-008–011 뒤에 [실행 가이드·평가·복구 고도화](docs/PRODUCT_COMPLETION_EVOLUTION_KO.md)를 연결했습니다. 실제 source의 staging loading/loaded insertion 순서와 action 조건의 누락, full-candidate 평가의 indivisible step, 버전 변경 후 역사 가이드·진행을 별도 작업으로 소유합니다. 기존 7단계와 측정 4단계를 보존한 전체 후보 분모는 **16**이며 SP-012–016을 추가했습니다. 그 16단계와 후속 z-노드의 현재 병합 범위는 위 “현재 구현 범위”에 기록했습니다. z-offer-bundles는 판매 묶음과 확인된 배송비를 Rust 견적으로 구분한다. z-strategy-library는 저장된 전략의 Recipe 비교를 Rust 응답으로 둔다. 문장만 같은 결과는 하나고, 저장 전 선택은 핀이 아니다. z-pareto-comparison은 같은 입력의 구매비·재사용·접근·미확인을 Rust 응답으로 비교한다. 미확인은 0이 아니고, 다 쓴 탐색 예산은 전역 최적해가 아니다. 산출물은 감독자가 여는 PR로 전달된다. `docs/aiops/ZARI_PRODUCT_COMPLETION_PROGRAM_DRAFT.json`가 비실행 전체 후보 정본이며, 최초 7단계 sidecar는 역사 checkpoint입니다. 화면 승인, 실제 기기 qualification, 런타임 활성화, 배포는 완료가 아닙니다.
+
+### 빈 공간 수납함 찾기 MVP (로컬 구현)
+
+기본 입구(처음 방문) 또는 `#/space-fit`에서 가로·깊이·높이 cm를 입력한다.
+Rust/WASM이 축별 0.5cm 여유, 허용된 바닥 회전, 같은 제품 격자와 최대 2종의
+바닥 행 조합을 계산한다. 미확인 결과는 접혀 있고 설치·개폐·접근·하중은 별도
+확인이 필요하다. 서로 다른 제품 적층과 일반 3D 전수 배치는 지원하지 않는다.
+기존 물건 크기 비교는 `#/easy`, 프로젝트 화면은 전문가 경로로 남아 있다.
+
+앱의 원격 카탈로그는 기존 v1 R2 reader를 쓴다. 로컬 빌드 설정
+`VITE_ZARI_CATALOG_R2_BASE=https://<public-bucket>.r2.dev/`가 필요하며 실제 주소는
+저장소에 넣지 않는다. 고정된 R2 origin의 읽기만 허용하고 정상 자료를 이 기기에
+캐시한다. 설정·수집·확인된 실상품이 없으면 실제 상품 추천이 가능하다고 표시하지
+않는다. 개발/test 빌드는 접힌 “개발용 상품 파일”에서
+`tests/fixtures/space-fit/catalog.json` 합성 번들을 가져올 수 있다. production
+빌드에는 파일 입력이 없다. v2 shard/release publisher는 아직 구현하지 않았다.
+
+무인양품/다이소 수집 상태와 서버 DeepSeek 설정은
+[수집 런북](docs/CATALOG_COLLECTION.md)을 참고한다. MUJI robots 미확인과 다이소
+403으로 실제 수집은 차단 상태다. 이 구현은 M4 실상품 수용·화면 승인·출시 완료가
+아니다. push·배포는 수행하지 않는다.

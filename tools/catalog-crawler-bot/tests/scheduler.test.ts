@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { normalizeConfig } from '../config.ts';
 import { runCrawl } from '../scheduler.ts';
-import { acquireLock, loadStore, saveStore } from '../state.ts';
+import { acquireLock, emptyHost, loadStore, saveStore } from '../state.ts';
 import { BILLY, FAST, IKEA_LISTING, KALLAX, T0, fakeClock, fakeExtension, fixture, ikeaPages, tempPaths } from './helpers.ts';
 import type { Page } from './helpers.ts';
 
@@ -149,35 +149,28 @@ describe('block signals stop the host immediately and are never worked around', 
     const host = loadStore(paths).hosts['www.29cm.co.kr']!;
     expect(Date.parse(host.cooldownUntil!) - T0).toBeGreaterThanOrEqual(6 * HOUR);
     expect(host.consecutiveBlocks).toBe(1);
-    expect(host.disabled).toBeNull();
+    expect(host.disabled?.reason).toBe(`blocked:${reason}`);
     expect(Object.keys(loadStore(paths).items)).toEqual([]);
   });
 
-  it('the cooldown holds across runs; a second consecutive block doubles it and disables the host until resume', async () => {
+  it('a blocked host stays closed after cooldown and across later runs', async () => {
     const paths = tempPaths();
     seed(paths, product);
-    const blocked = pages({ html: fixture('29cm', 'product.html'), status: 429 });
-    await run(paths, blocked);
-    // 5 h later: still cooling down → not a single request.
-    const early = await run(paths, blocked, fakeClock(T0 + 5 * HOUR));
-    expect(early.channel.requests).toEqual([]);
-    expect(early.summary.reason).toBe('hosts_paused');
-    // 7 h later: one probe request, blocked again → disabled, 12 h cooldown.
-    const second = await run(paths, blocked, fakeClock(T0 + 7 * HOUR));
-    expect(second.channel.requests.filter((r) => r.kind !== 'robots')).toHaveLength(1);
-    const host = loadStore(paths).hosts['www.29cm.co.kr']!;
-    expect(host.consecutiveBlocks).toBe(2);
-    expect(host.disabled?.reason).toMatch(/^repeated_block/);
-    expect(Date.parse(host.cooldownUntil!) - (T0 + 7 * HOUR)).toBe(12 * HOUR);
-    // Weeks later: still nothing without an explicit resume.
-    const late = await run(paths, pages({ html: fixture('29cm', 'product.html') }), fakeClock(T0 + 30 * DAY));
-    expect(late.channel.requests).toEqual([]);
+    await run(paths, pages({ html: fixture('29cm', 'product.html'), status: 429 }));
+    for (const hours of [5, 7, 24 * 30]) {
+      const next = await run(paths, pages({ html: fixture('29cm', 'product.html') }), fakeClock(T0 + hours * HOUR));
+      expect(next.channel.requests).toEqual([]);
+      expect(next.summary.reason).toBe('hosts_paused');
+    }
   });
 
   it('a successful page resets the consecutive-block count', async () => {
     const paths = tempPaths();
     seed(paths, product);
     await run(paths, pages({ html: fixture('29cm', 'product.html'), status: 429 }));
+    const store = loadStore(paths);
+    store.hosts['www.29cm.co.kr']!.disabled = null; // explicit operator resume
+    saveStore(paths, store);
     await run(paths, pages({ html: fixture('29cm', 'product.html') }), fakeClock(T0 + 7 * HOUR));
     expect(loadStore(paths).hosts['www.29cm.co.kr']).toMatchObject({ consecutiveBlocks: 0, cooldownUntil: null, disabled: null });
   });
@@ -242,11 +235,31 @@ describe('resumable queue, re-crawl interval, kill switch, lock', () => {
     takeover();
   });
 
-  it('a failed navigation backs off and gives up after three attempts', async () => {
+  it('a failed navigation is terminal and never automatically retried', async () => {
     const paths = tempPaths();
     seed(paths, KALLAX);
     const pages = { 'https://www.ikea.com/robots.txt': { text: fixture('robots', 'ikea.txt') } };
     for (let i = 0; i < 3; i += 1) await run(paths, pages, fakeClock(T0 + i * DAY));
-    expect(loadStore(paths).queue[0]).toMatchObject({ state: 'failed', attempts: 3 });
+    expect(loadStore(paths).queue[0]).toMatchObject({ state: 'failed', attempts: 1 });
   });
+});
+
+it.each(['https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123'])('operator-disabled source %s cannot crawl without explicit resume', async (url) => {
+  const paths = tempPaths(); seed(paths, url);
+  const store = loadStore(paths);
+  store.hosts[new URL(url).hostname] = { ...emptyHost(), disabled: { reason: 'blocked:empty_listing', at: new Date(T0).toISOString() } };
+  saveStore(paths, store);
+  const result = await run(paths, {});
+  expect(result.channel.requests).toEqual([]);
+  expect(loadStore(paths).hosts[new URL(url).hostname]?.disabled).toBeTruthy();
+});
+
+it('legacy failed entries with unknown last visit are fenced instead of automatically retried', async () => {
+  const paths=tempPaths();seed(paths,KALLAX);
+  const first=await run(paths,ikeaPages());expect(first.summary.itemsStored).toBeGreaterThan(0);
+  const store=loadStore(paths);const entry=store.queue.find((e)=>e.url===KALLAX)!;
+  entry.state='failed';entry.lastVisitedAt=null;saveStore(paths,store);
+  const next=await run(paths,ikeaPages(),fakeClock(T0+60*DAY));
+  expect(next.channel.requests).toEqual([]);
+  expect(loadStore(paths).queue.find((e)=>e.url===KALLAX)?.state).toBe('failed');
 });

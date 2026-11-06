@@ -41,6 +41,10 @@ pub enum CrawlSite {
     Cm29,
     #[serde(rename = "ikea")]
     Ikea,
+    #[serde(rename = "muji")]
+    Muji,
+    #[serde(rename = "daiso")]
+    Daiso,
 }
 
 impl CrawlSite {
@@ -49,6 +53,8 @@ impl CrawlSite {
             Self::Ohou => "ohou",
             Self::Cm29 => "29cm",
             Self::Ikea => "ikea",
+            Self::Muji => "muji",
+            Self::Daiso => "daiso",
         }
     }
     pub fn primary_host(self) -> &'static str {
@@ -56,10 +62,14 @@ impl CrawlSite {
             Self::Ohou => "ohou.se",
             Self::Cm29 => "www.29cm.co.kr",
             Self::Ikea => "www.ikea.com",
+            Self::Muji => "mujikorea.co.kr",
+            Self::Daiso => "www.daisomall.co.kr",
         }
     }
     fn host_allowed(self, host: &str, path: &str) -> bool {
         match self {
+            Self::Muji => host == "mujikorea.co.kr" && path.starts_with("/products/"),
+            Self::Daiso => host == "www.daisomall.co.kr" && path.starts_with("/pd/"),
             Self::Ohou => host == "ohou.se" || host == "store.ohou.se",
             Self::Cm29 => host == "www.29cm.co.kr",
             Self::Ikea => host == "www.ikea.com" && (path == "/kr" || path.starts_with("/kr/")),
@@ -356,6 +366,8 @@ fn id_parts(id: &str) -> Option<(CrawlSite, &str, Option<&str>)> {
         "ohou" => CrawlSite::Ohou,
         "29cm" => CrawlSite::Cm29,
         "ikea" => CrawlSite::Ikea,
+        "muji" => CrawlSite::Muji,
+        "daiso" => CrawlSite::Daiso,
         _ => return None,
     };
     let product = parts.next()?;
@@ -956,6 +968,22 @@ fn assemble(items: &[CrawledItem], created_at: &str, generator: &BundleGenerator
         },
         items: sorted,
     }
+}
+
+/// Safe external product links for the read-only space search.
+pub fn allowed_product_url(url: &str) -> bool {
+    valid_locator(url)
+        && url_parts(url).is_some_and(|(host, path)| {
+            [
+                CrawlSite::Muji,
+                CrawlSite::Daiso,
+                CrawlSite::Ohou,
+                CrawlSite::Cm29,
+                CrawlSite::Ikea,
+            ]
+            .iter()
+            .any(|site| site.host_allowed(host, path))
+        })
 }
 
 #[cfg(test)]
