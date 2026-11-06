@@ -77,3 +77,11 @@ describe('block / login / captcha pages report blocked and extract nothing', () 
     expect(await handleJob({ id: 'z', kind: 'robots', url: robots }, env({ [robots]: { text: '', status: 429 } }))).toMatchObject({ type: 'blocked', reason: 'http_429' });
   });
 });
+
+it('pauses an empty Daiso listing instead of accepting navigation-only DOM', async () => {
+  const url = 'https://www.daisomall.co.kr/ds/exhCtgr/C208/CTGR_00016';
+  const e = env({ [url]: { html: '<html><body><nav>다이소</nav></body></html>' } });
+  expect(await handleJob({ id: 'empty', kind: 'listing', url }, e)).toMatchObject({ type: 'blocked', reason: 'empty_listing' });
+  const linked = env({ [url]: { html: '<html><body><a href="https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123">상품</a></body></html>' } });
+  expect(await handleJob({ id: 'links', kind: 'listing', url }, linked)).toMatchObject({ type: 'result', links: ['https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123'] });
+});

@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { normalizeConfig } from '../config.ts';
 import { runCrawl } from '../scheduler.ts';
-import { acquireLock, loadStore, saveStore } from '../state.ts';
+import { acquireLock, emptyHost, loadStore, saveStore } from '../state.ts';
 import { BILLY, FAST, IKEA_LISTING, KALLAX, T0, fakeClock, fakeExtension, fixture, ikeaPages, tempPaths } from './helpers.ts';
 import type { Page } from './helpers.ts';
 
@@ -244,8 +244,11 @@ describe('resumable queue, re-crawl interval, kill switch, lock', () => {
   });
 });
 
-it.each(['https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123'])('observed blocked source %s cannot crawl without operator review', async (url) => {
+it.each(['https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123'])('operator-disabled source %s cannot crawl without explicit resume', async (url) => {
   const paths = tempPaths(); seed(paths, url);
+  const store = loadStore(paths);
+  store.hosts[new URL(url).hostname] = { ...emptyHost(), disabled: { reason: 'blocked:empty_listing', at: new Date(T0).toISOString() } };
+  saveStore(paths, store);
   const result = await run(paths, {});
   expect(result.channel.requests).toEqual([]);
   expect(loadStore(paths).hosts[new URL(url).hostname]?.disabled).toBeTruthy();

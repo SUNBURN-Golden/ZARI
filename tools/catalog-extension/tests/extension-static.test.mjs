@@ -18,7 +18,7 @@ describe('manifest', () => {
   it('declares exactly the allowed permissions and hosts', () => {
     expect([...manifest.permissions].sort()).toEqual(['activeTab', 'nativeMessaging', 'scripting']);
     expect([...manifest.host_permissions].sort()).toEqual([
-      'https://mujikorea.co.kr/products/*', 'https://mujikorea.co.kr/robots.txt', 'https://www.daisomall.co.kr/pd/*', 'https://www.daisomall.co.kr/robots.txt',
+      'https://mujikorea.co.kr/products/*', 'https://mujikorea.co.kr/robots.txt', 'https://www.daisomall.co.kr/ds/*', 'https://www.daisomall.co.kr/pd/*', 'https://www.daisomall.co.kr/robots.txt',
       'https://ohou.se/*', 'https://store.ohou.se/*', 'https://www.29cm.co.kr/*', 'https://www.ikea.com/kr/*',
     ].sort());
     expect(manifest.manifest_version).toBe(3);

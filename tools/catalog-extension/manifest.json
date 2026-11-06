@@ -8,6 +8,7 @@
   "host_permissions": [
     "https://mujikorea.co.kr/products/*",
     "https://mujikorea.co.kr/robots.txt",
+    "https://www.daisomall.co.kr/ds/*",
     "https://www.daisomall.co.kr/pd/*",
     "https://www.daisomall.co.kr/robots.txt",
     "https://ohou.se/*",

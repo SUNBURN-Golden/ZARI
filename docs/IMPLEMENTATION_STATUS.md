@@ -2511,3 +2511,38 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   축/옵션/외경 독립 확인과 비작성자 exact-HEAD review는 미완료다. 사용자 지시로
   현재 기능 branch를 Codex 명의로 commit하고 `sg feat/space-fit-mvp`에 push한다.
   main push·merge·태그 변경·앱 배포는 수행하지 않는다.
+
+### 2026-11-06 18:57 KST 승인 — DAISO 확장 allowlist / headed Chrome DS3
+
+- DAISO shared allowlist에 `/ds/`, `/pd/` pathPrefixes를 적용하고 manifest에
+  `/ds/*`를 추가했다. 기존 `/pd/pdl/SCR_PDL_0001?pdNo=` 상품 식별은 유지했다.
+  승인된 재개에 따라 static blockedReason만 제거했다. live 차단 뒤 operator
+  resume 전까지 host disabled를 유지하는 scheduler 계약은 보존했다.
+- 확장 render settle을 robots 1.5초 / 상품 2.5초 / listing 15초로 구분했다.
+  DAISO listing의 추출 상품 링크가 0개이면 empty_listing 차단으로 반환하여
+  navigation/footer만 있는 DOM을 성공으로 처리하지 않는다.
+- 실제 Google Chrome 156.0.8078.47, DISPLAY=:12, 전용 ext-state profile과
+  `--load-extension`으로 실행했다. switch만으로 확장이 로드되지 않아 Chrome
+  developer UI의 Load unpacked로 같은 경로를 설치했다. 최초 두 connection
+  setup은 90초 만료로 끝났고 DAISO 요청은 0회였다. 최종 CLI run handler는
+  extension 연결 대기만 600초로 늘렸으며 native connection이 실제 성립했다.
+  Playwright/CDP/UA 변경/로그인/프록시/우회는 사용하지 않았다. profile에서
+  이미지 로드를 차단하고 수집기는 DOM/meta/JSON-LD 텍스트만 읽었다.
+- 시드는 승인 category URL 단 하나다. config는 minIntervalMs=30000,
+  pagesPerRun=15, dailyPerHost=20, jitterMs=0, publishEvery=0이다.
+  robots **200**, `*` Crawl-delay **30초**, `/ds/`, `/pd/pdr/` Allow 확인.
+  robots job 10:07:51.108Z → category job 10:08:21.138Z (**30.030초**).
+  category에서 load 완료 뒤 15초 대기에도 상품 링크 **0**, empty_listing으로
+  host를 비활성화하고 종료했다. robots 1회/category 1회/product 0회,
+  DAISO **0 items / 0 with dims**, AI 호출 0회다. 재방문하지 않았다.
+- `/workspace/zari-fit-run/state/daiso.disabled`를 재생성했다. MUJI real-items.json과
+  상판 59138의 기존 제외 상태를 변경하지 않았다. 새 번들/R2 게시 없음.
+  Computer egress는 활성화하지 않았다. 다음 합법적 선택지는 준태님 컴퓨터를
+  통한 Settings → Computer egress이며 별도 사람 판단 후 진행해야 한다.
+- 검증: `npx vitest run tools/catalog-extension/tests tools/catalog-crawler-bot/tests`
+  **160 passed / 13 files**, `npm run typecheck`, `git diff --check` 통과.
+  앱/Rust 계산 변경 없음, browser/native WASM parity는 재실행하지 않았다.
+- 근거: `/workspace/zari-fit-run/DS3_EXT_RESULT.md`, ext-state/run.log,
+  ext-state/hosts.json, ext-state/cli-run.log. 비작성자 exact-HEAD review 미완료.
+  사용자 승인 범위에서 Codex 명의 commit과 `sg feat/space-fit-mvp` push만 수행한다.
+  main push/merge/tag 변경/앱 배포는 수행하지 않는다.

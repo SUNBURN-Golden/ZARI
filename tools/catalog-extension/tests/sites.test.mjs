@@ -27,3 +27,14 @@ describe('allowlist', () => {
     expect(SITES['29cm'].denyPrefixes).toEqual(expect.arrayContaining(['/embed/', '/home/embed/', '/my-page/', '/order/', '/auth/', '/inbox/', '/content/post/preview']));
   });
 });
+
+it('allows Daiso category and product paths while preserving product identity', () => {
+  const category = 'https://www.daisomall.co.kr/ds/exhCtgr/C208/CTGR_00016';
+  const product = 'https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123';
+  expect(normalizeUrl(category)).toBe(category);
+  expect(normalizeUrl(product)).toBe(product);
+  expect(productKey(category)).toBeNull();
+  expect(productKey(product)).toEqual({ site: 'daiso', productId: '123' });
+  expect(isVisitable('https://www.daisomall.co.kr/member/login')).toBe(false);
+  expect(SITES.daiso.blockedReason).toBeUndefined();
+});

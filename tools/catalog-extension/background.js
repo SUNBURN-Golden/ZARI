@@ -6,7 +6,9 @@ import { collectPage, collectRobots } from './lib/collector.js';
 
 const HOST_NAME = 'com.zari.catalog_bot';
 const LOAD_TIMEOUT_MS = 45000;
-const SETTLE_MS = 1500;
+const ROBOTS_SETTLE_MS = 1500;
+const PRODUCT_SETTLE_MS = 2500;
+const LISTING_SETTLE_MS = 15000;
 let port = null;
 let busy = false;
 
@@ -33,7 +35,8 @@ async function collect(url, kind) {
   const tab = await chrome.tabs.create({ url, active: true });
   try {
     await loaded(tab.id);
-    await wait(SETTLE_MS);
+    // Listings may populate links asynchronously after the load event.
+    await wait(kind === 'listing' ? LISTING_SETTLE_MS : kind === 'robots' ? ROBOTS_SETTLE_MS : PRODUCT_SETTLE_MS);
     const [injection] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: kind === 'robots' ? collectRobots : collectPage,

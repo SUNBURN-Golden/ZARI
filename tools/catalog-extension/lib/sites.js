@@ -11,9 +11,8 @@ export const SITES = {
     denyPrefixes: [], product: [/^\/products\/(\d+)\/?$/, /^\/products\/view\/(\d+)\/?$/],
   },
   daiso: {
-    key: 'daiso', hosts: ['www.daisomall.co.kr'], pathPrefix: '/pd/',
+    key: 'daiso', hosts: ['www.daisomall.co.kr'], pathPrefixes: ['/ds/', '/pd/'],
     denyPrefixes: [], product: [],
-    blockedReason: 'empty_render_real_chrome:2026-11-05',
   },
   ohou: {
     key: 'ohou',
@@ -73,7 +72,7 @@ export function normalizeUrl(raw) {
   const url = parseHttpsUrl(raw);
   if (!url) return null;
   const site = siteOfHost(url.hostname);
-  if (!site || !url.pathname.startsWith(site.pathPrefix)) return null;
+  if (!site || !(site.pathPrefixes ?? [site.pathPrefix]).some((prefix) => url.pathname.startsWith(prefix))) return null;
   const path = url.pathname.toLowerCase();
   if (site.denyPrefixes.some((prefix) => path.startsWith(prefix))) return null;
   if ([...url.searchParams.keys()].some((key) => DENIED_PARAM.test(key))) return null;
