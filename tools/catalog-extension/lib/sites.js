@@ -87,7 +87,7 @@ export function productKey(raw) {
   const url = parseHttpsUrl(raw);
   const site = url && siteOfHost(url.hostname);
   if (!url || !site) return null;
-  if (site.key === 'daiso' && url.pathname === '/pd/pdl/SCR_PDL_0001' && /^\d{1,20}$/.test(url.searchParams.get('pdNo') ?? '')) {
+  if (site.key === 'daiso' && ['/pd/pdr/SCR_PDR_0001', '/pd/pdl/SCR_PDL_0001'].includes(url.pathname) && /^\d{1,20}$/.test(url.searchParams.get('pdNo') ?? '')) {
     return { site: site.key, productId: url.searchParams.get('pdNo') };
   }
   for (const pattern of site.product) {
@@ -107,6 +107,7 @@ export function canonicalProductUrl(raw) {
   const key = productKey(raw);
   const normalized = normalizeUrl(raw);
   if (!key || !normalized) return null;
+  if (key.site === 'daiso') return `https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=${key.productId}`;
   const url = new URL(normalized);
-  return `${url.origin}${url.pathname}${key.site === 'daiso' ? `?pdNo=${key.productId}` : ''}`;
+  return `${url.origin}${url.pathname}`;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { extractListing, extractProducts } from '../lib/extract.js';
 import { normalizeUrl, productKey } from '../lib/sites.js';
 import { snapshotFromHtml, fixture } from './html-snapshot.mjs';
-const urls = { muji: 'https://mujikorea.co.kr/products/123456', daiso: 'https://www.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=123456' };
+const urls = { muji: 'https://mujikorea.co.kr/products/123456', daiso: 'https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=123456' };
 for (const [site, url] of Object.entries(urls)) describe(site, () => {
   it('keeps options separate, refuses inner/package sizes, never confirms', () => {
     const result = extractProducts(snapshotFromHtml(fixture(site, 'storage.html'), url), url);
@@ -31,4 +31,9 @@ for (const [site, url] of Object.entries(urls)) describe(site, () => {
     expect(extractListing({ links: [url, url + '&utm_source=x'] }, url)).toEqual([url]);
     expect(normalizeUrl(url.replace(new URL(url).hostname, 'evil.' + new URL(url).hostname))).toBeNull();
   });
+});
+
+it('deduplicates live PDR and legacy PDL Daiso listing links', () => {
+  const url = 'https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=1044144';
+  expect(extractListing({ links: [url + '&recmYn=N', url.replace('/pdr/SCR_PDR_', '/pdl/SCR_PDL_') + '&utm_source=x'] }, 'https://www.daisomall.co.kr/ds/exhCtgr/C208/CTGR_00016')).toEqual([url]);
 });

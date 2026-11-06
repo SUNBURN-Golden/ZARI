@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SITES, isVisitable, normalizeUrl, productKey } from '../lib/sites.js';
+import { SITES, canonicalProductUrl, isVisitable, normalizeUrl, productKey } from '../lib/sites.js';
 
 describe('allowlist', () => {
   it('accepts only https on the three sites', () => {
@@ -38,3 +38,16 @@ it('allows Daiso category and product paths while preserving product identity', 
   expect(isVisitable('https://www.daisomall.co.kr/member/login')).toBe(false);
   expect(SITES.daiso.blockedReason).toBeUndefined();
 });
+
+for (const path of ['/pd/pdr/SCR_PDR_0001', '/pd/pdl/SCR_PDL_0001']) {
+  it(`recognizes and canonicalizes Daiso ${path} with extra parameters`, () => {
+    const raw = `https://www.daisomall.co.kr${path}?recmYn=N&pdNo=1044144&utm_source=test#detail`;
+    expect(productKey(raw)).toEqual({ site: 'daiso', productId: '1044144' });
+    expect(normalizeUrl(raw)).toBe(`https://www.daisomall.co.kr${path}?pdNo=1044144&recmYn=N`);
+    expect(canonicalProductUrl(raw)).toBe('https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=1044144');
+    for (const id of ['', 'abc', '-1', '12x', '1'.repeat(21)]) {
+      expect(productKey(`https://www.daisomall.co.kr${path}?pdNo=${id}`)).toBeNull();
+      expect(canonicalProductUrl(`https://www.daisomall.co.kr${path}?pdNo=${id}`)).toBeNull();
+    }
+  });
+}

@@ -2546,3 +2546,21 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   ext-state/hosts.json, ext-state/cli-run.log. 비작성자 exact-HEAD review 미완료.
   사용자 승인 범위에서 Codex 명의 commit과 `sg feat/space-fit-mvp` push만 수행한다.
   main push/merge/tag 변경/앱 배포는 수행하지 않는다.
+
+### 2026-11-06 DS4 — DAISO PDR 상품 식별 수정 / 승인된 단일 재개
+
+- shared productKey가 numeric pdNo를 가진 PDR/PDL 두 경로를 인식하고,
+  canonicalProductUrl은 PDR + pdNo만 남긴다. recmYn=N 등 부가 query가 있는
+  live 형태와 legacy listing dedupe, invalid ID, parser fixture 회귀를 검증했다.
+- extension + crawler-bot unit tests: **163 passed / 13 files**. typecheck 통과.
+- 승인된 ext-state host resume와 기존 extension ID/native host/profile, DISPLAY=:12의
+  headed Chrome으로 단 한 번 재개했다. minIntervalMs=30000/pagesPerRun=15/
+  dailyPerHost=20을 유지하고 기존 daily count도 보존했다. 단일 category seed 유지.
+- fresh robots 요청 2026-11-06T10:19:23.486Z → **403** 판정으로 host closed.
+  listing/product 방문 0, 새 상품 0/치수 0, DeepSeek 0회. 추가 요청/재시도 없이
+  daiso.disabled를 재생성했다. 기존 MUJI 9개와 상판 제외는 변경하지 않았다.
+  새 bundle/R2 게시 없음. 앱 배포/main push/merge 없음.
+- 근거: /workspace/zari-fit-run/DS4_PDR_RESULT.md, ext-state/ds4-cli.log,
+  ext-state/run.log, hosts.json. Rust/app 변경 없음; browser/native WASM parity는
+  재실행하지 않았다. 비작성자 exact-HEAD review 미완료. 다음은 별도 owner resume
+  판단과 실제 상품 치수/옵션 독립 확인이다. Codex 명의 commit 후 sg의 현재 branch만 push.
