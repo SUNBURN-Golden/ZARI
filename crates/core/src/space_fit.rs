@@ -1207,6 +1207,58 @@ mod tests {
         ));
     }
     #[test]
+    fn confirmed_offer_price_with_listing_pack_becomes_reference() {
+        let mut value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            None,
+        );
+        value["packQuantity"] = json!({"value": 2, "basis": "confirmed", "evidence": "2개입"});
+        let mut i = input_with(json!([value.clone()]), ["30.5"; 3], vec![listing(&value)]);
+        for offer in &mut i.catalog.offers {
+            offer.pack_price = Fact::Known {
+                value: MoneyKrw::new(2000).unwrap(),
+                provenance: Provenance {
+                    verification: VerificationStatus::Confirmed,
+                    ..unverified()
+                },
+            };
+            offer.pack_quantity = Fact::unknown();
+        }
+        rehash(&mut i);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        assert!(matches!(
+            &p.singles[0].blocks[0].price,
+            SpaceFitPrice::Known {
+                pack_quantity: Some(pack),
+                unit_price_krw: Some(unit),
+                basis: SpaceFitPriceBasis::Reference,
+                ..
+            } if pack == "2" && unit == "1000"
+        ));
+    }
+    #[test]
+    fn out_of_range_listing_pack_reaching_search_is_refused() {
+        let mut value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            Some("1000 KRW"),
+        );
+        let i0 = input_with(json!([value.clone()]), ["30.5"; 3], vec![]);
+        for bad in [0, 10_001] {
+            value["packQuantity"] = json!({"value": bad, "basis": "confirmed", "evidence": "x"});
+            let mut i = i0.clone();
+            i.listings = vec![listing(&value)];
+            assert_eq!(
+                SpaceFitSearch::new(i).err().unwrap(),
+                "space_fit_listing_invalid",
+                "{bad}"
+            );
+        }
+    }
+    #[test]
     fn offer_pack_quantity_wins_over_listing() {
         let mut value = item_value(
             "crawl:muji:1",

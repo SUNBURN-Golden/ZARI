@@ -10077,7 +10077,7 @@
       "type": "integer"
     },
     "PackQuantityBasis": {
-      "description": "Where a pack quantity came from. `confirmed`: the seller's own page text\nstates it (\"입수 1개입\", \"2개입\", \"상품구성 수납함 1개\"). `reference`: inferred\n(e.g. a single product with no pack wording). Either way the item stays\n`unconfirmed` and space-fit prices built from it are reference values.",
+      "description": "Where a pack quantity came from. NOTE: this never confirms a price; any\nspace-fit price that uses a listing pack quantity is `reference` (참고치).\n`confirmed`: the seller's own page text\nstates it (\"입수 1개입\", \"2개입\", \"상품구성 수납함 1개\"). `reference`: inferred\n(e.g. a single product with no pack wording). Either way the item stays\n`unconfirmed` and space-fit prices built from it are reference values.",
       "enum": [
         "confirmed",
         "reference"

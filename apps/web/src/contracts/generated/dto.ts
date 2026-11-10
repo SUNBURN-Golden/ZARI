@@ -237,7 +237,9 @@ export type DimensionConfidence = 'high' | 'medium' | 'low' | 'unparsed';
  */
 export type LengthUnit = 'mm' | 'cm' | 'm';
 /**
- * Where a pack quantity came from. `confirmed`: the seller's own page text
+ * Where a pack quantity came from. NOTE: this never confirms a price; any
+ * space-fit price that uses a listing pack quantity is `reference` (참고치).
+ * `confirmed`: the seller's own page text
  * states it ("입수 1개입", "2개입", "상품구성 수납함 1개"). `reference`: inferred
  * (e.g. a single product with no pack wording). Either way the item stays
  * `unconfirmed` and space-fit prices built from it are reference values.

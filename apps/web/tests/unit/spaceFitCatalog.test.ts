@@ -84,6 +84,6 @@ it('keeps a listing pack quantity in the space-fit side channel',async()=>{
   const reviewer={review:vi.fn(async()=>({quarantined:false,snapshot} as unknown as CatalogBundleReview))};
   const loaded=await localCatalog(text,reviewer);
   const muji=loaded.listings.filter((item)=>item.source==='muji');
-  expect(muji.map((item)=>item.packQuantity)).toEqual([{basis:'confirmed',evidence:'2개입',value:2},{basis:'confirmed',evidence:'2개입',value:2}]);
+  expect(muji.map((item)=>[item.name,item.packQuantity])).toEqual([['합성 수납함 (소형)',{basis:'confirmed',evidence:'2개입',value:2}],['합성 수납함 (대형)',{basis:'reference',evidence:'단품 추정',value:1}]]);
   expect(loaded.listings.find((item)=>item.source==='daiso')?.packQuantity).toBeUndefined();
 });

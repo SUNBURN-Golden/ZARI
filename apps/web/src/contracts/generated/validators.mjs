@@ -72366,7 +72366,7 @@ function validate66(data, { instancePath = "", parentData, parentDataProperty, r
   validate66.errors = vErrors;
   return errors === 0;
 }
-var schema74 = { "description": 'Where a pack quantity came from. `confirmed`: the seller\'s own page text\nstates it ("\uC785\uC218 1\uAC1C\uC785", "2\uAC1C\uC785", "\uC0C1\uD488\uAD6C\uC131 \uC218\uB0A9\uD568 1\uAC1C"). `reference`: inferred\n(e.g. a single product with no pack wording). Either way the item stays\n`unconfirmed` and space-fit prices built from it are reference values.', "enum": ["confirmed", "reference"], "title": "PackQuantityBasis", "type": "string" };
+var schema74 = { "description": 'Where a pack quantity came from. NOTE: this never confirms a price; any\nspace-fit price that uses a listing pack quantity is `reference` (\uCC38\uACE0\uCE58).\n`confirmed`: the seller\'s own page text\nstates it ("\uC785\uC218 1\uAC1C\uC785", "2\uAC1C\uC785", "\uC0C1\uD488\uAD6C\uC131 \uC218\uB0A9\uD568 1\uAC1C"). `reference`: inferred\n(e.g. a single product with no pack wording). Either way the item stays\n`unconfirmed` and space-fit prices built from it are reference values.', "enum": ["confirmed", "reference"], "title": "PackQuantityBasis", "type": "string" };
 function validate68(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;

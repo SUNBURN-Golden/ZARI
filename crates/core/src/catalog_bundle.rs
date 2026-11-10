@@ -183,7 +183,9 @@ pub struct CrawledItem {
     pub pack_quantity: Option<BundlePackQuantity>,
 }
 
-/// Where a pack quantity came from. `confirmed`: the seller's own page text
+/// Where a pack quantity came from. NOTE: this never confirms a price; any
+/// space-fit price that uses a listing pack quantity is `reference` (참고치).
+/// `confirmed`: the seller's own page text
 /// states it ("입수 1개입", "2개입", "상품구성 수납함 1개"). `reference`: inferred
 /// (e.g. a single product with no pack wording). Either way the item stays
 /// `unconfirmed` and space-fit prices built from it are reference values.
@@ -582,7 +584,7 @@ fn check_item(item: &CrawledItem, codes: &mut BTreeSet<String>) -> Option<ItemRo
             codes.insert("pack_quantity_invalid".into());
         }
         if pack.evidence.trim().is_empty() {
-            codes.insert("required_text_missing".into());
+            codes.insert("pack_evidence_missing".into());
         }
         if pack.evidence.chars().count() > MAX_PACK_EVIDENCE_CHARS {
             codes.insert("text_too_long".into());
@@ -1153,14 +1155,19 @@ mod tests {
         let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
         assert_eq!(build.codes, Vec::<String>::new());
         let text = build.bundle_text.unwrap();
-        assert!(text.contains(r#""packQuantity":{"basis":"confirmed","evidence":"2개입","value":2}"#));
+        assert!(
+            text.contains(r#""packQuantity":{"basis":"confirmed","evidence":"2개입","value":2}"#)
+        );
         let review = review_bundle_text(&text);
         assert!(!review.quarantined, "{review:?}");
     }
 
     #[test]
     fn pack_quantity_out_of_range_or_unknown_field_is_rejected() {
-        for (value, code) in [(0, "pack_quantity_invalid"), (10_001, "pack_quantity_invalid")] {
+        for (value, code) in [
+            (0, "pack_quantity_invalid"),
+            (10_001, "pack_quantity_invalid"),
+        ] {
             let mut items = sample();
             items[0].pack_quantity = Some(BundlePackQuantity {
                 value,
@@ -1169,16 +1176,54 @@ mod tests {
             });
             let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
             assert!(
-                build.rejected.iter().any(|r| r.codes.contains(&code.to_owned())),
+                build
+                    .rejected
+                    .iter()
+                    .any(|r| r.codes.contains(&code.to_owned())),
                 "{value}: {:?}",
                 build.rejected
             );
         }
+        for (evidence, code) in [
+            (" ".to_owned(), "pack_evidence_missing"),
+            ("가".repeat(121), "text_too_long"),
+        ] {
+            let mut items = sample();
+            items[0].pack_quantity = Some(BundlePackQuantity {
+                value: 1,
+                basis: PackQuantityBasis::Reference,
+                evidence,
+            });
+            let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
+            assert!(
+                build
+                    .rejected
+                    .iter()
+                    .any(|r| r.codes.contains(&code.to_owned())),
+                "{code}: {:?}",
+                build.rejected
+            );
+        }
+        let mut items = sample();
+        items[0].pack_quantity = Some(BundlePackQuantity {
+            value: 1,
+            basis: PackQuantityBasis::Reference,
+            evidence: "가".repeat(120),
+        });
+        assert!(
+            build_bundle(items, "2026-10-15T01:00:00Z", generator())
+                .rejected
+                .is_empty()
+        );
         let mut value = serde_json::to_value(&sample()[0]).unwrap();
-        value["packQuantity"] = serde_json::json!({"value": 1, "basis": "confirmed", "evidence": "1개", "extra": 1});
+        value["packQuantity"] =
+            serde_json::json!({"value": 1, "basis": "confirmed", "evidence": "1개", "extra": 1});
         let text = serde_json::to_string(&vec![value]).unwrap();
         let build = build_bundle_from_json(&text, "2026-10-15T01:00:00Z", generator());
-        assert_eq!(build.rejected[0].codes, vec!["item_schema_invalid".to_owned()]);
+        assert_eq!(
+            build.rejected[0].codes,
+            vec!["item_schema_invalid".to_owned()]
+        );
     }
 
     #[test]
