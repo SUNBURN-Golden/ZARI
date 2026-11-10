@@ -199,3 +199,61 @@
 .space-empty:focus-visible { outline: var(--zari-focus-width) solid var(--zari-focus-ring); }
 .space-more { display: inline-flex; align-items: center; justify-content: center; min-height: var(--zari-touch-min-height); margin-block: var(--zari-space-2); padding: 0 var(--zari-space-4); border: var(--zari-border-width) solid var(--zari-border-control); border-radius: var(--zari-radius-control); background: var(--zari-surface-panel); color: var(--zari-text-primary); font-size: var(--zari-text-lg); word-break: keep-all; }
 .space-more:disabled { color: var(--zari-text-secondary); }
+
+/* --- PR-E typography and rhythm (apple.com/kr measurements, docs/evidence/space-fit-pr-e) ---
+   One hierarchy: h1 display → count line (single big accent) → row title → body → secondary.
+   Hangul keeps 0 tracking and 1.6 leading; only display sizes tighten. 8pt vertical rhythm. */
+.space-fit-shell { font-family: var(--zari-font-text); font-size: var(--zari-type-body); line-height: var(--zari-type-body-line); letter-spacing: var(--zari-type-tracking-text); text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+.space-fit-shell button, .space-fit-shell summary, .space-fit-shell a, .space-fit-shell input { font-family: inherit; line-height: var(--zari-type-label-line); letter-spacing: var(--zari-type-tracking-text); }
+.space-fit-main h1 { font-family: var(--zari-font-display); font-size: var(--zari-type-display); line-height: var(--zari-type-display-line); letter-spacing: var(--zari-type-display-tracking); font-weight: var(--zari-weight-semibold); margin: 0 0 var(--zari-space-4); }
+#space-help { margin: 0 0 var(--zari-space-8); color: var(--zari-text-secondary); }
+.space-fit-main .easy-dimensions { gap: var(--zari-space-4); }
+.space-clearance-details { margin-top: var(--zari-space-6); }
+.space-find { font-size: var(--zari-type-body); }
+
+/* Result section: scope notes are secondary; summary is a calm title, not a second accent. */
+.space-fit-main section > p { margin: 0 0 var(--zari-space-2); color: var(--zari-text-secondary); }
+.space-fit-main section > p + p { margin-bottom: var(--zari-space-6); }
+.space-summary { font-family: var(--zari-font-display); font-size: var(--zari-type-title); line-height: var(--zari-type-title-line); margin: var(--zari-space-8) 0 var(--zari-space-4); }
+.space-chip-row { gap: var(--zari-space-3); padding-block: var(--zari-space-2) var(--zari-space-4); }
+
+/* Rows breathe: 40px between rows, 8–16px inside, groups separated by 16px. */
+.space-results { margin: var(--zari-space-2) 0 var(--zari-space-8); }
+.space-results > li { padding-block: var(--zari-space-8) calc(var(--zari-space-8) + var(--zari-space-2)); }
+.space-meta-block { margin: 0 0 var(--zari-space-4); }
+.space-meta { gap: var(--zari-space-3) var(--zari-space-6); line-height: var(--zari-type-label-line); }
+.space-meta-entry { gap: var(--zari-space-2); }
+.space-seller { padding: 0 var(--zari-space-3); font-weight: var(--zari-weight-medium); }
+.space-badge { padding: 0 var(--zari-space-4); }
+.space-badge-note { margin-top: var(--zari-space-3); line-height: var(--zari-type-body-line); }
+.space-row-title { margin: 0 0 var(--zari-space-3); font-size: var(--zari-type-title); line-height: var(--zari-type-title-line); font-weight: var(--zari-weight-semibold); color: var(--zari-text-primary); }
+.space-count { margin: 0 0 var(--zari-space-3); font-family: var(--zari-font-display); font-size: var(--zari-type-result); line-height: var(--zari-type-result-line); letter-spacing: var(--zari-type-result-tracking); font-weight: var(--zari-weight-bold); }
+.space-remaining { margin: 0 0 var(--zari-space-2); line-height: var(--zari-type-body-line); }
+.space-price-line { margin: 0; }
+.space-price-block { margin-top: var(--zari-space-2); }
+.space-links { gap: var(--zari-space-3); margin: var(--zari-space-6) 0 var(--zari-space-4); }
+.space-fit-main .space-link-row { gap: var(--zari-space-1); padding: var(--zari-space-3) var(--zari-space-4); border-radius: var(--zari-radius-panel); }
+.space-link-name { font-weight: var(--zari-weight-medium); line-height: var(--zari-type-label-line); }
+.space-link-action { line-height: var(--zari-type-label-line); }
+.space-shape { margin-top: var(--zari-space-2); }
+.space-shape-body { gap: var(--zari-space-3); padding-block: var(--zari-space-2) var(--zari-space-4); }
+.space-shape-body p { line-height: var(--zari-type-body-line); }
+
+/* Filters: legends are small titles; options get room. */
+.space-filter-panel { gap: var(--zari-space-6); }
+.space-filter-group legend { margin-bottom: var(--zari-space-3); line-height: var(--zari-type-label-line); }
+.space-filter-options { gap: var(--zari-space-3) var(--zari-space-2); }
+.space-sheet { padding: var(--zari-space-6) var(--zari-space-6) max(var(--zari-space-6), env(safe-area-inset-bottom)); }
+.space-sheet-head { margin-bottom: var(--zari-space-6); }
+.space-sheet-head h2 { font-family: var(--zari-font-display); letter-spacing: var(--zari-type-display-tracking); }
+.space-sheet-footer { margin-top: var(--zari-space-8); gap: var(--zari-space-3); }
+.space-clearance-description { margin: 0 0 var(--zari-space-3); color: var(--zari-text-secondary); line-height: var(--zari-type-body-line); }
+
+@media (min-width: 64rem) {
+  .space-fit-main h1 { font-size: var(--zari-type-display-wide); }
+  .space-count { font-size: var(--zari-type-result-wide); }
+  .space-results-layout { gap: var(--zari-space-12); }
+}
+@media (max-width: 22.5rem) {
+  .space-fit-shell { padding-inline: var(--zari-space-4); }
+}
