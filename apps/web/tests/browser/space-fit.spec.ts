@@ -4,15 +4,16 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 const catalog=resolve('tests/fixtures/space-fit/catalog.json');
+const pricedCatalog=resolve('tests/fixtures/space-fit/catalog-priced.json');
 const input=readFileSync('tests/fixtures/space-fit/input.json','utf8');
 test.use({storageState:{cookies:[],origins:[]},serviceWorkers:'block'});
 async function fill(page: import('@playwright/test').Page,values=['60','40','40']) {
   for(const [i,name] of ['가로','깊이','높이'].entries()) await page.getByRole('textbox',{name,exact:true}).fill(values[i]!);
 }
-async function importCatalog(page: import('@playwright/test').Page) {
+async function importCatalog(page: import('@playwright/test').Page, file=catalog) {
   await page.getByText('개발용 상품 파일',{exact:true}).click();
-  await page.getByLabel('치수 번들 JSON').setInputFiles(catalog);
-  await expect(page.getByText(/개발용 파일: catalog.json/)).toBeVisible();
+  await page.getByLabel('치수 번들 JSON').setInputFiles(file);
+  await expect(page.getByText(/개발용 파일: catalog(-priced)?\.json/)).toBeVisible();
 }
 async function search(page: import('@playwright/test').Page) {
   await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
@@ -37,7 +38,7 @@ test('combined results, summary focus, unmeasured group, sticky action and stale
   const first=rows.first();
   await expect(first.getByText('무인양품')).toBeVisible();
   await expect(first.getByText(/수납함 \d+개가 딱 들어가요/)).toBeVisible();
-  await expect(first.getByText(/남아요/)).toBeVisible();
+  await expect(first.locator('.space-remaining')).toContainText('남아요');
   await expect(first.getByText('가격은 파는 곳에서 봐 주세요').first()).toBeVisible();
   // A combination names each product in its link, so identical link texts never point to different products.
   const links=first.getByRole('link',{name:/판매처에서 보기 \(새 탭\)$/});
@@ -88,9 +89,9 @@ test('reference size badge is visible, toggles its explanation and works from th
   await expect(badge).toHaveAttribute('aria-expanded','true');
   await expect(note).toBeVisible();
 });
-test('a space nothing fits shows the approved empty summary and no rows',async({page})=>{
+test('a space nothing fits shows the approved no-fit advice and no rows',async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['1','1','1']); await search(page);
-  await expect(page.locator('#space-summary')).toHaveText('고르신 내용에 맞는 수납함이 아직 없어요');
+  await expect(page.locator('#space-summary')).toHaveText('이 자리에 맞는 수납함이 없어요. 크기를 조금 넓히거나 여유 틈을 줄여 보세요');
   await expect(page.locator('.space-results > li')).toHaveCount(0);
 });
 test('reference badge shows a visible focus ring from the keyboard',async({page})=>{
@@ -109,6 +110,26 @@ test('unknown pack quantity keeps the honest price copy',async({page})=>{
   for(const text of await prices.allTextContents()) {
     expect(text.trim()).toBe('가격은 파는 곳에서 봐 주세요');
   }
+});
+test('a listing price without pack quantity shows as the listing price with the reference note',async({page})=>{
+  await page.goto('/#/space-fit'); await importCatalog(page,pricedCatalog); await fill(page); await search(page);
+  const prices=page.locator('.space-price-line');
+  const texts=(await prices.allTextContents()).map((t)=>t.trim());
+  expect(texts.length).toBeGreaterThan(0);
+  for(const text of texts) {
+    expect(text).toMatch(/^(19,900|29,900)원 · 몇 개 값인지는 파는 곳에서 봐 주세요$/);
+    expect(text).not.toMatch(/한 개|다 해서/);
+  }
+  const first=page.locator('.space-results > li').first();
+  await expect(first.getByText('글에서 찾은 가격이라 다를 수 있어요',{exact:true})).toBeVisible();
+  // Leftover space: each phrase is one unbroken unit, so a '·' never ends a line.
+  const parts=first.locator('.space-remaining-part');
+  await expect(parts).toHaveCount(3);
+  for(const part of await parts.all()) expect(await part.evaluate((el)=>getComputedStyle(el).whiteSpace)).toBe('nowrap');
+  const tail=await first.locator('.space-remaining').evaluate((el)=>{const r=document.createRange();const out:string[]=[];let lastTop=-1;let line='';for(const node of el.childNodes){const text=node.textContent??'';r.selectNodeContents(node);const rects=r.getClientRects();const top=rects.length?rects[0]!.top:lastTop;if(lastTop>=0&&top>lastTop+2){out.push(line);line='';}line+=text;lastTop=top;}out.push(line);return out.map((l)=>l.trim());});
+  for(const line of tail) expect(line.endsWith('·')).toBe(false);
+  // No sketch drawings ship yet, so the slot stays hidden.
+  await expect(page.locator('.space-sketch')).toHaveCount(0);
 });
 test('invalid inputs focus the associated field and offline errors preserve inputs',async({page})=>{
   await page.goto('/#/space-fit');await importCatalog(page);await fill(page,['0','40','40']);
