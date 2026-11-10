@@ -20,6 +20,7 @@ import {
   UNMEASURED_PREVIEW_CAP,
   totalQuantityText,
 } from './results';
+import { sketchFor } from './sketches';
 import {
   DEFAULT_VIEW,
   emptyReason,
@@ -502,6 +503,8 @@ function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
     if ((nameCount.get(link.name) ?? 0) > 1) link.name = `${link.name} ${n}`;
   }
   const stacked = candidate.blocks.some((block) => block.grid[2] > 1);
+  // Our own drawings only, at most two per row, hidden when none exist.
+  const sketches = [...new Set(candidate.blocks.map((block) => sketchFor(block.variantId)).filter((src): src is string => src !== null))].slice(0, 2);
   return <li data-candidate-id={candidate.id} className={deferred ? 'space-row-deferred' : undefined} aria-setsize={position?.setSize} aria-posinset={position?.posInSet}>
     {(meta.length > 0 || candidate.dimensionProvenance === 'reference') && <div className="space-meta-block">
       <p className="space-meta">
@@ -514,8 +517,19 @@ function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
       </p>
       <p id={noteId} className="space-badge-note" hidden={!metaOpen}>{REFERENCE_NOTE_COPY}</p>
     </div>}
-    <h3 className="space-row-title">{rowTitle(candidate)}</h3>
-    <p className="space-count">수납함 {totalQuantityText(candidate)}개가 딱 들어가요</p>
+    {sketches.length > 0
+      ? <div className="space-row-head">
+        <div className="space-row-head-text">
+          <h3 className="space-row-title">{rowTitle(candidate)}</h3>
+          <p className="space-count">수납함 {totalQuantityText(candidate)}개가 딱 들어가요</p>
+        </div>
+        {/* Decorative: the title already names the product. */}
+        <div className="space-sketches">{sketches.map((src) => <img key={src} className="space-sketch" src={src} alt="" width={72} height={72} loading="lazy" decoding="async" />)}</div>
+      </div>
+      : <>
+        <h3 className="space-row-title">{rowTitle(candidate)}</h3>
+        <p className="space-count">수납함 {totalQuantityText(candidate)}개가 딱 들어가요</p>
+      </>}
     <p className="space-remaining">{remainingParts(candidate).map((part, index) => <Fragment key={`${index}-${part}`}>{index > 0 && ' '}<span className="space-remaining-part">{index > 0 && '· '}{part}</span></Fragment>)}</p>
     {candidate.blocks.map((block, index) => {
       const line = priceLine(block);
