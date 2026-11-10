@@ -2571,6 +2571,10 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   `[image-OCR]` 표식으로만 판정한다. 실번들 `b-c8fb29299e687ad0`(읽기 전용) 측정: 상품 38개,
   보관함 31개 → confirmed 0 · reference 31(imageOcr 17, pageText 14) · unknown 0, 가격 known(참고) 31.
   OCR 형태의 합성 fixture로 Rust 단위 시험을 추가했다.
+- 리뷰 반영(DeepSeek flash, 읽기 전용): listing은 snapshot의 unknown 축만 채우고 Known 축을 덮어쓰지 않는다
+  (부분 Known 시험 추가). offer는 재고 있음 → Known 가격 → id 순으로 하나만 골라 판매처·가격·묶음 수량에 쓴다.
+  `expect` 제거. WASM·예제 입력 상한을 snapshot(4 MiB)+listings(번들 10 MiB)에 맞춰 16 MiB로 올렸다.
+  R2 경로에서 listings가 비면 `catalog_listings_missing`으로 거절한다. `unmeasured` 200개 상한 시험 추가.
 
 - 결정 기록: `design/DECISIONS.md`의 `D-space-fit-listing-provenance`에 2026-11-10
   준태님 결정 D1(판매처/source·분류·가격·치수 근거), D2(크롤/OCR/상품명 유래 치수는
@@ -2594,12 +2598,12 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 계약: block에 `source`(nullable CrawlSite), `sellerId`(안정 offer의 첫 seller,
   없으면 `seller-{site}`, 그것도 없으면 null), `category` `{hint,label|null}`,
   `price`(known `{packPriceKrw,packQuantity|null,unitPriceKrw|null,basis}` 또는
-  `unknown`), `dimensions` `{provenance,basis}`를 추가했다. 가격은 snapshot Known
+  `unknown`), `dimensions` `{provenance,basis,origin}`를 추가했다. 가격은 snapshot Known
   offer의 `packPrice`를 우선하고, 없으면 listing `priceText`가
   `^\s*(\d{1,3}(,\d{3})+|\d+)\s*(원|KRW)\s*$`(대소문자 구분)일 때만 0 초과
   100,000,000 이하를 `reference`로 쓴다. `packQuantity`는 snapshot 값만,
   단가는 묶음 수량을 알 때 정확히 나누어떨어질 때만 계산하며 합계는 만들지 않는다.
-  OCR origin 필드는 아직 번들 스키마에 없어 매핑하지 않았다. `deny_unknown_fields`는
+  번들 스키마에 origin 필드를 추가하지 않았고, `origin`은 `rawText`의 `[image-OCR]` 표식에서만 판정한다. `deny_unknown_fields`는
   유지했다.
 - 웹: `catalog.ts`의 `LoadedCatalog.listings`가 R2 번들, 캐시 번들, 개발용 파일의
   같은 검토 텍스트에서 `items`를 넘긴다. `SpaceFit.tsx`는 `listings`를 입력에 넣고

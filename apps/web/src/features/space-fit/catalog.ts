@@ -54,7 +54,11 @@ export async function loadCatalog(reviewer: BundleReviewer): Promise<LoadedCatal
   if (read.status === 'reviewed' && !read.review.quarantined && read.review.snapshot) {
     let cacheFailed = false;
     try { await cacheStore({ base: R2_BASE, text: bundleText }); } catch { cacheFailed = true; }
-    return { snapshot: read.review.snapshot, listings: bundleItems(bundleText), cached: false, cacheFailed };
+    const listings = bundleItems(bundleText);
+    // The reviewed snapshot came from these same bytes; an empty side channel
+    // would silently hide every reference item, so refuse instead.
+    if (listings.length === 0 && read.review.snapshot.variants.length > 0) throw new Error('catalog_listings_missing');
+    return { snapshot: read.review.snapshot, listings, cached: false, cacheFailed };
   }
   // A previous R2 snapshot is only a cache, and is revalidated before use.
   const cached = await cacheStore().catch(() => null);

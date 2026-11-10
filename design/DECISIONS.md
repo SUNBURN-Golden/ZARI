@@ -509,7 +509,7 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
   검토된 번들 item을 넘기고 Rust가 `check_item`과 같은 규칙으로 다시 검증한다.
   잘못된 item, 중복 id, snapshot에 없는 product(`p-{item.id}`)는
   `space_fit_listing_invalid`로 전체 입력을 거부한다. Known snapshot 사실을
-  listing이 덮어쓰지 못한다.
+  listing이 덮어쓰지 못한다(축별로 unknown 축만 채움).
 - 치수 근거 순서: (a) 외경 세 축 Known+Confirmed → confirmed, (b) 세 축 Known이나
   전부 Confirmed는 아님 → reference(있으면 listing confidence, 없으면
   unspecified), (c) snapshot 축 unknown이고 listing에 세 축+단위+non-unparsed
@@ -526,8 +526,8 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
 - OCR: 번들 스키마에 OCR/상품명 출처 필드가 아직 없다. ZARI OCR 카탈로그 갱신이
   필드를 추가하면 `dimensions.basis`로 매핑하며 provenance 의미는 바꾸지 않는다.
   이번 PR에서 `CrawledItem`/`BundleDimensions` 필드는 추가하지 않는다.
-- 정본 영향: `CatalogSnapshot`·`check_item`의 snapshot 산출·기존 fixture는 바뀌지
-  않는다. `solverVersion`은 `space-fit-1`에서 `space-fit-2`로 올린다(출력 의미 변경).
+- 정본 영향: `CatalogSnapshot`·`check_item`의 snapshot 산출·정본 fixture는 바뀌지
+  않는다(space-fit 입력 fixture에는 `listings`만 추가). `solverVersion`은 `space-fit-1`에서 `space-fit-2`로 올린다(출력 의미 변경).
 - 되돌리기: `SpaceFitInput.listings`, 새 블록/페이지 필드, TS 전달을 제거하면 기존
   snapshot-only 동작으로 돌아간다. 저장된 카탈로그는 이 결정으로 다시 쓰지 않는다.
 - 2026-11-10 추가(ZARI 전달, 번들 `b-c8fb29299e687ad0`): 이미지에서 읽은 치수는 `rawText`가

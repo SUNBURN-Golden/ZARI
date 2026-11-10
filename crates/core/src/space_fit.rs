@@ -283,11 +283,16 @@ fn listing_basis(listing: Option<&CrawledItem>) -> DimensionBasis {
         _ => DimensionBasis::Unspecified,
     }
 }
+/// One deterministic offer for seller, price and pack quantity: not out of
+/// stock first, then a Known pack price, then the smallest id.
 fn stable_offer<'a>(offers: &[&'a Offer]) -> Option<&'a Offer> {
-    offers
-        .iter()
-        .copied()
-        .min_by(|a, b| a.id.as_str().cmp(b.id.as_str()))
+    offers.iter().copied().min_by_key(|o| {
+        (
+            o.inventory.value() == Some(&InventoryState::OutOfStock),
+            !matches!(o.pack_price, Fact::Known { .. }),
+            o.id.as_str(),
+        )
+    })
 }
 fn block_seller(offers: &[&Offer], listing: Option<&CrawledItem>) -> Option<String> {
     stable_offer(offers)
@@ -440,20 +445,23 @@ impl SpaceFitSearch {
             let snapshot_known = snapshot.iter().all(Option::is_some);
             let snapshot_confirmed = outer.iter().all(|fact| confirmed(*fact));
             let listing_mm = listing.and_then(crate::catalog_bundle::listing_outer_mm);
-            let (mut base, provenance, basis) = if snapshot_known && snapshot_confirmed {
-                (
-                    snapshot.map(|axis| axis.expect("known axis")),
-                    DimensionProvenance::Confirmed,
-                    DimensionBasis::Unspecified,
-                )
-            } else if snapshot_known {
-                (
-                    snapshot.map(|axis| axis.expect("known axis")),
-                    DimensionProvenance::Reference,
-                    listing_basis(listing),
-                )
-            } else if let Some(axes) = listing_mm {
-                (axes, DimensionProvenance::Reference, listing_basis(listing))
+            // Known snapshot axes always win; a listing only fills unknown axes.
+            let composed: [Option<u32>; 3] =
+                std::array::from_fn(|i| snapshot[i].or_else(|| listing_mm.map(|mm| mm[i])));
+            let (mut base, provenance, basis) = if let [Some(w), Some(d), Some(h)] = composed {
+                if snapshot_known && snapshot_confirmed {
+                    (
+                        [w, d, h],
+                        DimensionProvenance::Confirmed,
+                        DimensionBasis::Unspecified,
+                    )
+                } else {
+                    (
+                        [w, d, h],
+                        DimensionProvenance::Reference,
+                        listing_basis(listing),
+                    )
+                }
             } else {
                 missing += 1;
                 if unmeasured.len() < MAX_UNMEASURED {
@@ -1258,6 +1266,44 @@ mod tests {
             p.singles[0].dimension_provenance,
             DimensionProvenance::Confirmed
         );
+    }
+    #[test]
+    fn listing_only_fills_unknown_snapshot_axes() {
+        // Snapshot knows W/D (medium), height unknown; a conflicting listing
+        // may fill the height but never overwrite the known W/D.
+        let snapshot = item_value("crawl:muji:1", "medium", [Some(200), Some(200), None], None);
+        let changed = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(999), Some(999), Some(150)],
+            None,
+        );
+        let i = input_with(json!([snapshot]), ["50"; 3], vec![listing(&changed)]);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        let block = &p.singles[0].blocks[0];
+        assert_eq!(block.unit_mm, [200, 200, 150]);
+        assert_eq!(block.dimensions.provenance, DimensionProvenance::Reference);
+        assert!(p.singles[0].unconfirmed);
+    }
+    #[test]
+    fn unmeasured_preview_is_capped_but_count_is_full() {
+        let items: Vec<_> = (0..205)
+            .map(|n| {
+                item_value(
+                    &format!("crawl:muji:{}", 1000 + n),
+                    "unparsed",
+                    [None; 3],
+                    None,
+                )
+            })
+            .collect();
+        let listings = items.iter().map(listing).collect();
+        let i = input_with(json!(items), ["50"; 3], listings);
+        let mut search = SpaceFitSearch::new(i).unwrap();
+        let first = search.step(1000);
+        assert_eq!(first.missing_dimensions, 205);
+        assert_eq!(first.unmeasured.len(), MAX_UNMEASURED);
+        assert!(search.step(1000).unmeasured.is_empty());
     }
     #[test]
     fn listing_price_grammar_is_strict() {
