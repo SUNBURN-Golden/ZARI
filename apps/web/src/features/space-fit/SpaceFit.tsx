@@ -168,14 +168,25 @@ function Candidate({ candidate, spaceMm }: { candidate: SpaceFitCandidate; space
   const noteId = `space-note-${candidate.id}`;
   const multi = new Set(candidate.blocks.map((block) => block.variantId)).size > 1;
   // In a combination each link and placement line names its product (data +
-  // existing copy), so identical link texts never point to different sellers.
+  // existing copy); repeated names are numbered below.
   const seen = new Set<string>();
   const links: { key: string; url: string; prefix: string }[] = [];
   for (const block of candidate.blocks) for (const url of block.urls) {
     const key = `${block.variantId}|${url}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    links.push({ key, url, prefix: multi ? `${displayName(block.name)} · ` : '' });
+    links.push({ key, url, prefix: multi ? displayName(block.name) : '' });
+  }
+  // Two variants of one product (or one variant with several offers) can share
+  // a display name; number repeats so every link text stays distinct.
+  const prefixCount = new Map<string, number>();
+  for (const link of links) prefixCount.set(link.prefix, (prefixCount.get(link.prefix) ?? 0) + 1);
+  const prefixSeen = new Map<string, number>();
+  for (const link of links) {
+    const n = (prefixSeen.get(link.prefix) ?? 0) + 1;
+    prefixSeen.set(link.prefix, n);
+    const numbered = (prefixCount.get(link.prefix) ?? 0) > 1 ? `${link.prefix ? `${link.prefix} ` : ''}${n}` : link.prefix;
+    link.prefix = numbered ? `${numbered} · ` : '';
   }
   const stacked = candidate.blocks.some((block) => block.grid[2] > 1);
   return <li data-candidate-id={candidate.id}>

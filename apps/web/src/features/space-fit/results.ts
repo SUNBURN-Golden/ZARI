@@ -86,7 +86,7 @@ export function priceLine(block: SpaceFitBlock): PriceLine {
   return { kind: 'unknown', text: UNKNOWN_PRICE_COPY };
 }
 
-/** Reference prices (crawled listing text) get the same badge as reference sizes. */
+/** Reference prices (crawled listing text). Not shown in the UI yet: the marker copy is a copy-todo. */
 export function isReferencePrice(block: SpaceFitBlock): boolean {
   return block.price.state === 'known' && block.price.basis === 'reference';
 }

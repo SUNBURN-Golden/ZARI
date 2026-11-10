@@ -30,8 +30,9 @@
 .space-remaining { margin: var(--zari-space-2) 0; color: var(--zari-text-secondary); }
 .space-price-block + .space-price-block { margin-top: var(--zari-space-2); }
 .space-price-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--zari-space-2); margin: var(--zari-space-2) 0; color: var(--zari-text-primary); }
-.space-links { display: flex; flex-wrap: wrap; gap: var(--zari-space-3); margin: var(--zari-space-2) 0; }
-.space-link { color: var(--zari-accent); }
+.space-links { display: flex; flex-wrap: wrap; overflow-wrap: anywhere; word-break: keep-all; gap: var(--zari-space-3); margin: var(--zari-space-2) 0; }
+.space-link { color: var(--zari-accent); overflow-wrap: anywhere; }
+.space-shape p { overflow-wrap: anywhere; word-break: keep-all; }
 .space-unmeasured { margin: var(--zari-space-6) 0; }
 .space-unmeasured-list { padding: 0; margin: var(--zari-space-4) 0; list-style: none; }
 .space-unmeasured-list > li { padding-block: var(--zari-space-3); border-bottom: var(--zari-border-width) solid var(--zari-border-subtle); }

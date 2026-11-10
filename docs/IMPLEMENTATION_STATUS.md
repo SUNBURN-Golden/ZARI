@@ -2686,7 +2686,7 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   --self-test` **80 base tokens / 90/90 contrast cases**, 같은 스크립트 CI 실행도
   **80 / 90/90**, `npm run contracts:check` **124 fixture structures valid**,
   `npm run test:build` 통과, `npx playwright test apps/web/tests/browser/space-fit.spec.ts
-  apps/web/tests/browser/easy-mode.spec.ts --project=chromium` **17 passed / 0 failed**.
+  apps/web/tests/browser/easy-mode.spec.ts --project=chromium` **19 passed / 0 failed** (2차 리뷰 수정 후 재실행, `npm test` 506 passed / 59 files).
   space-fit Playwright에는 합친 목록·요약 초점·sticky·미확인 접힘·stale 흐름,
   참고치 키보드(Enter/Space), 가격 줄 unknown 문구(조합의 unknown 가격은 한 줄로 합침, 9줄), 320px light/dark axe와
   넘침 없음, forced colors, native Rust ↔ 실제 Worker/WASM parity, 진행 중 편집
@@ -2695,3 +2695,12 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   실제 판매처·실기기·approved baseline 수용, 비작성자 exact-HEAD review, commit/push는
   수행하지 않았다. 묶음 가격만 아는 경우의 문구는 Argon 승인 대기다. 다음: PR-C,
   exact-head CI, 독립 review.
+
+#### PR-B 2차 리뷰(DeepSeek flash, read-only) 반영
+
+- 조합 링크: 같은 이름(옵션만 다른 variant, offer 여러 개)이 겹치면 이름 뒤에 번호를 붙여 링크 텍스트가 항상 달라지게 했다.
+- `isReferencePrice` 주석을 실제 상태(UI 미표시, copy-todo)로 고쳤다.
+- `.space-links`·`.space-link`·배치 문단에 `overflow-wrap:anywhere`(+keep-all)를 더해 긴 상품명이 320px에서 넘치지 않게 했다.
+- 측정함: typecheck·lint 통과, `npm test` 506/506, space-fit+easy-mode Chromium 19 passed.
+- 남김(후속 PR): `조합 더 찾기` 경로의 id 중복 테스트, 가격 확인된 block과 미확인 block이 섞인 조합 fixture 테스트, 긴 이름 fixture — 현재 실데이터 묶음 수량이 모두 미확인이라 fixture 추가가 필요하다.
+
