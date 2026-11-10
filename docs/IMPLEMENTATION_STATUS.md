@@ -2828,3 +2828,10 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 남김: 실제 판매처·실기기·approved baseline 수용, 비작성자 exact-HEAD review. fixture에 두 번째
   실측 판매처가 없어 브라우저의 `filters` 0개 상태는 live 시각 검증과 단위 시험으로 덮는다. 1,000행
   창 모드는 단위 시험(`windowRange`)만 있고 브라우저 시험은 없다(50번 `더 보기`가 필요).
+- 리뷰(DeepSeek flash, read-only; GLM 응답 없음) 반영: 검색 중 여유 틈을 바꾸면 그 검색을 새 값으로 다시
+  시작, 중지된 여유 틈 재검색의 이전 결과는 stale로 표시, 보기 변경 시 `stopped` 해제, 중지 뒤
+  `조합 더 찾기` 잠금, 창 모드 첫 프레임을 `useLayoutEffect`로 측정, 창 모드에서는
+  `content-visibility` 미적용(평균 행 높이 왜곡 방지), 빈 `noFit` 표식 제거(요약이 noFit 상태).
+  재실행(측정함): typecheck·lint 통과, `npm test` 529/529, space-fit+easy-mode Chromium 38 passed.
+  다른 46개 spec은 이 수정 전 HEAD에서 157 passed였고 수정은 space-fit 파일만 바꿨다.
+  남김: 1,000행 창 모드·결정적 `stopped` 빈 블록 브라우저 시험(지연 워커 fixture 필요).
