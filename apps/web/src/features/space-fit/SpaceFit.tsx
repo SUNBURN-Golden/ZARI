@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { SpaceFitCandidate, SpaceFitInput, SpaceFitPage, SpaceFitUnmeasured } from '../../contracts/generated/dto';
 import { validateSpaceFitPage } from '../../contracts/generated/validators.mjs';
@@ -20,7 +21,8 @@ import {
   DEFAULT_VIEW,
   facetOptions,
   filterCandidates,
-  isMixed,
+  needsMixedStep,
+  COMBINATION_CAP,
   parseViewState,
   serializeViewState,
   sortCandidates,
@@ -37,22 +39,6 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'price', label: '가격 싼 순' },
   { key: 'count', label: '수납함 많이 들어가는 순' },
 ];
-const AUTO_STEP_LIMIT = 6;
-const MIXED_TARGET = 20;
-const COMBINATION_CAP = 2000;
-
-/**
- * The Rust worker emits single-product grids (stage 0) before two-product
- * mixes (stage 1). After the first page we request a few more bounded steps so
- * the combined list can surface mixed rows without a manual button press.
- * Stops at 6 auto-steps, 20 mixed candidates, completion, or the 2,000 cap.
- */
-function needsMixedStep(result: SpaceFitPage, combined: SpaceFitCandidate[], steps: number): boolean {
-  if (steps >= AUTO_STEP_LIMIT) return false;
-  if (result.combinationsComplete) return false;
-  if (combined.length >= COMBINATION_CAP) return false;
-  return combined.filter(isMixed).length < MIXED_TARGET;
-}
 function initialSpace(): [string, string, string] {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null');
@@ -76,6 +62,10 @@ export function SpaceFit() {
   const [localLabel, setLocalLabel] = useState('');
   const [view, setView] = useState<ViewState>(() => parseViewState(location.hash));
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Background steps toward two-product mixes; the result screen stays usable.
+  const [autoStepping, setAutoStepping] = useState(false);
+  // Announces the filtered count after a chip change (appends stay silent).
+  const [filterStatus, setFilterStatus] = useState('');
   const worker = useRef<Worker | null>(null);
   const revision = useRef(0);
   const summary = useRef<HTMLHeadingElement | null>(null);
@@ -91,16 +81,27 @@ export function SpaceFit() {
   const applyView = (next: ViewState) => {
     setView(next);
     setLimit(20);
-    const path = location.hash.split('?')[0] || '#/';
+    // The root path canonicalizes to #/space-fit so a shared view link opens
+    // Space Fit even when this device last used expert mode.
+    const current = location.hash.split('?')[0] ?? '';
+    const path = current && current !== '#/' ? current : '#/space-fit';
     // replaceState keeps filter changes out of history and fires no hashchange.
     history.replaceState(null, '', serializeViewState(path, next));
+    const count = sortCandidates(filterCandidates(allResults, next), next.sort).length;
+    setFilterStatus(count === 0 ? '고르신 내용에 맞는 수납함이 아직 없어요' : `이 자리에 맞는 수납함 ${count}개를 찾았어요`);
   };
   const toggleFacet = (key: 'sellers' | 'types', value: string) => {
     const values = view[key];
     applyView({ ...view, [key]: values.includes(value) ? values.filter((item) => item !== value) : [...values, value] });
   };
-  const closeSheet = () => { setSheetOpen(false); opener.current?.focus(); };
-  const stop = () => { worker.current?.terminate(); worker.current = null; revision.current += 1; setBusy(false); };
+  const closeSheet = () => setSheetOpen(false);
+  // Return focus after the sheet unmounts and #root is no longer inert.
+  const sheetWasOpen = useRef(false);
+  useEffect(() => {
+    if (sheetOpen) { sheetWasOpen.current = true; return; }
+    if (sheetWasOpen.current) { sheetWasOpen.current = false; opener.current?.focus(); }
+  }, [sheetOpen]);
+  const stop = () => { worker.current?.terminate(); worker.current = null; revision.current += 1; setBusy(false); setAutoStepping(false); };
   useEffect(() => () => { worker.current?.terminate(); revision.current += 1; }, []);
   useEffect(() => {
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(space)); setStorageError(false); }
@@ -122,7 +123,7 @@ export function SpaceFit() {
   const submit = async (event: FormEvent) => {
     event.preventDefault(); stop(); const current = revision.current;
     setBusy(true); setError(''); setInvalidAxis(null); setPage(null); setSingles([]); setCombinations([]);
-    combinationsRef.current = [];
+    combinationsRef.current = []; setFilterStatus('');
     setUnmeasured([]); setLimit(20); moveFocus.current = true;
     try {
       const catalog = loaded ?? await loadCatalog(workerReviewer());
@@ -140,6 +141,7 @@ export function SpaceFit() {
         if (!message.data.ok || !message.data.json) {
           setBusy(false);
           const axisMatch = /^space_axis_([012])$/.exec(message.data.code ?? '');
+          setAutoStepping(false);
           if (axisMatch) {
             const axis = Number(axisMatch[1]); setInvalidAxis(axis); fields.current[axis]?.focus();
             setError(`${LABELS[axis]}를 0.1~1000cm, 소수 한 자리까지 적어 주세요.`);
@@ -156,11 +158,12 @@ export function SpaceFit() {
           // One auto-step per response, behind the same revision guard. The busy
           // status stays up until the sequence stops, and focus already moved
           // once on the first page.
-          if (needsMixedStep(result, combined, autoSteps)) {
+          setBusy(false);
+          if (needsMixedStep(result.combinationsComplete, combined, autoSteps)) {
             autoSteps += 1;
-            setBusy(true);
+            setAutoStepping(true);
             next.postMessage({ type: 'next', budget: 1000 });
-          } else setBusy(false);
+          } else setAutoStepping(false);
         } catch { stop(); setError('결과를 읽지 못했어요. 다시 찾아 주세요.'); }
       };
       const input: SpaceFitInput = { schemaVersion: 1, inputRevision: String(current), space, catalog: catalog.snapshot, clearanceMm: [5,5,5], listings: catalog.listings };
@@ -210,6 +213,7 @@ export function SpaceFit() {
           </div>
           <div className="space-results-main">
             {/* The number is outside the live announcement so appends do not re-announce. */}
+            <p className="space-visually-hidden" role="status">{filterStatus}</p>
             <h2 id="space-summary" ref={summary} className="space-summary" tabIndex={-1} aria-live="polite" aria-atomic="true">
               {shown.length === 0 ? '고르신 내용에 맞는 수납함이 아직 없어요' : <>이 자리에 맞는 수납함 <span aria-live="off">{shown.length}</span>개를 찾았어요</>}
             </h2>
@@ -224,7 +228,7 @@ export function SpaceFit() {
               {shown.slice(0, limit).map((candidate) => <Candidate key={candidate.id} candidate={candidate} spaceMm={page.spaceMm} />)}
             </ul>
             {shown.length > limit && <button type="button" className="space-more" onClick={() => setLimit((n) => n + 20)}>더 보기</button>}
-            {!page.combinationsComplete && <><p>조합을 더 찾아볼 수 있어요. 두 종류까지, 바닥에 나란히 놓는 조합을 찾아요. 서로 다른 제품을 쌓지는 않아요.</p><button type="button" disabled={busy || stale || combinations.length >= COMBINATION_CAP} onClick={findMoreCombinations}>조합 더 찾기</button></>}
+            {!page.combinationsComplete && <><p>조합을 더 찾아볼 수 있어요. 두 종류까지, 바닥에 나란히 놓는 조합을 찾아요. 서로 다른 제품을 쌓지는 않아요.</p><button type="button" disabled={busy || autoStepping || stale || combinations.length >= COMBINATION_CAP} onClick={findMoreCombinations}>조합 더 찾기</button></>}
             {combinations.length >= COMBINATION_CAP && <p>이 화면에서 보여 줄 수 있는 조합 수에 도달했어요. 공간 크기를 좁혀 다시 찾아 주세요. 모든 조합을 확인한 것은 아니에요.</p>}
             {page.missingDimensions > 0 && <UnmeasuredGroup items={unmeasured} count={page.missingDimensions} />}
             {page.unavailableVariants > 0 && <p>품절로 표시된 상품 {page.unavailableVariants}개는 뺐어요.</p>}
@@ -233,7 +237,7 @@ export function SpaceFit() {
           </div>
         </div>
       </section>}
-      {sheetOpen && <FilterSheet view={view} facets={facets} onChange={applyView} onReset={() => applyView(DEFAULT_VIEW)} onClose={closeSheet} />}
+      {sheetOpen && createPortal(<FilterSheet view={view} facets={facets} onChange={applyView} onReset={() => applyView(DEFAULT_VIEW)} onClose={closeSheet} />, document.body)}
       {LOCAL_IMPORT_ALLOWED && <details className="easy-details"><summary>개발용 상품 파일</summary><label>치수 번들 JSON<input type="file" accept="application/json,.json" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importLocal(file); }} /></label>{localLabel && <p role="status">개발용 파일: {localLabel}. 실상품 확인 완료를 뜻하지 않아요.</p>}</details>}
     </main>
     <footer className="easy-footer"><a href="#/easy">물건 크기 비교</a><a href="#/projects">전문가 모드</a></footer>
@@ -289,7 +293,15 @@ function FilterSheet({ view, facets, onChange, onReset, onClose }: {
 }) {
   const dialog = useRef<HTMLDivElement | null>(null);
   const title = useRef<HTMLHeadingElement | null>(null);
-  useEffect(() => { title.current?.focus(); }, []);
+  // Like PrintPanel: the app behind the sheet is inert, so clicks on non-focusable
+  // sheet parts or the scrim can never send Tab focus back into the page.
+  useEffect(() => {
+    const app = document.getElementById('root');
+    app?.setAttribute('inert', '');
+    document.body.setAttribute('data-space-sheet-open', 'true');
+    title.current?.focus();
+    return () => { app?.removeAttribute('inert'); document.body.removeAttribute('data-space-sheet-open'); };
+  }, []);
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') { event.preventDefault(); onClose(); return; }
     if (event.key !== 'Tab') return;

@@ -26,27 +26,32 @@ function unique(values: string[]): string[] {
   return [...new Set(values)];
 }
 
-function sellersFromQuery(value: string | null): string[] {
-  if (!value) return [];
-  return unique(value.split(',').map((item) => item.trim()))
-    .filter((item) => sellerLabel(item as Parameters<typeof sellerLabel>[0]) !== null);
+/**
+ * Comma lists are split on the RAW query value before decoding, so a label
+ * that itself contains a comma (written as %2C) survives the round trip.
+ */
+function rawList(query: string, key: string): string[] {
+  const values: string[] = [];
+  for (const pair of query.split('&')) {
+    const eq = pair.indexOf('=');
+    if (eq < 0 || pair.slice(0, eq) !== key) continue;
+    for (const part of pair.slice(eq + 1).split(',')) {
+      try { values.push(decodeURIComponent(part.replace(/\+/g, ' ')).trim()); } catch { /* Malformed escapes are ignored. */ }
+    }
+  }
+  return unique(values.filter(Boolean));
 }
 
-function typesFromQuery(value: string | null): string[] {
-  if (!value) return [];
-  return unique(value.split(',').map((item) => item.trim()).filter(Boolean));
-}
-
-/** Read the query part after '?' in a hash such as `#/?sort=price&seller=muji`. */
+/** Read the query part after '?' in a hash such as `#/space-fit?sort=price&seller=muji`. */
 export function parseViewState(hash: string): ViewState {
   const index = hash.indexOf('?');
   if (index < 0) return { sellers: [], types: [], sort: 'leftover' };
-  const params = new URLSearchParams(hash.slice(index + 1));
-  const rawSort = params.get('sort');
+  const query = hash.slice(index + 1);
+  const rawSort = new URLSearchParams(query).get('sort');
   const sort = SORT_KEYS.find((key) => key === rawSort) ?? 'leftover';
   return {
-    sellers: sellersFromQuery(params.get('seller')),
-    types: typesFromQuery(params.get('type')),
+    sellers: rawList(query, 'seller').filter((item) => sellerLabel(item as Parameters<typeof sellerLabel>[0]) !== null),
+    types: rawList(query, 'type'),
     sort,
   };
 }
@@ -153,4 +158,21 @@ function compareCount(a: SpaceFitCandidate, b: SpaceFitCandidate): number {
 export function sortCandidates(candidates: SpaceFitCandidate[], sort: SortKey): SpaceFitCandidate[] {
   const comparator = sort === 'price' ? comparePrice : sort === 'count' ? compareCount : compareCandidates;
   return [...candidates].sort(comparator);
+}
+
+const AUTO_STEP_LIMIT = 6;
+const MIXED_TARGET = 20;
+export const COMBINATION_CAP = 2000;
+
+/**
+ * The Rust worker emits single-product grids (stage 0) before two-product
+ * mixes (stage 1). After the first page we request a few more bounded steps so
+ * the combined list can surface mixed rows without a manual button press.
+ * Stops at 6 auto-steps, 20 mixed candidates, completion, or the 2,000 cap.
+ */
+export function needsMixedStep(combinationsComplete: boolean, combined: SpaceFitCandidate[], steps: number): boolean {
+  if (steps >= AUTO_STEP_LIMIT) return false;
+  if (combinationsComplete) return false;
+  if (combined.length >= COMBINATION_CAP) return false;
+  return combined.filter(isMixed).length < MIXED_TARGET;
 }

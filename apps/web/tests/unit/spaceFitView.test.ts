@@ -6,6 +6,8 @@ import {
   facetOptions,
   filterCandidates,
   isMixed,
+  needsMixedStep,
+  COMBINATION_CAP,
   parseViewState,
   serializeViewState,
   sortCandidates,
@@ -215,5 +217,23 @@ describe('space-fit facets and mixed detection', () => {
     expect(isMixed(makeCandidate({ blocks: [makeBlock({ variantId: 'same' }), makeBlock({ variantId: 'same' })] }))).toBe(false);
     expect(isMixed(makeCandidate({ blocks: [makeBlock({ variantId: 'a' }), makeBlock({ variantId: 'b' })] }))).toBe(true);
     expect(isMixed(makeCandidate({ blocks: [makeBlock()] }))).toBe(false);
+  });
+});
+
+describe('review fixes', () => {
+  it('keeps a type label containing a comma through the hash round trip', () => {
+    const view = { ...DEFAULT_VIEW, types: ['수납함, 정리함', '바구니'] };
+    const hash = serializeViewState('#/space-fit', view);
+    expect(parseViewState(hash).types).toEqual(['수납함, 정리함', '바구니']);
+  });
+  it('stops auto-steps at completion, the step limit, the cap or 20 mixed rows', () => {
+    const mixed = makeCandidate({ id: 'm', blocks: [makeBlock(), makeBlock({ variantId: 'crawl:muji:2:o00000002' })] });
+    const single = makeCandidate({ id: 's' });
+    expect(needsMixedStep(false, [single], 0)).toBe(true);
+    expect(needsMixedStep(true, [single], 0)).toBe(false);
+    expect(needsMixedStep(false, [single], 6)).toBe(false);
+    expect(needsMixedStep(false, Array.from({ length: COMBINATION_CAP }, () => single), 0)).toBe(false);
+    expect(needsMixedStep(false, Array.from({ length: 19 }, () => mixed), 0)).toBe(true);
+    expect(needsMixedStep(false, Array.from({ length: 20 }, () => mixed), 0)).toBe(false);
   });
 });

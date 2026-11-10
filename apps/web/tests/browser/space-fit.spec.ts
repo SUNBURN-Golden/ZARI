@@ -245,3 +245,36 @@ test('a view query on the root hash still opens Space Fit with that sort',async(
   await importCatalog(page); await fill(page); await search(page);
   await expect(page.locator('.space-filter-column').getByRole('button',{name:'수납함 많이 들어가는 순',exact:true})).toHaveAttribute('aria-pressed','true');
 });
+test('auto-steps surface two-product combinations without pressing 조합 더 찾기',async({page})=>{
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['200','200','40']); await search(page);
+  // The results stay usable while background steps run: no busy region, search enabled.
+  await expect(page.getByRole('region',{name:'찾은 수납함',exact:true})).toHaveAttribute('aria-busy','false');
+  await expect(page.getByRole('button',{name:'맞는 수납함 찾기',exact:true})).toBeEnabled();
+  // Page 0 holds 100 single-product grids; mixed rows only come from later steps.
+  await expect.poll(async()=>Number((await page.locator('#space-summary').textContent())?.match(/(\d+)개/)?.[1] ?? 0),{timeout:20000}).toBeGreaterThan(100);
+  await expect(page.locator('.space-results > li .space-row-title',{hasText:'+'}).first()).toBeAttached({timeout:20000}).catch(async()=>{
+    // The mixed rows may sort below the first 20; reveal more rows until one appears.
+    for(let i=0;i<10 && await page.locator('.space-results > li .space-row-title',{hasText:'+'}).count()===0;i++) await page.getByRole('button',{name:'더 보기',exact:true}).click();
+    await expect(page.locator('.space-results > li .space-row-title',{hasText:'+'}).first()).toBeAttached();
+  });
+});
+test('clicking a non-focusable part of the sheet keeps Tab and Escape inside it',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const opener=page.getByRole('button',{name:'순서·가게 고르기',exact:true});
+  await opener.click();
+  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
+  await dialog.getByText('파는 곳',{exact:true}).click();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(()=>Boolean(document.activeElement?.closest('[role="dialog"]')))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+  expect(await page.evaluate(()=>document.getElementById('root')?.hasAttribute('inert'))).toBe(false);
+});
+test('a view link opens Space Fit even after expert mode was used',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('zari.mode.v1','expert'));
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/space-fit?sort=price');
+  await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
+});

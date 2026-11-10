@@ -30,6 +30,7 @@
 .space-remaining { margin: var(--zari-space-2) 0; color: var(--zari-text-secondary); }
 .space-price-block + .space-price-block { margin-top: var(--zari-space-2); }
 .space-price-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--zari-space-2); margin: var(--zari-space-2) 0; color: var(--zari-text-primary); }
+.space-link { color: var(--zari-accent); overflow-wrap: anywhere; }
 .space-links { display: flex; flex-direction: column; gap: var(--zari-space-2); margin: var(--zari-space-3) 0; }
 .space-fit-main .space-link-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--zari-space-1); min-height: var(--zari-touch-min-height); padding: var(--zari-space-2) var(--zari-space-3); border: var(--zari-border-width) solid var(--zari-border-subtle); border-radius: var(--zari-radius-control); color: var(--zari-text-primary); text-decoration: none; word-break: keep-all; }
 .space-link-row:hover { border-color: var(--zari-border-control); }
@@ -150,3 +151,5 @@
 }
 .space-outline { fill: none; stroke: var(--zari-canvas-outline); stroke-width: var(--zari-border-width); }
 .space-block { fill: none; stroke: var(--zari-accent); stroke-width: var(--zari-focus-width); }
+
+.space-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
