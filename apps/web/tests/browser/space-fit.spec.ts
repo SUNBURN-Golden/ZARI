@@ -39,7 +39,10 @@ test('combined results, summary focus, unmeasured group, sticky action and stale
   await expect(first.getByText(/수납함 \d+개가 딱 들어가요/)).toBeVisible();
   await expect(first.getByText(/남아요/)).toBeVisible();
   await expect(first.getByText('가격은 파는 곳에서 봐 주세요').first()).toBeVisible();
-  await expect(first.getByRole('link',{name:'판매처에서 보기 (새 탭)'})).toHaveAttribute('target','_blank');
+  // A combination names each product in its link, so identical link texts never point to different products.
+  const links=first.getByRole('link',{name:/판매처에서 보기 \(새 탭\)$/});
+  for(const link of await links.all()) await expect(link).toHaveAttribute('target','_blank');
+  expect(new Set(await links.allTextContents()).size).toBe(await links.count());
   await first.getByText('놓는 모양 보기').click();
   await expect(first.getByRole('img')).toBeVisible();
   // Unmeasured variants stay in one collapsed details group after the list.
@@ -58,6 +61,8 @@ test('combined results, summary focus, unmeasured group, sticky action and stale
   await expect(rows).toHaveCount(20);
   await page.getByRole('button',{name:'더 보기',exact:true}).click();
   await expect(rows).toHaveCount(40);
+  const ids=await rows.evaluateAll((items)=>items.map((item)=>item.getAttribute('data-candidate-id')));
+  expect(new Set(ids).size).toBe(ids.length);
   await page.reload(); await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('200');
 });
 test('reference size badge is visible, toggles its explanation and works from the keyboard',async({page})=>{
@@ -83,11 +88,24 @@ test('reference size badge is visible, toggles its explanation and works from th
   await expect(badge).toHaveAttribute('aria-expanded','true');
   await expect(note).toBeVisible();
 });
+test('a space nothing fits shows the approved empty summary and no rows',async({page})=>{
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['1','1','1']); await search(page);
+  await expect(page.locator('#space-summary')).toHaveText('고르신 내용에 맞는 수납함이 아직 없어요');
+  await expect(page.locator('.space-results > li')).toHaveCount(0);
+});
+test('reference badge shows a visible focus ring from the keyboard',async({page})=>{
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const badge=page.locator('.space-results > li').first().getByRole('button',{name:'참고치',exact:true});
+  await page.keyboard.press('Tab');
+  await expect(badge).toBeFocused();
+  const outline=await badge.evaluate((el)=>{const s=getComputedStyle(el);return {style:s.outlineStyle,width:parseFloat(s.outlineWidth)};});
+  expect(outline.style).not.toBe('none'); expect(outline.width).toBeGreaterThan(0);
+});
 test('unknown pack quantity keeps the honest price copy',async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
   const prices=page.locator('.space-price-line');
-  // Nine combined results; their blocks add up to thirteen price lines.
-  await expect(prices).toHaveCount(13);
+  // Nine combined results; a combination whose prices are all unknown shows one line.
+  await expect(prices).toHaveCount(9);
   for(const text of await prices.allTextContents()) {
     expect(text.trim()).toBe('가격은 파는 곳에서 봐 주세요');
   }

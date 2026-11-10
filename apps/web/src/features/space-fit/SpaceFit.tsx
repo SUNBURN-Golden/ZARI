@@ -9,7 +9,6 @@ import {
   candidateTitle,
   displayName,
   distinctMeta,
-  isReferencePrice,
   mergeCandidates,
   placementText,
   priceLine,
@@ -165,13 +164,21 @@ function ReferenceBadge({ controlsId, expanded, onToggle }: { controlsId: string
 }
 function Candidate({ candidate, spaceMm }: { candidate: SpaceFitCandidate; spaceMm: number[] }) {
   const [metaOpen, setMetaOpen] = useState(false);
-  const [openPrices, setOpenPrices] = useState<string[]>([]);
   const meta = distinctMeta(candidate);
   const noteId = `space-note-${candidate.id}`;
-  const links = [...new Set(candidate.blocks.flatMap((block) => block.urls))];
+  const multi = new Set(candidate.blocks.map((block) => block.variantId)).size > 1;
+  // In a combination each link and placement line names its product (data +
+  // existing copy), so identical link texts never point to different sellers.
+  const seen = new Set<string>();
+  const links: { key: string; url: string; prefix: string }[] = [];
+  for (const block of candidate.blocks) for (const url of block.urls) {
+    const key = `${block.variantId}|${url}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    links.push({ key, url, prefix: multi ? `${displayName(block.name)} · ` : '' });
+  }
   const stacked = candidate.blocks.some((block) => block.grid[2] > 1);
-  const togglePrice = (key: string) => setOpenPrices((old) => old.includes(key) ? old.filter((value) => value !== key) : [...old, key]);
-  return <li>
+  return <li data-candidate-id={candidate.id}>
     {(meta.length > 0 || candidate.dimensionProvenance === 'reference') && <div className="space-meta-block">
       <p className="space-meta">
         {meta.map((entry, index) => <span className="space-meta-entry" key={`${entry.seller ?? ''}-${entry.category ?? ''}-${index}`}>
@@ -189,18 +196,18 @@ function Candidate({ candidate, spaceMm }: { candidate: SpaceFitCandidate; space
     <p className="space-remaining">{remainingText(candidate)}</p>
     {candidate.blocks.map((block, index) => {
       const line = priceLine(block);
+      // One unknown-price line is enough when every block's price is unknown.
+      if (index > 0 && line.kind === 'unknown' && candidate.blocks.every((other) => priceLine(other).kind === 'unknown')) return null;
       const key = `${block.variantId}-${index}`;
-      const priceNoteId = `space-price-note-${candidate.id}-${index}`;
-      const open = openPrices.includes(key);
       return <div className="space-price-block" key={key}>
-        <p className="space-price-line">{line.text}{line.kind === 'priced' && isReferencePrice(block) && <ReferenceBadge controlsId={priceNoteId} expanded={open} onToggle={() => togglePrice(key)} />}</p>
-        <p id={priceNoteId} className="space-badge-note" hidden={!open}>{REFERENCE_NOTE_COPY}</p>
+        <p className="space-price-line">{line.text}</p>
+        {/* copy-todo: a reference-price marker needs its own approved explanation; the 참고치 note describes sizes only. */}
       </div>;
     })}
-    {links.length > 0 && <p className="space-links">{links.map((url) => <a key={url} className="space-link" href={url} target="_blank" rel="noopener noreferrer">판매처에서 보기 (새 탭)</a>)}</p>}
+    {links.length > 0 && <p className="space-links">{links.map(({ key, url, prefix }) => <a key={key} className="space-link" href={url} target="_blank" rel="noopener noreferrer">{prefix}판매처에서 보기 (새 탭)</a>)}</p>}
     <details className="space-shape"><summary>놓는 모양 보기</summary>
       <svg className="space-diagram" viewBox={`-5 -5 ${spaceMm[0]!+10} ${spaceMm[1]!+10}`} role="img" aria-label="위에서 본 배치. 왼쪽 앞 바닥을 기준으로 놓아요."><rect className="space-outline" x="0" y="0" width={spaceMm[0]} height={spaceMm[1]} />{candidate.blocks.map((block) => <rect key={block.variantId} className="space-block" x={block.originMm[0]} y={block.originMm[1]} width={block.unitMm[0]*block.grid[0]} height={block.unitMm[1]*block.grid[1]} />)}</svg>
-      {candidate.blocks.map((block, index) => <p key={`${block.variantId}-${index}`}>{placementText(block)}</p>)}
+      {candidate.blocks.map((block, index) => <p key={`${block.variantId}-${index}`}>{multi ? `${displayName(block.name)} · ` : ''}{placementText(block)}</p>)}
       <p>위에서 본 모양이에요. 수량과 층수는 위의 글자를 확인해 주세요.</p>
       {(candidate.checks.outer === 'unknown' || candidate.checks.orientation === 'unknown') && <p>손잡이·뚜껑 포함 크기와 놓는 방향을 확인해 주세요.</p>}
       {stacked && <p>쌓을 때 하중과 지지 조건을 확인해 주세요.</p>}

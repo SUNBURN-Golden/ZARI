@@ -547,8 +547,8 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
 - 선택 1 — 한 목록: 단일·조합을 합쳐 정렬한 `ul` 하나로 표시하고 탭·그룹 제목을
   없앤다. 기본 정렬은 `occupiedVolumeMm3` 내림차순(BigInt), confirmed before
   reference, id 순이다. 20개씩 보이며 `더 보기`가 20개를 추가한다.
-- 선택 2 — 참고치를 숨기지 않음: `dimensionProvenance === 'reference'`인 행과
-  `price.basis === 'reference'`인 가격 줄에 `참고치` 버튼을 두고, 같은 설명 문단을
+- 선택 2 — 참고치를 숨기지 않음: `dimensionProvenance === 'reference'`인 행의 meta 줄에
+  `참고치` 버튼을 두고(참고 가격에는 두지 않음, 설명이 크기 문장이므로), 설명 문단을
   `aria-expanded`/`aria-controls`로 펼친다. confirmed에는 배지를 두지 않는다.
   치수가 전혀 없는 상품은 `unmeasured` 접힌 그룹 하나에 남긴다.
 - 선택 3 — 가격: known이고 `packQuantity`·`unitPriceKrw`가 있으면
@@ -558,8 +558,8 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
   Argon 승인 전까지 `copy-todo` 주석으로 남긴다. 원화 금액을 추정하지 않는다.
 - 접근성·성능: 결과 요약은 `tabindex=-1` `h2`이며 첫 page 도착 때만 초점을 받고
   `aria-live`로 한 번 알린다. 개수는 `aria-live="off"` 안에 두어 append가 다시
-  읽히지 않게 한다. 참고치 버튼은 48px 이상, 키보드 Enter/Space, focus-visible,
-  forced-colors를 실제 Chromium에서 확인한다. 320px에서 가로 넘침이 없어야 한다.
+  읽히지 않게 한다. 참고치 버튼은 48px 이상, 키보드 Enter/Space, Tab 순서와 focus-visible outline을
+  Chromium Playwright로 확인한다(forced-colors 배지 확인은 아직 없음). 320px에서 가로 넘침이 없어야 한다.
 - 전후 화면: 이전은 두 영역·숨긴 참고치·가격 없음. 이후는 한 목록·배지·가격 줄.
   baseline 캡처는 draft이며 approved로 기록하지 않는다.
 - 되돌리기: `SpaceFit.tsx`의 합친 목록·배지·가격 줄과 `results.ts`를 제거하고
