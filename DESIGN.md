@@ -53,7 +53,7 @@ ZARI는 홍보용 랜딩페이지나 일반 관리자 대시보드가 아니라,
 - 글자: 시스템 폰트 스택을 기본으로 한국어와 숫자의 실제 렌더링을 확인한다. 폰트 파일은 동봉하지 않는다. 특정 폰트의 번들링은 별도 검토다.
 - 본문·편집 입력: 기본 1rem. 라벨 0.875rem. 중요한 오류·가격을 작은 caption으로 축소하지 않는다.
 - 한국어 본문은 과도한 음수 자간을 사용하지 않는다. 문장 줄바꿈과 긴 상품명의 확대 표시를 확인한다.
-- 쉬운 모드·SpaceFit 글자(2026-11-11, PR-E): apple.com/kr 실측(`docs/evidence/space-fit-pr-e/apple-type.md`)을 따라 `--zari-font-text`/`--zari-font-display`(-apple-system·BlinkMacSystemFont·SF Pro 이름은 시스템 조회만, 이어서 Pretendard·Apple SD Gothic Neo·system-ui) 스택과 `--zari-type-*` 크기·행간·자간 토큰을 쓴다. 한글 본문 18px·행간 1.6·자간 0, 행 제목 20px·1.4, 결과 수량 32px(1024px 이상 40px)·1.18·-0.008em, 화면 제목 32px(40px)·1.25·-0.012em. 음수 자간은 display 크기에만 둔다.
+- 쉬운 모드·SpaceFit 글자(2026-11-11, PR-E): apple.com/kr 실측(`docs/evidence/space-fit-pr-e/apple-type.md`)을 따라 `--zari-font-text`/`--zari-font-display`(-apple-system·BlinkMacSystemFont·SF Pro 이름은 시스템 조회만, 이어서 Pretendard·Apple SD Gothic Neo·system-ui) 스택과 `--zari-type-*` 크기·행간·자간 토큰을 쓴다. 한글 본문 18px·행간 1.6·자간 0, 행 제목 20px·1.4, 결과 수량 32px(1024px 이상 40px)·1.18, 화면 제목 32px(40px)·1.25. apple.com/kr 실측대로 한글은 화면 제목·수량을 포함해 모든 크기에서 자간 0이며 음수 자간을 쓰지 않는다. 필터 시트는 body로 포털되므로 `.space-sheet`에 같은 글자 기준을 직접 건다.
 - 숫자·단위: tabular numerals를 사용하고, 표시 단위는 일관되게 붙인다. UI의 cm 표시가 정수 mm 계약을 변경하지 않는다.
 - 간격: 4·8·12·16·24·32·48·64px에 대응하는 rem 토큰. 예외는 이유를 남긴다.
 - 컨트롤: 기본 최소 높이 44px 상당의 rem, coarse pointer는 48px 상당. **ZARI의 사용성 목표**이며 WCAG 전체 충족을 뜻하지 않는다. 고정 높이로 확대된 텍스트를 자르지 않는다.

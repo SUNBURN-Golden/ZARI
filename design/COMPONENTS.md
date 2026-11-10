@@ -101,8 +101,8 @@ SVG 도면의 의미 있는 선은 `--zari-canvas-outline`, 선택은 `--zari-se
 
 | 역할 | 토큰 | 값 |
 |---|---|---|
-| 화면 제목 h1 | `--zari-type-display(-wide)`, `-display-line`, `-display-tracking`, `--zari-font-display` | 2rem(1024px 이상 2.5rem) / 1.25 / -0.012em / 600 |
-| 결과 수량 줄(유일한 강조) | `--zari-type-result(-wide)`, `-result-line`, `-result-tracking` | 2rem(2.5rem) / 1.18 / -0.008em / 700 |
+| 화면 제목 h1 | `--zari-type-display(-wide)`, `-display-line`, `-display-tracking`, `--zari-font-display` | 2rem(1024px 이상 2.5rem) / 1.25 / 0 / 600 |
+| 결과 수량 줄(유일한 강조) | `--zari-type-result(-wide)`, `-result-line`, `-result-tracking` | 2rem(2.5rem) / 1.18 / 0 / 700 |
 | 행 제목·요약·시트 제목 | `--zari-type-title`, `-title-line` | 1.25rem / 1.4 / 0 / 600 |
 | 본문·secondary 본문 | `--zari-type-body`, `-body-line`, `--zari-type-tracking-text`, `--zari-font-text` | 1.125rem / 1.6 / 0 |
 | 단추·칩·링크 행 | `--zari-type-label-line` | 1.35, 최소 높이 48px |

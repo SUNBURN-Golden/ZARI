@@ -2842,4 +2842,5 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 변경: `tokens.css`에 `--zari-font-text`/`--zari-font-display`와 `--zari-type-*`(display·result·title·body 크기/행간/자간, label 행간)를 더했다. `space-fit.css` 끝의 PR-E 층이 SpaceFit 화면 전체(입력·결과·시트·필터 열)에 적용한다. Rust·계약·문구·R2·배포는 바꾸지 않았다.
 - 시각 검증(측정함): live R2 번들 read-only, production build, 390/1440/320 × light/dark × 입력·결과·조합·시트 22개 상태에서 axe 위반 0, 가로 넘침·잘림 없음, 48px 미만 대상 없음. 줄 수: h1 390/320에서 2줄·1440 1줄, 행 제목 1줄, 수량 390/1440 1줄·320 2줄. 전후 비교: `docs/evidence/space-fit-pr-e/before-after-*.jpg`.
 
-- 검증(측정함): typecheck·lint 통과, `npm test` 529/529, `check-design-tokens --self-test` 97 base tokens · 90/90(새 색상 쌍 없음), `test:build` 통과, space-fit+easy-mode Chromium 38 passed.
+- 검증(측정함): typecheck·lint 통과, `npm test` 529/529, `check-design-tokens --self-test` 96 base tokens · 90/90(새 색상 쌍 없음), `test:build` 통과, space-fit+easy-mode Chromium 38 passed.
+- 검토(DeepSeek flash, 읽기 전용; GLM 무응답·Codex 사용 한도): (1) 한글 display·수량의 음수 자간이 apple.com/kr 실측(자간 0)과 어긋남 → 0em으로 고치고 쓰이지 않던 `--zari-type-tracking-label` 삭제 (2) 필터 시트가 body로 포털되어 PR-E 글자 기준을 못 받음(범례 16px) → `.space-sheet`에 본문 글자 기준을 직접 걸어 18px (3) 시트 제목이 문서와 다른 24px/1.2 → `--zari-type-title` 20px/1.4. 고친 뒤 22개 상태를 다시 찍어 모두 axe 0·넘침/잘림 0·48px 미만 0, 측정값 h1 32px/40px/자간 normal(1440 40px/50px), 수량 32px/37.76px(1440 40px/47.2px).
