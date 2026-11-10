@@ -2638,6 +2638,13 @@ export type HandoffSuitability = 'pass' | 'fail' | 'unknown' | 'notApplicable';
  */
 export type DimensionBasis = 'high' | 'medium' | 'low' | 'unspecified';
 /**
+ * Origin of reference size text. `Unspecified` when no listing is present.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionOrigin".
+ */
+export type DimensionOrigin = 'pageText' | 'imageOcr' | 'unspecified';
+/**
  * Whether the evaluated dimensions come from a Confirmed snapshot fact or
  * from reference-grade evidence. Ordering is deliberate: Confirmed <
  * Reference, so a candidate's worst block is the maximum.
@@ -5788,11 +5795,15 @@ export interface SpaceFitCategory {
  */
 export interface SpaceFitDimensions {
   /**
-   * Listing confidence. An OCR/product-name origin field does not exist in
-   * the bundle schema yet; when ZARI's OCR catalog update adds one it can be
-   * mapped here without changing provenance semantics.
+   * Listing confidence.
    */
   basis: DimensionBasis;
+  /**
+   * Where a listing's size text came from. The bundle has no origin field;
+   * the collector marks image-OCR size text with a leading `[image-OCR]`
+   * in `rawText`. Origin never upgrades provenance: OCR stays reference.
+   */
+  origin: DimensionOrigin;
   provenance: DimensionProvenance;
 }
 /**

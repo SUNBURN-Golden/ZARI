@@ -54,7 +54,7 @@ it('accepts a page carrying source, price, category and dimension provenance',()
         grid:[1,1,1],originMm:[0,0,0],quantity:'1',urls:['https://mujikorea.co.kr/products/1'],
         source:'muji',sellerId:'seller-muji',category:{hint:'bin',label:'수납함'},
         price:{state:'known',packPriceKrw:'1000',packQuantity:null,unitPriceKrw:null,basis:'reference'},
-        dimensions:{provenance:'reference',basis:'low'},
+        dimensions:{provenance:'reference',basis:'low',origin:'imageOcr'},
       }],
     }],combinations:[],unmeasured:[{
       variantId:'crawl:muji:2',name:'합성 수납함 2',urls:[],source:null,sellerId:null,
@@ -66,6 +66,9 @@ it('accepts a page carrying source, price, category and dimension provenance',()
   const missingUnmeasured:Record<string,unknown>={...page};
   delete missingUnmeasured.unmeasured;
   expect(validateSpaceFitPage(missingUnmeasured)).toBe(false);
+  const badOrigin=structuredClone(page) as unknown as {singles:{blocks:{dimensions:{origin:string}}[]}[]};
+  badOrigin.singles[0]!.blocks[0]!.dimensions.origin='guess';
+  expect(validateSpaceFitPage(badOrigin)).toBe(false);
 });
 it('aborts a stalled transport at its deadline',async()=>{
   vi.useFakeTimers();

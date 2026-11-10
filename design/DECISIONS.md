@@ -530,3 +530,8 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
   않는다. `solverVersion`은 `space-fit-1`에서 `space-fit-2`로 올린다(출력 의미 변경).
 - 되돌리기: `SpaceFitInput.listings`, 새 블록/페이지 필드, TS 전달을 제거하면 기존
   snapshot-only 동작으로 돌아간다. 저장된 카탈로그는 이 결정으로 다시 쓰지 않는다.
+- 2026-11-10 추가(ZARI 전달, 번들 `b-c8fb29299e687ad0`): 이미지에서 읽은 치수는 `rawText`가
+  `[image-OCR]`로 시작하고 unconfirmed+low로 들어온다. `dimensions.origin`
+  (`imageOcr` | `pageText` | `unspecified`)으로 구분하며, origin은 provenance를 올리지 않는다
+  (OCR도 reference). 실번들 측정: 보관함 31개 중 confirmed 0, reference 31
+  (imageOcr 17, pageText 14), unknown 0. bin이 아닌 7개는 기존 범위대로 제외.

@@ -3039,6 +3039,16 @@
       "title": "DimensionGuide",
       "type": "object"
     },
+    "DimensionOrigin": {
+      "description": "Origin of reference size text. `Unspecified` when no listing is present.",
+      "enum": [
+        "pageText",
+        "imageOcr",
+        "unspecified"
+      ],
+      "title": "DimensionOrigin",
+      "type": "string"
+    },
     "DimensionProvenance": {
       "description": "Whether the evaluated dimensions come from a Confirmed snapshot fact or\nfrom reference-grade evidence. Ordering is deliberate: Confirmed <\nReference, so a candidate's worst block is the maximum.",
       "enum": [
@@ -15542,7 +15552,15 @@
               "$ref": "#/definitions/DimensionBasis"
             }
           ],
-          "description": "Listing confidence. An OCR/product-name origin field does not exist in\nthe bundle schema yet; when ZARI's OCR catalog update adds one it can be\nmapped here without changing provenance semantics."
+          "description": "Listing confidence."
+        },
+        "origin": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/DimensionOrigin"
+            }
+          ],
+          "description": "Where a listing's size text came from. The bundle has no origin field;\nthe collector marks image-OCR size text with a leading `[image-OCR]`\nin `rawText`. Origin never upgrades provenance: OCR stays reference."
         },
         "provenance": {
           "$ref": "#/definitions/DimensionProvenance"
@@ -15550,7 +15568,8 @@
       },
       "required": [
         "provenance",
-        "basis"
+        "basis",
+        "origin"
       ],
       "title": "SpaceFitDimensions",
       "type": "object"

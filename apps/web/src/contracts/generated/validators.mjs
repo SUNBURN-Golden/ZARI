@@ -72901,10 +72901,11 @@ function validate980(data, { instancePath = "", parentData, parentDataProperty, 
 }
 var validateSpaceFitPage = validate983;
 var schema887 = { "additionalProperties": false, "properties": { "catalogDigest": { "type": "string" }, "combinations": { "items": { "$ref": "#/definitions/SpaceFitCandidate" }, "type": "array" }, "combinationsComplete": { "type": "boolean" }, "inputRevision": { "type": "string" }, "inspectedVariants": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "missingDimensions": { "description": "Full count of variants with no usable dimensions.", "maximum": 4294967295, "minimum": 0, "type": "integer" }, "nodes": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "profile": { "type": "string" }, "schemaVersion": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "singles": { "items": { "$ref": "#/definitions/SpaceFitCandidate" }, "type": "array" }, "singlesComplete": { "type": "boolean" }, "solverVersion": { "type": "string" }, "spaceMm": { "items": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "maxItems": 3, "minItems": 3, "type": "array" }, "unavailableVariants": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "unmeasured": { "description": "First 200 unmeasured variants in stable variant order, returned on the\nfirst page only. Later pages carry an empty list.", "items": { "$ref": "#/definitions/SpaceFitUnmeasured" }, "type": "array" } }, "required": ["schemaVersion", "inputRevision", "catalogDigest", "solverVersion", "spaceMm", "profile", "singles", "combinations", "unmeasured", "inspectedVariants", "missingDimensions", "unavailableVariants", "nodes", "singlesComplete", "combinationsComplete"], "title": "SpaceFitPage", "type": "object" };
-var schema893 = { "description": "Whether the evaluated dimensions come from a Confirmed snapshot fact or\nfrom reference-grade evidence. Ordering is deliberate: Confirmed <\nReference, so a candidate's worst block is the maximum.", "enum": ["confirmed", "reference"], "title": "DimensionProvenance", "type": "string" };
+var schema894 = { "description": "Whether the evaluated dimensions come from a Confirmed snapshot fact or\nfrom reference-grade evidence. Ordering is deliberate: Confirmed <\nReference, so a candidate's worst block is the maximum.", "enum": ["confirmed", "reference"], "title": "DimensionProvenance", "type": "string" };
 var schema889 = { "additionalProperties": false, "properties": { "category": { "$ref": "#/definitions/SpaceFitCategory" }, "dimensions": { "$ref": "#/definitions/SpaceFitDimensions" }, "grid": { "items": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "maxItems": 3, "minItems": 3, "type": "array" }, "name": { "type": "string" }, "orientation": { "$ref": "#/definitions/Orientation" }, "originMm": { "items": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "maxItems": 3, "minItems": 3, "type": "array" }, "price": { "$ref": "#/definitions/SpaceFitPrice" }, "quantity": { "type": "string" }, "sellerId": { "type": ["string", "null"] }, "source": { "anyOf": [{ "$ref": "#/definitions/CrawlSite" }, { "type": "null" }] }, "unitMm": { "items": { "maximum": 4294967295, "minimum": 0, "type": "integer" }, "maxItems": 3, "minItems": 3, "type": "array" }, "urls": { "items": { "type": "string" }, "type": "array" }, "variantId": { "type": "string" } }, "required": ["variantId", "name", "orientation", "unitMm", "grid", "originMm", "quantity", "urls", "source", "sellerId", "category", "price", "dimensions"], "title": "SpaceFitBlock", "type": "object" };
 var schema890 = { "additionalProperties": false, "properties": { "hint": { "description": "Product category hint (e.g. `bin`).", "type": "string" }, "label": { "description": "Listing category label, trimmed; null when uncollected.", "type": ["string", "null"] } }, "required": ["hint", "label"], "title": "SpaceFitCategory", "type": "object" };
 var schema892 = { "description": "Evidence quality behind a reference dimension. `Unspecified` means no\nlisting carried the values; `Unparsed` never appears on an evaluated item.", "enum": ["high", "medium", "low", "unspecified"], "title": "DimensionBasis", "type": "string" };
+var schema893 = { "description": "Origin of reference size text. `Unspecified` when no listing is present.", "enum": ["pageText", "imageOcr", "unspecified"], "title": "DimensionOrigin", "type": "string" };
 function validate954(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -72927,21 +72928,18 @@ function validate954(data, { instancePath = "", parentData, parentDataProperty, 
       }
       errors++;
     }
-    for (const key0 in data) {
-      if (!(key0 === "basis" || key0 === "provenance")) {
-        const err2 = { instancePath, schemaPath: "#/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key0 }, message: "must NOT have additional properties" };
-        if (vErrors === null) {
-          vErrors = [err2];
-        } else {
-          vErrors.push(err2);
-        }
-        errors++;
+    if (data.origin === void 0) {
+      const err2 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "origin" }, message: "must have required property 'origin'" };
+      if (vErrors === null) {
+        vErrors = [err2];
+      } else {
+        vErrors.push(err2);
       }
+      errors++;
     }
-    if (data.basis !== void 0) {
-      let data0 = data.basis;
-      if (typeof data0 !== "string") {
-        const err3 = { instancePath: instancePath + "/basis", schemaPath: "#/definitions/DimensionBasis/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    for (const key0 in data) {
+      if (!(key0 === "basis" || key0 === "origin" || key0 === "provenance")) {
+        const err3 = { instancePath, schemaPath: "#/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key0 }, message: "must NOT have additional properties" };
         if (vErrors === null) {
           vErrors = [err3];
         } else {
@@ -72949,8 +72947,11 @@ function validate954(data, { instancePath = "", parentData, parentDataProperty, 
         }
         errors++;
       }
-      if (!(data0 === "high" || data0 === "medium" || data0 === "low" || data0 === "unspecified")) {
-        const err4 = { instancePath: instancePath + "/basis", schemaPath: "#/definitions/DimensionBasis/enum", keyword: "enum", params: { allowedValues: schema892.enum }, message: "must be equal to one of the allowed values" };
+    }
+    if (data.basis !== void 0) {
+      let data0 = data.basis;
+      if (typeof data0 !== "string") {
+        const err4 = { instancePath: instancePath + "/basis", schemaPath: "#/definitions/DimensionBasis/type", keyword: "type", params: { type: "string" }, message: "must be string" };
         if (vErrors === null) {
           vErrors = [err4];
         } else {
@@ -72958,11 +72959,8 @@ function validate954(data, { instancePath = "", parentData, parentDataProperty, 
         }
         errors++;
       }
-    }
-    if (data.provenance !== void 0) {
-      let data1 = data.provenance;
-      if (typeof data1 !== "string") {
-        const err5 = { instancePath: instancePath + "/provenance", schemaPath: "#/definitions/DimensionProvenance/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+      if (!(data0 === "high" || data0 === "medium" || data0 === "low" || data0 === "unspecified")) {
+        const err5 = { instancePath: instancePath + "/basis", schemaPath: "#/definitions/DimensionBasis/enum", keyword: "enum", params: { allowedValues: schema892.enum }, message: "must be equal to one of the allowed values" };
         if (vErrors === null) {
           vErrors = [err5];
         } else {
@@ -72970,8 +72968,11 @@ function validate954(data, { instancePath = "", parentData, parentDataProperty, 
         }
         errors++;
       }
-      if (!(data1 === "confirmed" || data1 === "reference")) {
-        const err6 = { instancePath: instancePath + "/provenance", schemaPath: "#/definitions/DimensionProvenance/enum", keyword: "enum", params: { allowedValues: schema893.enum }, message: "must be equal to one of the allowed values" };
+    }
+    if (data.origin !== void 0) {
+      let data1 = data.origin;
+      if (typeof data1 !== "string") {
+        const err6 = { instancePath: instancePath + "/origin", schemaPath: "#/definitions/DimensionOrigin/type", keyword: "type", params: { type: "string" }, message: "must be string" };
         if (vErrors === null) {
           vErrors = [err6];
         } else {
@@ -72979,21 +72980,51 @@ function validate954(data, { instancePath = "", parentData, parentDataProperty, 
         }
         errors++;
       }
+      if (!(data1 === "pageText" || data1 === "imageOcr" || data1 === "unspecified")) {
+        const err7 = { instancePath: instancePath + "/origin", schemaPath: "#/definitions/DimensionOrigin/enum", keyword: "enum", params: { allowedValues: schema893.enum }, message: "must be equal to one of the allowed values" };
+        if (vErrors === null) {
+          vErrors = [err7];
+        } else {
+          vErrors.push(err7);
+        }
+        errors++;
+      }
+    }
+    if (data.provenance !== void 0) {
+      let data2 = data.provenance;
+      if (typeof data2 !== "string") {
+        const err8 = { instancePath: instancePath + "/provenance", schemaPath: "#/definitions/DimensionProvenance/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err8];
+        } else {
+          vErrors.push(err8);
+        }
+        errors++;
+      }
+      if (!(data2 === "confirmed" || data2 === "reference")) {
+        const err9 = { instancePath: instancePath + "/provenance", schemaPath: "#/definitions/DimensionProvenance/enum", keyword: "enum", params: { allowedValues: schema894.enum }, message: "must be equal to one of the allowed values" };
+        if (vErrors === null) {
+          vErrors = [err9];
+        } else {
+          vErrors.push(err9);
+        }
+        errors++;
+      }
     }
   } else {
-    const err7 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+    const err10 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
     if (vErrors === null) {
-      vErrors = [err7];
+      vErrors = [err10];
     } else {
-      vErrors.push(err7);
+      vErrors.push(err10);
     }
     errors++;
   }
   validate954.errors = vErrors;
   return errors === 0;
 }
-var schema895 = { "description": "A price fact, or an explicit unknown. Amounts are integer-won decimal text.", "oneOf": [{ "additionalProperties": false, "properties": { "basis": { "$ref": "#/definitions/SpaceFitPriceBasis" }, "packPriceKrw": { "type": "string" }, "packQuantity": { "type": ["string", "null"] }, "state": { "const": "known", "type": "string" }, "unitPriceKrw": { "type": ["string", "null"] } }, "required": ["state", "packPriceKrw", "packQuantity", "unitPriceKrw", "basis"], "type": "object" }, { "additionalProperties": false, "properties": { "state": { "const": "unknown", "type": "string" } }, "required": ["state"], "type": "object" }], "title": "SpaceFitPrice" };
-var schema896 = { "enum": ["confirmed", "reference"], "title": "SpaceFitPriceBasis", "type": "string" };
+var schema896 = { "description": "A price fact, or an explicit unknown. Amounts are integer-won decimal text.", "oneOf": [{ "additionalProperties": false, "properties": { "basis": { "$ref": "#/definitions/SpaceFitPriceBasis" }, "packPriceKrw": { "type": "string" }, "packQuantity": { "type": ["string", "null"] }, "state": { "const": "known", "type": "string" }, "unitPriceKrw": { "type": ["string", "null"] } }, "required": ["state", "packPriceKrw", "packQuantity", "unitPriceKrw", "basis"], "type": "object" }, { "additionalProperties": false, "properties": { "state": { "const": "unknown", "type": "string" } }, "required": ["state"], "type": "object" }], "title": "SpaceFitPrice" };
+var schema897 = { "enum": ["confirmed", "reference"], "title": "SpaceFitPriceBasis", "type": "string" };
 function validate956(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -73070,7 +73101,7 @@ function validate956(data, { instancePath = "", parentData, parentDataProperty, 
         errors++;
       }
       if (!(data0 === "confirmed" || data0 === "reference")) {
-        const err7 = { instancePath: instancePath + "/basis", schemaPath: "#/definitions/SpaceFitPriceBasis/enum", keyword: "enum", params: { allowedValues: schema896.enum }, message: "must be equal to one of the allowed values" };
+        const err7 = { instancePath: instancePath + "/basis", schemaPath: "#/definitions/SpaceFitPriceBasis/enum", keyword: "enum", params: { allowedValues: schema897.enum }, message: "must be equal to one of the allowed values" };
         if (vErrors === null) {
           vErrors = [err7];
         } else {
@@ -73093,7 +73124,7 @@ function validate956(data, { instancePath = "", parentData, parentDataProperty, 
     if (data.packQuantity !== void 0) {
       let data2 = data.packQuantity;
       if (typeof data2 !== "string" && data2 !== null) {
-        const err9 = { instancePath: instancePath + "/packQuantity", schemaPath: "#/oneOf/0/properties/packQuantity/type", keyword: "type", params: { type: schema895.oneOf[0].properties.packQuantity.type }, message: "must be string,null" };
+        const err9 = { instancePath: instancePath + "/packQuantity", schemaPath: "#/oneOf/0/properties/packQuantity/type", keyword: "type", params: { type: schema896.oneOf[0].properties.packQuantity.type }, message: "must be string,null" };
         if (vErrors === null) {
           vErrors = [err9];
         } else {
@@ -73126,7 +73157,7 @@ function validate956(data, { instancePath = "", parentData, parentDataProperty, 
     if (data.unitPriceKrw !== void 0) {
       let data4 = data.unitPriceKrw;
       if (typeof data4 !== "string" && data4 !== null) {
-        const err12 = { instancePath: instancePath + "/unitPriceKrw", schemaPath: "#/oneOf/0/properties/unitPriceKrw/type", keyword: "type", params: { type: schema895.oneOf[0].properties.unitPriceKrw.type }, message: "must be string,null" };
+        const err12 = { instancePath: instancePath + "/unitPriceKrw", schemaPath: "#/oneOf/0/properties/unitPriceKrw/type", keyword: "type", params: { type: schema896.oneOf[0].properties.unitPriceKrw.type }, message: "must be string,null" };
         if (vErrors === null) {
           vErrors = [err12];
         } else {
@@ -73794,7 +73825,7 @@ function validate953(data, { instancePath = "", parentData, parentDataProperty, 
   validate953.errors = vErrors;
   return errors === 0;
 }
-var schema898 = { "additionalProperties": false, "properties": { "access": { "$ref": "#/definitions/CheckStatus" }, "inner": { "$ref": "#/definitions/CheckStatus" }, "installation": { "$ref": "#/definitions/CheckStatus" }, "opening": { "$ref": "#/definitions/CheckStatus" }, "orientation": { "$ref": "#/definitions/CheckStatus" }, "outer": { "$ref": "#/definitions/CheckStatus" }, "quantity": { "$ref": "#/definitions/CheckStatus" }, "supportLoad": { "$ref": "#/definitions/CheckStatus" }, "tolerance": { "$ref": "#/definitions/CheckStatus" } }, "required": ["outer", "inner", "installation", "opening", "access", "supportLoad", "orientation", "quantity", "tolerance"], "title": "SpaceFitChecks", "type": "object" };
+var schema899 = { "additionalProperties": false, "properties": { "access": { "$ref": "#/definitions/CheckStatus" }, "inner": { "$ref": "#/definitions/CheckStatus" }, "installation": { "$ref": "#/definitions/CheckStatus" }, "opening": { "$ref": "#/definitions/CheckStatus" }, "orientation": { "$ref": "#/definitions/CheckStatus" }, "outer": { "$ref": "#/definitions/CheckStatus" }, "quantity": { "$ref": "#/definitions/CheckStatus" }, "supportLoad": { "$ref": "#/definitions/CheckStatus" }, "tolerance": { "$ref": "#/definitions/CheckStatus" } }, "required": ["outer", "inner", "installation", "opening", "access", "supportLoad", "orientation", "quantity", "tolerance"], "title": "SpaceFitChecks", "type": "object" };
 function validate959(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -73881,7 +73912,7 @@ function validate959(data, { instancePath = "", parentData, parentDataProperty, 
       errors++;
     }
     for (const key0 in data) {
-      if (!func2.call(schema898.properties, key0)) {
+      if (!func2.call(schema899.properties, key0)) {
         const err9 = { instancePath, schemaPath: "#/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key0 }, message: "must NOT have additional properties" };
         if (vErrors === null) {
           vErrors = [err9];
@@ -74208,7 +74239,7 @@ function validate952(data, { instancePath = "", parentData, parentDataProperty, 
         errors++;
       }
       if (!(data3 === "confirmed" || data3 === "reference")) {
-        const err10 = { instancePath: instancePath + "/dimensionProvenance", schemaPath: "#/definitions/DimensionProvenance/enum", keyword: "enum", params: { allowedValues: schema893.enum }, message: "must be equal to one of the allowed values" };
+        const err10 = { instancePath: instancePath + "/dimensionProvenance", schemaPath: "#/definitions/DimensionProvenance/enum", keyword: "enum", params: { allowedValues: schema894.enum }, message: "must be equal to one of the allowed values" };
         if (vErrors === null) {
           vErrors = [err10];
         } else {
@@ -74326,7 +74357,7 @@ function validate952(data, { instancePath = "", parentData, parentDataProperty, 
   validate952.errors = vErrors;
   return errors === 0;
 }
-var schema909 = { "additionalProperties": false, "description": "A variant with no usable W/D/H at all. It is never evaluated; the block\nshape stays the same for display without inventing dimensions or prices.", "properties": { "category": { "$ref": "#/definitions/SpaceFitCategory" }, "name": { "type": "string" }, "price": { "$ref": "#/definitions/SpaceFitPrice" }, "sellerId": { "type": ["string", "null"] }, "source": { "anyOf": [{ "$ref": "#/definitions/CrawlSite" }, { "type": "null" }] }, "urls": { "items": { "type": "string" }, "type": "array" }, "variantId": { "type": "string" } }, "required": ["variantId", "name", "urls", "source", "sellerId", "category", "price"], "title": "SpaceFitUnmeasured", "type": "object" };
+var schema910 = { "additionalProperties": false, "description": "A variant with no usable W/D/H at all. It is never evaluated; the block\nshape stays the same for display without inventing dimensions or prices.", "properties": { "category": { "$ref": "#/definitions/SpaceFitCategory" }, "name": { "type": "string" }, "price": { "$ref": "#/definitions/SpaceFitPrice" }, "sellerId": { "type": ["string", "null"] }, "source": { "anyOf": [{ "$ref": "#/definitions/CrawlSite" }, { "type": "null" }] }, "urls": { "items": { "type": "string" }, "type": "array" }, "variantId": { "type": "string" } }, "required": ["variantId", "name", "urls", "source", "sellerId", "category", "price"], "title": "SpaceFitUnmeasured", "type": "object" };
 function validate963(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
@@ -74490,7 +74521,7 @@ function validate963(data, { instancePath = "", parentData, parentDataProperty, 
     if (data.sellerId !== void 0) {
       let data5 = data.sellerId;
       if (typeof data5 !== "string" && data5 !== null) {
-        const err15 = { instancePath: instancePath + "/sellerId", schemaPath: "#/properties/sellerId/type", keyword: "type", params: { type: schema909.properties.sellerId.type }, message: "must be string,null" };
+        const err15 = { instancePath: instancePath + "/sellerId", schemaPath: "#/properties/sellerId/type", keyword: "type", params: { type: schema910.properties.sellerId.type }, message: "must be string,null" };
         if (vErrors === null) {
           vErrors = [err15];
         } else {

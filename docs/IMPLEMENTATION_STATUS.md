@@ -2567,6 +2567,11 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 
 ### 2026-11-10 PR-A — 결과 블록 판매처·분류·가격·치수 근거 계약 (사용자 결정 D1–D3)
 
+- 추가: `dimensions.origin`(`imageOcr`/`pageText`/`unspecified`). 수집기가 `rawText` 앞에 붙이는
+  `[image-OCR]` 표식으로만 판정한다. 실번들 `b-c8fb29299e687ad0`(읽기 전용) 측정: 상품 38개,
+  보관함 31개 → confirmed 0 · reference 31(imageOcr 17, pageText 14) · unknown 0, 가격 known(참고) 31.
+  OCR 형태의 합성 fixture로 Rust 단위 시험을 추가했다.
+
 - 결정 기록: `design/DECISIONS.md`의 `D-space-fit-listing-provenance`에 2026-11-10
   준태님 결정 D1(판매처/source·분류·가격·치수 근거), D2(크롤/OCR/상품명 유래 치수는
   참고치이며 적합성 계산에 포함), D3(unknown을 가격·묶음 수량·단가·치수로 발명하지

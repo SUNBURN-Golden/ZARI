@@ -64,10 +64,36 @@ pub enum DimensionBasis {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SpaceFitDimensions {
     pub provenance: DimensionProvenance,
-    /// Listing confidence. An OCR/product-name origin field does not exist in
-    /// the bundle schema yet; when ZARI's OCR catalog update adds one it can be
-    /// mapped here without changing provenance semantics.
+    /// Listing confidence.
     pub basis: DimensionBasis,
+    /// Where a listing's size text came from. The bundle has no origin field;
+    /// the collector marks image-OCR size text with a leading `[image-OCR]`
+    /// in `rawText`. Origin never upgrades provenance: OCR stays reference.
+    pub origin: DimensionOrigin,
+}
+/// Origin of reference size text. `Unspecified` when no listing is present.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum DimensionOrigin {
+    PageText,
+    ImageOcr,
+    Unspecified,
+}
+const IMAGE_OCR_MARKER: &str = "[image-OCR]";
+fn listing_origin(listing: Option<&CrawledItem>) -> DimensionOrigin {
+    match listing {
+        Some(item)
+            if item
+                .dimensions
+                .raw_text
+                .trim_start()
+                .starts_with(IMAGE_OCR_MARKER) =>
+        {
+            DimensionOrigin::ImageOcr
+        }
+        Some(_) => DimensionOrigin::PageText,
+        None => DimensionOrigin::Unspecified,
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -452,6 +478,11 @@ impl SpaceFitSearch {
                 }
             }
             let source = listing.map(|item| item.source);
+            let origin = if provenance == DimensionProvenance::Confirmed {
+                DimensionOrigin::Unspecified
+            } else {
+                listing_origin(listing)
+            };
             let seller_id = block_seller(&offers, listing);
             let category = block_category(product, listing);
             let price = block_price(&offers, listing);
@@ -502,7 +533,11 @@ impl SpaceFitSearch {
                         seller_id: seller_id.clone(),
                         category: category.clone(),
                         price: price.clone(),
-                        dimensions: SpaceFitDimensions { provenance, basis },
+                        dimensions: SpaceFitDimensions {
+                            provenance,
+                            basis,
+                            origin,
+                        },
                     },
                     max,
                     confirmed: provenance == DimensionProvenance::Confirmed,
@@ -1108,6 +1143,71 @@ mod tests {
                 basis: SpaceFitPriceBasis::Reference,
             } if pack_price_krw == "1000"
         ));
+    }
+    #[test]
+    fn image_ocr_low_confidence_item_is_reference_with_ocr_origin() {
+        // Synthetic copy of the live R2 bundle shape (b-c8fb29299e687ad0):
+        // unconfirmed + low confidence, `[image-OCR]` prefix in rawText, cm.
+        let ocr = json!({
+            "id": "crawl:daiso:1015446",
+            "sourceKind": "crawled",
+            "status": "unconfirmed",
+            "name": "합성 멀티 바스켓",
+            "brand": "다이소",
+            "category": "플라스틱바구니",
+            "categoryHint": "bin",
+            "productUrl": "https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=1015446",
+            "source": "daiso",
+            "fetchedAt": "2026-11-10T01:10:39Z",
+            "priceText": "1000 KRW",
+            "dimensions": {
+                "rawText": "[image-OCR] 12.3 X 32 X 8 cm",
+                "width": "12.3",
+                "depth": "32",
+                "height": "8",
+                "unit": "cm",
+                "confidence": "low"
+            }
+        });
+        let page_text = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            None,
+        );
+        let i = input_with(
+            json!([ocr.clone(), page_text.clone()]),
+            ["40"; 3],
+            vec![listing(&ocr), listing(&page_text)],
+        );
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        assert!(p.unmeasured.is_empty());
+        assert_eq!(p.missing_dimensions, 0);
+        let block = |id: &str| {
+            p.singles
+                .iter()
+                .flat_map(|c| &c.blocks)
+                .find(|b| b.variant_id.contains(id))
+                .cloned()
+                .unwrap()
+        };
+        let ocr_block = block("1015446");
+        assert_eq!(ocr_block.unit_mm, [123, 320, 80]);
+        assert_eq!(
+            ocr_block.dimensions.provenance,
+            DimensionProvenance::Reference
+        );
+        assert_eq!(ocr_block.dimensions.basis, DimensionBasis::Low);
+        assert_eq!(ocr_block.dimensions.origin, DimensionOrigin::ImageOcr);
+        assert_eq!(ocr_block.source, Some(CrawlSite::Daiso));
+        assert_eq!(ocr_block.category.label.as_deref(), Some("플라스틱바구니"));
+        let page_block = block("muji");
+        assert_eq!(page_block.dimensions.origin, DimensionOrigin::PageText);
+        assert!(
+            p.singles
+                .iter()
+                .all(|c| c.unconfirmed && c.dimension_provenance == DimensionProvenance::Reference)
+        );
     }
     #[test]
     fn unparsed_or_partial_listing_stays_unmeasured() {
