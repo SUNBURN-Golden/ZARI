@@ -14,17 +14,22 @@ import { MODE_KEY } from '../features/easy/state';
 import { navigate } from './router';
 
 export function App() {
-  const hash = useHashRoute();
+  // Re-render on hash changes; routing below reads the path before '?'.
+  useHashRoute();
+  // SpaceFit keeps filter state in the hash query (`#/?sort=price`). Routing
+  // compares only the path part so the query never changes the screen.
+  const hashPath = location.hash.split('?')[0] ?? '';
   const [mode, setMode] = useState(() => {
-    if (location.hash === '#/easy' || location.hash === '#/space-fit') return 'easy';
-    if (location.hash && location.hash !== '#/') return 'expert';
+    const initialPath = location.hash.split('?')[0] ?? '';
+    if (initialPath === '#/easy' || initialPath === '#/space-fit') return 'easy';
+    if (initialPath && initialPath !== '#/') return 'expert';
     try { return localStorage.getItem(MODE_KEY) === 'expert' ? 'expert' : 'easy'; }
     catch { return 'easy'; }
   });
   useEffect(() => {
-    if (hash === '#/easy' || hash === '#/space-fit') setMode('easy');
-    else if (location.hash && location.hash !== '#/') setMode('expert');
-  }, [hash]);
+    if (hashPath === '#/easy' || hashPath === '#/space-fit') setMode('easy');
+    else if (hashPath && hashPath !== '#/') setMode('expert');
+  }, [hashPath]);
   useEffect(() => {
     try { localStorage.setItem(MODE_KEY, mode); } catch { /* Current mode remains usable. */ }
   }, [mode]);
@@ -32,7 +37,7 @@ export function App() {
     setMode(next);
     navigate(next === 'easy' ? '#/easy' : '#/projects');
   };
-  if (hash === '#/space-fit' || ((!location.hash || hash === '#/') && mode === 'easy')) return <SpaceFit />;
+  if (hashPath === '#/space-fit' || ((!location.hash || hashPath === '#/') && mode === 'easy')) return <SpaceFit />;
   if (mode === 'easy') return <EasyMode onExpert={() => change('expert')} />;
   return <><ExpertApp /><footer className="expert-mode-footer"><a href="#/easy" onClick={(e) => { e.preventDefault(); change('easy'); }}>쉬운 모드</a><a href="#/space-fit">빈 공간 수납함 찾기</a></footer></>;
 }

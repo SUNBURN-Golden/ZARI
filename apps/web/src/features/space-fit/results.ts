@@ -65,22 +65,32 @@ function formatKrw(value: bigint): string {
 }
 
 /**
+ * Total price for one block: ceil(quantity / packQuantity) packs. Null when
+ * the pack price, pack quantity or unit price is unknown, so callers never
+ * invent an amount.
+ */
+export function blockTotalKrw(block: SpaceFitBlock): bigint | null {
+  const price = block.price;
+  if (price.state !== 'known' || price.packQuantity === null || price.unitPriceKrw === null) return null;
+  const packQuantity = BigInt(price.packQuantity);
+  if (packQuantity <= 0n) return null;
+  const quantity = BigInt(block.quantity);
+  const packs = (quantity + packQuantity - 1n) / packQuantity;
+  return packs * BigInt(price.packPriceKrw);
+}
+
+/**
  * Price is shown only when the pack price, pack quantity and unit price are
  * all known. The total is ceil(quantity / packQuantity) packs, never guessed.
  */
 export function priceLine(block: SpaceFitBlock): PriceLine {
+  const total = blockTotalKrw(block);
   const price = block.price;
-  if (price.state === 'known' && price.packQuantity !== null && price.unitPriceKrw !== null) {
-    const packQuantity = BigInt(price.packQuantity);
-    if (packQuantity > 0n) {
-      const quantity = BigInt(block.quantity);
-      const packs = (quantity + packQuantity - 1n) / packQuantity;
-      const total = packs * BigInt(price.packPriceKrw);
-      return {
-        kind: 'priced',
-        text: `한 개 ${formatKrw(BigInt(price.unitPriceKrw))}원 · 다 해서 ${formatKrw(total)}원`,
-      };
-    }
+  if (total !== null && price.state === 'known' && price.unitPriceKrw !== null) {
+    return {
+      kind: 'priced',
+      text: `한 개 ${formatKrw(BigInt(price.unitPriceKrw))}원 · 다 해서 ${formatKrw(total)}원`,
+    };
   }
   // copy-todo: pack-price line (판매처 표시가 {가격}원, 묶음 수량 미확인) needs Argon approval
   return { kind: 'unknown', text: UNKNOWN_PRICE_COPY };

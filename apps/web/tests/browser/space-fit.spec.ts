@@ -154,6 +154,74 @@ test('Space Fit pages match native Rust in a real browser Worker/WASM',async({pa
   expect(browser).toEqual(native);
 });
 
+test('mobile chip row, sheet focus trap and sort persistence',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const chipRow=page.locator('.space-chip-row');
+  await expect(chipRow).toBeVisible();
+  expect(await chipRow.evaluate((el)=>getComputedStyle(el).overflowX)).toBe('auto');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+  const opener=page.getByRole('button',{name:'순서·가게 고르기',exact:true});
+  await opener.click();
+  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole('heading',{name:'순서·가게 고르기'})).toBeFocused();
+  // Tab and Shift+Tab stay inside the modal while it is open.
+  for(let i=0;i<12;i++) {
+    await page.keyboard.press(i%3===0?'Shift+Tab':'Tab');
+    expect(await page.evaluate(()=>Boolean(document.activeElement?.closest('[role="dialog"]')))).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  const price=dialog.getByRole('button',{name:'가격 싼 순',exact:true});
+  await price.click();
+  await expect(price).toHaveAttribute('aria-pressed','true');
+  expect(await page.evaluate(()=>location.hash)).toContain('sort=price');
+  await dialog.getByRole('button',{name:'이대로 보기',exact:true}).click();
+  await expect(dialog).toBeHidden();
+  // The URL keeps the chosen sort; a reload and a new search still show it pressed.
+  await page.reload(); await importCatalog(page); await fill(page); await search(page);
+  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
+  await expect(page.getByRole('dialog').getByRole('button',{name:'가격 싼 순',exact:true})).toHaveAttribute('aria-pressed','true');
+});
+test('seller chip filters the rows and reset restores the default view',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const rows=page.locator('.space-results > li');
+  await expect(rows).toHaveCount(9);
+  const chip=page.locator('.space-chip-row').getByRole('button',{name:'무인양품',exact:true});
+  await expect(chip).toHaveAttribute('aria-pressed','false');
+  await chip.click();
+  await expect(chip).toHaveAttribute('aria-pressed','true');
+  // Every candidate in this fixture is sold by MUJI, so all rows remain and name it.
+  await expect(rows).toHaveCount(9);
+  for(const row of await rows.all()) await expect(row.getByText('무인양품').first()).toBeVisible();
+  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
+  await dialog.getByRole('button',{name:'처음대로 돌리기',exact:true}).click();
+  await dialog.getByRole('button',{name:'이대로 보기',exact:true}).click();
+  await expect(chip).toHaveAttribute('aria-pressed','false');
+  expect(await page.evaluate(()=>location.hash)).not.toContain('seller=');
+});
+test('desktop filter column is sticky and the result list stays within 720px',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const column=page.locator('.space-filter-column');
+  await expect(column).toBeVisible();
+  expect(await column.evaluate((el)=>getComputedStyle(el).position)).toBe('sticky');
+  await expect(page.getByRole('button',{name:'순서·가게 고르기',exact:true})).toBeHidden();
+  const width=await page.locator('.space-results').evaluate((el)=>el.getBoundingClientRect().width);
+  expect(width).toBeLessThanOrEqual(720);
+});
+test('mobile filter sheet has no axe violations',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'순서·가게 고르기'})).toBeVisible();
+  expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
+});
 test('editing cancels an in-flight Worker and keeps the next search usable', async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page);
   // Queue an actual start and input event in the same browser task. Termination
