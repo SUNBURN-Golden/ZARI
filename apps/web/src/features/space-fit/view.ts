@@ -18,6 +18,31 @@ export interface ViewState {
 
 export const DEFAULT_VIEW: ViewState = { sellers: [], types: [], sort: 'leftover' };
 
+export type EmptyReason = 'noData' | 'filters' | 'stopped' | 'noFit';
+
+export interface EmptyInput {
+  hasPage: boolean;
+  loadFailed: boolean;
+  stopped: boolean;
+  /** Every candidate the worker returned, before filters. */
+  total: number;
+  /** Candidates left after filters. */
+  shown: number;
+}
+
+/**
+ * Why the page has nothing to show. A stopped search after a page keeps the
+ * page and only adds a status line, so it never becomes an empty block.
+ */
+export function emptyReason({ hasPage, loadFailed, stopped, total, shown }: EmptyInput): EmptyReason | null {
+  if (loadFailed && !hasPage) return 'noData';
+  if (stopped && !hasPage) return 'stopped';
+  if (!hasPage) return null;
+  if (shown > 0) return null;
+  if (stopped) return null;
+  return total > 0 ? 'filters' : 'noFit';
+}
+
 const SORT_KEYS: readonly SortKey[] = ['leftover', 'price', 'count'];
 /** Approved seller order; facetOptions keeps only those present. */
 const SELLER_ORDER = ['muji', 'daiso'] as const;

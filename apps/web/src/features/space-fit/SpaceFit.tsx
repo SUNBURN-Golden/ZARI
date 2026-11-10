@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { SpaceFitCandidate, SpaceFitInput, SpaceFitPage, SpaceFitUnmeasured } from '../../contracts/generated/dto';
 import { validateSpaceFitPage } from '../../contracts/generated/validators.mjs';
 import { readBundleFile, workerReviewer } from '../catalog/bundle';
@@ -19,6 +19,7 @@ import {
 } from './results';
 import {
   DEFAULT_VIEW,
+  emptyReason,
   facetOptions,
   filterCandidates,
   needsMixedStep,
@@ -30,6 +31,16 @@ import {
   type SortKey,
   type ViewState,
 } from './view';
+import {
+  CLEARANCE_OPTIONS_MM,
+  CLEARANCE_STORAGE_KEY,
+  DEFAULT_CLEARANCE_MM,
+  clearanceLabel,
+  formatClearanceCm,
+  parseClearance,
+  type ClearanceMm,
+} from './clearance';
+import { useWindowedRows } from './windowing';
 import '../easy/easy.css';
 import './space-fit.css';
 const DRAFT_KEY = 'zari.space-fit.v1';
@@ -46,6 +57,13 @@ function initialSpace(): [string, string, string] {
   } catch { /* A broken draft never changes the old easy-mode draft. */ }
   return ['', '', ''];
 }
+function initialClearance(): ClearanceMm {
+  try { return parseClearance(localStorage.getItem(CLEARANCE_STORAGE_KEY)); } catch { return DEFAULT_CLEARANCE_MM; }
+}
+function persistClearance(value: ClearanceMm) {
+  // Storage failures keep the current screen usable, like the dimension draft.
+  try { localStorage.setItem(CLEARANCE_STORAGE_KEY, String(value)); } catch { /* ignored */ }
+}
 export function SpaceFit() {
   const [space, setSpace] = useState(initialSpace);
   const [error, setError] = useState('');
@@ -54,6 +72,11 @@ export function SpaceFit() {
   const [stale, setStale] = useState(false);
   const [loaded, setLoaded] = useState<LoadedCatalog | null>(null);
   const [page, setPage] = useState<SpaceFitPage | null>(null);
+  // The clearance belongs to the search that produced the visible page.
+  const [pageClearance, setPageClearance] = useState<ClearanceMm>(DEFAULT_CLEARANCE_MM);
+  const [clearance, setClearance] = useState<ClearanceMm>(initialClearance);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [stopped, setStopped] = useState(false);
   const [singles, setSingles] = useState<SpaceFitCandidate[]>([]);
   const [combinations, setCombinations] = useState<SpaceFitCandidate[]>([]);
   const [unmeasured, setUnmeasured] = useState<SpaceFitUnmeasured[]>([]);
@@ -78,6 +101,13 @@ export function SpaceFit() {
   const facets = useMemo(() => facetOptions(allResults), [allResults]);
   // Filtering and sorting only reorder the worker's candidates; fit stays in Rust.
   const shown = useMemo(() => sortCandidates(filterCandidates(allResults, view), view.sort), [allResults, view]);
+  const visibleCount = Math.min(limit, shown.length);
+  // Below 1,000 rendered rows this keeps every row; above it renders a window.
+  const windowed = useWindowedRows(visibleCount);
+  const reason = emptyReason({ hasPage: page !== null, loadFailed, stopped, total: allResults.length, shown: shown.length });
+  // When the list is windowed, only the rows in view (plus overscan) render.
+  const rowStart = windowed.active ? windowed.range.start : 0;
+  const rowEnd = windowed.active ? windowed.range.end : visibleCount;
   const applyView = (next: ViewState) => {
     setView(next);
     setLimit(20);
@@ -117,18 +147,34 @@ export function SpaceFit() {
     node.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
   }, [page]);
   const edit = (index: number, value: string) => {
-    stop(); setStale(true); setError(''); setInvalidAxis(null);
+    stop(); setStale(true); setError(''); setInvalidAxis(null); setStopped(false);
     setSpace((old) => old.map((s,i) => i === index ? value : s) as [string,string,string]);
   };
-  const submit = async (event: FormEvent) => {
-    event.preventDefault(); stop(); const current = revision.current;
-    setBusy(true); setError(''); setInvalidAxis(null); setPage(null); setSingles([]); setCombinations([]);
+  /**
+   * The single search path. `moveFocus` is true for a new search and false for
+   * a clearance re-run, which keeps the results screen (and the pressed chip)
+   * mounted so focus never leaves it.
+   */
+  const runSearch = async ({ moveFocus: focusSummary, clearanceMm = clearance }: { moveFocus: boolean; clearanceMm?: ClearanceMm }) => {
+    stop(); const current = revision.current;
+    const keepPage = !focusSummary && page !== null;
+    setBusy(true); setError(''); setInvalidAxis(null); setLoadFailed(false); setStopped(false);
+    if (!keepPage) setPage(null);
+    setSingles([]); setCombinations([]);
     combinationsRef.current = []; setFilterStatus('');
-    setUnmeasured([]); setLimit(20); moveFocus.current = true;
+    setUnmeasured([]); setLimit(20); moveFocus.current = focusSummary;
+    let catalog: LoadedCatalog;
     try {
-      const catalog = loaded ?? await loadCatalog(workerReviewer());
-      if (revision.current !== current) return;
-      setLoaded(catalog); setStale(false);
+      catalog = loaded ?? await loadCatalog(workerReviewer());
+    } catch {
+      // The catalog itself is unavailable: this is a distinct empty state from
+      // a search that ran and found nothing, so no role=alert is emitted.
+      if (revision.current === current) { setBusy(false); setLoadFailed(true); }
+      return;
+    }
+    if (revision.current !== current) return;
+    setLoaded(catalog); setStale(false);
+    try {
       const next = new Worker(new URL('../../worker/spaceFitWorker.ts', import.meta.url), { type: 'module' });
       worker.current = next;
       // The first page carries `unmeasured`; later pages send an empty list.
@@ -151,7 +197,12 @@ export function SpaceFit() {
         try {
           const result: unknown = JSON.parse(message.data.json);
           if (!validateSpaceFitPage(result) || result.inputRevision !== String(current) || result.catalogDigest !== catalog.snapshot.catalogDigest) throw new Error('stale_result');
-          if (firstPage) { setUnmeasured(result.unmeasured); firstPage = false; }
+          if (firstPage) {
+            setUnmeasured(result.unmeasured);
+            // The scope line describes the clearance of the shown page.
+            setPageClearance(clearanceMm);
+            firstPage = false;
+          }
           const combined = [...combinationsRef.current, ...result.combinations];
           combinationsRef.current = combined;
           setPage(result); setSingles((old) => [...old, ...result.singles]); setCombinations(combined);
@@ -166,14 +217,39 @@ export function SpaceFit() {
           } else setAutoStepping(false);
         } catch { stop(); setError('결과를 읽지 못했어요. 다시 찾아 주세요.'); }
       };
-      const input: SpaceFitInput = { schemaVersion: 1, inputRevision: String(current), space, catalog: catalog.snapshot, clearanceMm: [5,5,5], listings: catalog.listings };
+      const input: SpaceFitInput = { schemaVersion: 1, inputRevision: String(current), space, catalog: catalog.snapshot, clearanceMm: [clearanceMm, clearanceMm, clearanceMm], listings: catalog.listings };
       next.postMessage({ type: 'start', json: JSON.stringify(input) });
     } catch {
-      if (revision.current === current) { setBusy(false); setError('상품 자료를 아직 받지 못했어요. 연결을 확인한 뒤 다시 찾아 주세요.'); }
+      if (revision.current === current) { stop(); setError('계산하지 못했어요. 다시 찾아 주세요.'); }
     }
   };
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    void runSearch({ moveFocus: true });
+  };
+  const chooseClearance = (value: ClearanceMm) => {
+    if (value === clearance) return;
+    setClearance(value);
+    persistClearance(value);
+    // Only a visible result page has a search to repeat; before the first
+    // search the choice is just an input for the next submit.
+    if (page) void runSearch({ moveFocus: false, clearanceMm: value });
+  };
+  const resetAll = () => {
+    applyView(DEFAULT_VIEW);
+    if (clearance === DEFAULT_CLEARANCE_MM) return;
+    setClearance(DEFAULT_CLEARANCE_MM);
+    persistClearance(DEFAULT_CLEARANCE_MM);
+    // A reset that changes clearance repeats the search with the new value.
+    if (page) void runSearch({ moveFocus: false, clearanceMm: DEFAULT_CLEARANCE_MM });
+  };
+  const stopByUser = () => {
+    stop();
+    // With a page shown the results stay; only the status line changes.
+    setStopped(true);
+  };
   const importLocal = async (file: File) => {
-    stop(); const current = revision.current; setError(''); setStale(true);
+    stop(); const current = revision.current; setError(''); setStale(true); setStopped(false); setLoadFailed(false);
     try {
       const read = await readBundleFile(file);
       if (!('text' in read)) throw new Error('file_large');
@@ -184,7 +260,7 @@ export function SpaceFit() {
   };
   const findMoreCombinations = () => {
     if (!worker.current) return;
-    setBusy(true);
+    setStopped(false); setBusy(true);
     worker.current.postMessage({ type: 'next', budget: Math.min(1000, COMBINATION_CAP - combinations.length) });
   };
   return <div className="easy-shell space-fit-shell">
@@ -196,20 +272,32 @@ export function SpaceFit() {
         <div className="easy-dimensions">{LABELS.map((label, i) => <div key={label}>
           <label htmlFor={`space-${i}`}>{label}<span className="easy-input-unit"><input id={`space-${i}`} ref={(node) => { fields.current[i] = node; }} value={space[i]} onChange={(e) => edit(i,e.target.value)} inputMode="decimal" enterKeyHint="search" maxLength={64} placeholder={['60','40','40'][i]} aria-invalid={invalidAxis === i || undefined} aria-describedby={invalidAxis === i ? 'space-error' : 'space-help'} /><span aria-hidden="true">cm</span></span></label>
         </div>)}</div>
+        <details className="space-clearance-details">
+          <summary>여유 틈</summary>
+          <ClearanceField value={clearance} onChange={chooseClearance} />
+        </details>
         <div className="space-find-bar">
           <button className="space-find" type="submit" disabled={busy}>맞는 수납함 찾기</button>
         </div>
       </form>
       {storageError && <p role="status">입력은 이 화면에 있어요. 이 기기에 임시 저장하지 못했어요.</p>}
       {error && <p id="space-error" role="alert" className="easy-error">{error}</p>}
-      <p role="status" aria-live="polite">{busy ? '들어갈 수 있는지 맞춰 보고 있어요.' : stale && page ? '크기를 바꿨어요. 다시 찾아 주세요.' : ''}</p>
-      {busy && <button type="button" onClick={() => { stop(); setError('찾기를 멈췄어요. 입력은 그대로 있어요.'); }}>찾기 멈추기</button>}
+      {reason === 'noData' && <div className="space-empty" data-reason="noData" role="status">
+        <p>상품 자료를 아직 받지 못했어요. 연결을 확인한 뒤 다시 찾아 주세요.</p>
+        <button type="button" className="space-empty-action" onClick={() => void runSearch({ moveFocus: true })}>맞는 수납함 찾기</button>
+      </div>}
+      {reason === 'stopped' && <div className="space-empty" data-reason="stopped" role="status">
+        <p>찾기를 멈췄어요. 입력은 그대로 있어요.</p>
+        <button type="button" className="space-empty-action" onClick={() => void runSearch({ moveFocus: true })}>맞는 수납함 찾기</button>
+      </div>}
+      <p role="status" aria-live="polite">{busy ? '들어갈 수 있는지 맞춰 보고 있어요.' : stopped && page ? '찾기를 멈췄어요. 입력은 그대로 있어요.' : stale && page ? '크기를 바꿨어요. 다시 찾아 주세요.' : ''}</p>
+      {(busy || autoStepping) && <button type="button" onClick={stopByUser}>찾기 멈추기</button>}
       {page && <section aria-label="찾은 수납함" aria-busy={busy} data-stale={stale}>
-        <p>적어 주신 크기대로만 맞춰 본 결과예요. 축마다 0.5cm를 남겨요.</p>
+        <p>적어 주신 크기대로만 맞춰 본 결과예요. 축마다 {formatClearanceCm(pageClearance)}cm를 남겨요.</p>
         <p>문이 잘 열리는지, 넣고 빼기 편한지는 따로 살펴봐 주세요.</p>
         <div className="space-results-layout">
           <div className="space-filter-column">
-            <FilterPanel view={view} facets={facets} onChange={applyView} onReset={() => applyView(DEFAULT_VIEW)} />
+            <FilterPanel view={view} facets={facets} clearance={clearance} onClearanceChange={chooseClearance} onChange={applyView} onReset={resetAll} />
           </div>
           <div className="space-results-main">
             {/* The number is outside the live announcement so appends do not re-announce. */}
@@ -217,15 +305,25 @@ export function SpaceFit() {
             <h2 id="space-summary" ref={summary} className="space-summary" tabIndex={-1} aria-live="polite" aria-atomic="true">
               {shown.length === 0 ? '고르신 내용에 맞는 수납함이 아직 없어요' : <>이 자리에 맞는 수납함 <span aria-live="off">{shown.length}</span>개를 찾았어요</>}
             </h2>
-            {shown.length === 0 && allResults.length > 0 && <button type="button" className="space-reset-inline" onClick={() => applyView(DEFAULT_VIEW)}>처음대로 돌리기</button>}
+            {!busy && reason === 'filters' && <div className="space-empty" data-reason="filters">
+              <div className="space-empty-actions">
+                <button type="button" className="space-reset-inline" onClick={resetAll}>처음대로 돌리기</button>
+                <button type="button" className="space-empty-reselect" onClick={() => setSheetOpen(true)}>다시 골라보기</button>
+              </div>
+            </div>}
+            {!busy && reason === 'noFit' && <div className="space-empty" data-reason="noFit">
+              {/* copy-todo: 이 크기에 맞는 수납함이 없어요 — 크기를 조금 넓혀 보거나 여유 틈을 줄여 보세요 */}
+            </div>}
             {/* Quick toggles only; '모두 보기' per group lives in the sheet so the row has no duplicate names. */}
             <div className="space-chip-row">
               <button type="button" className="space-chip space-filter-open" ref={opener} onClick={() => setSheetOpen(true)}>순서·가게 고르기</button>
               {facets.sellers.map((seller) => <button key={seller.value} type="button" className="space-chip" aria-pressed={view.sellers.includes(seller.value)} onClick={() => toggleFacet('sellers', seller.value)}>{seller.label}</button>)}
               {facets.types.map((type) => <button key={type} type="button" className="space-chip" aria-pressed={view.types.includes(type)} onClick={() => toggleFacet('types', type)}>{type}</button>)}
             </div>
-            <ul className="space-results">
-              {shown.slice(0, limit).map((candidate) => <Candidate key={candidate.id} candidate={candidate} spaceMm={page.spaceMm} />)}
+            <ul className="space-results" ref={windowed.listRef}>
+              {windowed.active && windowed.topHeight > 0 && <li className="space-row-spacer" aria-hidden="true" style={{ height: windowed.topHeight }} />}
+              {shown.slice(rowStart, rowEnd).map((candidate, index) => <Candidate key={candidate.id} candidate={candidate} spaceMm={page.spaceMm} deferred={rowStart + index >= 200} position={windowed.active ? { setSize: visibleCount, posInSet: rowStart + index + 1 } : null} />)}
+              {windowed.active && windowed.bottomHeight > 0 && <li className="space-row-spacer" aria-hidden="true" style={{ height: windowed.bottomHeight }} />}
             </ul>
             {shown.length > limit && <button type="button" className="space-more" onClick={() => setLimit((n) => n + 20)}>더 보기</button>}
             {!page.combinationsComplete && <><p>조합을 더 찾아볼 수 있어요. 두 종류까지, 바닥에 나란히 놓는 조합을 찾아요. 서로 다른 제품을 쌓지는 않아요.</p><button type="button" disabled={busy || autoStepping || stale || combinations.length >= COMBINATION_CAP} onClick={findMoreCombinations}>조합 더 찾기</button></>}
@@ -237,16 +335,33 @@ export function SpaceFit() {
           </div>
         </div>
       </section>}
-      {sheetOpen && createPortal(<FilterSheet view={view} facets={facets} onChange={applyView} onReset={() => applyView(DEFAULT_VIEW)} onClose={closeSheet} />, document.body)}
+      {sheetOpen && createPortal(<FilterSheet view={view} facets={facets} clearance={clearance} onClearanceChange={chooseClearance} onChange={applyView} onReset={resetAll} onClose={closeSheet} />, document.body)}
       {LOCAL_IMPORT_ALLOWED && <details className="easy-details"><summary>개발용 상품 파일</summary><label>치수 번들 JSON<input type="file" accept="application/json,.json" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importLocal(file); }} /></label>{localLabel && <p role="status">개발용 파일: {localLabel}. 실상품 확인 완료를 뜻하지 않아요.</p>}</details>}
     </main>
     <footer className="easy-footer"><a href="#/easy">물건 크기 비교</a><a href="#/projects">전문가 모드</a></footer>
   </div>;
 }
+/**
+ * The clearance chips. The same fieldset appears in the input form, the mobile
+ * sheet and the desktop column; useId keeps each description link unique.
+ */
+function ClearanceField({ value, onChange }: { value: ClearanceMm; onChange: (value: ClearanceMm) => void }) {
+  const descriptionId = useId();
+  return <fieldset className="space-filter-group space-clearance" aria-describedby={descriptionId}>
+    <legend>여유 틈</legend>
+    <p id={descriptionId} className="space-clearance-description">수납함이 빡빡하지 않게 남길 틈이에요</p>
+    <div className="space-filter-options">
+      {CLEARANCE_OPTIONS_MM.map((option) => <button key={option} type="button" className="space-filter-option" aria-pressed={value === option} onClick={() => onChange(option)}>{clearanceLabel(option)}</button>)}
+    </div>
+  </fieldset>;
+}
+
 /** Shared by the mobile sheet and the desktop sticky column (CSS shows one). */
-function FilterPanel({ view, facets, onChange, onReset, showReset = true }: {
+function FilterPanel({ view, facets, clearance, onClearanceChange, onChange, onReset, showReset = true }: {
   view: ViewState;
   facets: FacetOptions;
+  clearance: ClearanceMm;
+  onClearanceChange: (value: ClearanceMm) => void;
   onChange: (next: ViewState) => void;
   onReset: () => void;
   showReset?: boolean;
@@ -256,6 +371,7 @@ function FilterPanel({ view, facets, onChange, onReset, showReset = true }: {
     onChange({ ...view, [key]: values.includes(value) ? values.filter((item) => item !== value) : [...values, value] });
   };
   return <div className="space-filter-panel">
+    <ClearanceField value={clearance} onChange={onClearanceChange} />
     <fieldset className="space-filter-group">
       <legend>보여주는 순서</legend>
       <div className="space-filter-options">
@@ -284,9 +400,11 @@ function FilterPanel({ view, facets, onChange, onReset, showReset = true }: {
  * Mobile bottom sheet. Focus moves to the heading on open, Tab/Shift+Tab cycle
  * inside, Esc and the scrim close, and the parent returns focus to the opener.
  */
-function FilterSheet({ view, facets, onChange, onReset, onClose }: {
+function FilterSheet({ view, facets, clearance, onClearanceChange, onChange, onReset, onClose }: {
   view: ViewState;
   facets: FacetOptions;
+  clearance: ClearanceMm;
+  onClearanceChange: (value: ClearanceMm) => void;
   onChange: (next: ViewState) => void;
   onReset: () => void;
   onClose: () => void;
@@ -320,7 +438,7 @@ function FilterSheet({ view, facets, onChange, onReset, onClose }: {
         <h2 id="space-sheet-title" ref={title} tabIndex={-1}>순서·가게 고르기</h2>
         <button type="button" className="space-sheet-close" onClick={onClose}>닫기</button>
       </div>
-      <FilterPanel view={view} facets={facets} onChange={onChange} onReset={onReset} showReset={false} />
+      <FilterPanel view={view} facets={facets} clearance={clearance} onClearanceChange={onClearanceChange} onChange={onChange} onReset={onReset} showReset={false} />
       <div className="space-sheet-footer">
         <button type="button" className="space-sheet-reset" onClick={onReset}>처음대로 돌리기</button>
         <button type="button" className="space-sheet-apply" onClick={onClose}>이대로 보기</button>
@@ -332,7 +450,13 @@ function FilterSheet({ view, facets, onChange, onReset, onClose }: {
 function ReferenceBadge({ controlsId, expanded, onToggle }: { controlsId: string; expanded: boolean; onToggle: () => void }) {
   return <button type="button" className="space-badge" aria-expanded={expanded} aria-controls={controlsId} onClick={onToggle}>{REFERENCE_BADGE_COPY}</button>;
 }
-function Candidate({ candidate, spaceMm }: { candidate: SpaceFitCandidate; spaceMm: number[] }) {
+function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
+  candidate: SpaceFitCandidate;
+  spaceMm: number[];
+  deferred?: boolean;
+  /** aria-setsize/posinset are only needed while the list is windowed. */
+  position?: { setSize: number; posInSet: number } | null;
+}) {
   const [metaOpen, setMetaOpen] = useState(false);
   const meta = distinctMeta(candidate);
   const noteId = `space-note-${candidate.id}`;
@@ -357,7 +481,7 @@ function Candidate({ candidate, spaceMm }: { candidate: SpaceFitCandidate; space
     if ((nameCount.get(link.name) ?? 0) > 1) link.name = `${link.name} ${n}`;
   }
   const stacked = candidate.blocks.some((block) => block.grid[2] > 1);
-  return <li data-candidate-id={candidate.id}>
+  return <li data-candidate-id={candidate.id} className={deferred ? 'space-row-deferred' : undefined} aria-setsize={position?.setSize} aria-posinset={position?.posInSet}>
     {(meta.length > 0 || candidate.dimensionProvenance === 'reference') && <div className="space-meta-block">
       <p className="space-meta">
         {meta.map((entry, index) => <span className="space-meta-entry" key={`${entry.seller ?? ''}-${entry.category ?? ''}-${index}`}>
