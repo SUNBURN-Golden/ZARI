@@ -448,3 +448,8 @@ void wasmReady.then(
     console.error(error);
   },
 );
+
+declare global { interface Window { spaceFitWorker: () => Worker } }
+
+// Test-build-only worker constructor for Space Fit native/browser comparison.
+window.spaceFitWorker = () => new Worker(new URL('../src/worker/spaceFitWorker.ts', import.meta.url), { type: 'module' });

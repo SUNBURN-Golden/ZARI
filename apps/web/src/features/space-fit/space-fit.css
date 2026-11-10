@@ -1,0 +1,13 @@
+.space-fit-main { text-align: left; }
+.space-find { width: 100%; margin-top: var(--zari-space-6); background: var(--zari-accent); color: var(--zari-text-inverse); }
+.space-fit-main h2 { font-size: var(--zari-text-title); margin-top: var(--zari-space-8); }
+.space-fit-main input { min-width: 0; width: 100%; }
+.space-fit-main summary { cursor: pointer; padding-block: var(--zari-space-3); }
+.space-results { padding: 0; list-style: none; }
+.space-results > li { padding-block: var(--zari-space-6); border-bottom: var(--zari-border-width) solid var(--zari-border-control); }
+.space-results p { margin-block: var(--zari-space-3); }
+.space-fit-main [data-stale=true] { border-inline-start: var(--zari-focus-width) solid var(--zari-warning); padding-inline-start: var(--zari-space-3); }
+
+.space-diagram { width: 100%; height: auto; max-height: var(--zari-easy-illustration-width); }
+.space-outline { fill: none; stroke: var(--zari-canvas-outline); stroke-width: var(--zari-border-width); }
+.space-block { fill: none; stroke: var(--zari-accent); stroke-width: var(--zari-focus-width); }

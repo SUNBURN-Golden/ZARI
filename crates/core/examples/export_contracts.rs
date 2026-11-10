@@ -37,6 +37,8 @@ fn main() {
             "ProtocolRequest":schema::<ProtocolRequest>(),
             "ProtocolResponse":schema::<ProtocolResponse>(),
             "BootstrapProbeDto":schema::<BootstrapProbeDto>(),
+            "SpaceFitInput":schema::<space_fit::SpaceFitInput>(),
+            "SpaceFitPage":schema::<space_fit::SpaceFitPage>(),
             "EasyFitInput":schema::<easy_fit::EasyFitInput>(),
             "EasyFitResult":schema::<easy_fit::EasyFitResult>(),
             "BootstrapProbeResult":schema::<BootstrapProbeResult>(),

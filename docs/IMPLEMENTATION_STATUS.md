@@ -2371,3 +2371,196 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 검증 중 발견·수정: 첫 전체 브라우저 실행은 방 선택 오류 시험에 남은 이전 기대값 ‘둘 곳을 골라 주세요.’를 검출해 중단했고 ‘놓을 곳을 골라 주세요.’로 수정했다. 현 작업 사본의 Chromium·Firefox 쉬운 모드 18개는 통과했다. WebKit 9개는 실행 전 라이브러리 경로 검사에서 실패했다. 라이브러리는 캐시의 `sys/lib/libproxy/libpxbackend-1.0.so`에 이미 있었고 두 WebKit 번들의 `sys/lib`에 해당 파일의 상대 심볼릭 링크를 추가해 기본 WebKit launch와 페이지 표시를 확인했다. 저장소 의존성·Playwright 설정·timeout·baseline·retry 설정은 바꾸지 않았다. 캐시 수정 후 WebKit 쉬운 모드 9개도 통과했다. 현 작업 사본의 세 브라우저 쉬운 모드 총 27개와 각 브라우저의 8개 native/Worker-WASM 전체 JSON 대조가 통과했고, 분리한 커밋 대상 코드의 전체 브라우저 검사는 `npm run test:browser -- --workers=3`에서 466/471 통과, WebKit 기존 전문가 경로 5개 실패였다. 추적 자료 확인 뒤 workers=1로 진단한 5개 중 대기 시간 초과 4개는 통과했고, 카탈로그 오프라인 새 탭 재방문 1개는 WebKit 내부 오류를 재현했다. GTK headed 실행과 별도 사본의 서비스 워커 네트워크 회피 진단에서도 같은 오류였다. 서비스 워커 진단 변경은 폐기했고 저장소 앱에는 적용하지 않았다. 다른 기존 WebKit 오프라인 시험과 같은 캐시 검증 범위로 맞출지, 문구만 커밋하며 기존 실패를 기록할지 사용자 결정 대기 중이다.
 
 실제 이미지 확인: 현 작업 사본의 390px light 입력·결과와 1440px dark 상세 화면에서 최종 문구를 확인했다. 이 캡처에는 기존 미커밋 시각 QA 수정도 들어 있으며 화면 승인은 계속 draft다. 실제 모바일·수동 스크린리더·사용자 화면 baseline 승인·비작성자 exact-HEAD 검토는 미완료다. 다음 작업은 WebKit 검증 범위에 대한 사용자 결정 뒤 최종 검사와 커밋, 이후 비작성자 검토다. 사용자가 모든 검사의 통과를 요구했으므로 현재 커밋·push는 보류했다. merge·배포는 수행하지 않는다.
+
+## 2026-11-05 — Space Fit MVP 로컬 구현과 검증 (M1–M4 실물 수용은 미완료)
+
+- 요청/결정: `docs/design/space-fit.md` 전체와 §14를 기준으로
+  `feat/space-fit-mvp` worktree 안에서 구현했다. 축별 기본 여유 5mm, 혼합 최대
+  2종, 미확인 접힘, 서버 환경의 DeepSeek Flash, 비용 상한 기본 꺼짐을 적용했다.
+  보존 프롬프트·SOURCE_MANIFEST·main·원격·배포·태그는 변경하지 않았다.
+- 수집: 기존 Native Messaging 봇/Chrome 확장에 MUJI/Daiso 텍스트 파서를 추가했다.
+  공식 MUJI 링크의 현재 목적지는 `mujikorea.co.kr`, 다이소 기업 사이트의 몰
+  링크는 `www.daisomall.co.kr`임을 웹으로 확인한 뒤 정확한 호스트만 등록했다.
+  legacy MUJI alias/이미지 호스트/wildcard subdomain은 등록하지 않았다.
+  옵션·외경/내경/포장을 분리하며 URL을 포함한 사양 절은 버린다. 새 자료는 항상
+  `unconfirmed`이고 이미지 수집은 없다. 손으로 쓴 합성 HTML fixture로 검증했다.
+- 수집 차단: 다이소몰 HTTP 403에서 추가 접근을 중단했다. MUJI robots는 읽을 수
+  없어 `robots_unverified`다. 두 출처는 기본 비활성이며 운영자 검토/명시적 재개와
+  새 robots 확인 전에는 요청하지 않는다. 차단은 cooldown 이후에도 유지한다.
+  실패 작업(마지막 방문 시각이 없는 legacy 실패 포함)은 자동 재시도하지 않는다.
+- Rust: 새 `space_fit.rs`와 얇은 WASM session을 추가했다. 기존 cm 정수 mm 파서와
+  카탈로그 검증/digest를 재사용한다. 단일 상품 전수 검사, 허용된 upright0/90,
+  같은 제품 N×M×K 압축 격자, 2종·64개 이하의 바닥 행 조합을 생성한다.
+  K>1은 확인된 적층 maxUnits 범위만 생성하고 하중은 계속 unknown이다.
+  별도 압축 AABB/수량/바닥·방향·적층 검사 후 후보를 반환한다. 외경·내용물·설치·
+  개폐·접근·하중·방향·수량·오차 상태를 구분한다. 기본 5mm는 축 끝에서 한 번
+  남기는 검색 조건이며 제품 사이 간격은 0이다. 제조사 안전 여유가 아니다.
+- 성능/범위: 상품 최대 5,000개, 한 step 최대 1,000 node/100개 조합, Worker 상주
+  상태와 명시적 이어보기, 화면 조합 최대 2,000개다. 단일 후보와 각 조합 페이지는
+  결정론적으로 정렬한다. 미탐색 범위가 있으면 완료로 표시하지 않는다. 서로 다른
+  제품 적층, 일반 3D 전수 탐색, 전역 최적/전역 순위, 실제 모바일 p95는 달성한
+  것으로 주장하지 않는다. v1의 4 MiB snapshot/10 MiB bundle 한도를 유지한다.
+- 카탈로그: 기존 v1 R2 reader에 UTF-8 길이/hash 결속과 스트림 제한을 보강했다.
+  앱은 빌드 설정으로 고정한 public R2 bucket origin만 credentials omit / redirect
+  error / no-referrer GET으로 읽는다. 정상 번들은 별도 IndexedDB에 캐시하고
+  장애 시 같은 R2 base의 캐시를 Rust 재검토 후 쓴다. 원격 쓰기/판매처 fetch/AI
+  호출은 앱에 없다. 파일 가져오기는 dev/test 전용이다. v2 shard/release/철회
+  publisher, 실제 R2/CORS 연결은 이번에 완료하지 않았다.
+- 서버 AI: 봇의 낮은 신뢰도 짧은 사양에만 `deepseek-flash` fallback을 연결했다.
+  키는 `process.env.DEEPSEEK_API_KEY`만 읽고 출력/로그하지 않는다. 정확한 옵션,
+  외경 역할, 원문 evidence span, 축/단위/값, 제한 JSON을 확인한 뒤 기존 Rust
+  bundle tool로 검증한다. high confidence도 unconfirmed다. 30초/400 output token/
+  16 KiB 응답, run 내 최대 1,000개 cache와 실패 재호출 방지가 있다. `aiCostCap`
+  기본 null; 선택 상한은 검증된 단가를 요구하는 per-run 예약/사용량 계산이다.
+  durable 일/월 한도·cross-run cache·AI 조합 순위·실제 유료 호출은 미구현/미실행이다.
+- 화면: 첫 입구/`#/space-fit`는 가로·깊이·높이 cm와 단추 하나다. 딱 맞음/조합,
+  접힌 치수 확인 중, 더 보기/탐색 제한, 오류 초점·stale·취소·입력 보존을 구현했다.
+  새 `zari.space-fit.v1` 초안과 캐시는 기존 easy/프로젝트 저장과 분리했다.
+  `#/easy` 물건 비교·전문가 프로젝트를 보존했다. 도형은 같은 후보의 Rust 좌표를
+  투영한 개략 그림이며 새 PlanSnapshot 채택/견적/가이드 기능을 만들지 않았다.
+  기존 전문가 도면/BOM/가이드의 같은 snapshot 계약은 회귀 시험으로 유지했다.
+- 실행 검증:
+  - `cargo test --workspace --locked`: **268 passed, 1 ignored, 0 failed** (30 suites).
+  - `npm test` (`vitest run`): **458 passed / 54 files**.
+  - `npx playwright test --project=chromium --workers=1 --grep-invert '@parity|@capture|@bench'`:
+    **163 passed** (12.6분). 새 Space Fit 6개에 다중 페이지 native Rust ↔ 실제
+    browser Worker/WASM 전체 JSON 대조와 입력 수정 중 Worker 취소를 포함했다.
+  - 초기 workers=2 실행은 160 pass/2 fail였다. 잘못 옮긴 easy mode-memory 테스트
+    주소를 새 입구 계약에 맞게 수정했다. 기존 execution-checklist의 5초 Worker
+    제한 중단은 native/브라우저 동시 부하를 피한 serial 전체 실행에서 통과했다.
+    그 검사·생산 timeout·assertion을 삭제/완화하거나 자동 retry하지 않았다.
+  - `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`,
+    `npm run contracts:check`(124 fixture structures), `npm run typecheck`, `npm run lint` 통과.
+  - 실제 `npm run wasm:build` / test build와 별도 production build 통과. production
+    Chromium smoke에서 파일 입력 0개, 외부 요청 0개, 미설정 자료 오류/입력 유지 확인.
+    기존 대형 chunk 경고는 남아 있다.
+  - `node scripts/check-design-tokens.mjs --self-test`: **13 self-tests, 90/90 contrast cases**.
+    실제 320px(light/dark axe·keyboard·forced-colors), 390/1440px(light/dark) 검토에서
+    가로 넘침 없음/주요 단추 48px 확인. 캡처는 draft이며 승인 baseline으로 올리지 않았다.
+- 검증 산출물: 로컬 `test-results/space-fit-review/`의 draft 화면/metrics와
+  `test-results/space-fit-run/logs/`, 사용자 지정 `/workspace/zari-fit-run/RESULT.md`.
+- 미완료/다음: 허용 robots와 실제 옵션 URL/텍스트 확보 → 사람/독립 규칙의 세 축·옵션·
+  돌출 확인 → 실제 R2/CORS 설정 → 두 판매처 수집/확인/R2/검색 여정 → 사용자 사용 수용.
+  실제 휴대폰·Firefox/WebKit 전체 matrix·사용자 화면 승인·비작성자 exact-HEAD review는
+  미완료다. 사용자가 언급한 main의 WebKit `catalog-crawler:67` 실패는 여기서 재현하지
+  않았으며 그 테스트를 비활성화하지 않았다. M4·출시·배포 완료를 선언하지 않는다.
+
+### 2026-11-05 16:31 KST 승인 — headed Chrome / DeepSeek Flash 치수 수집
+
+- `tools/catalog-trial/trial-deepseek.ts`를 추가했다. 지정 Chrome profile,
+  DISPLAY=:12, 실제 headed Chrome/default UA/no proxy, 이미지·미디어·폰트 차단,
+  DOMContentLoaded 뒤 9초 렌더 대기, MUJI 4–8초 간격을 사용한다.
+  기존 adapter의 1,024자 제한 때문에 같은 `deepseek-flash` 모델로 12,000자 이하의
+  visible innerText를 JSON response_format으로 보낸다. 키는 env에서만 읽는다.
+- DAISO robots 200을 먼저 확인했다. `/ds/`와 `/pd/pdr/` 허용 및 30초 delay를
+  적용하고, navigation뿐 아니라 모든 허용된 DAISO 요청을 직렬 제한한다.
+  허용 검색 페이지에서 상품 링크를 발견하지 못해 상품 방문/AI 호출 없이 종료했다.
+  실행 뒤 보수적으로 `empty_page:no_product_links`로 분류하여 로컬
+  `/workspace/zari-fit-run/state/daiso.disabled`를 기록했다. 재시도하지 않았다.
+- 기존 MUJI 9개 중 치수 누락 4개를 productUrl로 재방문했다. 실제 DeepSeek 호출
+  **4회**, 네 항목 모두 literal evidence/0.5–300cm 검사를 통과했다. 원본 5개를
+  보존하여 **9 items / 9 with dims**, DAISO **0 / 0**이다. 모두 unconfirmed다.
+  로컬 real-items.v1.json에 원본을 보관하고 real-items.json을 갱신했다.
+- 새 추출은 real-items.json에 confidence `llm`과 evidence rawText를 기록한다.
+  Rust v1 계약에는 llm enum이 없어 bundle 입력 경계에서 `low`로 명시 변환한다
+  (치수 미확보는 unparsed). 따라서 새 네 항목은 fit 계산에서 계속 unknown이며,
+  자동 추출을 확인된 치수로 승격하지 않았다. 앱/공유 Rust 계약 변경은 없다.
+- 기존 Rust buildBundle로 9개 전부 수용/거절 0인 `b-cece21958d57f694`를 생성하고,
+  사용자 승인 범위에서 기존 publish-file.ts로 zari-catalog R2에 게시했다.
+  public latest.json **200**, 새 bundleId/digest 일치, bundle **200** 및 로컬과
+  공개 응답 **4,457 bytes 전체 일치**를 확인했다. 앱 배포는 수행하지 않았다.
+- 검증: trial/robots offline tests **13 passed / 3 files**, `npm run typecheck` 통과.
+  새 sanity test는 범위 경계, NaN/null, 허구/빈 evidence, 원문에 없는 값,
+  내경 거절 및 mm→cm를 포함한다. 네트워크/키 없이 실행한다.
+- 로컬 근거: `/workspace/zari-fit-run/ds-run.json`, `ds-publish-verification.json`,
+  `DS_RESULT.md`. 미완료/다음: DAISO 사람 검토 후 재개 판단, 새 MUJI 네 상품의
+  축·옵션·외경 독립 확인 및 비작성자 exact-HEAD review. 새 Rust/WASM 계산 변경은
+  없으며 전체 browser/native parity는 이번 작업에서 재실행하지 않았다.
+  push/merge/tag/branch 변경/앱 배포는 수행하지 않았다.
+
+### 2026-11-05 16:59 KST 승인 — DAISO 카테고리 단일 재개 시도
+
+- `d9f0e17`의 DeepSeek sibling을 재사용한
+  `tools/catalog-trial/trial-daiso-category.ts`를 추가했다. 기존 disabled flag를
+  자동 삭제하지 않고, 전용 backup이 있으면 재실행을 거절한다. 실제 headed
+  Chrome / DISPLAY=:12 / 지정 profile / default UA / no proxy·login과
+  image·media·font 차단을 유지했다. `/robots.txt`를 먼저 읽고 이후 DAISO 요청을
+  `/ds/`, `/pd/pdr/`와 새 robots 허용 교집합으로 제한했다.
+- robots **200**, User-agent `*`의 Crawl-delay **30초**. robots navigation
+  08:01:33.545Z → 승인 category navigation 08:02:03.548Z로 **30.003초** 간격이었다.
+  category **200** 뒤 10초 render 대기·600px scroll·추가 1초 대기에도 상품 없이
+  navigation/footer만 나타났다. `empty_page`로 즉시 중단하여
+  `/workspace/zari-fit-run/state/daiso.disabled`를 썼다. 추가 접근/재시도 없음.
+  방문은 robots 1개와 category 1개, detail **0**, DAISO **0개/치수 0개**,
+  이번 DeepSeek 호출 **0회**다. 두 판매처 수집 성공으로 기록하지 않는다.
+- `real-items.ds2-backup.json`을 먼저 보관했다. MUJI **9개/치수 9개**를 유지하고
+  상판 `59138`만 `categoryHint=other`로 바꿨다. 기존 Rust SpaceFit의 `bin` 필터로
+  적합성 후보에서 제외된다. 나머지 필드·다른 8개 항목의 동일성을 확인했다.
+  전부 unconfirmed이며 llm→low 변환과 literal evidence/range 검사를 유지했다.
+- Rust bundle tool이 9개 수용/거절 0인 **b-3f1f3dfb266282aa**를 생성했다.
+  승인된 `publish-file.ts`로 기존 `zari-catalog`에 게시했다. public latest와 새
+  bundle 모두 **200**, latest의 bundleId/digest 일치, 공개 bundle **4,459 bytes**가
+  로컬과 완전히 같다. 앱 배포는 수행하지 않았다.
+- 검증: 기존 trial/robots/publish/bundle-flow **41 tests / 5 files**와 신규 경로
+  제한 검사 **1 test / 1 file** 통과. `npm run typecheck`, Rust `space_fit`
+  **7 tests**, `node --check`, `git diff --check` 통과. 앱/Rust 구현 변경은 없고
+  실제 browser/native parity는 이번에 재실행하지 않았다.
+- 근거: `/workspace/zari-fit-run/DS2_RESULT.md`, `ds2-run.json`,
+  `ds2-publish-verification.json`, `ds2-page-2.txt`, `ds2-daiso-robots.txt`.
+  다음: DAISO는 사람 검토와 별도 명시적 재개 전까지 disabled 유지. MUJI 치수의
+  축/옵션/외경 독립 확인과 비작성자 exact-HEAD review는 미완료다. 사용자 지시로
+  현재 기능 branch를 Codex 명의로 commit하고 `sg feat/space-fit-mvp`에 push한다.
+  main push·merge·태그 변경·앱 배포는 수행하지 않는다.
+
+### 2026-11-06 18:57 KST 승인 — DAISO 확장 allowlist / headed Chrome DS3
+
+- DAISO shared allowlist에 `/ds/`, `/pd/` pathPrefixes를 적용하고 manifest에
+  `/ds/*`를 추가했다. 기존 `/pd/pdl/SCR_PDL_0001?pdNo=` 상품 식별은 유지했다.
+  승인된 재개에 따라 static blockedReason만 제거했다. live 차단 뒤 operator
+  resume 전까지 host disabled를 유지하는 scheduler 계약은 보존했다.
+- 확장 render settle을 robots 1.5초 / 상품 2.5초 / listing 15초로 구분했다.
+  DAISO listing의 추출 상품 링크가 0개이면 empty_listing 차단으로 반환하여
+  navigation/footer만 있는 DOM을 성공으로 처리하지 않는다.
+- 실제 Google Chrome 156.0.8078.47, DISPLAY=:12, 전용 ext-state profile과
+  `--load-extension`으로 실행했다. switch만으로 확장이 로드되지 않아 Chrome
+  developer UI의 Load unpacked로 같은 경로를 설치했다. 최초 두 connection
+  setup은 90초 만료로 끝났고 DAISO 요청은 0회였다. 최종 CLI run handler는
+  extension 연결 대기만 600초로 늘렸으며 native connection이 실제 성립했다.
+  Playwright/CDP/UA 변경/로그인/프록시/우회는 사용하지 않았다. profile에서
+  이미지 로드를 차단하고 수집기는 DOM/meta/JSON-LD 텍스트만 읽었다.
+- 시드는 승인 category URL 단 하나다. config는 minIntervalMs=30000,
+  pagesPerRun=15, dailyPerHost=20, jitterMs=0, publishEvery=0이다.
+  robots **200**, `*` Crawl-delay **30초**, `/ds/`, `/pd/pdr/` Allow 확인.
+  robots job 10:07:51.108Z → category job 10:08:21.138Z (**30.030초**).
+  category에서 load 완료 뒤 15초 대기에도 상품 링크 **0**, empty_listing으로
+  host를 비활성화하고 종료했다. robots 1회/category 1회/product 0회,
+  DAISO **0 items / 0 with dims**, AI 호출 0회다. 재방문하지 않았다.
+- `/workspace/zari-fit-run/state/daiso.disabled`를 재생성했다. MUJI real-items.json과
+  상판 59138의 기존 제외 상태를 변경하지 않았다. 새 번들/R2 게시 없음.
+  Computer egress는 활성화하지 않았다. 다음 합법적 선택지는 준태님 컴퓨터를
+  통한 Settings → Computer egress이며 별도 사람 판단 후 진행해야 한다.
+- 검증: `npx vitest run tools/catalog-extension/tests tools/catalog-crawler-bot/tests`
+  **160 passed / 13 files**, `npm run typecheck`, `git diff --check` 통과.
+  앱/Rust 계산 변경 없음, browser/native WASM parity는 재실행하지 않았다.
+- 근거: `/workspace/zari-fit-run/DS3_EXT_RESULT.md`, ext-state/run.log,
+  ext-state/hosts.json, ext-state/cli-run.log. 비작성자 exact-HEAD review 미완료.
+  사용자 승인 범위에서 Codex 명의 commit과 `sg feat/space-fit-mvp` push만 수행한다.
+  main push/merge/tag 변경/앱 배포는 수행하지 않는다.
+
+### 2026-11-06 DS4 — DAISO PDR 상품 식별 수정 / 승인된 단일 재개
+
+- shared productKey가 numeric pdNo를 가진 PDR/PDL 두 경로를 인식하고,
+  canonicalProductUrl은 PDR + pdNo만 남긴다. recmYn=N 등 부가 query가 있는
+  live 형태와 legacy listing dedupe, invalid ID, parser fixture 회귀를 검증했다.
+- extension + crawler-bot unit tests: **163 passed / 13 files**. typecheck 통과.
+- 승인된 ext-state host resume와 기존 extension ID/native host/profile, DISPLAY=:12의
+  headed Chrome으로 단 한 번 재개했다. minIntervalMs=30000/pagesPerRun=15/
+  dailyPerHost=20을 유지하고 기존 daily count도 보존했다. 단일 category seed 유지.
+- fresh robots 요청 2026-11-06T10:19:23.486Z → **403** 판정으로 host closed.
+  listing/product 방문 0, 새 상품 0/치수 0, DeepSeek 0회. 추가 요청/재시도 없이
+  daiso.disabled를 재생성했다. 기존 MUJI 9개와 상판 제외는 변경하지 않았다.
+  새 bundle/R2 게시 없음. 앱 배포/main push/merge 없음.
+- 근거: /workspace/zari-fit-run/DS4_PDR_RESULT.md, ext-state/ds4-cli.log,
+  ext-state/run.log, hosts.json. Rust/app 변경 없음; browser/native WASM parity는
+  재실행하지 않았다. 비작성자 exact-HEAD review 미완료. 다음은 별도 owner resume
+  판단과 실제 상품 치수/옵션 독립 확인이다. Codex 명의 commit 후 sg의 현재 branch만 push.

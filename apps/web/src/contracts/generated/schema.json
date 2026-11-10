@@ -2852,7 +2852,9 @@
       "enum": [
         "ohou",
         "29cm",
-        "ikea"
+        "ikea",
+        "muji",
+        "daiso"
       ],
       "title": "CrawlSite",
       "type": "string"
@@ -15297,6 +15299,294 @@
       "title": "Space",
       "type": "object"
     },
+    "SpaceFitBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "grid": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "orientation": {
+          "$ref": "#/definitions/Orientation"
+        },
+        "originMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "quantity": {
+          "type": "string"
+        },
+        "unitMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "urls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "variantId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "variantId",
+        "name",
+        "orientation",
+        "unitMm",
+        "grid",
+        "originMm",
+        "quantity",
+        "urls"
+      ],
+      "title": "SpaceFitBlock",
+      "type": "object"
+    },
+    "SpaceFitCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "blocks": {
+          "items": {
+            "$ref": "#/definitions/SpaceFitBlock"
+          },
+          "type": "array"
+        },
+        "checks": {
+          "$ref": "#/definitions/SpaceFitChecks"
+        },
+        "id": {
+          "type": "string"
+        },
+        "occupiedVolumeMm3": {
+          "type": "string"
+        },
+        "remainingMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "unconfirmed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "blocks",
+        "remainingMm",
+        "occupiedVolumeMm3",
+        "unconfirmed",
+        "checks"
+      ],
+      "title": "SpaceFitCandidate",
+      "type": "object"
+    },
+    "SpaceFitChecks": {
+      "additionalProperties": false,
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "inner": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "installation": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "opening": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "orientation": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "outer": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "quantity": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "supportLoad": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "tolerance": {
+          "$ref": "#/definitions/CheckStatus"
+        }
+      },
+      "required": [
+        "outer",
+        "inner",
+        "installation",
+        "opening",
+        "access",
+        "supportLoad",
+        "orientation",
+        "quantity",
+        "tolerance"
+      ],
+      "title": "SpaceFitChecks",
+      "type": "object"
+    },
+    "SpaceFitInput": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog": {
+          "$ref": "#/definitions/CatalogSnapshot"
+        },
+        "clearanceMm": {
+          "default": [
+            5,
+            5,
+            5
+          ],
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "inputRevision": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "space": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "inputRevision",
+        "space",
+        "catalog"
+      ],
+      "title": "SpaceFitInput",
+      "type": "object"
+    },
+    "SpaceFitPage": {
+      "additionalProperties": false,
+      "properties": {
+        "catalogDigest": {
+          "type": "string"
+        },
+        "combinations": {
+          "items": {
+            "$ref": "#/definitions/SpaceFitCandidate"
+          },
+          "type": "array"
+        },
+        "combinationsComplete": {
+          "type": "boolean"
+        },
+        "inputRevision": {
+          "type": "string"
+        },
+        "inspectedVariants": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "missingDimensions": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "nodes": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "singles": {
+          "items": {
+            "$ref": "#/definitions/SpaceFitCandidate"
+          },
+          "type": "array"
+        },
+        "singlesComplete": {
+          "type": "boolean"
+        },
+        "solverVersion": {
+          "type": "string"
+        },
+        "spaceMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "unavailableVariants": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "inputRevision",
+        "catalogDigest",
+        "solverVersion",
+        "spaceMm",
+        "profile",
+        "singles",
+        "combinations",
+        "inspectedVariants",
+        "missingDimensions",
+        "unavailableVariants",
+        "nodes",
+        "singlesComplete",
+        "combinationsComplete"
+      ],
+      "title": "SpaceFitPage",
+      "type": "object"
+    },
     "SpaceKind": {
       "enum": [
         "rectangularCompartment"
@@ -16921,6 +17211,12 @@
     "SnapshotBinding": {
       "$ref": "#/definitions/SnapshotBinding"
     },
+    "SpaceFitInput": {
+      "$ref": "#/definitions/SpaceFitInput"
+    },
+    "SpaceFitPage": {
+      "$ref": "#/definitions/SpaceFitPage"
+    },
     "VerifiableRecordDto": {
       "$ref": "#/definitions/VerifiableRecordDto"
     }
@@ -16929,6 +17225,8 @@
     "ProtocolRequest",
     "ProtocolResponse",
     "BootstrapProbeDto",
+    "SpaceFitInput",
+    "SpaceFitPage",
     "EasyFitInput",
     "EasyFitResult",
     "BootstrapProbeResult",

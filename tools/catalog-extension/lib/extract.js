@@ -1,6 +1,6 @@
 // Page snapshot → listing links and dimension-only items. Reads only the
 // snapshot fields the collector produces; there is no image data in it.
-import { normalizeUrl, productKey, siteOfHost, parseHttpsUrl } from './sites.js';
+import { normalizeUrl, productKey, siteOfHost, parseHttpsUrl, canonicalProductUrl } from './sites.js';
 import { parseDimensionBlocks } from './dimensions.js';
 import { SITE_PARSERS } from '../parsers/index.js';
 
@@ -16,7 +16,7 @@ export function extractListing(snapshot, pageUrl) {
     const key = productKey(href);
     const normalized = key && key.site === site.key ? normalizeUrl(href) : null;
     // Product URLs lose their query so one product has one queue entry.
-    if (normalized) out.add(normalized.split('?')[0]);
+    if (normalized) out.add(canonicalProductUrl(href));
     if (out.size >= MAX_LINKS) break;
   }
   return [...out];
@@ -27,7 +27,10 @@ const HINTS = [
   ['sofa', /소파|sofa|couch/i],
   ['chair', /의자|스툴|체어|chair|stool/i],
   ['table', /테이블|책상|식탁|데스크|desk|table/i],
-  ['bin', /바구니|수납함|수납\s*박스|박스|정리함|bin\b|basket|box\b/i],
+  // Storage containers, shared by every site (MUJI, Daiso, ...). Checked before
+  // shelf/cabinet so 수납장·보관장·서랍장 count as bins. Bare 수납/보관 is
+  // not enough: hooks, hangers and covers (수납걸이, 보관커버) stay out.
+  ['bin', /바구니|바스켓|(?:수납|보관|정리)\s*(?:함|박스|케이스|통|바구니|트레이)|(?:수납|보관|서랍)장|리빙\s*박스|박스|bin\b|basket|box\b/i],
   ['shelf', /선반|책장|서가|shelf|shelves|bookcase|rack|행거/i],
   ['cabinet', /수납장|서랍|캐비닛|캐비넷|옷장|장롱|찬장|cabinet|drawer|wardrobe|dresser|chest/i],
 ];
@@ -96,8 +99,8 @@ export function extractProducts(snapshot, pageUrl, now = Date.now()) {
   ).trim().slice(0, 120);
   const category = (snapshot.breadcrumbs?.length ? snapshot.breadcrumbs.join(' > ') : String(product?.category ?? '')).slice(0, 200);
   const hint = categoryHintOf(category, name);
-  const blocks = parseDimensionBlocks(lines(snapshot));
-  const productUrl = normalized.split('?')[0];
+  const blocks = parseDimensionBlocks(parser.dimensionLines ? parser.dimensionLines(snapshot) : lines(snapshot));
+  const productUrl = canonicalProductUrl(pageUrl);
   const price = priceText(product, snapshot);
   const items = blocks.map((block) => {
     const optioned = block.optionLabel !== null;

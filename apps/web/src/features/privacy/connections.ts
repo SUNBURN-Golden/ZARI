@@ -7,6 +7,7 @@
  */
 export type ConnectionKind =
   /** Works with no network at all. */
+  | 'r2-catalog-read'
   | 'local'
   /** Needs the network only to fetch ZARI's own static files. No user data leaves. */
   | 'same-origin-update'
@@ -21,6 +22,7 @@ export interface ConnectionEntry {
 }
 
 export const CONNECTIONS: readonly ConnectionEntry[] = [
+  { id: 'catalog-r2', kind: 'r2-catalog-read', label: '상품 자료 받기', note: '찾기를 누르면 지정된 R2에서 상품 글자·치수만 받습니다. 공간 치수와 사진은 보내지 않습니다.' },
   {
     id: 'plan',
     kind: 'local',
@@ -61,6 +63,7 @@ export const CONNECTIONS: readonly ConnectionEntry[] = [
 
 export const KIND_TEXT: Record<ConnectionKind, string> = {
   local: '완전 로컬',
+  'r2-catalog-read': '연결 필요: 상품 자료 받기',
   'same-origin-update': '연결 필요: 앱 파일 받기',
   'user-opened-link': '연결 필요: 직접 연 링크',
 };

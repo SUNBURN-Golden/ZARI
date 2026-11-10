@@ -3,9 +3,17 @@
 // Deny lists are defense in depth: the bot still reads and obeys each host's
 // live robots.txt, and the extension refuses these paths regardless.
 
-/** @typedef {'ohou'|'29cm'|'ikea'} SiteKey */
+/** @typedef {'ohou'|'29cm'|'ikea'|'muji'|'daiso'} SiteKey */
 
 export const SITES = {
+  muji: {
+    key: 'muji', hosts: ['mujikorea.co.kr'], pathPrefix: '/products/',
+    denyPrefixes: [], product: [/^\/products\/(\d+)\/?$/, /^\/products\/view\/(\d+)\/?$/],
+  },
+  daiso: {
+    key: 'daiso', hosts: ['www.daisomall.co.kr'], pathPrefixes: ['/ds/', '/pd/'],
+    denyPrefixes: [], product: [],
+  },
   ohou: {
     key: 'ohou',
     hosts: ['ohou.se', 'store.ohou.se'],
@@ -64,7 +72,7 @@ export function normalizeUrl(raw) {
   const url = parseHttpsUrl(raw);
   if (!url) return null;
   const site = siteOfHost(url.hostname);
-  if (!site || !url.pathname.startsWith(site.pathPrefix)) return null;
+  if (!site || !(site.pathPrefixes ?? [site.pathPrefix]).some((prefix) => url.pathname.startsWith(prefix))) return null;
   const path = url.pathname.toLowerCase();
   if (site.denyPrefixes.some((prefix) => path.startsWith(prefix))) return null;
   if ([...url.searchParams.keys()].some((key) => DENIED_PARAM.test(key))) return null;
@@ -79,6 +87,9 @@ export function productKey(raw) {
   const url = parseHttpsUrl(raw);
   const site = url && siteOfHost(url.hostname);
   if (!url || !site) return null;
+  if (site.key === 'daiso' && ['/pd/pdr/SCR_PDR_0001', '/pd/pdl/SCR_PDL_0001'].includes(url.pathname) && /^\d{1,20}$/.test(url.searchParams.get('pdNo') ?? '')) {
+    return { site: site.key, productId: url.searchParams.get('pdNo') };
+  }
   for (const pattern of site.product) {
     const match = pattern.exec(url.pathname);
     if (match?.[1]) return { site: site.key, productId: match[1] };
@@ -89,4 +100,14 @@ export function productKey(raw) {
 /** A URL a job may visit: allowlisted, not denied, and not a robots probe. */
 export function isVisitable(raw) {
   return normalizeUrl(raw) !== null;
+}
+
+/** Retain only the product identity query, never tracking or unrelated state. */
+export function canonicalProductUrl(raw) {
+  const key = productKey(raw);
+  const normalized = normalizeUrl(raw);
+  if (!key || !normalized) return null;
+  if (key.site === 'daiso') return `https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=${key.productId}`;
+  const url = new URL(normalized);
+  return `${url.origin}${url.pathname}`;
 }
