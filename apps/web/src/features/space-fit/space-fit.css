@@ -262,6 +262,7 @@
    Product name + count read as one title block; leftover space is a quiet
    secondary line; price stands on its own. Text stays at the easy-mode 18px
    minimum, so hierarchy comes from weight, colour, leading and spacing. */
+.space-meta { gap: var(--zari-space-2) var(--zari-space-4); }
 .space-meta-entry { gap: 0; }
 .space-meta-sep { margin-inline: var(--zari-space-1); }
 .space-seller { min-height: 0; padding: var(--zari-space-1) var(--zari-space-3); line-height: var(--zari-type-label-line); font-weight: var(--zari-weight-medium); }

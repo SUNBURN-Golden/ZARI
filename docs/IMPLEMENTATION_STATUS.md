@@ -2844,3 +2844,9 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 
 - 검증(측정함): typecheck·lint 통과, `npm test` 529/529, `check-design-tokens --self-test` 96 base tokens · 90/90(새 색상 쌍 없음), `test:build` 통과, space-fit+easy-mode Chromium 38 passed.
 - 검토(DeepSeek flash, 읽기 전용; GLM 무응답·Codex 사용 한도): (1) 한글 display·수량의 음수 자간이 apple.com/kr 실측(자간 0)과 어긋남 → 0em으로 고치고 쓰이지 않던 `--zari-type-tracking-label` 삭제 (2) 필터 시트가 body로 포털되어 PR-E 글자 기준을 못 받음(범례 16px) → `.space-sheet`에 본문 글자 기준을 직접 걸어 18px (3) 시트 제목이 문서와 다른 24px/1.2 → `--zari-type-title` 20px/1.4. 고친 뒤 22개 상태를 다시 찍어 모두 axe 0·넘침/잘림 0·48px 미만 0, 측정값 h1 32px/40px/자간 normal(1440 40px/50px), 수량 32px/37.76px(1440 40px/47.2px).
+
+## 2026-11-11 PR-F (가격·결과 줄 위계·손그림 칸)
+- 측정(측정함): 실번들 38개 중 판매처 가격 38, 묶음 수량 필드 0, 사진 주소 0. Rust `block_price`는 수량 미확인 시 판매처 가격을 이미 유지(시험 `unit_price_needs_a_known_exact_pack_quantity`) → 계약 변경 없음.
+- 변경: `priceLine`에 `listing` 종류 추가(판매처 가격, 한 개 값 없음), 글 가격 설명, 0개일 때 조언, 미확인 목록 200개 안내(개수>200일 때만), 단일 상품 제목에서 중복 `{n}개` 제거, 남는 공간 nowrap 단위, Argon 위계 수치(18px 계약 유지), 손그림 칸(`sketches.ts`, 비어 있음).
+- 시험: `tests/fixtures/space-fit/catalog-priced.json`(가격 글 있는 개발용 번들, 정본 sha256) 추가. 단위 시험에 승인 문구 고정·한 개 값 미생성·손그림 경로 거절.
+- 화면 확인(측정함, 실 R2 번들, 운영 빌드): 390/1440/320 × light/dark × 입력·결과·시트 16상태 모두 axe 0, 가로 넘침·잘림 0, 48px 미만 0, 줄 끝 `·` 0(이전 390에서 20). 수치: 상품명 18px/24.3px/600, 수량 32px/37.76px(1440 40px/47.2px), 남는 공간 18px/26.1px/400, 가격 18px/24.3px/600.

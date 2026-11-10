@@ -650,3 +650,10 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
 - 글꼴: 폰트 파일·애플 자산은 동봉하지 않는다. SF Pro 이름은 시스템 조회용으로만 stack에 둔다.
 - 범위: `tokens.css`에 새 `--zari-font-text`/`--zari-font-display`/`--zari-type-*` 토큰을 더하고 `space-fit.css`의 SpaceFit 화면에만 적용했다. 다른 화면의 `--zari-font-ui`는 그대로다. 문구 변경 없음.
 
+## D-space-fit-price-and-hierarchy (2026-11-11, PR-F)
+- 근거: 준태님 2026-11-11 08:39 "가격정보도 넣을 수 있잖아, 제품 사진도 손그림으로", Argon 2026-11-11 검토(`/workspace/shots/zari-spacefit-ui/argon-review-20261111.md`, 저장소 밖).
+- 측정(측정함): 실번들 `b-c8fb29299e687ad0` 38개 모두 판매처 가격 글이 있고, 묶음 수량 필드는 0개, 사진 주소는 0개(번들 계약이 사진을 거절). `docs/evidence/space-fit-pr-f/catalog-counts.md`.
+- 결정: Rust 계약은 이미 묶음 수량을 모르면 `packQuantity: null, unitPriceKrw: null`로 판매처 가격을 남기므로 계약은 바꾸지 않았다. 화면은 이 경우 판매처 가격만 보여 주고 한 개 값은 만들지 않는다. 수량을 알지만 나누어떨어지지 않는 경우는 승인 문구가 없어 기존 `가격은 파는 곳에서 봐 주세요`를 유지한다(copy-todo).
+- 문구는 모두 `results.ts`의 `SPACE_FIT_COPY` 한 곳에 둔다(Argon 승인 그대로). 필터로 0개가 된 경우는 조언이 맞지 않아 이전 승인 문구 `고르신 내용에 맞는 수납함이 아직 없어요`를 유지한다.
+- 위계: Argon의 14~17px 제안은 쉬운 모드 본문 18px 계약과 충돌해 18px를 지키고 굵기·보조색·행간 1.45·간격으로 대신했다.
+- 손그림: 상품 id(`crawl:{site}:{id}`)로 찾는 `sketches.ts` 표를 앱에 두고 `/sketches/*.webp|jpg` 같은 출처 경로만 받는다. 표가 비면 칸이 보이지 않는다. 판매처 사진은 수집·보관·배포하지 않는다.
