@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { SpaceFitCandidate, SpaceFitInput, SpaceFitPage, SpaceFitUnmeasured } from '../../contracts/generated/dto';
 import { validateSpaceFitPage } from '../../contracts/generated/validators.mjs';
 import { readBundleFile, workerReviewer } from '../catalog/bundle';
@@ -7,14 +7,17 @@ import { LOCAL_IMPORT_ALLOWED, loadCatalog, localCatalog, type LoadedCatalog } f
 import {
   REFERENCE_BADGE_COPY,
   REFERENCE_NOTE_COPY,
-  candidateTitle,
   displayName,
   distinctMeta,
   mergeCandidates,
   placementText,
+  isReferencePrice,
   priceLine,
-  remainingText,
+  remainingParts,
+  rowTitle,
   sellerLabel,
+  SPACE_FIT_COPY,
+  UNMEASURED_PREVIEW_CAP,
   totalQuantityText,
 } from './results';
 import {
@@ -120,7 +123,7 @@ export function SpaceFit() {
     // replaceState keeps filter changes out of history and fires no hashchange.
     history.replaceState(null, '', serializeViewState(path, next));
     const count = sortCandidates(filterCandidates(allResults, next), next.sort).length;
-    setFilterStatus(count === 0 ? '고르신 내용에 맞는 수납함이 아직 없어요' : `이 자리에 맞는 수납함 ${count}개를 찾았어요`);
+    setFilterStatus(count === 0 ? (allResults.length === 0 ? SPACE_FIT_COPY.noFit : SPACE_FIT_COPY.filteredEmpty) : `이 자리에 맞는 수납함 ${count}개를 찾았어요`);
   };
   const toggleFacet = (key: 'sellers' | 'types', value: string) => {
     const values = view[key];
@@ -322,7 +325,7 @@ export function SpaceFit() {
             {/* The number is outside the live announcement so appends do not re-announce. */}
             <p className="space-visually-hidden" role="status">{filterStatus}</p>
             <h2 id="space-summary" ref={summary} className="space-summary" tabIndex={-1} aria-live="polite" aria-atomic="true">
-              {shown.length === 0 ? '고르신 내용에 맞는 수납함이 아직 없어요' : <>이 자리에 맞는 수납함 <span aria-live="off">{shown.length}</span>개를 찾았어요</>}
+              {shown.length === 0 ? (reason === 'noFit' ? SPACE_FIT_COPY.noFit : SPACE_FIT_COPY.filteredEmpty) : <>이 자리에 맞는 수납함 <span aria-live="off">{shown.length}</span>개를 찾았어요</>}
             </h2>
             {!busy && reason === 'filters' && <div className="space-empty" data-reason="filters">
               <div className="space-empty-actions">
@@ -330,7 +333,7 @@ export function SpaceFit() {
                 <button type="button" className="space-empty-reselect" onClick={() => setSheetOpen(true)}>다시 골라보기</button>
               </div>
             </div>}
-            {/* noFit is the summary alone. copy-todo: 이 크기에 맞는 수납함이 없어요 — 크기를 조금 넓혀 보거나 여유 틈을 줄여 보세요 */}
+            {/* noFit is the summary alone; its advice (SPACE_FIT_COPY.noFit) is Argon-approved. */}
             {/* Quick toggles only; '모두 보기' per group lives in the sheet so the row has no duplicate names. */}
             <div className="space-chip-row">
               <button type="button" className="space-chip space-filter-open" ref={opener} onClick={() => setSheetOpen(true)}>순서·가게 고르기</button>
@@ -466,7 +469,7 @@ function FilterSheet({ view, facets, clearance, onClearanceChange, onChange, onR
 }
 
 function ReferenceBadge({ controlsId, expanded, onToggle }: { controlsId: string; expanded: boolean; onToggle: () => void }) {
-  return <button type="button" className="space-badge" aria-expanded={expanded} aria-controls={controlsId} onClick={onToggle}>{REFERENCE_BADGE_COPY}</button>;
+  return <button type="button" className="space-badge" aria-expanded={expanded} aria-controls={controlsId} onClick={onToggle}><span className="space-badge-pill">{REFERENCE_BADGE_COPY}</span></button>;
 }
 function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
   candidate: SpaceFitCandidate;
@@ -504,26 +507,26 @@ function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
       <p className="space-meta">
         {meta.map((entry, index) => <span className="space-meta-entry" key={`${entry.seller ?? ''}-${entry.category ?? ''}-${index}`}>
           {entry.seller && <span className="space-seller">{entry.seller}</span>}
-          {entry.seller && entry.category && <span aria-hidden="true"> · </span>}
+          {entry.seller && entry.category && <span aria-hidden="true" className="space-meta-sep">·</span>}
           {entry.category}
         </span>)}
         {candidate.dimensionProvenance === 'reference' && <ReferenceBadge controlsId={noteId} expanded={metaOpen} onToggle={() => setMetaOpen((open) => !open)} />}
       </p>
       <p id={noteId} className="space-badge-note" hidden={!metaOpen}>{REFERENCE_NOTE_COPY}</p>
     </div>}
-    <h3 className="space-row-title">{candidateTitle(candidate)}</h3>
+    <h3 className="space-row-title">{rowTitle(candidate)}</h3>
     <p className="space-count">수납함 {totalQuantityText(candidate)}개가 딱 들어가요</p>
-    <p className="space-remaining">{remainingText(candidate)}</p>
+    <p className="space-remaining">{remainingParts(candidate).map((part, index) => <Fragment key={`${index}-${part}`}>{index > 0 && ' '}<span className="space-remaining-part">{index > 0 && '· '}{part}</span></Fragment>)}</p>
     {candidate.blocks.map((block, index) => {
       const line = priceLine(block);
       // One unknown-price line is enough when every block's price is unknown.
       if (index > 0 && line.kind === 'unknown' && candidate.blocks.every((other) => priceLine(other).kind === 'unknown')) return null;
       const key = `${block.variantId}-${index}`;
       return <div className="space-price-block" key={key}>
-        <p className="space-price-line">{line.text}</p>
-        {/* copy-todo: a reference-price marker needs its own approved explanation; the 참고치 note describes sizes only. */}
+        <p className="space-price-line" data-kind={line.kind}>{line.text}</p>
       </div>;
     })}
+    {candidate.blocks.some((block) => priceLine(block).kind !== 'unknown' && isReferencePrice(block)) && <p className="space-price-note">{SPACE_FIT_COPY.referencePriceNote}</p>}
     {links.length > 0 && <div className="space-links">{links.map(({ key, url, name }) => <a key={key} className="space-link-row" href={url} target="_blank" rel="noopener noreferrer"><span className="space-link-name">{name}</span><span className="space-link-action">판매처에서 보기 (새 탭)</span></a>)}</div>}
     <details className="space-shape"><summary>놓는 모양 보기</summary>
       <div className="space-shape-body">
@@ -538,6 +541,7 @@ function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
 }
 function UnmeasuredGroup({ items, count }: { items: SpaceFitUnmeasured[]; count: number }) {
   return <details className="space-unmeasured"><summary>치수 확인 중 ({count}개)</summary>
+    {count > UNMEASURED_PREVIEW_CAP && <p className="space-unmeasured-cap">{SPACE_FIT_COPY.unmeasuredCapNote}</p>}
     <ul className="space-unmeasured-list">
       {items.map((item) => {
         const seller = sellerLabel(item.source);

@@ -1,6 +1,26 @@
 import type { CrawlSite, SpaceFitBlock, SpaceFitCandidate } from '../../contracts/generated/dto';
 
 export const UNKNOWN_PRICE_COPY = '가격은 파는 곳에서 봐 주세요';
+
+/**
+ * Argon-approved copy (2026-11-11, docs/evidence/space-fit-pr-f). Every new
+ * Korean string for prices, no-fit and the unmeasured cap lives here so a
+ * wording change is one edit.
+ */
+export const SPACE_FIT_COPY = {
+  /** Shown when the search itself found nothing (not when filters hide all). */
+  noFit: '이 자리에 맞는 수납함이 없어요. 크기를 조금 넓히거나 여유 틈을 줄여 보세요',
+  /** Filters hide every result: the earlier approved summary. */
+  filteredEmpty: '고르신 내용에 맞는 수납함이 아직 없어요',
+  /** Listing price whose pack quantity is unknown: the price of the listing, never per unit. */
+  listingPrice: (priceText: string) => `${priceText}원 · 몇 개 값인지는 파는 곳에서 봐 주세요`,
+  /** Price came from listing text (reference basis). */
+  referencePriceNote: '글에서 찾은 가격이라 다를 수 있어요',
+  /** Under the unmeasured heading when more than the preview cap exist. */
+  unmeasuredCapNote: '너무 많아서 200개까지만 먼저 보여드려요',
+} as const;
+/** Rust sends at most this many unmeasured previews (first page only). */
+export const UNMEASURED_PREVIEW_CAP = 200;
 export const REFERENCE_BADGE_COPY = '참고치';
 export const REFERENCE_NOTE_COPY =
   '참고치는 사진이나 이름에서 찾은 크기라 사기 전에 파는 곳에서 한 번 더 봐 주세요';
@@ -15,6 +35,17 @@ const KRW = new Intl.NumberFormat('ko-KR');
 /** Strip the crawler's option token from the display name. */
 export function displayName(name: string): string {
   return name.replace(OPTION_SUFFIX, '').replace(DEFAULT_OPTION_SUFFIX, '');
+}
+
+/**
+ * Row title. A single product is its display name alone: its quantity is the
+ * big count line right below, so `{n}개` would repeat it. A combo keeps
+ * `{name} {quantity}개 + …` because the per-product split is new information.
+ */
+export function rowTitle(candidate: SpaceFitCandidate): string {
+  const [only] = candidate.blocks;
+  if (candidate.blocks.length === 1 && only) return displayName(only.name);
+  return candidateTitle(candidate);
 }
 
 /** A combo is titled as `{name} {quantity}개 + …`, using display names. */
@@ -56,7 +87,8 @@ export function mergeCandidates(
 }
 
 export interface PriceLine {
-  kind: 'priced' | 'unknown';
+  /** priced: per-unit and total; listing: the listing's own price, quantity unknown. */
+  kind: 'priced' | 'listing' | 'unknown';
   text: string;
 }
 
@@ -80,8 +112,10 @@ export function blockTotalKrw(block: SpaceFitBlock): bigint | null {
 }
 
 /**
- * Price is shown only when the pack price, pack quantity and unit price are
- * all known. The total is ceil(quantity / packQuantity) packs, never guessed.
+ * Per-unit and total prices are shown only when the pack price, pack quantity
+ * and unit price are all known; the total is ceil(quantity / packQuantity)
+ * packs, never guessed. A listing price without a pack quantity is shown as
+ * the listing's own price; no per-unit price is derived from it.
  */
 export function priceLine(block: SpaceFitBlock): PriceLine {
   const total = blockTotalKrw(block);
@@ -92,11 +126,15 @@ export function priceLine(block: SpaceFitBlock): PriceLine {
       text: `한 개 ${formatKrw(BigInt(price.unitPriceKrw))}원 · 다 해서 ${formatKrw(total)}원`,
     };
   }
-  // copy-todo: pack-price line (판매처 표시가 {가격}원, 묶음 수량 미확인) needs Argon approval
+  if (price.state === 'known' && price.packQuantity === null) {
+    return { kind: 'listing', text: SPACE_FIT_COPY.listingPrice(formatKrw(BigInt(price.packPriceKrw))) };
+  }
+  // copy-todo: a known pack quantity that does not divide the pack price has
+  // no approved wording yet, so it keeps the approved fallback.
   return { kind: 'unknown', text: UNKNOWN_PRICE_COPY };
 }
 
-/** Reference prices (crawled listing text). Not shown in the UI yet: the marker copy is a copy-todo. */
+/** Reference prices (crawled listing text) carry SPACE_FIT_COPY.referencePriceNote. */
 export function isReferencePrice(block: SpaceFitBlock): boolean {
   return block.price.state === 'known' && block.price.basis === 'reference';
 }
@@ -129,10 +167,13 @@ export function distinctMeta(candidate: SpaceFitCandidate): DistinctMeta[] {
   return entries;
 }
 
+/** One phrase per axis; the UI keeps each phrase unbroken. */
+export function remainingParts(candidate: SpaceFitCandidate): string[] {
+  return candidate.remainingMm.map((mm, index) => `${AXIS_LABELS[index] ?? ''}로 ${mm / 10}cm 남아요`);
+}
+
 export function remainingText(candidate: SpaceFitCandidate): string {
-  return candidate.remainingMm
-    .map((mm, index) => `${AXIS_LABELS[index] ?? ''}로 ${mm / 10}cm 남아요`)
-    .join(' · ');
+  return remainingParts(candidate).join(' · ');
 }
 
 export function placementText(block: SpaceFitBlock): string {

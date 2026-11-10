@@ -257,3 +257,27 @@
 @media (max-width: 22.5rem) {
   .space-fit-shell { padding-inline: var(--zari-space-4); }
 }
+
+/* --- PR-F row hierarchy (Argon review 2026-11-11) ---
+   Product name + count read as one title block; leftover space is a quiet
+   secondary line; price stands on its own. Text stays at the easy-mode 18px
+   minimum, so hierarchy comes from weight, colour, leading and spacing. */
+.space-meta-entry { gap: 0; }
+.space-meta-sep { margin-inline: var(--zari-space-1); }
+.space-seller { min-height: 0; padding: var(--zari-space-1) var(--zari-space-3); line-height: var(--zari-type-label-line); font-weight: var(--zari-weight-medium); }
+/* The badge keeps its 48px target; only the visible pill is low. */
+.space-badge { display: inline-flex; align-items: center; padding: 0; border: 0; background: transparent; font-weight: var(--zari-weight-medium); }
+.space-badge-pill { display: inline-flex; align-items: center; padding: var(--zari-space-1) var(--zari-space-3); border: var(--zari-border-width) solid var(--zari-warning); border-radius: var(--zari-radius-pill); background: var(--zari-warning-soft); color: var(--zari-warning); line-height: var(--zari-type-label-line); }
+.space-row-title { margin: 0 0 var(--zari-space-2); font-size: var(--zari-type-body); line-height: var(--zari-type-label-line); font-weight: var(--zari-weight-semibold); }
+.space-count { margin: 0 0 var(--zari-space-2); }
+.space-remaining { margin: 0; color: var(--zari-text-secondary); font-weight: var(--zari-weight-regular); line-height: var(--zari-type-secondary-line); }
+.space-remaining-part { white-space: nowrap; }
+.space-remaining + .space-price-block { margin-top: var(--zari-space-3); }
+.space-price-line { font-weight: var(--zari-weight-semibold); line-height: var(--zari-type-label-line); }
+.space-price-note { margin: var(--zari-space-1) 0 0; color: var(--zari-text-secondary); line-height: var(--zari-type-secondary-line); }
+.space-fit-main .space-link-row { gap: var(--zari-space-1); padding: var(--zari-space-3) var(--zari-space-4); }
+.space-link-name { font-weight: var(--zari-weight-medium); }
+.space-link-action { font-weight: var(--zari-weight-regular); }
+.space-unmeasured-cap { margin: var(--zari-space-2) 0 var(--zari-space-3); color: var(--zari-text-secondary); line-height: var(--zari-type-secondary-line); }
+.space-filter-panel { gap: var(--zari-space-8); }
+.space-filter-group legend { margin-bottom: var(--zari-space-3); }
