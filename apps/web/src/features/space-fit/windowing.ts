@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 /** Below this many rendered rows the plain list is kept. */
 export const WINDOW_THRESHOLD = 1000;
@@ -70,6 +70,8 @@ export function useWindowedRows(count: number, estimate: number = FALLBACK_ROW_H
     if (node) setListTop(node.getBoundingClientRect().top + window.scrollY);
   }, []);
 
+  // Measure before paint so the first windowed frame already uses the real scroll position.
+  useLayoutEffect(() => { if (active) measure(); }, [active, measure]);
   useEffect(() => {
     if (!active) return;
     measure();

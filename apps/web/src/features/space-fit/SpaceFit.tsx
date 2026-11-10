@@ -112,6 +112,7 @@ export function SpaceFit() {
   const applyView = (next: ViewState) => {
     setView(next);
     setLimit(20);
+    setStopped(false);
     // The root path canonicalizes to #/space-fit so a shared view link opens
     // Space Fit even when this device last used expert mode.
     const current = location.hash.split('?')[0] ?? '';
@@ -248,7 +249,8 @@ export function SpaceFit() {
     persistClearance(value);
     // Only a visible result page has a search to repeat; before the first
     // search the choice is just an input for the next submit.
-    if (page) void runSearch({ moveFocus: false, clearanceMm: value });
+    // An in-flight search restarts too, so the shown page always matches the chip.
+    if (page || busy) void runSearch({ moveFocus: page === null, clearanceMm: value });
   };
   const resetAll = () => {
     applyView(DEFAULT_VIEW);
@@ -259,6 +261,8 @@ export function SpaceFit() {
     if (page) void runSearch({ moveFocus: false, clearanceMm: DEFAULT_CLEARANCE_MM });
   };
   const stopByUser = () => {
+    // A stopped clearance re-run leaves the old page; mark it stale so it is not shown as current.
+    if (page && clearance !== pageClearance) setStale(true);
     stop();
     // With a page shown the results stay; only the status line changes.
     setStopped(true);
@@ -326,9 +330,7 @@ export function SpaceFit() {
                 <button type="button" className="space-empty-reselect" onClick={() => setSheetOpen(true)}>다시 골라보기</button>
               </div>
             </div>}
-            {!busy && reason === 'noFit' && <div className="space-empty" data-reason="noFit">
-              {/* copy-todo: 이 크기에 맞는 수납함이 없어요 — 크기를 조금 넓혀 보거나 여유 틈을 줄여 보세요 */}
-            </div>}
+            {/* noFit is the summary alone. copy-todo: 이 크기에 맞는 수납함이 없어요 — 크기를 조금 넓혀 보거나 여유 틈을 줄여 보세요 */}
             {/* Quick toggles only; '모두 보기' per group lives in the sheet so the row has no duplicate names. */}
             <div className="space-chip-row">
               <button type="button" className="space-chip space-filter-open" ref={opener} onClick={() => setSheetOpen(true)}>순서·가게 고르기</button>
@@ -337,11 +339,11 @@ export function SpaceFit() {
             </div>
             <ul className="space-results" ref={windowed.listRef}>
               {windowed.active && windowed.topHeight > 0 && <li className="space-row-spacer" aria-hidden="true" style={{ height: windowed.topHeight }} />}
-              {shown.slice(rowStart, rowEnd).map((candidate, index) => <Candidate key={candidate.id} candidate={candidate} spaceMm={page.spaceMm} deferred={rowStart + index >= 200} position={windowed.active ? { setSize: visibleCount, posInSet: rowStart + index + 1 } : null} />)}
+              {shown.slice(rowStart, rowEnd).map((candidate, index) => <Candidate key={candidate.id} candidate={candidate} spaceMm={page.spaceMm} deferred={!windowed.active && rowStart + index >= 200} position={windowed.active ? { setSize: visibleCount, posInSet: rowStart + index + 1 } : null} />)}
               {windowed.active && windowed.bottomHeight > 0 && <li className="space-row-spacer" aria-hidden="true" style={{ height: windowed.bottomHeight }} />}
             </ul>
             {shown.length > limit && <button type="button" className="space-more" onClick={() => setLimit((n) => n + 20)}>더 보기</button>}
-            {!page.combinationsComplete && <><p>조합을 더 찾아볼 수 있어요. 두 종류까지, 바닥에 나란히 놓는 조합을 찾아요. 서로 다른 제품을 쌓지는 않아요.</p><button type="button" className="space-more" disabled={busy || autoStepping || stale || combinations.length >= COMBINATION_CAP} onClick={findMoreCombinations}>조합 더 찾기</button></>}
+            {!page.combinationsComplete && <><p>조합을 더 찾아볼 수 있어요. 두 종류까지, 바닥에 나란히 놓는 조합을 찾아요. 서로 다른 제품을 쌓지는 않아요.</p><button type="button" className="space-more" disabled={busy || autoStepping || stale || stopped || combinations.length >= COMBINATION_CAP} onClick={findMoreCombinations}>조합 더 찾기</button></>}
             {combinations.length >= COMBINATION_CAP && <p>이 화면에서 보여 줄 수 있는 조합 수에 도달했어요. 공간 크기를 좁혀 다시 찾아 주세요. 모든 조합을 확인한 것은 아니에요.</p>}
             {page.missingDimensions > 0 && <UnmeasuredGroup items={unmeasured} count={page.missingDimensions} />}
             {page.unavailableVariants > 0 && <p>품절로 표시된 상품 {page.unavailableVariants}개는 뺐어요.</p>}

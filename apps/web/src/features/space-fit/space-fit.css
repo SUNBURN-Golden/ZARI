@@ -163,7 +163,7 @@
   background: var(--zari-surface-subtle);
 }
 .space-empty p { margin: 0; color: var(--zari-text-primary); font-size: var(--zari-text-lg); line-height: var(--zari-line-body); word-break: keep-all; }
-/* noFit keeps only the summary; the marker element stays for tests but adds no box. */
+/* An empty .space-empty adds no box. */
 .space-empty:empty { display: none; }
 .space-empty-actions { display: flex; flex-wrap: wrap; gap: var(--zari-space-2); }
 .space-empty-action,
