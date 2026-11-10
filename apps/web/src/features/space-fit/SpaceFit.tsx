@@ -214,11 +214,10 @@ export function SpaceFit() {
               {shown.length === 0 ? '고르신 내용에 맞는 수납함이 아직 없어요' : <>이 자리에 맞는 수납함 <span aria-live="off">{shown.length}</span>개를 찾았어요</>}
             </h2>
             {shown.length === 0 && allResults.length > 0 && <button type="button" className="space-reset-inline" onClick={() => applyView(DEFAULT_VIEW)}>처음대로 돌리기</button>}
+            {/* Quick toggles only; '모두 보기' per group lives in the sheet so the row has no duplicate names. */}
             <div className="space-chip-row">
               <button type="button" className="space-chip space-filter-open" ref={opener} onClick={() => setSheetOpen(true)}>순서·가게 고르기</button>
-              <button type="button" className="space-chip" aria-pressed={view.sellers.length === 0} onClick={() => applyView({ ...view, sellers: [] })}>모두 보기</button>
               {facets.sellers.map((seller) => <button key={seller.value} type="button" className="space-chip" aria-pressed={view.sellers.includes(seller.value)} onClick={() => toggleFacet('sellers', seller.value)}>{seller.label}</button>)}
-              <button type="button" className="space-chip" aria-pressed={view.types.length === 0} onClick={() => applyView({ ...view, types: [] })}>모두 보기</button>
               {facets.types.map((type) => <button key={type} type="button" className="space-chip" aria-pressed={view.types.includes(type)} onClick={() => toggleFacet('types', type)}>{type}</button>)}
             </div>
             <ul className="space-results">

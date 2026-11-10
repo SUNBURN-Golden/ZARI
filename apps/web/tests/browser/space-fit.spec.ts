@@ -238,3 +238,10 @@ test('editing cancels an in-flight Worker and keeps the next search usable', asy
   await expect(page.getByRole('region',{name:'찾은 수납함',exact:true})).toHaveCount(0);
   await search(page);
 });
+test('a view query on the root hash still opens Space Fit with that sort',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/?sort=count');
+  await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
+  await importCatalog(page); await fill(page); await search(page);
+  await expect(page.locator('.space-filter-column').getByRole('button',{name:'수납함 많이 들어가는 순',exact:true})).toHaveAttribute('aria-pressed','true');
+});
