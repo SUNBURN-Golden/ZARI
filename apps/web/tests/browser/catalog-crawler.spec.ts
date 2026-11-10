@@ -90,7 +90,7 @@ test('importing a bundle file draws items from W/D/H only, saves, reopens, with 
   expect(w / d).toBeCloseTo(80 / 30, 1);
   await expect(page.getByTestId('shape-box-crawl:ohou:1001')).toBeVisible();
   await expect(page.getByTestId('shape-front-crawl:ohou:1001').locator('.shape-hint line')).toHaveCount(4); // shelf hint
-  await expect(page.getByTestId('shape-front-crawl:29cm:3001').locator('.shape-hint line')).toHaveCount(1); // cabinet door split
+  await expect(page.getByTestId('shape-front-crawl:29cm:3001').locator('line.shape-hint')).toHaveCount(1); // 서랍장 is a bin: top rim line
   // Unmeasured items say so and draw nothing to scale.
   for (const id of ['crawl:29cm:3002', 'crawl:29cm:3005', 'crawl:ikea:23456789']) {
     await expect(page.getByTestId(`bundle-item-${id}`)).toHaveAttribute('data-measured', 'false');
