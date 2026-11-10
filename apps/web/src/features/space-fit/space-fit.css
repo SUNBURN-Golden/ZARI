@@ -281,3 +281,7 @@
 .space-unmeasured-cap { margin: var(--zari-space-2) 0 var(--zari-space-3); color: var(--zari-text-secondary); line-height: var(--zari-type-secondary-line); }
 .space-filter-panel { gap: var(--zari-space-8); }
 .space-filter-group legend { margin-bottom: var(--zari-space-3); }
+/* Optional sketch thumbnail (our own drawing); absent rows keep the plain layout. */
+.space-row-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--zari-space-4); }
+.space-sketches { display: flex; gap: var(--zari-space-2); }
+.space-sketch { display: block; width: var(--zari-sketch-size); height: var(--zari-sketch-size); object-fit: contain; border-radius: var(--zari-radius-control); background: var(--zari-surface-subtle); }
