@@ -2835,3 +2835,11 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   재실행(측정함): typecheck·lint 통과, `npm test` 529/529, space-fit+easy-mode Chromium 38 passed.
   다른 46개 spec은 이 수정 전 HEAD에서 157 passed였고 수정은 space-fit 파일만 바꿨다.
   남김: 1,000행 창 모드·결정적 `stopped` 빈 블록 브라우저 시험(지연 워커 fixture 필요).
+
+### 2026-11-11 PR-E — SpaceFit 글자·간격 (애플 실측 기반)
+
+- 측정(측정함): `docs/evidence/space-fit-pr-e/apple-type.md`. 한국어 애플 페이지는 자간 0, 본문 행간 ≈1.59, display 1.10–1.19.
+- 변경: `tokens.css`에 `--zari-font-text`/`--zari-font-display`와 `--zari-type-*`(display·result·title·body 크기/행간/자간, label 행간)를 더했다. `space-fit.css` 끝의 PR-E 층이 SpaceFit 화면 전체(입력·결과·시트·필터 열)에 적용한다. Rust·계약·문구·R2·배포는 바꾸지 않았다.
+- 시각 검증(측정함): live R2 번들 read-only, production build, 390/1440/320 × light/dark × 입력·결과·조합·시트 22개 상태에서 axe 위반 0, 가로 넘침·잘림 없음, 48px 미만 대상 없음. 줄 수: h1 390/320에서 2줄·1440 1줄, 행 제목 1줄, 수량 390/1440 1줄·320 2줄. 전후 비교: `docs/evidence/space-fit-pr-e/before-after-*.jpg`.
+
+- 검증(측정함): typecheck·lint 통과, `npm test` 529/529, `check-design-tokens --self-test` 97 base tokens · 90/90(새 색상 쌍 없음), `test:build` 통과, space-fit+easy-mode Chromium 38 passed.
