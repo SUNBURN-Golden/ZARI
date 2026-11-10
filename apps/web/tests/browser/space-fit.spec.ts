@@ -110,6 +110,15 @@ test('unknown pack quantity keeps the honest price copy',async({page})=>{
     expect(text.trim()).toBe('가격은 파는 곳에서 봐 주세요');
   }
 });
+test('a catalog pack quantity shows a reference unit and total price',async({page})=>{
+  await page.goto('/#/space-fit');
+  await page.getByText('개발용 상품 파일',{exact:true}).click();
+  await page.getByLabel('치수 번들 JSON').setInputFiles(resolve('tests/fixtures/space-fit/catalog-priced.json'));
+  await expect(page.getByText(/개발용 파일: catalog-priced.json/)).toBeVisible();
+  await fill(page); await search(page);
+  const priced=page.locator('.space-price-line',{hasText:/^한 개 1,000원 · 다 해서 [\d,]+원$/});
+  expect(await priced.count()).toBeGreaterThan(0);
+});
 test('invalid inputs focus the associated field and offline errors preserve inputs',async({page})=>{
   await page.goto('/#/space-fit');await importCatalog(page);await fill(page,['0','40','40']);
   await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();

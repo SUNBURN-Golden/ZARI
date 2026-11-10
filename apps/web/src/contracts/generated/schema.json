@@ -737,6 +737,31 @@
       "title": "BundleManifest",
       "type": "object"
     },
+    "BundlePackQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/definitions/PackQuantityBasis"
+        },
+        "evidence": {
+          "description": "Short verbatim evidence or the inference note (<= 120 chars).",
+          "type": "string"
+        },
+        "value": {
+          "description": "Units per listed price, 1..=10000.",
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "evidence"
+      ],
+      "title": "BundlePackQuantity",
+      "type": "object"
+    },
     "BundleSource": {
       "additionalProperties": false,
       "properties": {
@@ -2805,6 +2830,17 @@
         },
         "name": {
           "type": "string"
+        },
+        "packQuantity": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BundlePackQuantity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How many units the listed price buys (e.g. \"2개입\" = 2). Optional;\nabsent means unknown and the price stays a pack-only price."
         },
         "priceText": {
           "type": [
@@ -10039,6 +10075,15 @@
       "minimum": 1,
       "title": "PackQuantity",
       "type": "integer"
+    },
+    "PackQuantityBasis": {
+      "description": "Where a pack quantity came from. `confirmed`: the seller's own page text\nstates it (\"입수 1개입\", \"2개입\", \"상품구성 수납함 1개\"). `reference`: inferred\n(e.g. a single product with no pack wording). Either way the item stays\n`unconfirmed` and space-fit prices built from it are reference values.",
+      "enum": [
+        "confirmed",
+        "reference"
+      ],
+      "title": "PackQuantityBasis",
+      "type": "string"
     },
     "ParentRef": {
       "oneOf": [

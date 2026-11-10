@@ -237,6 +237,16 @@ export type DimensionConfidence = 'high' | 'medium' | 'low' | 'unparsed';
  */
 export type LengthUnit = 'mm' | 'cm' | 'm';
 /**
+ * Where a pack quantity came from. `confirmed`: the seller's own page text
+ * states it ("입수 1개입", "2개입", "상품구성 수납함 1개"). `reference`: inferred
+ * (e.g. a single product with no pack wording). Either way the item stays
+ * `unconfirmed` and space-fit prices built from it are reference values.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "PackQuantityBasis".
+ */
+export type PackQuantityBasis = 'confirmed' | 'reference';
+/**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
  * via the `definition` "CrawlSite".
  */
@@ -2886,6 +2896,11 @@ export interface CrawledItem {
   fetchedAt: string;
   id: string;
   name: string;
+  /**
+   * How many units the listed price buys (e.g. "2개입" = 2). Optional;
+   * absent means unknown and the price stays a pack-only price.
+   */
+  packQuantity?: BundlePackQuantity | null;
   priceText?: string | null;
   productUrl: string;
   source: CrawlSite;
@@ -2906,6 +2921,21 @@ export interface BundleDimensions {
   rawText: string;
   unit: LengthUnit | null;
   width: string | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "BundlePackQuantity".
+ */
+export interface BundlePackQuantity {
+  basis: PackQuantityBasis;
+  /**
+   * Short verbatim evidence or the inference note (<= 120 chars).
+   */
+  evidence: string;
+  /**
+   * Units per listed price, 1..=10000.
+   */
+  value: number;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema

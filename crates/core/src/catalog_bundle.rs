@@ -29,6 +29,8 @@ const MAX_SNAPSHOT_BYTES: usize = 4 * 1024 * 1024;
 const MAX_ID_CHARS: usize = 80;
 const MAX_RAW_TEXT_CHARS: usize = 1024;
 const MAX_PRICE_TEXT_CHARS: usize = 64;
+const MAX_PACK_EVIDENCE_CHARS: usize = 120;
+pub const MAX_PACK_QUANTITY: u32 = 10_000;
 const GENERATOR_NAME_MAX: usize = 64;
 
 #[derive(
@@ -175,6 +177,31 @@ pub struct CrawledItem {
     pub dimensions: BundleDimensions,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price_text: Option<String>,
+    /// How many units the listed price buys (e.g. "2개입" = 2). Optional;
+    /// absent means unknown and the price stays a pack-only price.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pack_quantity: Option<BundlePackQuantity>,
+}
+
+/// Where a pack quantity came from. `confirmed`: the seller's own page text
+/// states it ("입수 1개입", "2개입", "상품구성 수납함 1개"). `reference`: inferred
+/// (e.g. a single product with no pack wording). Either way the item stays
+/// `unconfirmed` and space-fit prices built from it are reference values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum PackQuantityBasis {
+    Confirmed,
+    Reference,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BundlePackQuantity {
+    /// Units per listed price, 1..=10000.
+    pub value: u32,
+    pub basis: PackQuantityBasis,
+    /// Short verbatim evidence or the inference note (<= 120 chars).
+    pub evidence: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -549,6 +576,17 @@ fn check_item(item: &CrawledItem, codes: &mut BTreeSet<String>) -> Option<ItemRo
         .is_some_and(|p| p.chars().count() > MAX_PRICE_TEXT_CHARS)
     {
         codes.insert("text_too_long".into());
+    }
+    if let Some(pack) = &item.pack_quantity {
+        if pack.value == 0 || pack.value > MAX_PACK_QUANTITY {
+            codes.insert("pack_quantity_invalid".into());
+        }
+        if pack.evidence.trim().is_empty() {
+            codes.insert("required_text_missing".into());
+        }
+        if pack.evidence.chars().count() > MAX_PACK_EVIDENCE_CHARS {
+            codes.insert("text_too_long".into());
+        }
     }
     let dims = &item.dimensions;
     if dims.raw_text.chars().count() > MAX_RAW_TEXT_CHARS {
@@ -1044,6 +1082,7 @@ mod tests {
             fetched_at: "2026-10-15T00:00:00Z".into(),
             dimensions: dims,
             price_text: Some("19,900원".into()),
+            pack_quantity: None,
         }
     }
 
@@ -1099,6 +1138,47 @@ mod tests {
         let text = build.bundle_text.expect("bundle built");
         let bundle = serde_json::from_str(&text).expect("bundle parses");
         (text, bundle)
+    }
+
+    #[test]
+    fn pack_quantity_round_trips_and_absent_keeps_old_bytes() {
+        let (old_text, _) = built();
+        assert!(!old_text.contains("packQuantity"));
+        let mut items = sample();
+        items[0].pack_quantity = Some(BundlePackQuantity {
+            value: 2,
+            basis: PackQuantityBasis::Confirmed,
+            evidence: "2개입".into(),
+        });
+        let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
+        assert_eq!(build.codes, Vec::<String>::new());
+        let text = build.bundle_text.unwrap();
+        assert!(text.contains(r#""packQuantity":{"basis":"confirmed","evidence":"2개입","value":2}"#));
+        let review = review_bundle_text(&text);
+        assert!(!review.quarantined, "{review:?}");
+    }
+
+    #[test]
+    fn pack_quantity_out_of_range_or_unknown_field_is_rejected() {
+        for (value, code) in [(0, "pack_quantity_invalid"), (10_001, "pack_quantity_invalid")] {
+            let mut items = sample();
+            items[0].pack_quantity = Some(BundlePackQuantity {
+                value,
+                basis: PackQuantityBasis::Reference,
+                evidence: "x".into(),
+            });
+            let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
+            assert!(
+                build.rejected.iter().any(|r| r.codes.contains(&code.to_owned())),
+                "{value}: {:?}",
+                build.rejected
+            );
+        }
+        let mut value = serde_json::to_value(&sample()[0]).unwrap();
+        value["packQuantity"] = serde_json::json!({"value": 1, "basis": "confirmed", "evidence": "1개", "extra": 1});
+        let text = serde_json::to_string(&vec![value]).unwrap();
+        let build = build_bundle_from_json(&text, "2026-10-15T01:00:00Z", generator());
+        assert_eq!(build.rejected[0].codes, vec!["item_schema_invalid".to_owned()]);
     }
 
     #[test]

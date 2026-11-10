@@ -78,3 +78,12 @@ it('aborts a stalled transport at its deadline',async()=>{
   expect(await pending).toEqual(new Error('r2_read_failed'));
   vi.useRealTimers();
 });
+it('keeps a listing pack quantity in the space-fit side channel',async()=>{
+  const text=readFileSync('tests/fixtures/space-fit/catalog-priced.json','utf8');
+  const snapshot=JSON.parse(readFileSync('tests/fixtures/space-fit/input.json','utf8')).catalog as CatalogSnapshot;
+  const reviewer={review:vi.fn(async()=>({quarantined:false,snapshot} as unknown as CatalogBundleReview))};
+  const loaded=await localCatalog(text,reviewer);
+  const muji=loaded.listings.filter((item)=>item.source==='muji');
+  expect(muji.map((item)=>item.packQuantity)).toEqual([{basis:'confirmed',evidence:'2개입',value:2},{basis:'confirmed',evidence:'2개입',value:2}]);
+  expect(loaded.listings.find((item)=>item.source==='daiso')?.packQuantity).toBeUndefined();
+});
