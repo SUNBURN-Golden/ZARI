@@ -2710,7 +2710,7 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 범위: `apps/web/src/features/space-fit/`(신규 `view.ts`), `apps/web/src/app/App.tsx`,
   같은 기능의 단위·브라우저 시험, `design/COMPONENTS.md`·`design/SCREENS.md`·
   `design/DECISIONS.md`만 바꿨다. Rust crates·계약 생성 코드·R2·배포·catalog
-  데이터·main은 건드리지 않았고 commit/push도 하지 않았다.
+  데이터·main은 건드리지 않았다.
 - 보기 상태: `view.ts`는 `SortKey`(`leftover`|`price`|`count`)와
   `ViewState{sellers,types,sort}`를 정의하고, hash의 `?` 뒤 query만 읽어
   `sort`·`seller`·`type`을 복원한다. 모르는 정렬·판매처 값은 버리고 중복은 합친다.
@@ -2726,16 +2726,21 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 혼합 조합: 첫 page가 `combinationsComplete=false`이면 응답마다
   `{type:'next', budget:1000}`을 최대 6번 자동 전송한다. 혼합 후보 20개, 완료,
   조합 2,000개 중 하나에서 멈추고 revision guard를 유지한다. 초점은 첫 page에서만
-  이동하고 계산 중 문구는 자동 단계 동안 유지되며 `조합 더 찾기`는 이후에도 동작한다.
+  이동한다. 자동 단계는 `busy`와 분리된 `autoStepping` 상태라 결과·찾기 단추·칩이 계속 쓸 수 있고
+  `aria-busy`도 걸리지 않으며, 그동안 `조합 더 찾기`만 잠긴다.
 - UI: 1024px 미만은 결과 요약 아래 가로 스크롤 칩 줄과 하단 시트
-  (`role="dialog"`, `aria-modal`, `aria-labelledby`, 초점 트랩·Esc·scrim·`닫기`,
-  닫을 때 연 단추로 초점 복귀), 1024px 이상은 왼쪽 sticky 필터 열과 최대 720px
+  (`role="dialog"`, `aria-modal`, `aria-labelledby`, `document.body`로 portal하고 `#root`를
+  inert로 만드는 PrintPanel 방식, 초점 트랩·Esc·scrim·`닫기`, 닫은 뒤 연 단추로 초점 복귀), 1024px 이상은 왼쪽 sticky 필터 열과 최대 720px
   결과 열이다. 시트와 열은 같은 `FilterPanel`을 쓰고 CSS로 하나만 접근성 트리에
-  남긴다. 칩·정렬은 `button aria-pressed`이며 `모두 보기`는 빈 그룹에서 pressed다.
+  남긴다. 칩·정렬은 `button aria-pressed`이며 `모두 보기`는 빈 그룹에서 pressed다(칩 줄에는 같은 이름이 두 번 나오지 않게 `모두 보기`를 두지 않고 시트·열에만 둔다).
+  필터를 바꾸면 화면에 보이지 않는 `role=status`가 필터된 개수를 기존 요약 문구로 알린다.
+  hash의 판매처·분류 목록은 디코딩 전 raw 값을 `,`로 나눠 쉼표가 든 label도 왕복한다.
+  루트(`#/`)에서 바꾼 보기는 `#/space-fit?…`로 써서 전문가 모드 기기에서도 Space Fit이 열린다.
   필터를 바꾸면 보이는 개수는 20개로 돌아가고, 필터 결과 0개(원래 결과 있음)이면
   요약 문구와 `처음대로 돌리기`를 보인다. 요약 개수는 필터된 개수다.
 - 결과 행 다듬기: 판매처 링크를 48px 전체 폭 `space-link-row`로 바꿔 왼쪽에 제품명
-  (한 줄 말줄임), 오른쪽에 `판매처에서 보기 (새 탭)`을 두고 반복 이름은 번호를
+  (한 줄 말줄임)을, 48rem 이상에서는 같은 줄 오른쪽에, 그보다 좁으면 항상 다음 줄에
+  `판매처에서 보기 (새 탭)`을 두고 반복 이름은 번호를
   붙여 접근 가능한 이름을 유지한다. `놓는 모양 보기`는 안쪽 wrapper를 8pt grid로
   묶고 배치 줄은 primary, 일반 확인 문단은 secondary 색으로 낮췄다. `space-count`만
   큰 강조 줄로 남는다.
@@ -2749,15 +2754,16 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   `results.ts`(`blockTotalKrw` 추출), `app/App.tsx`, `tests/unit/spaceFitView.test.ts`(신규),
   `tests/browser/space-fit.spec.ts`, `design/COMPONENTS.md`, `design/SCREENS.md`,
   `design/DECISIONS.md`, 이 문서.
-- 검증(측정 전): `npm run typecheck` 통과, `npm run lint` 통과,
-  `npx vitest run apps/web/tests/unit/spaceFitResults.test.ts
-  apps/web/tests/unit/spaceFitView.test.ts`에서 2 files / 25 tests 통과.
-  Playwright(새 필터·시트·sticky·axe 시험 포함)는 이 작업에서 실행하지 않았으므로
-  브라우저 통과 개수·캡처는 **측정 전**이다. 전체 `npm test`, `contracts:check`,
-  `test:build`, 디자인 토큰 검사 수치도 **측정 전**이다. 색상 쌍은 기존
-  `selected-label`·`accent-link`·`inverse-on-accent`·`control-on-panel`을 재사용해
-  `design/token-contrast-cases.json`을 바꾸지 않았다.
-- 미완료: 1440px wide 레이아웃의 실제 시각 검토, 실기기·실제 판매처 수용, 승인된
-  baseline, 비작성자 exact-HEAD review, commit/push는 수행하지 않았다. 브라우저
-  시험은 새 동작을 명세했지만 이 환경에서는 실행하지 않았다. 다음: Playwright
-  exact-head 실행과 캡처, PR-D의 여유 공간/빈 상태/가상화.
+- 검증(측정함, HEAD 기준): `npm run typecheck`·`npm run lint` 통과, `npm test` **521 passed / 60 files**,
+  `contracts:check` 124 valid, `check-design-tokens --self-test` 80 tokens · 90/90, `test:build` 통과,
+  `space-fit.spec.ts` Chromium **18 passed**(space-fit+easy-mode 묶음 실행은 리뷰 수정 전 24 passed).
+  전체 Chromium 결과는 PR 본문에 적는다. 색상 쌍은 기존 `selected-label`·`accent-link`·
+  `inverse-on-accent`·`control-on-panel`을 재사용해 `design/token-contrast-cases.json`을 바꾸지 않았다.
+- 시각 검증(측정함): live R2 번들(read-only)을 production build로 390/320/1440 × light/dark,
+  입력·결과·배지·펼침·조합·시트(또는 필터 열) 42개 상태에서 axe 위반 0, 가로 넘침 없음, 48px 미만
+  대상 없음, 잘림 없음, page error 없음. 60×30×35에서 223개가 나오고 기본 정렬 상위 20개 중 8개가
+  두 제품 조합이다(PR-B는 첫 화면 0개). 증거: `docs/evidence/space-fit-pr-c/`.
+- 리뷰(DeepSeek flash, read-only; GLM 429): 시트 모달 격리, `.space-link` 규칙 삭제, 쉼표 label
+  hash 왕복, 자동 단계 시험 공백, 필터 개수 미공지, 자동 단계의 전역 busy, 전문가 모드에서의 `#/?…`
+  를 반영했다. 남김: fixture에 분류 label·두 번째 실측 판매처가 없어 분류 칩·판매처 필터의 브라우저
+  시험은 단위 시험으로만 덮는다(fixture 재생성은 후속).

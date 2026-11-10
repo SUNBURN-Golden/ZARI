@@ -46,10 +46,10 @@ SpaceFit은 단일·조합 결과를 한 목록으로 합친다. 탭이나 `딱 
 
 | 컴포넌트 | 책임 | 반드시 구현할 상태 |
 | --- | --- | --- |
-| FilterChips | 모바일 결과 위 한 줄 가로 스크롤. `순서·가게 고르기` 열기 단추와 판매처·모양 빠른 토글. 각 그룹의 `모두 보기`는 그룹 선택이 비었을 때 pressed | default, filtered, scrollable, keyboard, 320px |
+| FilterChips | 모바일 결과 위 한 줄 가로 스크롤. `순서·가게 고르기` 열기 단추와 판매처·모양 빠른 토글만 둔다(같은 이름 중복을 피하려고 `모두 보기`는 시트·열에만). 시트·열의 각 그룹 `모두 보기`는 그룹 선택이 비었을 때 pressed | default, filtered, scrollable, keyboard, 320px |
 | FilterSheet | 모바일 하단 시트 `role="dialog"` `aria-modal="true"`. 열리면 제목으로 초점, Tab/Shift+Tab 순환, Esc·scrim·`닫기`로 닫고 초점은 연 단추로 복귀. `처음대로 돌리기`는 기본 보기로 되돌리고 `이대로 보기`는 닫는다 | closed, open, reset, esc, focus trap, focus return |
 | FilterColumn | 1024px 이상 왼쪽 sticky 열. 시트와 같은 `FilterPanel`을 쓰며 CSS로 둘 중 하나만 접근성 트리에 남긴다. 필터 결과 목록 열은 최대 720px | default, filtered, sticky, hidden on mobile |
-| LinkRow | 결과 링크 하나를 48px 이상 전체 폭 행으로 표시. 왼쪽은 한 줄 말줄임 제품명, 오른쪽은 새 탭 안내 문구. 같은 이름은 번호를 붙여 접근 가능한 이름을 행마다 다르게 유지 | single, repeated name, long Korean name, 320px wrap |
+| LinkRow | 결과 링크 하나를 48px 이상 전체 폭 행으로 표시. 첫 줄은 한 줄 말줄임 제품명, 새 탭 안내 문구는 48rem 이상에서 같은 줄 오른쪽, 그보다 좁으면 항상 다음 줄. 같은 이름은 번호를 붙여 접근 가능한 이름을 행마다 다르게 유지 | single, repeated name, long Korean name, 320px wrap |
 
 - 정렬은 `빈틈없이 꽉 차는 순`(기본, 기존 `compareCandidates`), `가격 싼 순`(아는 총액 오름차순, 모르는 가격은 뒤), `수납함 많이 들어가는 순`(총 수량 내림차순)이며 동률은 기존 순서를 쓴다. 각 그룹은 `button aria-pressed`이고 정렬은 항상 하나만 pressed다.
 - 가격 합계는 `priceLine`과 같은 `ceil(quantity / packQuantity) * packPriceKrw` 규칙의 `blockTotalKrw`를 재사용한다. 묶음 수량·개당 가격이 없으면 합계를 만들지 않고 정렬에서도 모르는 값으로 둔다.
