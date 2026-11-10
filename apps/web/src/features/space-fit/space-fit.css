@@ -191,3 +191,11 @@
 .space-block { fill: none; stroke: var(--zari-accent); stroke-width: var(--zari-focus-width); }
 
 .space-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.space-empty-actions .space-reset-inline { margin: 0; }
+.space-empty-actions .space-reset-inline,
+.space-empty-actions .space-empty-reselect { min-height: var(--zari-touch-min-height); border-radius: var(--zari-radius-control); padding-block: 0; }
+.space-empty:focus { outline: none; }
+.space-empty:focus-visible { outline: var(--zari-focus-width) solid var(--zari-focus-ring); }
+.space-more { display: inline-flex; align-items: center; justify-content: center; min-height: var(--zari-touch-min-height); margin-block: var(--zari-space-2); padding: 0 var(--zari-space-4); border: var(--zari-border-width) solid var(--zari-border-control); border-radius: var(--zari-radius-control); background: var(--zari-surface-panel); color: var(--zari-text-primary); font-size: var(--zari-text-lg); word-break: keep-all; }
+.space-more:disabled { color: var(--zari-text-secondary); }

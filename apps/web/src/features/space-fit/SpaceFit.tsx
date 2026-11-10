@@ -104,6 +104,7 @@ export function SpaceFit() {
   const visibleCount = Math.min(limit, shown.length);
   // Below 1,000 rendered rows this keeps every row; above it renders a window.
   const windowed = useWindowedRows(visibleCount);
+  const emptyBlock = useRef<HTMLDivElement | null>(null);
   const reason = emptyReason({ hasPage: page !== null, loadFailed, stopped, total: allResults.length, shown: shown.length });
   // When the list is windowed, only the rows in view (plus overscan) render.
   const rowStart = windowed.active ? windowed.range.start : 0;
@@ -146,6 +147,15 @@ export function SpaceFit() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     node.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
   }, [page]);
+  // noData/stopped sit below the tall form; bring them into view like the summary.
+  useEffect(() => {
+    if (reason !== 'noData' && reason !== 'stopped') return;
+    const node = emptyBlock.current;
+    if (!node) return;
+    node.focus({ preventScroll: true });
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    node.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+  }, [reason]);
   const edit = (index: number, value: string) => {
     stop(); setStale(true); setError(''); setInvalidAxis(null); setStopped(false);
     setSpace((old) => old.map((s,i) => i === index ? value : s) as [string,string,string]);
@@ -279,7 +289,7 @@ export function SpaceFit() {
         </div>)}</div>
         <details className="space-clearance-details">
           <summary>여유 틈</summary>
-          <ClearanceField value={clearance} onChange={chooseClearance} />
+          <ClearanceField value={clearance} onChange={chooseClearance} hideLegend />
         </details>
         <div className="space-find-bar">
           <button className="space-find" type="submit" disabled={busy}>맞는 수납함 찾기</button>
@@ -287,11 +297,11 @@ export function SpaceFit() {
       </form>
       {storageError && <p role="status">입력은 이 화면에 있어요. 이 기기에 임시 저장하지 못했어요.</p>}
       {error && <p id="space-error" role="alert" className="easy-error">{error}</p>}
-      {reason === 'noData' && <div className="space-empty" data-reason="noData" role="status">
+      {reason === 'noData' && <div className="space-empty" data-reason="noData" role="status" tabIndex={-1} ref={emptyBlock}>
         <p>상품 자료를 아직 받지 못했어요. 연결을 확인한 뒤 다시 찾아 주세요.</p>
         <button type="button" className="space-empty-action" onClick={() => void runSearch({ moveFocus: true })}>맞는 수납함 찾기</button>
       </div>}
-      {reason === 'stopped' && <div className="space-empty" data-reason="stopped" role="status">
+      {reason === 'stopped' && <div className="space-empty" data-reason="stopped" role="status" tabIndex={-1} ref={emptyBlock}>
         <p>찾기를 멈췄어요. 입력은 그대로 있어요.</p>
         <button type="button" className="space-empty-action" onClick={() => void runSearch({ moveFocus: true })}>맞는 수납함 찾기</button>
       </div>}
@@ -331,7 +341,7 @@ export function SpaceFit() {
               {windowed.active && windowed.bottomHeight > 0 && <li className="space-row-spacer" aria-hidden="true" style={{ height: windowed.bottomHeight }} />}
             </ul>
             {shown.length > limit && <button type="button" className="space-more" onClick={() => setLimit((n) => n + 20)}>더 보기</button>}
-            {!page.combinationsComplete && <><p>조합을 더 찾아볼 수 있어요. 두 종류까지, 바닥에 나란히 놓는 조합을 찾아요. 서로 다른 제품을 쌓지는 않아요.</p><button type="button" disabled={busy || autoStepping || stale || combinations.length >= COMBINATION_CAP} onClick={findMoreCombinations}>조합 더 찾기</button></>}
+            {!page.combinationsComplete && <><p>조합을 더 찾아볼 수 있어요. 두 종류까지, 바닥에 나란히 놓는 조합을 찾아요. 서로 다른 제품을 쌓지는 않아요.</p><button type="button" className="space-more" disabled={busy || autoStepping || stale || combinations.length >= COMBINATION_CAP} onClick={findMoreCombinations}>조합 더 찾기</button></>}
             {combinations.length >= COMBINATION_CAP && <p>이 화면에서 보여 줄 수 있는 조합 수에 도달했어요. 공간 크기를 좁혀 다시 찾아 주세요. 모든 조합을 확인한 것은 아니에요.</p>}
             {page.missingDimensions > 0 && <UnmeasuredGroup items={unmeasured} count={page.missingDimensions} />}
             {page.unavailableVariants > 0 && <p>품절로 표시된 상품 {page.unavailableVariants}개는 뺐어요.</p>}
@@ -350,10 +360,11 @@ export function SpaceFit() {
  * The clearance chips. The same fieldset appears in the input form, the mobile
  * sheet and the desktop column; useId keeps each description link unique.
  */
-function ClearanceField({ value, onChange }: { value: ClearanceMm; onChange: (value: ClearanceMm) => void }) {
+function ClearanceField({ value, onChange, hideLegend = false }: { value: ClearanceMm; onChange: (value: ClearanceMm) => void; hideLegend?: boolean }) {
   const descriptionId = useId();
   return <fieldset className="space-filter-group space-clearance" aria-describedby={descriptionId}>
-    <legend>여유 틈</legend>
+    {/* In the form the <summary> already shows '여유 틈'; the legend stays for screen readers. */}
+    <legend className={hideLegend ? 'space-visually-hidden' : undefined}>여유 틈</legend>
     <p id={descriptionId} className="space-clearance-description">수납함이 빡빡하지 않게 남길 틈이에요</p>
     <div className="space-filter-options">
       {CLEARANCE_OPTIONS_MM.map((option) => <button key={option} type="button" className="space-filter-option" aria-pressed={value === option} onClick={() => onChange(option)}>{clearanceLabel(option)}</button>)}
