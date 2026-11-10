@@ -349,7 +349,6 @@ function Candidate({ candidate, spaceMm }: { candidate: SpaceFitCandidate; space
     {(meta.length > 0 || candidate.dimensionProvenance === 'reference') && <div className="space-meta-block">
       <p className="space-meta">
         {meta.map((entry, index) => <span className="space-meta-entry" key={`${entry.seller ?? ''}-${entry.category ?? ''}-${index}`}>
-          {index > 0 && <span aria-hidden="true"> · </span>}
           {entry.seller && <span className="space-seller">{entry.seller}</span>}
           {entry.seller && entry.category && <span aria-hidden="true"> · </span>}
           {entry.category}
