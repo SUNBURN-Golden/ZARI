@@ -2773,7 +2773,7 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 범위: `apps/web/src/features/space-fit/`(신규 `clearance.ts`·`windowing.ts`),
   같은 기능의 단위·브라우저 시험, `design/COMPONENTS.md`·`design/SCREENS.md`·
   `design/DECISIONS.md`, 이 문서만 바꿨다. Rust crates·계약 생성 코드·R2·배포·
-  catalog 데이터·main은 건드리지 않았다. commit/push도 하지 않았다.
+  catalog 데이터·main은 건드리지 않았다.
 - 여유 틈: `clearance.ts`가 승인된 0·5·10·20mm(`ClearanceMm`)와 기본 5mm,
   `parseClearance`(목록 밖·깨진 값은 기본), `formatClearanceCm`(0/0.5/1/2, 뒤
   붙는 0 없음), `clearanceLabel`을 제공한다. localStorage 키는
@@ -2785,7 +2785,9 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 검색: `SpaceFitInput.clearanceMm`에 `[c,c,c]`를 보낸다(기존 `[5,5,5]` 고정 제거).
   `submit`을 `runSearch({moveFocus})`로 정리했다. 결과가 보이는 상태에서 여유 틈을
   바꾸면 `moveFocus:false`로 현재 입력을 자동 재검색하고, 결과 화면을 유지해 누른
-  칩이 초점을 잃지 않는다. page에는 그 검색의 여유 틈(`pageClearance`)을 함께
+  칩이 초점을 잃지 않는다. 재검색 중에는 이전 행을 그대로 두고 첫 page가 오면 바꿔 끼워
+  요약이 빈 문구로 잠깐 바뀌지 않는다. 입력 form 안의 fieldset legend는 summary와 겹치지 않게
+  시각적으로만 숨긴다. page에는 그 검색의 여유 틈(`pageClearance`)을 함께
   두어 안내가 `축마다 {0|0.5|1|2}cm를 남겨요.`로 바뀐다. `처음대로 돌리기`는
   정렬·판매처·모양과 여유 틈을 0.5cm로 되돌리고, 여유 틈이 실제로 달라졌을 때만
   재검색한다.
@@ -2794,7 +2796,8 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   전 사용자 중지)는 `div.space-empty[data-reason]` `role="status"`와 `맞는 수납함
   찾기` 재시도를 두고, 같은 내용의 `role="alert"`는 없앴다. `filters`는 요약 아래
   `처음대로 돌리기`와 모바일 전용 `다시 골라보기`(시트 열기), `noFit`은 요약만
-  둔다. page가 보인 뒤 중지는 결과를 유지하고 status 문장만 추가한다. `찾기 멈추기`
+  둔다. `noData`·`stopped` 블록은 키 큰 form 아래에 있으므로 나타나면 초점(`tabIndex=-1`)을
+  받고 화면 가운데로 스크롤된다. page가 보인 뒤 중지는 결과를 유지하고 status 문장만 추가한다. `찾기 멈추기`
   단추는 첫 계산과 자동 조합 단계 모두에서 보인다.
 - 긴 목록: 200번째 이후 행에 `space-row-deferred`(`content-visibility: auto;
   contain-intrinsic-size: auto 28rem;`)를 붙인다. 렌더 행이 1,000개를 넘으면
@@ -2813,17 +2816,15 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   `SpaceFit.tsx`, `view.ts`(`emptyReason`), `space-fit.css`,
   `tests/unit/spaceFitView.test.ts`, `tests/browser/space-fit.spec.ts`,
   `design/COMPONENTS.md`, `design/SCREENS.md`, `design/DECISIONS.md`, 이 문서.
-- 검증: typecheck·lint·지정 단위 시험 결과는 아래 실행값 참고. Playwright(브라우저
-  여유 틈·빈 상태·axe 320/390/1440 × light/dark·시트)는 **측정 전**이다.
-  `node scripts/check-design-tokens.mjs --self-test`도 측정 전이다. 새 색상 쌍이
-  없어 `design/token-contrast-cases.json`은 바꾸지 않았다(기존
-  primary/secondary-on-subtle 재사용).
-- 미완료: 브라우저 여유 틈·빈 상태·axe 실행, 실제 판매처·실기기·approved baseline
-  수용, 비작성자 exact-HEAD review, commit/push. fixture에 두 번째 실측 판매처가
-  없어 `filters` 0개 상태는 단위 시험으로만 덮고, 브라우저에서는 `처음대로 돌리기`
-  경로를 확인한다. 다음: Playwright 실행, exact-head CI, 독립 review.
-- 실행값(측정함): `npm run typecheck` 통과, `npm run lint` 통과,
-  `npx vitest run apps/web/tests/unit/spaceFitView.test.ts
-  apps/web/tests/unit/spaceFitResults.test.ts` **35 passed / 2 files**,
-  `node scripts/check-design-tokens.mjs --self-test` **80 base tokens · 90/90**.
-  Playwright·axe 실행값은 아직 **측정 전**이다.
+- 검증(측정함, HEAD 기준): typecheck·lint 통과, `npm test` **529 passed / 60 files**, contracts 124 valid,
+  `check-design-tokens --self-test` 통과(80 tokens · 90/90), `test:build` 통과, `test:parity` 2 passed.
+  Chromium 브라우저는 묶음별로 실행했다: `space-fit.spec.ts` **29 passed**(여유 틈·noData·stopped·
+  axe 320/390/1440 × light/dark·시트 포함), 나머지 46개 spec 세 묶음 **56 + 52 + 49 passed**,
+  합계 **186 passed / 0 failed**. 새 색상 쌍은 없어 `design/token-contrast-cases.json`은 그대로다.
+- 시각 검증(측정함): live R2 번들(read-only), production build로 390/320/1440 × light/dark에서
+  입력·결과·배지·펼침·조합·시트/열·form 여유 틈·`filters` 빈 상태(무인양품 + 부직포정리함)·`noData`
+  (R2 요청 abort) 66개 상태: axe 위반 0, 가로 넘침 없음, 48px 미만 대상 없음, 잘림 없음, page error 없음.
+  증거: `docs/evidence/space-fit-pr-d/`.
+- 남김: 실제 판매처·실기기·approved baseline 수용, 비작성자 exact-HEAD review. fixture에 두 번째
+  실측 판매처가 없어 브라우저의 `filters` 0개 상태는 live 시각 검증과 단위 시험으로 덮는다. 1,000행
+  창 모드는 단위 시험(`windowRange`)만 있고 브라우저 시험은 없다(50번 `더 보기`가 필요).
