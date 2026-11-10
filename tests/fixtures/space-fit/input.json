@@ -6,6 +6,48 @@
     "200",
     "40"
   ],
+  "listings": [
+    {
+      "id": "crawl:muji:123456:o1aa33fda",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "합성 수납함 (소형)",
+      "brand": "무인양품",
+      "category": "",
+      "categoryHint": "bin",
+      "productUrl": "https://mujikorea.co.kr/products/123456",
+      "source": "muji",
+      "fetchedAt": "2026-11-05T00:00:00Z",
+      "dimensions": {
+        "rawText": "[소형] 가로 20cm 깊이 15cm 높이 10cm",
+        "width": "20",
+        "depth": "15",
+        "height": "10",
+        "unit": "cm",
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "crawl:muji:123456:oe920d1be",
+      "sourceKind": "crawled",
+      "status": "unconfirmed",
+      "name": "합성 수납함 (대형)",
+      "brand": "무인양품",
+      "category": "",
+      "categoryHint": "bin",
+      "productUrl": "https://mujikorea.co.kr/products/123456",
+      "source": "muji",
+      "fetchedAt": "2026-11-05T00:00:00Z",
+      "dimensions": {
+        "rawText": "[대형] 가로 30cm 깊이 20cm 높이 15cm",
+        "width": "30",
+        "depth": "20",
+        "height": "15",
+        "unit": "cm",
+        "confidence": "high"
+      }
+    }
+  ],
   "catalog": {
     "schemaVersion": 1,
     "catalogVersion": "b-8fa7a0f7cc84a413",

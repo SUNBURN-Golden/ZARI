@@ -1,4 +1,4 @@
-import type { CatalogSnapshot } from '../../contracts/generated/dto';
+import type { CatalogSnapshot, CrawledItem } from '../../contracts/generated/dto';
 import { readRepository, reviewBundleText, type BundleReviewer } from '../catalog/bundle';
 import { configuredR2Base, r2Transport } from '../catalog/r2Transport';
 
@@ -21,14 +21,26 @@ async function cacheStore(value?: Cache): Promise<Cache | null> {
     };
   });
 }
-export interface LoadedCatalog { snapshot: CatalogSnapshot; cached: boolean; cacheFailed: boolean }
+export interface LoadedCatalog {
+  snapshot: CatalogSnapshot;
+  /** Reviewed bundle items, sent to Rust as the re-validated reference side channel. */
+  listings: CrawledItem[];
+  cached: boolean;
+  cacheFailed: boolean;
+}
+function bundleItems(text: string): CrawledItem[] {
+  try {
+    const value = JSON.parse(text) as { items?: unknown };
+    return Array.isArray(value.items) ? (value.items as CrawledItem[]) : [];
+  } catch { return []; }
+}
 function requireSnapshot(read: Awaited<ReturnType<typeof reviewBundleText>>): CatalogSnapshot {
   if (read.status !== 'reviewed' || read.review.quarantined || !read.review.snapshot) throw new Error('catalog_invalid');
   return read.review.snapshot;
 }
 export async function localCatalog(text: string, reviewer: BundleReviewer): Promise<LoadedCatalog> {
   if (!LOCAL_IMPORT_ALLOWED) throw new Error('local_import_disabled');
-  return { snapshot: requireSnapshot(await reviewBundleText(text, reviewer)), cached: false, cacheFailed: false };
+  return { snapshot: requireSnapshot(await reviewBundleText(text, reviewer)), listings: bundleItems(text), cached: false, cacheFailed: false };
 }
 export async function loadCatalog(reviewer: BundleReviewer): Promise<LoadedCatalog> {
   if (!R2_BASE) throw new Error('catalog_not_configured');
@@ -42,10 +54,10 @@ export async function loadCatalog(reviewer: BundleReviewer): Promise<LoadedCatal
   if (read.status === 'reviewed' && !read.review.quarantined && read.review.snapshot) {
     let cacheFailed = false;
     try { await cacheStore({ base: R2_BASE, text: bundleText }); } catch { cacheFailed = true; }
-    return { snapshot: read.review.snapshot, cached: false, cacheFailed };
+    return { snapshot: read.review.snapshot, listings: bundleItems(bundleText), cached: false, cacheFailed };
   }
   // A previous R2 snapshot is only a cache, and is revalidated before use.
   const cached = await cacheStore().catch(() => null);
-  if (cached?.base === R2_BASE) return { snapshot: requireSnapshot(await reviewBundleText(cached.text, reviewer)), cached: true, cacheFailed: false };
+  if (cached?.base === R2_BASE) return { snapshot: requireSnapshot(await reviewBundleText(cached.text, reviewer)), listings: bundleItems(cached.text), cached: true, cacheFailed: false };
   throw new Error('catalog_unavailable');
 }
