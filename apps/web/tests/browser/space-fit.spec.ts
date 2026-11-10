@@ -287,8 +287,9 @@ test('clearance defaults, persists and re-runs from the desktop column without m
   const details=page.locator('.space-clearance-details');
   await expect(details).not.toHaveAttribute('open','');
   const formClearance=details.locator('.space-clearance');
-  await expect(formClearance.getByRole('button',{name:'0.5cm',exact:true})).toHaveAttribute('aria-pressed','true');
   await details.locator('summary').click();
+  // Closed <details> content is not in the accessibility tree; check after opening.
+  await expect(formClearance.getByRole('button',{name:'0.5cm',exact:true})).toHaveAttribute('aria-pressed','true');
   await formClearance.getByRole('button',{name:'1cm',exact:true}).click();
   await expect(formClearance.getByRole('button',{name:'1cm',exact:true})).toHaveAttribute('aria-pressed','true');
   expect(await page.evaluate(()=>localStorage.getItem('zari.space-fit.clearance.v1'))).toBe('10');

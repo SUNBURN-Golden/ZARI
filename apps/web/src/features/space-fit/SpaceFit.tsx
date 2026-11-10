@@ -159,10 +159,11 @@ export function SpaceFit() {
     stop(); const current = revision.current;
     const keepPage = !focusSummary && page !== null;
     setBusy(true); setError(''); setInvalidAxis(null); setLoadFailed(false); setStopped(false);
-    if (!keepPage) setPage(null);
-    setSingles([]); setCombinations([]);
+    // A clearance re-run keeps the old rows until its first page replaces them,
+    // so the summary never flashes the empty text while it recomputes.
+    if (!keepPage) { setPage(null); setSingles([]); setCombinations([]); setUnmeasured([]); }
     combinationsRef.current = []; setFilterStatus('');
-    setUnmeasured([]); setLimit(20); moveFocus.current = focusSummary;
+    setLimit(20); moveFocus.current = focusSummary;
     let catalog: LoadedCatalog;
     try {
       catalog = loaded ?? await loadCatalog(workerReviewer());
@@ -181,6 +182,8 @@ export function SpaceFit() {
       let firstPage = true;
       // Bounded automatic steps toward two-product mixes (see needsMixedStep).
       let autoSteps = 0;
+      // The first page of this search replaces any rows kept from the last one.
+      let appended = false;
       next.onerror = () => { if (current === revision.current) { stop(); setError('계산하지 못했어요. 다시 찾아 주세요.'); } };
       next.onmessage = (message: MessageEvent<{ ok: boolean; json?: string; code?: string }>) => {
         if (revision.current !== current) return;
@@ -204,8 +207,10 @@ export function SpaceFit() {
             firstPage = false;
           }
           const combined = [...combinationsRef.current, ...result.combinations];
+          const replace = !appended;
+          appended = true;
           combinationsRef.current = combined;
-          setPage(result); setSingles((old) => [...old, ...result.singles]); setCombinations(combined);
+          setPage(result); setSingles((old) => replace ? result.singles : [...old, ...result.singles]); setCombinations(combined);
           // One auto-step per response, behind the same revision guard. The busy
           // status stays up until the sequence stops, and focus already moved
           // once on the first page.
