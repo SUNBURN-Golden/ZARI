@@ -107,3 +107,15 @@ SVG 도면의 의미 있는 선은 `--zari-canvas-outline`, 선택은 `--zari-se
 | 본문·secondary 본문 | `--zari-type-body`, `-body-line`, `--zari-type-tracking-text`, `--zari-font-text` | 1.125rem / 1.6 / 0 |
 | 단추·칩·링크 행 | `--zari-type-label-line` | 1.35, 최소 높이 48px |
 
+### SpaceFit 결과 줄 (PR-F)
+| 역할 | 값 |
+|---|---|
+| 상품명(단일은 `{n}개` 생략) | 18px / 1.35 / 600, 아래 8px |
+| 수량 줄 | 32px(1024px 이상 40px) / 1.18 / 700, 아래 8px |
+| 남는 공간 | 18px / `--zari-type-secondary-line` 1.45 / 400 / 보조색, 축별 nowrap 단위 |
+| 가격 줄 | 18px / 1.35 / 600, 위 12px. `kind`: priced·listing·unknown |
+| 참고 가격 설명 | 18px / 1.45 / 보조색, 위 4px |
+| 판매처 알약·참고치 알약 | 위아래 4px, 좌우 12px, 500. 참고치 단추 누름 영역 48px 유지 |
+| 링크 상자 | 이름 500, 행동 400, 두 줄 간격 4px, 안쪽 12px/16px |
+| 필터 묶음 | 묶음 사이 32px, 제목→칩 12px |
+| 손그림 칸 | `--zari-sketch-size` 72px, 그림 있을 때만, alt="" (제목이 이름을 말함) |
