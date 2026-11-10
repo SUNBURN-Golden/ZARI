@@ -535,3 +535,32 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
   (`imageOcr` | `pageText` | `unspecified`)으로 구분하며, origin은 provenance를 올리지 않는다
   (OCR도 reference). 실번들 측정: 보관함 31개 중 confirmed 0, reference 31
   (imageOcr 17, pageText 14), unknown 0. bin이 아닌 7개는 기존 범위대로 제외.
+
+## D-space-fit-results-ui — 결과 한 목록·기본 정렬·참고치 배지·가격 문구 / 구현 초안 (PR-B)
+
+- 상태: **draft**. 사용자 화면 수용·승인, 실제 판매처·실기기 확인은 미완료다.
+- 근거: 사용자 2026-11-10 PR-B 지시. PR-A의 `D-space-fit-listing-provenance` 계약을
+  화면에 드러내되 Rust 계산을 복제하지 않는다.
+- 문제: 기존 결과 화면은 `딱 맞음`/`조합` 두 영역으로 갈라져 같은 후보를 두 번 읽게
+  했고, 참고치를 숨긴 채 confirmed처럼 보이게 했다. 가격·판매처·분류·치수 근거는
+  계약에만 있고 화면에는 없었다.
+- 선택 1 — 한 목록: 단일·조합을 합쳐 정렬한 `ul` 하나로 표시하고 탭·그룹 제목을
+  없앤다. 기본 정렬은 `occupiedVolumeMm3` 내림차순(BigInt), confirmed before
+  reference, id 순이다. 20개씩 보이며 `더 보기`가 20개를 추가한다.
+- 선택 2 — 참고치를 숨기지 않음: `dimensionProvenance === 'reference'`인 행과
+  `price.basis === 'reference'`인 가격 줄에 `참고치` 버튼을 두고, 같은 설명 문단을
+  `aria-expanded`/`aria-controls`로 펼친다. confirmed에는 배지를 두지 않는다.
+  치수가 전혀 없는 상품은 `unmeasured` 접힌 그룹 하나에 남긴다.
+- 선택 3 — 가격: known이고 `packQuantity`·`unitPriceKrw`가 있으면
+  `ceil(quantity / packQuantity) * packPriceKrw`를 BigInt로 계산해
+  `한 개 {가격}원 · 다 해서 {가격}원`으로 표시한다. 그 외에는
+  `가격은 파는 곳에서 봐 주세요`만 표시하고 판매처 표시가만 아는 경우의 문구는
+  Argon 승인 전까지 `copy-todo` 주석으로 남긴다. 원화 금액을 추정하지 않는다.
+- 접근성·성능: 결과 요약은 `tabindex=-1` `h2`이며 첫 page 도착 때만 초점을 받고
+  `aria-live`로 한 번 알린다. 개수는 `aria-live="off"` 안에 두어 append가 다시
+  읽히지 않게 한다. 참고치 버튼은 48px 이상, 키보드 Enter/Space, focus-visible,
+  forced-colors를 실제 Chromium에서 확인한다. 320px에서 가로 넘침이 없어야 한다.
+- 전후 화면: 이전은 두 영역·숨긴 참고치·가격 없음. 이후는 한 목록·배지·가격 줄.
+  baseline 캡처는 draft이며 approved로 기록하지 않는다.
+- 되돌리기: `SpaceFit.tsx`의 합친 목록·배지·가격 줄과 `results.ts`를 제거하고
+  이전 두 영역 렌더링으로 돌아간다. Rust 계약과 저장 데이터는 바뀌지 않는다.

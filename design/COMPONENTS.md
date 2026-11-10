@@ -25,6 +25,21 @@
 | RecoveryPanel (초안) | 저장·충돌·손상·워커 실패에서 입력 유지 | save failed, conflict, corrupt, worker failed |
 | InterruptedSearchNote (초안) | 계산 상태. `role="status"` | idle, running, done, cancelled, interrupted, failed |
 
+## SpaceFit 결과 — PR-B 구현 초안 (2026-11-10)
+
+SpaceFit은 단일·조합 결과를 한 목록으로 합친다. 탭이나 `딱 맞음`/`조합` 그룹 제목을 두지 않는다.
+
+| 컴포넌트 | 책임 | 반드시 구현할 상태 |
+| --- | --- | --- |
+| SpaceFitResultRow | 결과 하나를 하나의 `li`와 한 겹의 테두리 행으로 표시. 메타(판매처·분류·참고치) → 제품명 `h3` → 큰 수량 문장 → 축별 남는 길이 → 블록별 가격 → 판매처 링크 → 접힌 놓는 모양 순서 | confirmed, reference, priced, price unknown, stacked, long Korean name, stale, busy |
+| ReferenceBadge | `참고치` 버튼. `aria-expanded`/`aria-controls`로 설명 문단을 펼친다. 치수 근거와 참고 가격에 같은 컴포넌트를 쓴다 | collapsed, expanded, keyboard, focus-visible, forced-colors |
+| UnmeasuredGroup | 결과 목록 뒤 접힌 `details` 하나. 요약은 `치수 확인 중 ({n}개)`이며 n은 page의 전체 미확인 수, 내부는 이름·판매처·링크의 `ul`/`li` | closed, open, empty(렌더하지 않음) |
+
+- 참고치 배지는 meta 줄에서 치수 provenance가 reference일 때, 가격 줄에서는 known 가격의 basis가 reference일 때만 보인다. confirmed 행에는 배지가 없다. 배지는 높이 48px 이상이고 Enter/Space로 동작하며 설명은 `aria-controls`가 항상 가리키는 한 곳에 둔다.
+- 결과 행은 카드 안에 카드를 넣지 않는다. 목록은 `ul`, 행은 `li`, 제품명은 `h3`다. 결과 요약은 초점 가능한 `h2`이며 `aria-live`는 검색 결과가 처음 도착할 때 한 번만 알린다.
+- 가격이 known이고 묶음 수량·개당 가격이 있으면 `한 개 {가격}원 · 다 해서 {가격}원`을 표시한다. 그 외에는 `가격은 파는 곳에서 봐 주세요`만 표시하고 원화 금액을 만들어 내지 않는다. 묶음 가격만 아는 경우의 문구는 승인 전까지 `copy-todo` 주석으로 남긴다.
+- 찾기 단추는 입력 화면에서 viewport 아래에 sticky로 두고 panel 토큰 배경·safe-area 여백을 쓴다. 결과는 같은 화면 아래에 이어지며, 첫 결과 page가 온 뒤 요약으로 초점을 옮기고 `prefers-reduced-motion`에서는 부드러운 스크롤을 쓰지 않는다.
+
 ## 접근성과 입력 규칙
 
 레이블을 placeholder로 대체하지 않는다. input의 타입, inputmode, 허용 문자열, 정규화 시점을 분리한다. 구체화된 [프런트엔드 계약](../docs/FRONTEND.md)에 따라 DimensionField는 React Aria TextField로 원문 문자열을 유지하고 Rust가 정규화한다. NumberField나 JS 숫자 파서를 정식 측정값 변환에 사용하지 않는다. JS 부동소수점 결과를 정식 도메인 값으로 확정하지 않는다.
