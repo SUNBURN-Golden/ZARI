@@ -64,7 +64,18 @@ async function collect(url: string, kind: string) {
     // 'load' can stall on slow third-party scripts; the collector waits for content itself.
     const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     if (kind === 'listing') {
-      for (let i = 0; i < 6; i++) { await wait(2500); await page.mouse.wheel(0, 1500); }
+      // The category grid renders and lazy-loads after DOMContentLoaded: scroll until the
+      // number of product links stops growing (same single page view, no extra navigation).
+      await wait(5000);
+      let last = -1, stable = 0;
+      for (let i = 0; i < 30 && stable < 4; i++) {
+        await page.mouse.wheel(0, 2000);
+        await wait(2500);
+        const count = await page.evaluate(() => document.querySelectorAll('a[href*="pdNo="]').length).catch(() => 0);
+        stable = count > 0 && count === last ? stable + 1 : 0;
+        last = count;
+      }
+      log(`${new Date().toISOString()} listing-scroll links=${last} stable=${stable}`);
       await wait(2000);
     } else await wait(kind === 'robots' ? 1500 : 4000);
     const snap: any = await page.evaluate(kind === 'robots' ? collectRobots : collectPage);
