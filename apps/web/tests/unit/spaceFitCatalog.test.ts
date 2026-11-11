@@ -40,7 +40,7 @@ it('returns reviewed bundle items as the space-fit listing side channel',async()
   const snapshot=JSON.parse(readFileSync('tests/fixtures/space-fit/input.json','utf8')).catalog as CatalogSnapshot;
   const reviewer={review:vi.fn(async()=>({quarantined:false,snapshot} as unknown as CatalogBundleReview))};
   const loaded=await localCatalog(text,reviewer);
-  expect(loaded.listings.map((item)=>item.id)).toEqual(['crawl:muji:123456:o1aa33fda','crawl:muji:123456:oe920d1be']);
+  expect(loaded.listings.map((item)=>item.id)).toEqual(['crawl:daiso:0001234567:o0000abcd','crawl:muji:123456:o1aa33fda','crawl:muji:123456:oe920d1be']);
 });
 it('accepts a page carrying source, price, category and dimension provenance',()=>{
   const page:SpaceFitPage={

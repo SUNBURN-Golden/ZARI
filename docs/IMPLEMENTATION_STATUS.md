@@ -2630,3 +2630,77 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   가격 문법은 현재 `원`/`KRW`만 지원. `unmeasured` 첫-page 한정은 문서화된 선택이며
   UI는 아직 표시하지 않는다. 비작성자 exact-HEAD review와 commit/push는 이 작업
   범위 밖이며 수행하지 않았다. 다음: PR-B UI, review, CI exact-head 확인.
+
+### 2026-11-10 PR-B — SpaceFit 결과 한 목록·참고치 배지·가격 표시 (UI 전용)
+
+- 시각 검증·리뷰 반영(코디네이터, 실 R2 번들 `b-c8fb29299e687ad0` 읽기 전용): 이름 끝의 기본 옵션 표식
+  ` 기본` 제거, 요약 `scroll-margin-top`, 조합의 링크·놓는 법 줄에 제품명 접두(같은 문구가 다른 판매처를
+  가리키지 않게, 링크 키는 variantId+url), 모든 블록 가격이 unknown이면 한 줄, 수량 문장 32px
+  (`--zari-text-title`, DESIGN.md 쉬운 모드 결과 32px 이상), 참고 가격 배지 제거(설명 문장이 크기용이라
+  잘못된 출처 설명이 됨 → copy-todo). 시험 추가: 빈 결과 요약, 배지 Tab 초점 outline, 페이지 넘김 id 중복 없음.
+- 알려진 한계: 첫 page는 같은 상품 격자 단계에서 node 예산을 다 써서 서로 다른 두 상품 조합은
+  `조합 더 찾기`를 눌러야 나온다(실번들 60×30×35: 첫 page 123개, 10번 누르면 1123개, 1위가 조합).
+  기본 정렬이 남는 공간 순이라 조합이 늦게 보인다. PR-C/D 또는 Rust 단계 순서 조정에서 다룬다.
+- 미확인 상품 미리보기는 Rust가 앞 200개만 보내므로 그보다 많으면 나머지는 목록에 없다(개수는 전체). 안내 문구는 copy-todo.
+
+- 범위: `apps/web/src/features/space-fit/`와 그 시험·fixture·디자인 문서만 바꿨다.
+  Rust·계약 생성 코드·R2·배포·catalog 데이터·main은 건드리지 않았다. commit/push는
+  하지 않았다.
+- 화면: 단일·조합을 `mergeCandidates`로 합친 한 목록으로 표시하고 `딱 맞음`/`조합`
+  영역을 없앴다. 정렬은 `occupiedVolumeMm3` 내림차순 BigInt, confirmed before
+  reference, id 순이다. 20개 + `더 보기` 20개, 기존 `조합 더 찾기`·2,000개 한도
+  문구는 유지했다. 결과 요약은 `h2` `tabindex=-1`이며 첫 page에서만 초점을 받고
+  `aria-live`로 한 번 알린다(개수는 `aria-live="off"`). `prefers-reduced-motion`에서는
+  부드러운 스크롤을 쓰지 않는다.
+- 입력: 가로/깊이/높이 레이블을 항상 보이고 cm는 필드 안 고정, `inputMode="decimal"`,
+  `enterKeyHint="search"`, placeholder 60/40/40을 유지했다. `맞는 수납함 찾기`는
+  입력 form의 sticky bottom bar(panel 토큰 배경, safe-area 여백)에 두었다.
+- 행: 판매처(무인양품/다이소)·분류 메타, 제품명 `h3`, `수납함 {n}개가 딱 들어가요`
+  (BigInt 합), 축별 `{방향}로 {n}cm 남아요`, 블록별 가격, 판매처 새 탭 링크,
+  접힌 `놓는 모양 보기`(SVG·배치·기존 확인 문구) 순서다. 목록 뒤에는 단일 접힌
+  `치수 확인 중 ({n}개)`을 두고 미확인 상품 이름·판매처·링크를 넣는다.
+- 참고치: 치수 provenance가 reference인 행의 meta 줄에만
+  `참고치` 버튼을 두고 `aria-expanded`/`aria-controls`로 설명 문단을 펼친다.
+  confirmed 행에는 배지가 없다. 버튼 높이는 48px 이상이다.
+- 가격: known이고 묶음 수량·개당 가격이 있으면
+  `한 개 {가격}원 · 다 해서 {가격}원`(총액은 `ceil(quantity / packQuantity) *
+  packPriceKrw` BigInt)을 표시한다. 그 외에는 `가격은 파는 곳에서 봐 주세요`만
+  표시한다. 판매처 표시가만 아는 문구는 승인 전이라 `results.ts`에
+  `// copy-todo: pack-price line (판매처 표시가 {가격}원, 묶음 수량 미확인) needs Argon approval`
+  주석만 남기고 렌더하지 않는다. 현재 copy-todo는 이 한 건이다.
+- 문구: `찾고 있어요.` → `들어갈 수 있는지 맞춰 보고 있어요.`, 입력 기준 안내 →
+  `적어 주신 크기대로만 맞춰 본 결과예요. 축마다 0.5cm를 남겨요.`, 확인 안내 →
+  `문이 잘 열리는지, 넣고 빼기 편한지는 따로 살펴봐 주세요.`로 바꿨다. 기존
+  `상품 {n}개를 확인했어요.`, `치수를 확인한 수납함은 아직 찾지 못했어요.`,
+  `크기와 판매처 보기` details를 제거했다. 승인되지 않은 새 한국어 문구는 없다.
+- 파일: `features/space-fit/results.ts`(신규 helper), `SpaceFit.tsx`, `space-fit.css`,
+  `tests/unit/spaceFitResults.test.ts`(신규), `tests/unit/spaceFitCatalog.test.ts`,
+  `tests/browser/space-fit.spec.ts`, `tests/fixtures/space-fit/catalog.json`.
+- fixture: 손으로 hash를 고치지 않고 저장소 도구
+  `cargo run -p zari-core --example catalog_bundle_tool build 2026-11-05T00:00:00Z 1`로
+  재생성했다. 치수 미확인 합성 다이소 item 1개를 더해 총 3개, bundleId
+  `b-b2bc69873c8c1aea`, 1,255 bytes다. 검토 결과 review 통과·variant 3개·미확인 1개를
+  확인했다.
+- 검증(실행값): `npm run typecheck` 통과, `npm run lint` 통과,
+  `npm test` **505 passed / 59 files**, `node scripts/check-design-tokens.mjs
+  --self-test` **80 base tokens / 90/90 contrast cases**, 같은 스크립트 CI 실행도
+  **80 / 90/90**, `npm run contracts:check` **124 fixture structures valid**,
+  `npm run test:build` 통과, `npx playwright test apps/web/tests/browser/space-fit.spec.ts
+  apps/web/tests/browser/easy-mode.spec.ts --project=chromium` **19 passed / 0 failed** (2차 리뷰 수정 후 재실행, `npm test` 506 passed / 59 files).
+  space-fit Playwright에는 합친 목록·요약 초점·sticky·미확인 접힘·stale 흐름,
+  참고치 키보드(Enter/Space), 가격 줄 unknown 문구(조합의 unknown 가격은 한 줄로 합침, 9줄), 320px light/dark axe와
+  넘침 없음, forced colors, native Rust ↔ 실제 Worker/WASM parity, 진행 중 편집
+  취소가 포함된다.
+- 미완료: PR-C의 필터·정렬 UI, PR-D의 여유 공간/빈 상태/가상화는 이 PR에 없다.
+  실제 판매처·실기기·approved baseline 수용, 비작성자 exact-HEAD review, commit/push는
+  수행하지 않았다. 묶음 가격만 아는 경우의 문구는 Argon 승인 대기다. 다음: PR-C,
+  exact-head CI, 독립 review.
+
+#### PR-B 2차 리뷰(DeepSeek flash, read-only) 반영
+
+- 조합 링크: 같은 이름(옵션만 다른 variant, offer 여러 개)이 겹치면 이름 뒤에 번호를 붙여 링크 텍스트가 항상 달라지게 했다.
+- `isReferencePrice` 주석을 실제 상태(UI 미표시, copy-todo)로 고쳤다.
+- `.space-links`·`.space-link`·배치 문단에 `overflow-wrap:anywhere`(+keep-all)를 더해 긴 상품명이 320px에서 넘치지 않게 했다.
+- 측정함: typecheck·lint 통과, `npm test` 506/506, space-fit+easy-mode Chromium 19 passed.
+- 남김(후속 PR): `조합 더 찾기` 경로의 id 중복 테스트, 가격 확인된 block과 미확인 block이 섞인 조합 fixture 테스트, 긴 이름 fixture — 현재 실데이터 묶음 수량이 모두 미확인이라 fixture 추가가 필요하다.
+
