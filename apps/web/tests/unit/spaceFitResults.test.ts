@@ -14,6 +14,7 @@ import {
   rowTitle,
   sellerLabel,
   SPACE_FIT_COPY,
+  UNMEASURED_PREVIEW_CAP,
   totalQuantityText,
 } from '../../src/features/space-fit/results';
 
@@ -143,6 +144,8 @@ describe('space-fit price line', () => {
     expect(SPACE_FIT_COPY.filteredEmpty).toBe('고르신 내용에 맞는 수납함이 아직 없어요');
     expect(SPACE_FIT_COPY.referencePriceNote).toBe('글에서 찾은 가격이라 다를 수 있어요');
     expect(SPACE_FIT_COPY.unmeasuredCapNote).toBe('너무 많아서 200개까지만 먼저 보여드려요');
+    // The cap in the copy and the Rust preview cap must move together.
+    expect(SPACE_FIT_COPY.unmeasuredCapNote).toContain(`${UNMEASURED_PREVIEW_CAP}개`);
   });
 
   it('flags only known reference prices', () => {

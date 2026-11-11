@@ -503,6 +503,9 @@ function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
     if ((nameCount.get(link.name) ?? 0) > 1) link.name = `${link.name} ${n}`;
   }
   const stacked = candidate.blocks.some((block) => block.grid[2] > 1);
+  const pricedBlocks = candidate.blocks.filter((block) => priceLine(block).kind !== 'unknown');
+  const referenceBlocks = pricedBlocks.filter(isReferencePrice).length;
+  const notePerBlock = referenceBlocks > 0 && referenceBlocks < pricedBlocks.length;
   // Our own drawings only, at most two per row, hidden when none exist.
   const sketches = [...new Set(candidate.blocks.map((block) => sketchFor(block.variantId)).filter((src): src is string => src !== null))].slice(0, 2);
   return <li data-candidate-id={candidate.id} className={deferred ? 'space-row-deferred' : undefined} aria-setsize={position?.setSize} aria-posinset={position?.posInSet}>
@@ -538,9 +541,12 @@ function Candidate({ candidate, spaceMm, deferred = false, position = null }: {
       const key = `${block.variantId}-${index}`;
       return <div className="space-price-block" key={key}>
         <p className="space-price-line" data-kind={line.kind}>{line.text}</p>
+        {/* Mixed bases: the note sits under the reference line it qualifies. */}
+        {notePerBlock && line.kind !== 'unknown' && isReferencePrice(block) && <p className="space-price-note">{SPACE_FIT_COPY.referencePriceNote}</p>}
       </div>;
     })}
-    {candidate.blocks.some((block) => priceLine(block).kind !== 'unknown' && isReferencePrice(block)) && <p className="space-price-note">{SPACE_FIT_COPY.referencePriceNote}</p>}
+    {/* Every shown price is from listing text: one note covers them all. */}
+    {referenceBlocks > 0 && !notePerBlock && <p className="space-price-note">{SPACE_FIT_COPY.referencePriceNote}</p>}
     {links.length > 0 && <div className="space-links">{links.map(({ key, url, name }) => <a key={key} className="space-link-row" href={url} target="_blank" rel="noopener noreferrer"><span className="space-link-name">{name}</span><span className="space-link-action">판매처에서 보기 (새 탭)</span></a>)}</div>}
     <details className="space-shape"><summary>놓는 모양 보기</summary>
       <div className="space-shape-body">
