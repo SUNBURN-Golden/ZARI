@@ -9,8 +9,13 @@ import {
   mergeCandidates,
   placementText,
   priceLine,
+  remainingParts,
   remainingText,
+  rowTitle,
   sellerLabel,
+  SPACE_FIT_COPY,
+  REFERENCE_NOTICE,
+  UNMEASURED_PREVIEW_CAP,
   totalQuantityText,
 } from '../../src/features/space-fit/results';
 
@@ -101,6 +106,12 @@ describe('space-fit counts and titles', () => {
       ],
     });
     expect(candidateTitle(candidate)).toBe('합성 수납함 (소형) 2개 + 합성 수납함 (대형) 1개');
+    expect(rowTitle(candidate)).toBe('합성 수납함 (소형) 2개 + 합성 수납함 (대형) 1개');
+  });
+
+  it('drops the quantity from a single product title because the count line says it', () => {
+    const candidate = makeCandidate({ blocks: [makeBlock({ name: '접이식 패브릭 수납함 26 L 기본', quantity: '3' })] });
+    expect(rowTitle(candidate)).toBe('접이식 패브릭 수납함 26 L');
   });
 });
 
@@ -115,11 +126,27 @@ describe('space-fit price line', () => {
     expect(line.text).toBe('한 개 19,900원 · 다 해서 19,900원');
   });
 
-  it('keeps the price copy when pack quantity, unit price or the price itself is unknown', () => {
+  it('shows the listing price, never a per-unit price, when pack quantity is unknown', () => {
+    const line = priceLine(makeBlock({ quantity: '4', price: knownPrice({ packQuantity: null, unitPriceKrw: null, packPriceKrw: '19900' }) }));
+    expect(line).toEqual({ kind: 'listing', text: '19,900원 · 몇 개 값인지는 파는 곳에서 봐 주세요' });
+    expect(line.text).not.toMatch(/한 개|다 해서/);
+    expect(SPACE_FIT_COPY.listingPrice('1,000')).toBe('1,000원 · 몇 개 값인지는 파는 곳에서 봐 주세요');
+  });
+
+  it('keeps the approved fallback when the price is unknown or the pack quantity cannot price one unit', () => {
     const unknown = '가격은 파는 곳에서 봐 주세요';
     expect(priceLine(makeBlock({ price: { state: 'unknown' } }))).toEqual({ kind: 'unknown', text: unknown });
-    expect(priceLine(makeBlock({ price: knownPrice({ packQuantity: null, unitPriceKrw: null }) }))).toEqual({ kind: 'unknown', text: unknown });
     expect(priceLine(makeBlock({ price: knownPrice({ packQuantity: '0', unitPriceKrw: null }) }))).toEqual({ kind: 'unknown', text: unknown });
+    expect(priceLine(makeBlock({ price: knownPrice({ packQuantity: '3', packPriceKrw: '10000', unitPriceKrw: null }) }))).toEqual({ kind: 'unknown', text: unknown });
+  });
+
+  it('holds the Argon-approved copy verbatim', () => {
+    expect(SPACE_FIT_COPY.noFit).toBe('이 자리에 맞는 수납함이 없어요. 크기를 조금 넓히거나 여유 틈을 줄여 보세요');
+    expect(SPACE_FIT_COPY.filteredEmpty).toBe('고르신 내용에 맞는 수납함이 아직 없어요');
+    expect(SPACE_FIT_COPY.referencePriceNote).toBe('글에서 찾은 가격이라 다를 수 있어요');
+    expect(SPACE_FIT_COPY.unmeasuredCapNote).toBe('너무 많아서 200개까지만 먼저 보여드려요');
+    // The cap in the copy and the Rust preview cap must move together.
+    expect(SPACE_FIT_COPY.unmeasuredCapNote).toContain(`${UNMEASURED_PREVIEW_CAP}개`);
   });
 
   it('flags only known reference prices', () => {
@@ -152,6 +179,7 @@ describe('space-fit display helpers', () => {
   });
 
   it('formats remaining space and the placement text from the existing copy', () => {
+    expect(remainingParts(makeCandidate({ remainingMm: [100, 0, 25] }))).toEqual(['가로로 10cm 남아요', '깊이로 0cm 남아요', '높이로 2.5cm 남아요']);
     expect(remainingText(makeCandidate({ remainingMm: [100, 0, 25] }))).toBe('가로로 10cm 남아요 · 깊이로 0cm 남아요 · 높이로 2.5cm 남아요');
     expect(placementText(makeBlock({ grid: [2, 3, 1], orientation: 'upright90' }))).toBe('옆으로 2개, 앞뒤로 3줄 · 옆으로 돌려 놓아요 · 20 × 15 × 10cm');
     expect(placementText(makeBlock({ grid: [1, 1, 2] }))).toBe('옆으로 1개, 앞뒤로 1줄, 2단으로 쌓기 · 20 × 15 × 10cm');
@@ -163,5 +191,11 @@ describe('displayName', () => {
     expect(displayName('접이식 수납함 26 L 기본')).toBe('접이식 수납함 26 L');
     expect(displayName('수납함 o1a2b3c4d')).toBe('수납함');
     expect(displayName('기본 수납함 대')).toBe('기본 수납함 대');
+  });
+});
+
+describe('reference notice', () => {
+  it('uses the Argon-approved wording', () => {
+    expect(REFERENCE_NOTICE).toBe('사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.');
   });
 });

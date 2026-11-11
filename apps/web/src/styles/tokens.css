@@ -34,6 +34,28 @@
   --zari-canvas-outline: #3A342E;
   --zari-canvas-grid: #E6E1D6;
   --zari-font-ui: -apple-system, BlinkMacSystemFont, system-ui, "Pretendard Variable", "Pretendard", "SUIT Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  /* PR-E type scale, measured from apple.com/kr (2026-11-11, 측정함): Hangul keeps 0 tracking
+     and ~1.6 body leading; only display sizes tighten. System faces only: no font files. */
+  --zari-font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", system-ui, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --zari-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", system-ui, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --zari-type-display: 2rem;
+  --zari-type-display-wide: 2.5rem;
+  --zari-type-display-line: 1.25;
+  --zari-type-display-tracking: 0em;
+  --zari-type-result: 2rem;
+  --zari-type-result-wide: 2.5rem;
+  --zari-type-result-line: 1.18;
+  --zari-type-result-tracking: 0em;
+  --zari-type-title: 1.25rem;
+  --zari-type-title-line: 1.4;
+  --zari-type-body: 1.125rem;
+  --zari-type-body-line: 1.6;
+  --zari-type-label-line: 1.35;
+  --zari-type-secondary-line: 1.45;
+  --zari-sketch-size: 4.5rem;
+  --zari-sf-pic: 10rem;
+  --zari-sf-pic-wide: 8.75rem;
+  --zari-type-tracking-text: 0em;
   --zari-font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", "Segoe UI Mono", monospace;
   --zari-text-xs: 0.8125rem;
   --zari-text-sm: 0.875rem;

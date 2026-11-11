@@ -96,3 +96,35 @@ Storybook을 도입할 때 각 컴포넌트의 기본/초점/오류/미확인/�
 글자·간격·색상·border·radius·motion은 `apps/web/src/styles/tokens.css`를 참조한다. 토큰 변경 후 정의된 색상 쌍은 `node scripts/check-design-tokens.mjs`로 확인한다. 새 색상 조합은 contrast cases에 추가하고 렌더링도 검토한다.
 
 SVG 도면의 의미 있는 선은 `--zari-canvas-outline`, 선택은 `--zari-selection-ring`, 오류는 `--zari-danger` 등을 사용한다. 얇은 장식선과 안전 관련 검사 표시를 혼동하지 않는다. 작은 경계선의 실제 식별성은 별도 렌더링 검토가 필요하다.
+
+### SpaceFit 글자 토큰 (PR-E)
+
+| 역할 | 토큰 | 값 |
+|---|---|---|
+| 화면 제목 h1 | `--zari-type-display(-wide)`, `-display-line`, `-display-tracking`, `--zari-font-display` | 2rem(1024px 이상 2.5rem) / 1.25 / 0 / 600 |
+| 결과 수량 줄(유일한 강조) | `--zari-type-result(-wide)`, `-result-line`, `-result-tracking` | 2rem(2.5rem) / 1.18 / 0 / 700 |
+| 행 제목·요약·시트 제목 | `--zari-type-title`, `-title-line` | 1.25rem / 1.4 / 0 / 600 |
+| 본문·secondary 본문 | `--zari-type-body`, `-body-line`, `--zari-type-tracking-text`, `--zari-font-text` | 1.125rem / 1.6 / 0 |
+| 단추·칩·링크 행 | `--zari-type-label-line` | 1.35, 최소 높이 48px |
+
+### SpaceFit 결과 줄 (PR-F)
+| 역할 | 값 |
+|---|---|
+| 상품명(단일은 `{n}개` 생략) | 18px / 1.35 / 600, 아래 8px |
+| 수량 줄 | 32px(1024px 이상 40px) / 1.18 / 700, 아래 8px |
+| 남는 공간 | 18px / `--zari-type-secondary-line` 1.45 / 400 / 보조색, 축별 nowrap 단위 |
+| 가격 줄 | 18px / 1.35 / 600, 위 12px. `kind`: priced·listing·unknown |
+| 참고 가격 설명 | 18px / 1.45 / 보조색, 위 4px |
+| 판매처 알약·참고치 알약 | 위아래 4px, 좌우 12px, 500. 참고치 단추 누름 영역 48px 유지 |
+| 링크 상자 | 이름 500, 행동 400, 두 줄 간격 4px, 안쪽 12px/16px |
+| 필터 묶음 | 묶음 사이 32px, 제목→칩 12px |
+| 손그림 칸 | `--zari-sketch-size` 72px, 그림 있을 때만, alt="" (제목이 이름을 말함) |
+
+### SpaceFit 단순화 카드 (2026-11-11, D-space-fit-simple)
+
+| 컴포넌트 | 책임 | 반드시 구현할 상태 |
+| --- | --- | --- |
+| SpaceFitSimpleCard | 배치 하나. 손그림(투명 배경, 없으면 회색 자리 표시, `alt=""`) → 이름 18px/600 → 수량 줄 32px/700 → 크기 → 가격 → 참고 가격 설명(해당할 때만) → 판매처 단추 48px. 모바일 1열(그림 위), 1024px 이상 카드 2열(그림 왼쪽) | sketch, placeholder, priced, listing, unknown, combo (그림 최대 2장), long Korean name, focus-visible |
+| SpaceFitMore | 보이는 글자 `더 보기`. 접근 이름은 `수납함 더 보기`/`조합 더 보기`. 누르면 새로 열린 첫 카드로 초점 이동 | more remaining, last page (단추 사라짐), keyboard |
+| SpaceFitMoreOptions | 결과 맨 아래 기본 닫힌 `더 고르기` details. `여유 틈`·정렬·판매처·`처음대로 돌리기`. summary 높이 48px 이상 | closed, open, keyboard, forced-colors |
+| SpaceFitReferenceNotice | 결과 목록 위 한 줄. Argon 승인 문구 `사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.` | visible |

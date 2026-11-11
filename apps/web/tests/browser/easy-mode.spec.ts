@@ -194,7 +194,9 @@ test('easy draft restore, validation, soft unit confirmation, result refresh and
   await expect(page.getByTestId('easy-mode')).toBeVisible();
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('빈 공간에 맞는 수납함을 찾아요');
-  await page.getByRole('link', { name: '물건 크기 비교', exact: true }).click();
+  await expect(page.getByRole('link', { name: '물건 크기 비교' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '전문가 모드' })).toHaveCount(0);
+  await page.goto('/#/easy');
   await expect(page.getByTestId('easy-mode')).toBeVisible();
 });
 

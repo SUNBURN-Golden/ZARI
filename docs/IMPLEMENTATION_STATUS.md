@@ -2835,3 +2835,38 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   재실행(측정함): typecheck·lint 통과, `npm test` 529/529, space-fit+easy-mode Chromium 38 passed.
   다른 46개 spec은 이 수정 전 HEAD에서 157 passed였고 수정은 space-fit 파일만 바꿨다.
   남김: 1,000행 창 모드·결정적 `stopped` 빈 블록 브라우저 시험(지연 워커 fixture 필요).
+
+### 2026-11-11 PR-E — SpaceFit 글자·간격 (애플 실측 기반)
+
+- 측정(측정함): `docs/evidence/space-fit-pr-e/apple-type.md`. 한국어 애플 페이지는 자간 0, 본문 행간 ≈1.59, display 1.10–1.19.
+- 변경: `tokens.css`에 `--zari-font-text`/`--zari-font-display`와 `--zari-type-*`(display·result·title·body 크기/행간/자간, label 행간)를 더했다. `space-fit.css` 끝의 PR-E 층이 SpaceFit 화면 전체(입력·결과·시트·필터 열)에 적용한다. Rust·계약·문구·R2·배포는 바꾸지 않았다.
+- 시각 검증(측정함): live R2 번들 read-only, production build, 390/1440/320 × light/dark × 입력·결과·조합·시트 22개 상태에서 axe 위반 0, 가로 넘침·잘림 없음, 48px 미만 대상 없음. 줄 수: h1 390/320에서 2줄·1440 1줄, 행 제목 1줄, 수량 390/1440 1줄·320 2줄. 전후 비교: `docs/evidence/space-fit-pr-e/before-after-*.jpg`.
+
+- 검증(측정함): typecheck·lint 통과, `npm test` 529/529, `check-design-tokens --self-test` 96 base tokens · 90/90(새 색상 쌍 없음), `test:build` 통과, space-fit+easy-mode Chromium 38 passed.
+- 검토(DeepSeek flash, 읽기 전용; GLM 무응답·Codex 사용 한도): (1) 한글 display·수량의 음수 자간이 apple.com/kr 실측(자간 0)과 어긋남 → 0em으로 고치고 쓰이지 않던 `--zari-type-tracking-label` 삭제 (2) 필터 시트가 body로 포털되어 PR-E 글자 기준을 못 받음(범례 16px) → `.space-sheet`에 본문 글자 기준을 직접 걸어 18px (3) 시트 제목이 문서와 다른 24px/1.2 → `--zari-type-title` 20px/1.4. 고친 뒤 22개 상태를 다시 찍어 모두 axe 0·넘침/잘림 0·48px 미만 0, 측정값 h1 32px/40px/자간 normal(1440 40px/50px), 수량 32px/37.76px(1440 40px/47.2px).
+
+## 2026-11-11 PR-F (가격·결과 줄 위계·손그림 칸)
+- 측정(측정함): 실번들 38개 중 판매처 가격 38, 묶음 수량 필드 0, 사진 주소 0. Rust `block_price`는 수량 미확인 시 판매처 가격을 이미 유지(시험 `unit_price_needs_a_known_exact_pack_quantity`) → 계약 변경 없음.
+- 변경: `priceLine`에 `listing` 종류 추가(판매처 가격, 한 개 값 없음), 글 가격 설명, 0개일 때 조언, 미확인 목록 200개 안내(개수>200일 때만), 단일 상품 제목에서 중복 `{n}개` 제거, 남는 공간 nowrap 단위, Argon 위계 수치(18px 계약 유지), 손그림 칸(`sketches.ts`, 비어 있음).
+- 시험: `tests/fixtures/space-fit/catalog-priced.json`(가격 글 있는 개발용 번들, 정본 sha256) 추가. 단위 시험에 승인 문구 고정·한 개 값 미생성·손그림 경로 거절.
+- 화면 확인(측정함, 실 R2 번들, 운영 빌드): 390/1440/320 × light/dark × 입력·결과·시트 16상태 모두 axe 0, 가로 넘침·잘림 0, 48px 미만 0, 줄 끝 `·` 0(이전 390에서 20). 수치: 상품명 18px/24.3px/600, 수량 32px/37.76px(1440 40px/47.2px), 남는 공간 18px/26.1px/400, 가격 18px/24.3px/600.
+- 검토(DeepSeek flash, 읽기 전용; GLM 장애·Codex 한도): 5건 중 반영 2건 — (1) 기준이 섞인 조합에서 글 가격 설명을 해당 가격 줄 바로 아래에 두고, 모두 글 가격이면 한 번만 둔다 (2) 문구의 200과 `UNMEASURED_PREVIEW_CAP`(Rust `MAX_UNMEASURED`=200)이 함께 움직이는지 단위 시험으로 고정. 미반영: `pricedCatalog` 미선언 지적은 검토용 diff에서 해당 줄을 뺀 탓의 오판(선언 있음, 시험 통과), 기존 미확인 가격 시험은 가격 없는 원래 픽스처라 유효, 빈 상태 이중 안내는 PR-F 이전부터 있던 구조라 범위 밖(후속 과제). 이후 `npm test` 535/535, 토큰 98 base · 90/90, `test:build`, space-fit+easy-mode Chromium 39 passed.
+
+## 2026-11-11 SpaceFit 단순화 (local `feat/space-fit-simple`, PR 아직 없음)
+
+- 근거: 준태님 직접 결정 2026-11-11 09:58 KST (ZARI 중계). `#137`·`#138`을 닫고 main 대상 단순화 PR 하나로 대체할 예정. 이 커밋은 로컬만 두고 push·PR·머지는 하지 않았다. 손그림 2장(`muji-1006187` 계열, `muji-59138`)과 참고치 안내 문구(Argon)가 아직 남았다.
+- 화면: 모든 배치 결과를 각각 단순 카드로 보여 준다(상품별 1장으로 묶지 않음). 수납함은 6장, 조합은 3장씩 `더 보기`. 결과 위 `REFERENCE_NOTICE`는 빈 문자열 자리만 두고 값이 있을 때만 그린다. `여유 틈`·정렬·판매처는 결과 맨 아래 기본 닫힌 `더 고르기` 뒤에 둔다. `치수 확인 중`, `조합 더 찾기`, 하단 `물건 크기 비교`·`전문가 모드`는 이 화면에서 빼였다.
+- 접근성: 두 `더 보기`의 접근 이름은 `수납함 더 보기`/`조합 더 보기`로 구분하고, 누르면 새로 열린 첫 카드로 초점을 옮긴다. 필터·정렬로 개수가 바뀌면 숨긴 `role="status"`가 알린다. 쉬운 모드 계약(본문 18px, 수량 32px, 단추 48px, keep-all, light/dark, WCAG AA)을 유지한다.
+- 손그림: 승인된 30장을 `apps/web/public/sketches/`에 두고 `sketches.ts`가 34개 상품 id에 연결한다(같은 상품 옵션은 그림을 공유). 크림 배경은 투명으로 처리해 카드 위에 회색 상자가 보이지 않게 했다. 없는 2개 상품은 회색 자리 표시.
+- 파일: `SimpleResults.tsx`, `SpaceFit.tsx`, `results.ts`(`REFERENCE_NOTICE`), `sketches.ts`, `space-fit.css`, `apps/web/public/sketches/`, 단위·브라우저 시험, `design/DECISIONS.md` `D-space-fit-simple`, `design/SCREENS.md`, `design/COMPONENTS.md`, `DESIGN.md`, 이 문서. Rust 계약·R2·배포는 바꾸지 않았다.
+- 검증(측정함, 이 작업 기준): typecheck·lint 통과, `npm test` **539 passed / 61 files**, `check-design-tokens --self-test` 100 base tokens · 90/90, `test:build` 통과. Chromium `space-fit.spec.ts` **26 passed**. 전체 Chromium 브라우저(`@parity|@capture|@bench` 제외)는 수정 전 182 passed / 1 failed(쉬운 모드가 공간맞춤 하단 링크로 돌아가던 시험)였고, 해당 시험을 `#/easy`로 고친 뒤 그 시험은 통과했다.
+- 시각·접근성(측정함, 실 R2 번들, 운영 빌드, 입력 60×40×40cm, 기본 여유 틈): 320/390/1440 × light/dark 결과와 입력·열린 `더 고르기`에서 axe 위반 0, 가로 넘침 0, 48px 미만 대상 0, 18px 미만 본문 0. 요약은 `이 자리에 맞는 수납함 327개를 찾았어요`. 스크린샷: `/workspace/shots/zari-spacefit-ui/simple-pr/`.
+- 남김: 손그림 2장, Argon 참고치 문구, push·PR, 준태님 머지·배포 승인, 비작성자 exact-HEAD review. `#137`·`#138` 닫기는 PR을 열 때 한다.
+
+## 2026-11-11 SpaceFit 단순화 — 손그림 32장·참고치 문구 (PR 예정)
+
+- 손그림 32장 완료. `muji-1006187`은 1006186·1006188과 공유. `muji-59138`(아카시아 L용 상판)은 원본 사진과 같은 나무 살창 상판이라 맞다고 보고 넣었다(측정함, 원본과 그림 대조).
+- `REFERENCE_NOTICE`에 Argon 승인 문구를 그대로 넣었다: `사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.`
+- 가지를 `origin/main` `f873c2e`(#139 카탈로그 수집기, 공간맞춤 파일과 겹치지 않음) 위로 rebase했다.
+- 검증(측정함): typecheck·lint 통과, `npm test` **550 passed / 62 files**(rebase로 catalog-server 시험이 더해짐), Chromium `space-fit.spec.ts` **26 passed**. 실 R2 번들·운영 빌드, 60×40×40cm, 기본 여유 틈: 320/390/1440 × light/dark와 입력·열린 `더 고르기`에서 axe 위반 0, 가로 넘침 0. 요약 `이 자리에 맞는 수납함 337개를 찾았어요`. 스크린샷: `/workspace/shots/zari-spacefit-ui/simple-pr/`.
+- 남김: push 후 PR 생성, `#137`·`#138` 닫기, 준태님 머지·배포 승인, 비작성자 exact-HEAD review.
