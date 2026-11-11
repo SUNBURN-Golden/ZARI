@@ -119,3 +119,12 @@ SVG 도면의 의미 있는 선은 `--zari-canvas-outline`, 선택은 `--zari-se
 | 링크 상자 | 이름 500, 행동 400, 두 줄 간격 4px, 안쪽 12px/16px |
 | 필터 묶음 | 묶음 사이 32px, 제목→칩 12px |
 | 손그림 칸 | `--zari-sketch-size` 72px, 그림 있을 때만, alt="" (제목이 이름을 말함) |
+
+### SpaceFit 단순화 카드 (2026-11-11, D-space-fit-simple)
+
+| 컴포넌트 | 책임 | 반드시 구현할 상태 |
+| --- | --- | --- |
+| SpaceFitSimpleCard | 배치 하나. 손그림(투명 배경, 없으면 회색 자리 표시, `alt=""`) → 이름 18px/600 → 수량 줄 32px/700 → 크기 → 가격 → 참고 가격 설명(해당할 때만) → 판매처 단추 48px. 모바일 1열(그림 위), 1024px 이상 카드 2열(그림 왼쪽) | sketch, placeholder, priced, listing, unknown, combo (그림 최대 2장), long Korean name, focus-visible |
+| SpaceFitMore | 보이는 글자 `더 보기`. 접근 이름은 `수납함 더 보기`/`조합 더 보기`. 누르면 새로 열린 첫 카드로 초점 이동 | more remaining, last page (단추 사라짐), keyboard |
+| SpaceFitMoreOptions | 결과 맨 아래 기본 닫힌 `더 고르기` details. `여유 틈`·정렬·판매처·`처음대로 돌리기`. summary 높이 48px 이상 | closed, open, keyboard, forced-colors |
+| SpaceFitReferenceNotice | 결과 목록 위 한 줄. `REFERENCE_NOTICE`가 비어 있으면 그리지 않음 | hidden (placeholder), visible (승인 문구 후) |

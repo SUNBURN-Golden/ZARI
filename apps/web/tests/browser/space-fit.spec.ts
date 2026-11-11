@@ -17,129 +17,118 @@ async function importCatalog(page: import('@playwright/test').Page, file=catalog
 }
 async function search(page: import('@playwright/test').Page) {
   await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
-  await expect(page.locator('#space-summary')).toContainText(/이 자리에 맞는 수납함|고르신 내용에 맞는 수납함이 아직 없어요/);
+  await expect(page.locator('#space-summary')).toContainText(/이 자리에 맞는 수납함|고르신 내용에 맞는 수납함이 아직 없어요|이 자리에 맞는 수납함이 없어요/);
   await expect(page.locator('#space-summary')).toBeFocused();
 }
-test('combined results, summary focus, unmeasured group, sticky action and stale/search flow',async({page})=>{
+async function openMore(page: import('@playwright/test').Page) {
+  const details=page.locator('.sf-more-options');
+  await expect(details).toBeVisible();
+  if(!(await details.evaluate((el)=>(el as HTMLDetailsElement).open))) await details.locator('summary').click();
+  await expect(details).toHaveAttribute('open','');
+  return details;
+}
+
+test('combined placements, summary focus, no unmeasured or footer links, 더 보기 names and focus',async({page})=>{
   await page.goto('/');
   await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
   await expect(page.getByRole('textbox')).toHaveCount(3);
   await expect(page.getByRole('button')).toHaveCount(1);
   expect(await page.locator('.space-find-bar').evaluate((el)=>getComputedStyle(el).position)).toBe('sticky');
+  await expect(page.getByRole('link',{name:'물건 크기 비교'})).toHaveCount(0);
+  await expect(page.getByRole('link',{name:'전문가 모드'})).toHaveCount(0);
   await importCatalog(page); await fill(page);
   await search(page);
-  // One combined list: the old single/combo regions are gone.
-  await expect(page.getByRole('region',{name:'딱 맞음',exact:true})).toHaveCount(0);
-  await expect(page.getByRole('region',{name:'조합',exact:true})).toHaveCount(0);
-  await expect(page.getByRole('region',{name:'찾은 수납함',exact:true})).toBeVisible();
   await expect(page.locator('#space-summary')).toHaveText('이 자리에 맞는 수납함 9개를 찾았어요');
-  const rows=page.locator('.space-results > li');
-  await expect(rows).toHaveCount(9);
-  const first=rows.first();
-  await expect(first.getByText('무인양품')).toBeVisible();
+  await expect(page.getByText('치수 확인 중',{exact:false})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'조합 더 찾기'})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'참고치'})).toHaveCount(0);
+  await expect(page.getByRole('link',{name:'물건 크기 비교'})).toHaveCount(0);
+  await expect(page.getByRole('link',{name:'전문가 모드'})).toHaveCount(0);
+  const singles=page.getByRole('list',{name:'찾은 수납함'}).locator('.sf-card');
+  const visible=await singles.count();
+  expect(visible).toBeGreaterThan(0);
+  expect(visible).toBeLessThanOrEqual(6);
+  const first=singles.first();
   await expect(first.getByText(/수납함 \d+개가 딱 들어가요/)).toBeVisible();
-  await expect(first.locator('.space-remaining')).toContainText('남아요');
   await expect(first.getByText('가격은 파는 곳에서 봐 주세요').first()).toBeVisible();
-  // A combination names each product in its link, so identical link texts never point to different products.
   const links=first.getByRole('link',{name:/판매처에서 보기 \(새 탭\)$/});
   for(const link of await links.all()) await expect(link).toHaveAttribute('target','_blank');
   expect(new Set(await links.allTextContents()).size).toBe(await links.count());
-  await first.getByText('놓는 모양 보기').click();
-  await expect(first.getByRole('img')).toBeVisible();
-  // Unmeasured variants stay in one collapsed details group after the list.
-  const unmeasured=page.locator('.space-unmeasured');
-  await expect(unmeasured).toBeVisible();
-  await expect(unmeasured.getByText('치수 확인 중 (1개)')).toBeVisible();
-  expect(await unmeasured.getAttribute('open')).toBeNull();
-  await unmeasured.locator('summary').click();
-  await expect(unmeasured.getByText('합성 수납함 (치수 미확인)')).toBeVisible();
-  await expect(unmeasured.getByText('다이소')).toBeVisible();
-  await expect(unmeasured.getByRole('link',{name:'판매처에서 보기 (새 탭)'})).toHaveCount(1);
-  // Editing marks the visible result stale and keeps the inputs.
+  // The two 더 보기 controls, when both exist, must not share an accessible name.
+  const moreSingles=page.getByRole('button',{name:'수납함 더 보기',exact:true});
+  const moreCombos=page.getByRole('button',{name:'조합 더 보기',exact:true});
+  if(await moreSingles.count()) {
+    const before=await singles.count();
+    const nextId=await page.evaluate(()=>{
+      const cards=[...document.querySelectorAll('.sf-cards[aria-label="찾은 수납함"] .sf-card')];
+      // The first not-yet-rendered card is at index `before` in the full candidate
+      // list, which we cannot read; after click we assert focus on a newly visible card.
+      return cards.length;
+    });
+    expect(nextId).toBe(before);
+    await moreSingles.click();
+    await expect(singles).toHaveCount(await page.locator('.sf-cards[aria-label="찾은 수납함"] .sf-card').count());
+    expect(await singles.count()).toBeGreaterThan(before);
+    const focused=await page.evaluate(()=>(document.activeElement as HTMLElement|null)?.dataset.cardId ?? '');
+    expect(focused).not.toBe('');
+    const ids=await singles.evaluateAll((items)=>items.map((item)=>item.getAttribute('data-card-id')));
+    expect(ids.slice(before)).toContain(focused);
+    expect(new Set(ids).size).toBe(ids.length);
+  }
+  if(await moreCombos.count() && await moreSingles.count()) {
+    const names=await page.getByRole('button',{name:/더 보기/}).evaluateAll((btns)=>btns.map((b)=>b.getAttribute('aria-label')||b.textContent||''));
+    expect(new Set(names).size).toBe(names.length);
+  }
   await fill(page,['200','200','40']);
   await expect(page.getByText('크기를 바꿨어요. 다시 찾아 주세요.')).toBeVisible();
   await search(page);
-  await expect(rows).toHaveCount(20);
-  await page.getByRole('button',{name:'더 보기',exact:true}).click();
-  await expect(rows).toHaveCount(40);
-  const ids=await rows.evaluateAll((items)=>items.map((item)=>item.getAttribute('data-candidate-id')));
-  expect(new Set(ids).size).toBe(ids.length);
+  await expect(page.locator('#space-summary')).toContainText(/이 자리에 맞는 수납함 \d+개를 찾았어요/);
+  await expect(page.getByRole('button',{name:'수납함 더 보기',exact:true})).toBeVisible();
   await page.reload(); await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('200');
 });
-test('reference size badge is visible, toggles its explanation and works from the keyboard',async({page})=>{
-  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const row=page.locator('.space-results > li').first();
-  const badge=row.getByRole('button',{name:'참고치',exact:true});
-  await expect(badge).toBeVisible();
-  const noteId=await badge.getAttribute('aria-controls');
-  expect(noteId).toBeTruthy();
-  const note=page.locator(`#${noteId}`);
-  await expect(note).toBeHidden();
-  await expect(badge).toHaveAttribute('aria-expanded','false');
-  const box=await badge.boundingBox(); expect(box!.height).toBeGreaterThanOrEqual(48);
-  await badge.click();
-  await expect(badge).toHaveAttribute('aria-expanded','true');
-  await expect(note).toBeVisible();
-  await expect(note).toHaveText('참고치는 사진이나 이름에서 찾은 크기라 사기 전에 파는 곳에서 한 번 더 봐 주세요');
-  await badge.press('Enter');
-  await expect(badge).toHaveAttribute('aria-expanded','false');
-  await expect(note).toBeHidden();
-  await badge.focus();
-  await badge.press('Space');
-  await expect(badge).toHaveAttribute('aria-expanded','true');
-  await expect(note).toBeVisible();
-});
-test('a space nothing fits shows the approved no-fit advice and no rows',async({page})=>{
+
+test('a space nothing fits shows the approved no-fit advice and no cards',async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['1','1','1']); await search(page);
   await expect(page.locator('#space-summary')).toHaveText('이 자리에 맞는 수납함이 없어요. 크기를 조금 넓히거나 여유 틈을 줄여 보세요');
-  await expect(page.locator('.space-results > li')).toHaveCount(0);
+  await expect(page.locator('.sf-card')).toHaveCount(0);
 });
-test('reference badge shows a visible focus ring from the keyboard',async({page})=>{
-  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const badge=page.locator('.space-results > li').first().getByRole('button',{name:'참고치',exact:true});
-  await page.keyboard.press('Tab');
-  await expect(badge).toBeFocused();
-  const outline=await badge.evaluate((el)=>{const s=getComputedStyle(el);return {style:s.outlineStyle,width:parseFloat(s.outlineWidth)};});
-  expect(outline.style).not.toBe('none'); expect(outline.width).toBeGreaterThan(0);
-});
+
 test('unknown pack quantity keeps the honest price copy',async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const prices=page.locator('.space-price-line');
-  // Nine combined results; a combination whose prices are all unknown shows one line.
-  await expect(prices).toHaveCount(9);
+  const prices=page.locator('.sf-price');
+  expect(await prices.count()).toBeGreaterThan(0);
   for(const text of await prices.allTextContents()) {
     expect(text.trim()).toBe('가격은 파는 곳에서 봐 주세요');
   }
 });
+
 test('a catalog pack quantity shows a reference unit and total price',async({page})=>{
   await page.goto('/#/space-fit');
   await page.getByText('개발용 상품 파일',{exact:true}).click();
   await page.getByLabel('치수 번들 JSON').setInputFiles(resolve('tests/fixtures/space-fit/catalog-priced.json'));
   await expect(page.getByText(/개발용 파일: catalog-priced.json/)).toBeVisible();
   await fill(page); await search(page);
-  const priced=page.locator('.space-price-line',{hasText:/^한 개 1,000원 · 다 해서 [\d,]+원$/});
+  const priced=page.locator('.sf-price',{hasText:/^한 개 1,000원 · 다 해서 [\d,]+원$/});
   expect(await priced.count()).toBeGreaterThan(0);
 });
+
 test('a listing price without pack quantity shows as the listing price with the reference note',async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page,pricedCatalog); await fill(page); await search(page);
-  const prices=page.locator('.space-price-line');
+  const prices=page.locator('.sf-price');
   const texts=(await prices.allTextContents()).map((t)=>t.trim());
   expect(texts.length).toBeGreaterThan(0);
   for(const text of texts) {
     expect(text).toMatch(/^(19,900|29,900)원 · 몇 개 값인지는 파는 곳에서 봐 주세요$/);
     expect(text).not.toMatch(/한 개|다 해서/);
   }
-  const first=page.locator('.space-results > li').first();
+  const first=page.locator('.sf-card').first();
   await expect(first.getByText('글에서 찾은 가격이라 다를 수 있어요',{exact:true})).toBeVisible();
-  // Leftover space: each phrase is one unbroken unit, so a '·' never ends a line.
-  const parts=first.locator('.space-remaining-part');
-  await expect(parts).toHaveCount(3);
-  for(const part of await parts.all()) expect(await part.evaluate((el)=>getComputedStyle(el).whiteSpace)).toBe('nowrap');
-  const tail=await first.locator('.space-remaining').evaluate((el)=>{const r=document.createRange();const out:string[]=[];let lastTop=-1;let line='';for(const node of el.childNodes){const text=node.textContent??'';r.selectNodeContents(node);const rects=r.getClientRects();const top=rects.length?rects[0]!.top:lastTop;if(lastTop>=0&&top>lastTop+2){out.push(line);line='';}line+=text;lastTop=top;}out.push(line);return out.map((l)=>l.trim());});
-  for(const line of tail) expect(line.endsWith('·')).toBe(false);
-  // No sketch drawings ship yet, so the slot stays hidden.
-  await expect(page.locator('.space-sketch')).toHaveCount(0);
+  // Fixture products have no drawings, so the grey placeholder stays.
+  await expect(first.locator('.sf-pic-empty')).toBeVisible();
+  // The Argon notice is a placeholder and must not invent copy.
+  await expect(page.locator('.sf-notice')).toHaveCount(0);
 });
+
 test('invalid inputs focus the associated field and offline errors preserve inputs',async({page})=>{
   await page.goto('/#/space-fit');await importCatalog(page);await fill(page,['0','40','40']);
   await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
@@ -148,11 +137,11 @@ test('invalid inputs focus the associated field and offline errors preserve inpu
   await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveAttribute('aria-invalid','true');
   await page.reload();await fill(page);
   await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
-  // A catalog failure is its own empty state, not a role=alert error.
   await expect(page.locator('.space-empty[data-reason="noData"]')).toContainText('상품 자료를 아직 받지 못했어요');
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('60');
 });
+
 for(const theme of ['light','dark'] as const) test(`mobile keyboard, contrast and no overflow ${theme}`,async({page},info)=>{
   await page.setViewportSize({width:320,height:844});await page.emulateMedia({colorScheme:theme});await page.goto('/#/space-fit');
   expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
@@ -161,10 +150,13 @@ for(const theme of ['light','dark'] as const) test(`mobile keyboard, contrast an
   expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
   const button=await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).boundingBox();expect(button!.height).toBeGreaterThanOrEqual(48);
-  const badge=await page.getByRole('button',{name:'참고치',exact:true}).first().boundingBox();expect(badge!.height).toBeGreaterThanOrEqual(48);
+  const more=page.locator('.sf-more-options > summary');
+  const moreBox=await more.boundingBox();expect(moreBox!.height).toBeGreaterThanOrEqual(48);
+  const link=await page.locator('.sf-link').first().boundingBox();expect(link!.height).toBeGreaterThanOrEqual(48);
   await page.screenshot({path:info.outputPath(`space-fit-${theme}-draft.png`),fullPage:true});
   await page.emulateMedia({forcedColors:'active'});await expect(page.getByRole('button',{name:'맞는 수납함 찾기',exact:true})).toBeVisible();
 });
+
 test('Space Fit pages match native Rust in a real browser Worker/WASM',async({page})=>{
   const native=JSON.parse(execFileSync('cargo',['run','-q','--locked','-p','zari-core','--example','space_fit'],{input,encoding:'utf8',maxBuffer:16*1024*1024}));
   await page.goto('/tests/harness.html');
@@ -186,78 +178,55 @@ test('Space Fit pages match native Rust in a real browser Worker/WASM',async({pa
   expect(browser).toEqual(native);
 });
 
-test('mobile chip row, sheet focus trap and sort persistence',async({page})=>{
+test('더 고르기 hides clearance, sort and seller filters and is keyboard accessible',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const chipRow=page.locator('.space-chip-row');
-  await expect(chipRow).toBeVisible();
-  expect(await chipRow.evaluate((el)=>getComputedStyle(el).overflowX)).toBe('auto');
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
-  const opener=page.getByRole('button',{name:'순서·가게 고르기',exact:true});
-  await opener.click();
-  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
-  await expect(dialog).toBeVisible();
-  await expect(page.getByRole('heading',{name:'순서·가게 고르기'})).toBeFocused();
-  // Tab and Shift+Tab stay inside the modal while it is open.
-  for(let i=0;i<12;i++) {
-    await page.keyboard.press(i%3===0?'Shift+Tab':'Tab');
-    expect(await page.evaluate(()=>Boolean(document.activeElement?.closest('[role="dialog"]')))).toBe(true);
-  }
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
-  await expect(opener).toBeFocused();
-  await opener.click();
-  const price=dialog.getByRole('button',{name:'가격 싼 순',exact:true});
+  const details=page.locator('.sf-more-options');
+  await expect(details).toBeVisible();
+  await expect(details).not.toHaveAttribute('open','');
+  // Closed content stays out of the way; the summary is a 48px control.
+  const summary=details.locator('summary');
+  await expect(summary).toHaveText('더 고르기');
+  const box=await summary.boundingBox();expect(box!.height).toBeGreaterThanOrEqual(48);
+  await summary.focus();
+  await expect(summary).toBeFocused();
+  await summary.press('Enter');
+  await expect(details).toHaveAttribute('open','');
+  await expect(details.getByRole('group',{name:'여유 틈'})).toBeVisible();
+  await expect(details.getByRole('group',{name:'보여주는 순서'})).toBeVisible();
+  await expect(details.getByRole('group',{name:'파는 곳'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'순서·가게 고르기'})).toHaveCount(0);
+  await expect(page.locator('.space-chip-row')).toHaveCount(0);
+  await expect(page.locator('.space-filter-column')).toHaveCount(0);
+  const price=details.getByRole('button',{name:'가격 싼 순',exact:true});
   await price.click();
   await expect(price).toHaveAttribute('aria-pressed','true');
   expect(await page.evaluate(()=>location.hash)).toContain('sort=price');
-  await dialog.getByRole('button',{name:'이대로 보기',exact:true}).click();
-  await expect(dialog).toBeHidden();
-  // The URL keeps the chosen sort; a reload and a new search still show it pressed.
   await page.reload(); await importCatalog(page); await fill(page); await search(page);
-  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
-  await expect(page.getByRole('dialog').getByRole('button',{name:'가격 싼 순',exact:true})).toHaveAttribute('aria-pressed','true');
+  const reopened=await openMore(page);
+  await expect(reopened.getByRole('button',{name:'가격 싼 순',exact:true})).toHaveAttribute('aria-pressed','true');
 });
-test('seller chip filters the rows and reset restores the default view',async({page})=>{
+
+test('seller filter in 더 고르기 announces the new count and reset restores the default',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const rows=page.locator('.space-results > li');
-  await expect(rows).toHaveCount(9);
-  const chip=page.locator('.space-chip-row').getByRole('button',{name:'무인양품',exact:true});
+  await expect(page.locator('#space-summary')).toHaveText('이 자리에 맞는 수납함 9개를 찾았어요');
+  const details=await openMore(page);
+  const chip=details.getByRole('button',{name:'무인양품',exact:true});
   await expect(chip).toHaveAttribute('aria-pressed','false');
   await chip.click();
   await expect(chip).toHaveAttribute('aria-pressed','true');
-  // Every candidate in this fixture is sold by MUJI, so all rows remain and name it.
-  await expect(rows).toHaveCount(9);
-  for(const row of await rows.all()) await expect(row.getByText('무인양품').first()).toBeVisible();
-  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
-  await dialog.getByRole('button',{name:'처음대로 돌리기',exact:true}).click();
-  await dialog.getByRole('button',{name:'이대로 보기',exact:true}).click();
+  // Every candidate in this fixture is sold by MUJI, so the count stays 9 and is announced.
+  await expect(page.locator('#space-summary')).toHaveText('이 자리에 맞는 수납함 9개를 찾았어요');
+  const status=page.locator('.sf-results .space-visually-hidden[role="status"]');
+  await expect(status).toHaveText('이 자리에 맞는 수납함 9개를 찾았어요');
+  await details.getByRole('button',{name:'처음대로 돌리기',exact:true}).click();
   await expect(chip).toHaveAttribute('aria-pressed','false');
   expect(await page.evaluate(()=>location.hash)).not.toContain('seller=');
 });
-test('desktop filter column is sticky and the result list stays within 720px',async({page})=>{
-  await page.setViewportSize({width:1440,height:900});
-  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const column=page.locator('.space-filter-column');
-  await expect(column).toBeVisible();
-  expect(await column.evaluate((el)=>getComputedStyle(el).position)).toBe('sticky');
-  await expect(page.getByRole('button',{name:'순서·가게 고르기',exact:true})).toBeHidden();
-  const width=await page.locator('.space-results').evaluate((el)=>el.getBoundingClientRect().width);
-  expect(width).toBeLessThanOrEqual(720);
-});
-test('mobile filter sheet has no axe violations',async({page})=>{
-  await page.setViewportSize({width:390,height:844});
-  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'순서·가게 고르기'})).toBeVisible();
-  expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
-});
+
 test('editing cancels an in-flight Worker and keeps the next search usable', async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page);
-  // Queue an actual start and input event in the same browser task. Termination
-  // and the revision fence must discard the worker's eventual old response.
   await page.evaluate(()=>{
     const form=document.querySelector('form')!;
     form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
@@ -267,43 +236,29 @@ test('editing cancels an in-flight Worker and keeps the next search usable', asy
   });
   await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('50');
   await expect(page.getByRole('button',{name:'맞는 수납함 찾기',exact:true})).toBeEnabled();
-  await expect(page.getByRole('region',{name:'찾은 수납함',exact:true})).toHaveCount(0);
+  await expect(page.locator('.sf-results')).toHaveCount(0);
   await search(page);
 });
+
 test('a view query on the root hash still opens Space Fit with that sort',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/#/?sort=count');
   await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
   await importCatalog(page); await fill(page); await search(page);
-  await expect(page.locator('.space-filter-column').getByRole('button',{name:'수납함 많이 들어가는 순',exact:true})).toHaveAttribute('aria-pressed','true');
+  const details=await openMore(page);
+  await expect(details.getByRole('button',{name:'수납함 많이 들어가는 순',exact:true})).toHaveAttribute('aria-pressed','true');
 });
+
 test('auto-steps surface two-product combinations without pressing 조합 더 찾기',async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['200','200','40']); await search(page);
-  // The results stay usable while background steps run: no busy region, search enabled.
-  await expect(page.getByRole('region',{name:'찾은 수납함',exact:true})).toHaveAttribute('aria-busy','false');
+  await expect(page.locator('.sf-results')).toHaveAttribute('aria-busy','false');
   await expect(page.getByRole('button',{name:'맞는 수납함 찾기',exact:true})).toBeEnabled();
-  // Page 0 holds 100 single-product grids; mixed rows only come from later steps.
+  await expect(page.getByRole('button',{name:'조합 더 찾기'})).toHaveCount(0);
   await expect.poll(async()=>Number((await page.locator('#space-summary').textContent())?.match(/(\d+)개/)?.[1] ?? 0),{timeout:20000}).toBeGreaterThan(100);
-  await expect(page.locator('.space-results > li .space-row-title',{hasText:'+'}).first()).toBeAttached({timeout:20000}).catch(async()=>{
-    // The mixed rows may sort below the first 20; reveal more rows until one appears.
-    for(let i=0;i<10 && await page.locator('.space-results > li .space-row-title',{hasText:'+'}).count()===0;i++) await page.getByRole('button',{name:'더 보기',exact:true}).click();
-    await expect(page.locator('.space-results > li .space-row-title',{hasText:'+'}).first()).toBeAttached();
-  });
+  await expect(page.locator('.sf-combos')).toBeVisible({timeout:20000});
+  await expect(page.locator('.sf-combos .sf-name',{hasText:'+'}).first()).toBeVisible();
 });
-test('clicking a non-focusable part of the sheet keeps Tab and Escape inside it',async({page})=>{
-  await page.setViewportSize({width:390,height:844});
-  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const opener=page.getByRole('button',{name:'순서·가게 고르기',exact:true});
-  await opener.click();
-  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
-  await dialog.getByText('파는 곳',{exact:true}).click();
-  await page.keyboard.press('Tab');
-  expect(await page.evaluate(()=>Boolean(document.activeElement?.closest('[role="dialog"]')))).toBe(true);
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
-  await expect(opener).toBeFocused();
-  expect(await page.evaluate(()=>document.getElementById('root')?.hasAttribute('inert'))).toBe(false);
-});
+
 test('a view link opens Space Fit even after expert mode was used',async({page})=>{
   await page.addInitScript(()=>localStorage.setItem('zari.mode.v1','expert'));
   await page.setViewportSize({width:1440,height:900});
@@ -311,47 +266,38 @@ test('a view link opens Space Fit even after expert mode was used',async({page})
   await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
 });
 
-test('clearance defaults, persists and re-runs from the desktop column without moving focus',async({page})=>{
+test('clearance in 더 고르기 defaults, persists and re-runs without moving focus',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/#/space-fit');
-  const details=page.locator('.space-clearance-details');
-  await expect(details).not.toHaveAttribute('open','');
-  const formClearance=details.locator('.space-clearance');
-  await details.locator('summary').click();
-  // Closed <details> content is not in the accessibility tree; check after opening.
-  await expect(formClearance.getByRole('button',{name:'0.5cm',exact:true})).toHaveAttribute('aria-pressed','true');
-  await formClearance.getByRole('button',{name:'1cm',exact:true}).click();
-  await expect(formClearance.getByRole('button',{name:'1cm',exact:true})).toHaveAttribute('aria-pressed','true');
+  await importCatalog(page); await fill(page); await search(page);
+  const details=await openMore(page);
+  const half=details.getByRole('button',{name:'0.5cm',exact:true});
+  await expect(half).toHaveAttribute('aria-pressed','true');
+  const one=details.getByRole('button',{name:'1cm',exact:true});
+  await one.click();
+  await expect(one).toHaveAttribute('aria-pressed','true');
+  await expect(one).toBeFocused();
   expect(await page.evaluate(()=>localStorage.getItem('zari.space-fit.clearance.v1'))).toBe('10');
-  await importCatalog(page); await fill(page); await search(page);
-  await expect(page.getByText('축마다 1cm를 남겨요.')).toBeVisible();
-  // The stored choice survives a reload.
+  await expect(page.locator('#space-summary')).toBeVisible();
   await page.reload();
-  const reloaded=page.locator('.space-clearance-details');
-  await reloaded.locator('summary').click();
-  await expect(reloaded.locator('.space-clearance').getByRole('button',{name:'1cm',exact:true})).toHaveAttribute('aria-pressed','true');
   await importCatalog(page); await fill(page); await search(page);
-  // A change on the visible results screen repeats the search; the pressed
-  // chip keeps focus and the summary stays mounted.
-  const column=page.locator('.space-filter-column');
-  const two=column.getByRole('button',{name:'2cm',exact:true});
+  const reloaded=await openMore(page);
+  await expect(reloaded.getByRole('button',{name:'1cm',exact:true})).toHaveAttribute('aria-pressed','true');
+  const two=reloaded.getByRole('button',{name:'2cm',exact:true});
   await two.click();
   await expect(two).toBeFocused();
   await expect(page.locator('#space-summary')).toBeVisible();
-  await expect(page.getByText('축마다 2cm를 남겨요.')).toBeVisible();
 });
 
-test('desktop 처음대로 돌리기 restores the default view and clearance',async({page})=>{
+test('처음대로 돌리기 in 더 고르기 restores the default view and clearance',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  const column=page.locator('.space-filter-column');
-  await column.getByRole('button',{name:'가격 싼 순',exact:true}).click();
-  await column.getByRole('button',{name:'2cm',exact:true}).click();
-  await expect(page.getByText('축마다 2cm를 남겨요.')).toBeVisible();
-  await column.getByRole('button',{name:'처음대로 돌리기',exact:true}).click();
-  await expect(column.getByRole('button',{name:'빈틈없이 꽉 차는 순',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(column.getByRole('button',{name:'0.5cm',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(page.getByText('축마다 0.5cm를 남겨요.')).toBeVisible();
+  const details=await openMore(page);
+  await details.getByRole('button',{name:'가격 싼 순',exact:true}).click();
+  await details.getByRole('button',{name:'2cm',exact:true}).click();
+  await details.getByRole('button',{name:'처음대로 돌리기',exact:true}).click();
+  await expect(details.getByRole('button',{name:'빈틈없이 꽉 차는 순',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(details.getByRole('button',{name:'0.5cm',exact:true})).toHaveAttribute('aria-pressed','true');
 });
 
 test('a failed catalog load shows the noData empty state with a retry action',async({page})=>{
@@ -372,10 +318,8 @@ test('stopping a search keeps the inputs and reports a stopped state or the show
   await page.setViewportSize({width:390,height:844});
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['200','200','40']);
   await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
-  // The first page can beat the click; both outcomes are valid, but the
-  // screen must say something and keep the inputs.
   await page.getByRole('button',{name:'찾기 멈추기',exact:true}).click({timeout:2000}).catch(()=>undefined);
-  await expect(page.getByText('찾기를 멈췄어요. 입력은 그대로 있어요.').or(page.getByRole('region',{name:'찾은 수납함'}))).toBeVisible();
+  await expect(page.getByText('찾기를 멈췄어요. 입력은 그대로 있어요.').or(page.locator('.sf-results'))).toBeVisible();
   await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('200');
 });
 
@@ -387,10 +331,9 @@ for(const width of [320,390,1440] as const) for(const theme of ['light','dark'] 
   expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
 });
 
-test('mobile filter sheet with clearance has no axe violations',async({page})=>{
+test('열린 더 고르기 has no axe violations',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
-  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'순서·가게 고르기'})).toBeVisible();
+  await openMore(page);
   expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
 });

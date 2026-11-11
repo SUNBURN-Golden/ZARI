@@ -14,6 +14,7 @@ import {
   rowTitle,
   sellerLabel,
   SPACE_FIT_COPY,
+  REFERENCE_NOTICE,
   UNMEASURED_PREVIEW_CAP,
   totalQuantityText,
 } from '../../src/features/space-fit/results';
@@ -190,5 +191,11 @@ describe('displayName', () => {
     expect(displayName('접이식 수납함 26 L 기본')).toBe('접이식 수납함 26 L');
     expect(displayName('수납함 o1a2b3c4d')).toBe('수납함');
     expect(displayName('기본 수납함 대')).toBe('기본 수납함 대');
+  });
+});
+
+describe('reference notice placeholder', () => {
+  it('stays empty until Argon approves the wording', () => {
+    expect(REFERENCE_NOTICE).toBe('');
   });
 });

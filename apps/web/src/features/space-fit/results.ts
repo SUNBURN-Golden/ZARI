@@ -19,6 +19,15 @@ export const SPACE_FIT_COPY = {
   /** Under the unmeasured heading when more than the preview cap exist. */
   unmeasuredCapNote: '너무 많아서 200개까지만 먼저 보여드려요',
 } as const;
+
+/**
+ * One short 참고치 honesty line shown above the results list.
+ * TODO: exact Korean copy will come from Argon review; do not invent final copy.
+ * Keep this constant empty until that wording is approved. The results UI
+ * renders the line only when the string is non-empty.
+ */
+export const REFERENCE_NOTICE = '';
+
 /** Rust sends at most this many unmeasured previews (first page only). */
 export const UNMEASURED_PREVIEW_CAP = 200;
 export const REFERENCE_BADGE_COPY = '참고치';

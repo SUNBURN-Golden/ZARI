@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SpaceFitBlock, SpaceFitCandidate } from '../../contracts/generated/dto';
 import { displayName, isReferencePrice, priceLine, rowTitle, sellerLabel, SPACE_FIT_COPY, totalQuantityText } from './results';
 import { sketchFor } from './sketches';
 
-/** Simple mode (mockup 2026-11-11): one list of big cards, combos below. */
-const FIRST_SINGLES = 6;
-const FIRST_COMBOS = 3;
+/** First page sizes; later pages use the same step (existing 더 보기 pattern). */
+export const FIRST_SINGLES = 6;
+export const FIRST_COMBOS = 3;
 
 function sizeText(block: SpaceFitBlock): string {
   return `${block.unitMm.map((mm) => mm / 10).join(' × ')}cm`;
@@ -26,7 +26,7 @@ function Card({ candidate }: { candidate: SpaceFitCandidate }) {
   const prices = distinct.map(priceLine);
   const allUnknown = prices.every((line) => line.kind === 'unknown');
   const reference = distinct.some((block, index) => prices[index]!.kind !== 'unknown' && isReferencePrice(block));
-  return <li className="sf-card">
+  return <li className="sf-card" data-card-id={candidate.id} tabIndex={-1}>
     <div className="sf-pics">{distinct.slice(0, 2).map((block) => <Picture key={block.variantId} block={block} />)}</div>
     <div className="sf-body">
       <h3 className="sf-name">{rowTitle(candidate)}</h3>
@@ -49,32 +49,45 @@ function Card({ candidate }: { candidate: SpaceFitCandidate }) {
   </li>;
 }
 
-/**
- * One card per product (or product pair): the list is already best-fit first,
- * so the first candidate for a set of variants is the one to show.
- */
-export function onePerProduct(candidates: SpaceFitCandidate[]): SpaceFitCandidate[] {
-  const seen = new Set<string>();
-  return candidates.filter((candidate) => {
-    const key = [...new Set(candidate.blocks.map((block) => block.variantId))].sort().join('+');
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function focusCard(id: string) {
+  const node = document.querySelector<HTMLElement>(`[data-card-id="${CSS.escape(id)}"]`);
+  node?.focus();
 }
 
+/**
+ * Every placement stays a card (no collapse by product). Singles and two-product
+ * combinations keep separate lists and 더 보기 controls, with distinct accessible names.
+ */
 export function SimpleResults({ candidates }: { candidates: SpaceFitCandidate[] }) {
   const [singleLimit, setSingleLimit] = useState(FIRST_SINGLES);
   const [comboLimit, setComboLimit] = useState(FIRST_COMBOS);
+  const pendingFocus = useRef<string | null>(null);
   const singles = candidates.filter((candidate) => candidate.blocks.length === 1);
   const combos = candidates.filter((candidate) => candidate.blocks.length > 1);
+
+  useEffect(() => {
+    const id = pendingFocus.current;
+    if (!id) return;
+    pendingFocus.current = null;
+    focusCard(id);
+  }, [singleLimit, comboLimit]);
+
+  const showMoreSingles = () => {
+    pendingFocus.current = singles[singleLimit]?.id ?? null;
+    setSingleLimit((n) => n + FIRST_SINGLES);
+  };
+  const showMoreCombos = () => {
+    pendingFocus.current = combos[comboLimit]?.id ?? null;
+    setComboLimit((n) => n + FIRST_COMBOS);
+  };
+
   return <>
     {singles.length > 0 && <ul className="sf-cards" aria-label="찾은 수납함">{singles.slice(0, singleLimit).map((candidate) => <Card key={candidate.id} candidate={candidate} />)}</ul>}
-    {singles.length > singleLimit && <button type="button" className="sf-more" onClick={() => setSingleLimit((n) => n + FIRST_SINGLES)}>더 보기</button>}
+    {singles.length > singleLimit && <button type="button" className="sf-more" aria-label="수납함 더 보기" onClick={showMoreSingles}>더 보기</button>}
     {combos.length > 0 && <section className="sf-combos" aria-labelledby="sf-combos-title">
       <h2 id="sf-combos-title" className="sf-section-title">조합</h2>
       <ul className="sf-cards">{combos.slice(0, comboLimit).map((candidate) => <Card key={candidate.id} candidate={candidate} />)}</ul>
-      {combos.length > comboLimit && <button type="button" className="sf-more" onClick={() => setComboLimit((n) => n + FIRST_COMBOS)}>더 보기</button>}
+      {combos.length > comboLimit && <button type="button" className="sf-more" aria-label="조합 더 보기" onClick={showMoreCombos}>더 보기</button>}
     </section>}
   </>;
 }

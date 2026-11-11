@@ -2851,3 +2851,15 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 시험: `tests/fixtures/space-fit/catalog-priced.json`(가격 글 있는 개발용 번들, 정본 sha256) 추가. 단위 시험에 승인 문구 고정·한 개 값 미생성·손그림 경로 거절.
 - 화면 확인(측정함, 실 R2 번들, 운영 빌드): 390/1440/320 × light/dark × 입력·결과·시트 16상태 모두 axe 0, 가로 넘침·잘림 0, 48px 미만 0, 줄 끝 `·` 0(이전 390에서 20). 수치: 상품명 18px/24.3px/600, 수량 32px/37.76px(1440 40px/47.2px), 남는 공간 18px/26.1px/400, 가격 18px/24.3px/600.
 - 검토(DeepSeek flash, 읽기 전용; GLM 장애·Codex 한도): 5건 중 반영 2건 — (1) 기준이 섞인 조합에서 글 가격 설명을 해당 가격 줄 바로 아래에 두고, 모두 글 가격이면 한 번만 둔다 (2) 문구의 200과 `UNMEASURED_PREVIEW_CAP`(Rust `MAX_UNMEASURED`=200)이 함께 움직이는지 단위 시험으로 고정. 미반영: `pricedCatalog` 미선언 지적은 검토용 diff에서 해당 줄을 뺀 탓의 오판(선언 있음, 시험 통과), 기존 미확인 가격 시험은 가격 없는 원래 픽스처라 유효, 빈 상태 이중 안내는 PR-F 이전부터 있던 구조라 범위 밖(후속 과제). 이후 `npm test` 535/535, 토큰 98 base · 90/90, `test:build`, space-fit+easy-mode Chromium 39 passed.
+
+## 2026-11-11 SpaceFit 단순화 (local `feat/space-fit-simple`, PR 아직 없음)
+
+- 근거: 준태님 직접 결정 2026-11-11 09:58 KST (ZARI 중계). `#137`·`#138`을 닫고 main 대상 단순화 PR 하나로 대체할 예정. 이 커밋은 로컬만 두고 push·PR·머지는 하지 않았다. 손그림 2장(`muji-1006187` 계열, `muji-59138`)과 참고치 안내 문구(Argon)가 아직 남았다.
+- 화면: 모든 배치 결과를 각각 단순 카드로 보여 준다(상품별 1장으로 묶지 않음). 수납함은 6장, 조합은 3장씩 `더 보기`. 결과 위 `REFERENCE_NOTICE`는 빈 문자열 자리만 두고 값이 있을 때만 그린다. `여유 틈`·정렬·판매처는 결과 맨 아래 기본 닫힌 `더 고르기` 뒤에 둔다. `치수 확인 중`, `조합 더 찾기`, 하단 `물건 크기 비교`·`전문가 모드`는 이 화면에서 빼였다.
+- 접근성: 두 `더 보기`의 접근 이름은 `수납함 더 보기`/`조합 더 보기`로 구분하고, 누르면 새로 열린 첫 카드로 초점을 옮긴다. 필터·정렬로 개수가 바뀌면 숨긴 `role="status"`가 알린다. 쉬운 모드 계약(본문 18px, 수량 32px, 단추 48px, keep-all, light/dark, WCAG AA)을 유지한다.
+- 손그림: 승인된 30장을 `apps/web/public/sketches/`에 두고 `sketches.ts`가 34개 상품 id에 연결한다(같은 상품 옵션은 그림을 공유). 크림 배경은 투명으로 처리해 카드 위에 회색 상자가 보이지 않게 했다. 없는 2개 상품은 회색 자리 표시.
+- 파일: `SimpleResults.tsx`, `SpaceFit.tsx`, `results.ts`(`REFERENCE_NOTICE`), `sketches.ts`, `space-fit.css`, `apps/web/public/sketches/`, 단위·브라우저 시험, `design/DECISIONS.md` `D-space-fit-simple`, `design/SCREENS.md`, `design/COMPONENTS.md`, `DESIGN.md`, 이 문서. Rust 계약·R2·배포는 바꾸지 않았다.
+- 검증(측정함, 이 작업 기준): typecheck·lint 통과, `npm test` **539 passed / 61 files**, `check-design-tokens --self-test` 100 base tokens · 90/90, `test:build` 통과. Chromium `space-fit.spec.ts` **26 passed**. 전체 Chromium 브라우저(`@parity|@capture|@bench` 제외)는 수정 전 182 passed / 1 failed(쉬운 모드가 공간맞춤 하단 링크로 돌아가던 시험)였고, 해당 시험을 `#/easy`로 고친 뒤 그 시험은 통과했다.
+- 시각·접근성(측정함, 실 R2 번들, 운영 빌드, 입력 60×40×40cm, 기본 여유 틈): 320/390/1440 × light/dark 결과와 입력·열린 `더 고르기`에서 axe 위반 0, 가로 넘침 0, 48px 미만 대상 0, 18px 미만 본문 0. 요약은 `이 자리에 맞는 수납함 327개를 찾았어요`. 스크린샷: `/workspace/shots/zari-spacefit-ui/simple-pr/`.
+- 남김: 손그림 2장, Argon 참고치 문구, push·PR, 준태님 머지·배포 승인, 비작성자 exact-HEAD review. `#137`·`#138` 닫기는 PR을 열 때 한다.
+
