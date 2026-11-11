@@ -471,6 +471,46 @@ struct ItemRow {
     dimensions_usable: bool,
 }
 
+/// Re-run the bundle's own item rules at a second boundary. The space-fit
+/// side channel calls this so a listing cannot reach the search under weaker
+/// checks than the one that produced the snapshot.
+pub(crate) fn validate_listing(item: &CrawledItem) -> bool {
+    let mut codes = BTreeSet::new();
+    check_item(item, &mut codes).is_some() && codes.is_empty()
+}
+
+/// Whole-millimetre outer W/D/H for a reference listing. All three axes, the
+/// unit, and a confidence other than `unparsed` are required. Conversion reuses
+/// the bundle's `axis_mm`, so a listing and a snapshot cannot disagree on the
+/// same source text.
+pub(crate) fn listing_outer_mm(item: &CrawledItem) -> Option<[u32; 3]> {
+    if item.dimensions.confidence == DimensionConfidence::Unparsed {
+        return None;
+    }
+    let unit = item.dimensions.unit?;
+    let mut codes = BTreeSet::new();
+    let mut out = [0u32; 3];
+    for (axis, value) in [
+        &item.dimensions.width,
+        &item.dimensions.depth,
+        &item.dimensions.height,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        value.as_ref()?;
+        let text = axis_mm(value, Some(unit), &mut codes);
+        if !codes.is_empty() {
+            return None;
+        }
+        out[axis] = parse_length(&text, Unit::Mm).ok().flatten()?.get();
+    }
+    if out.contains(&0) {
+        return None;
+    }
+    Some(out)
+}
+
 fn check_item(item: &CrawledItem, codes: &mut BTreeSet<String>) -> Option<ItemRow> {
     let parts = id_parts(&item.id);
     match parts {

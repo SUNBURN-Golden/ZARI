@@ -489,3 +489,49 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
   브라우저 시험으로 확인한다. 화면은 draft이며 사용자 수용·승인은 미완료다.
 - 되돌리기: 새 입구·Worker·R2 transport를 제거하고 기존 easy 입구를 연결한다.
   새 캐시/초안은 기존 프로젝트 저장 형식과 분리되어 있다.
+
+## D-space-fit-listing-provenance — 결과 블록의 판매처·분류·가격·치수 근거 / 사용자 결정
+
+- 근거: 준태님 사용자 결정 **2026-11-10**. 대상은 `feat/space-fit-pr-a-contract`
+  (PR-A)이며 화면 문구·배지는 PR-B 범위다.
+- D1. 각 결과 블록은 판매처/출처, 분류, 가격, 치수 근거를 함께 전달한다.
+- D2. 수집 페이지·OCR·상품명에서 읽은 치수는 **참고치(reference)**다. 참고치는
+  적합성 검색에서 실제로 평가되고 일반 결과에 반환되며 참고치로 표시된다.
+  계약에서 confirmed와 reference를 구분한다. W/D/H를 하나도 쓸 수 없는 variant만
+  접힌 “unknown” 그룹에 남긴다.
+- D3. 모르는 값은 모르는 채로 둔다. 가격·묶음 수량·개당 가격·치수를 만들어 내지
+  않는다.
+- 문제: 기존 `SpaceFitBlock`은 variantId·이름·방향·치수·격자·원점·수량·URL만
+  가졌고, 정본 `catalog_bundle::check_item`은 high/medium만 snapshot에 넣고 low를
+  unknown으로 만들며 가격을 `Offer.packPrice`에 넣지 않는다. 정본 snapshot의
+  “추측은 적합이 될 수 없다” 규칙은 다른 기능이 의존하므로 바꾸지 않는다.
+- 선택: space-fit 전용 side channel. `SpaceFitInput.listings`(선택, 기본 빈 배열)로
+  검토된 번들 item을 넘기고 Rust가 `check_item`과 같은 규칙으로 다시 검증한다.
+  잘못된 item, 중복 id, snapshot에 없는 product(`p-{item.id}`)는
+  `space_fit_listing_invalid`로 전체 입력을 거부한다. Known snapshot 사실을
+  listing이 덮어쓰지 못한다(축별로 unknown 축만 채움).
+- 치수 근거 순서: (a) 외경 세 축 Known+Confirmed → confirmed, (b) 세 축 Known이나
+  전부 Confirmed는 아님 → reference(있으면 listing confidence, 없으면
+  unspecified), (c) snapshot 축 unknown이고 listing에 세 축+단위+non-unparsed
+  confidence가 있음 → reference, (d) 그 외 → unknown(평가하지 않고 `unmeasured`에
+  기록, `missingDimensions` 전체 개수 유지). 후보 수준
+  `dimensionProvenance`는 블록 중 가장 약한 값이다. 기존 순위의 첫 키
+  (unconfirmed)가 confirmed-before-reference를 이미 보장한다.
+- 계약: `SpaceFitPage.unmeasured`는 안정 variant 순서의 처음 200개이며 **첫 페이지에만**
+  실린다(이후 페이지는 빈 배열). TS는 첫 응답만 보관한다. 가격은
+  `{state:"known"|"unknown"}` 태그 객체이고, listing `priceText`는
+  `^\s*(\d{1,3}(,\d{3})+|\d+)\s*(원|KRW)\s*$`(KRW 대소문자 구분)와
+  0 < 값 ≤ 100,000,000만 reference로 인정한다. `packQuantity`는 Known snapshot
+  Offer에서만, `unitPriceKrw`는 나눗셈이 정확할 때만 채운다. 총액 계산은 하지 않는다.
+- OCR: 번들 스키마에 OCR/상품명 출처 필드가 아직 없다. ZARI OCR 카탈로그 갱신이
+  필드를 추가하면 `dimensions.basis`로 매핑하며 provenance 의미는 바꾸지 않는다.
+  이번 PR에서 `CrawledItem`/`BundleDimensions` 필드는 추가하지 않는다.
+- 정본 영향: `CatalogSnapshot`·`check_item`의 snapshot 산출·정본 fixture는 바뀌지
+  않는다(space-fit 입력 fixture에는 `listings`만 추가). `solverVersion`은 `space-fit-1`에서 `space-fit-2`로 올린다(출력 의미 변경).
+- 되돌리기: `SpaceFitInput.listings`, 새 블록/페이지 필드, TS 전달을 제거하면 기존
+  snapshot-only 동작으로 돌아간다. 저장된 카탈로그는 이 결정으로 다시 쓰지 않는다.
+- 2026-11-10 추가(ZARI 전달, 번들 `b-c8fb29299e687ad0`): 이미지에서 읽은 치수는 `rawText`가
+  `[image-OCR]`로 시작하고 unconfirmed+low로 들어온다. `dimensions.origin`
+  (`imageOcr` | `pageText` | `unspecified`)으로 구분하며, origin은 provenance를 올리지 않는다
+  (OCR도 reference). 실번들 측정: 보관함 31개 중 confirmed 0, reference 31
+  (imageOcr 17, pageText 14), unknown 0. bin이 아닌 7개는 기존 범위대로 제외.

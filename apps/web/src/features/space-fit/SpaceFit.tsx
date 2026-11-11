@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { SpaceFitCandidate, SpaceFitInput, SpaceFitPage } from '../../contracts/generated/dto';
+import type { SpaceFitCandidate, SpaceFitInput, SpaceFitPage, SpaceFitUnmeasured } from '../../contracts/generated/dto';
 import { validateSpaceFitPage } from '../../contracts/generated/validators.mjs';
 import { readBundleFile, workerReviewer } from '../catalog/bundle';
 import { LOCAL_IMPORT_ALLOWED, loadCatalog, localCatalog, type LoadedCatalog } from './catalog';
@@ -28,6 +28,9 @@ export function SpaceFit() {
   const [localLabel, setLocalLabel] = useState('');
   const worker = useRef<Worker | null>(null);
   const revision = useRef(0);
+  // The first page carries the unmeasured preview; later pages send an empty
+  // list, so keep the first non-empty snapshot without changing the UI yet.
+  const unmeasured = useRef<SpaceFitUnmeasured[]>([]);
   const fields = useRef<(HTMLInputElement | null)[]>([]);
   const stop = () => { worker.current?.terminate(); worker.current = null; revision.current += 1; setBusy(false); };
   useEffect(() => () => { worker.current?.terminate(); revision.current += 1; }, []);
@@ -41,7 +44,7 @@ export function SpaceFit() {
   };
   const submit = async (event: FormEvent) => {
     event.preventDefault(); stop(); const current = revision.current;
-    setBusy(true); setError(''); setInvalidAxis(null); setPage(null); setSingles([]); setCombos([]);
+    setBusy(true); setError(''); setInvalidAxis(null); setPage(null); setSingles([]); setCombos([]); unmeasured.current = [];
     try {
       const catalog = loaded ?? await loadCatalog(workerReviewer());
       if (revision.current !== current) return;
@@ -63,10 +66,11 @@ export function SpaceFit() {
         try {
           const result: unknown = JSON.parse(message.data.json);
           if (!validateSpaceFitPage(result) || result.inputRevision !== String(current) || result.catalogDigest !== catalog.snapshot.catalogDigest) throw new Error('stale_result');
+          if (unmeasured.current.length === 0) unmeasured.current = result.unmeasured;
           setPage(result); setSingles((old) => [...old, ...result.singles]); setCombos((old) => [...old, ...result.combinations]);
         } catch { stop(); setError('결과를 읽지 못했어요. 다시 찾아 주세요.'); }
       };
-      const input: SpaceFitInput = { schemaVersion: 1, inputRevision: String(current), space, catalog: catalog.snapshot, clearanceMm: [5,5,5] };
+      const input: SpaceFitInput = { schemaVersion: 1, inputRevision: String(current), space, catalog: catalog.snapshot, clearanceMm: [5,5,5], listings: catalog.listings };
       next.postMessage({ type: 'start', json: JSON.stringify(input) });
     } catch {
       if (revision.current === current) { setBusy(false); setError('상품 자료를 아직 받지 못했어요. 연결을 확인한 뒤 다시 찾아 주세요.'); }

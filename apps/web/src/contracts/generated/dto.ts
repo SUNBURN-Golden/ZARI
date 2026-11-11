@@ -2629,6 +2629,52 @@ export type PurchaseLink =
  * via the `definition` "HandoffSuitability".
  */
 export type HandoffSuitability = 'pass' | 'fail' | 'unknown' | 'notApplicable';
+/**
+ * Evidence quality behind a reference dimension. `Unspecified` means no
+ * listing carried the values; `Unparsed` never appears on an evaluated item.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionBasis".
+ */
+export type DimensionBasis = 'high' | 'medium' | 'low' | 'unspecified';
+/**
+ * Origin of reference size text. `Unspecified` when no listing is present.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionOrigin".
+ */
+export type DimensionOrigin = 'pageText' | 'imageOcr' | 'unspecified';
+/**
+ * Whether the evaluated dimensions come from a Confirmed snapshot fact or
+ * from reference-grade evidence. Ordering is deliberate: Confirmed <
+ * Reference, so a candidate's worst block is the maximum.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "DimensionProvenance".
+ */
+export type DimensionProvenance = 'confirmed' | 'reference';
+/**
+ * A price fact, or an explicit unknown. Amounts are integer-won decimal text.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitPrice".
+ */
+export type SpaceFitPrice =
+  | {
+      basis: SpaceFitPriceBasis;
+      packPriceKrw: string;
+      packQuantity: string | null;
+      state: 'known';
+      unitPriceKrw: string | null;
+    }
+  | {
+      state: 'unknown';
+    };
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitPriceBasis".
+ */
+export type SpaceFitPriceBasis = 'confirmed' | 'reference';
 
 export interface ZariContractBundle {
   BootstrapFixture: BootstrapFixture;
@@ -5633,6 +5679,12 @@ export interface SpaceFitInput {
    */
   clearanceMm?: [number, number, number, ...number[]];
   inputRevision: string;
+  /**
+   * Reviewed bundle items. Rust re-validates them and may use their
+   * dimensions and price text as clearly-flagged reference values; they can
+   * never overwrite a Known snapshot fact. Empty keeps the old behaviour.
+   */
+  listings?: CrawledItem[];
   schemaVersion: number;
   /**
    * @minItems 3
@@ -5650,6 +5702,9 @@ export interface SpaceFitPage {
   combinationsComplete: boolean;
   inputRevision: string;
   inspectedVariants: number;
+  /**
+   * Full count of variants with no usable dimensions.
+   */
   missingDimensions: number;
   nodes: number;
   profile: string;
@@ -5663,6 +5718,11 @@ export interface SpaceFitPage {
    */
   spaceMm: [number, number, number, ...number[]];
   unavailableVariants: number;
+  /**
+   * First 200 unmeasured variants in stable variant order, returned on the
+   * first page only. Later pages carry an empty list.
+   */
+  unmeasured: SpaceFitUnmeasured[];
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -5671,6 +5731,10 @@ export interface SpaceFitPage {
 export interface SpaceFitCandidate {
   blocks: SpaceFitBlock[];
   checks: SpaceFitChecks;
+  /**
+   * Worst block provenance: one reference block makes the candidate reference.
+   */
+  dimensionProvenance: DimensionProvenance;
   id: string;
   occupiedVolumeMm3: string;
   /**
@@ -5685,6 +5749,8 @@ export interface SpaceFitCandidate {
  * via the `definition` "SpaceFitBlock".
  */
 export interface SpaceFitBlock {
+  category: SpaceFitCategory;
+  dimensions: SpaceFitDimensions;
   /**
    * @minItems 3
    * @maxItems 3
@@ -5697,7 +5763,10 @@ export interface SpaceFitBlock {
    * @maxItems 3
    */
   originMm: [number, number, number, ...number[]];
+  price: SpaceFitPrice;
   quantity: string;
+  sellerId: string | null;
+  source: CrawlSite | null;
   /**
    * @minItems 3
    * @maxItems 3
@@ -5705,6 +5774,37 @@ export interface SpaceFitBlock {
   unitMm: [number, number, number, ...number[]];
   urls: string[];
   variantId: string;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitCategory".
+ */
+export interface SpaceFitCategory {
+  /**
+   * Product category hint (e.g. `bin`).
+   */
+  hint: string;
+  /**
+   * Listing category label, trimmed; null when uncollected.
+   */
+  label: string | null;
+}
+/**
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitDimensions".
+ */
+export interface SpaceFitDimensions {
+  /**
+   * Listing confidence.
+   */
+  basis: DimensionBasis;
+  /**
+   * Where a listing's size text came from. The bundle has no origin field;
+   * the collector marks image-OCR size text with a leading `[image-OCR]`
+   * in `rawText`. Origin never upgrades provenance: OCR stays reference.
+   */
+  origin: DimensionOrigin;
+  provenance: DimensionProvenance;
 }
 /**
  * This interface was referenced by `ZariContractBundle`'s JSON-Schema
@@ -5720,4 +5820,20 @@ export interface SpaceFitChecks {
   quantity: CheckStatus;
   supportLoad: CheckStatus;
   tolerance: CheckStatus;
+}
+/**
+ * A variant with no usable W/D/H at all. It is never evaluated; the block
+ * shape stays the same for display without inventing dimensions or prices.
+ *
+ * This interface was referenced by `ZariContractBundle`'s JSON-Schema
+ * via the `definition` "SpaceFitUnmeasured".
+ */
+export interface SpaceFitUnmeasured {
+  category: SpaceFitCategory;
+  name: string;
+  price: SpaceFitPrice;
+  sellerId: string | null;
+  source: CrawlSite | null;
+  urls: string[];
+  variantId: string;
 }

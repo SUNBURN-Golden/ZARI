@@ -2,13 +2,24 @@
 //! axis (default 5 mm); inter-item gaps are zero, so stacks retain contact.
 //! No opening, load, tolerance or contents guarantee is inferred from W/D/H.
 use crate::{
-    canonical::*, catalog::*, facts::*, geometry::Box3, input::Orientation, plan::CheckStatus,
+    canonical::*,
+    catalog::*,
+    catalog_bundle::{CrawlSite, CrawledItem, DimensionConfidence},
+    facts::*,
+    geometry::Box3,
+    input::Orientation,
+    plan::CheckStatus,
     scalars::*,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest as _, Sha256};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
+
+/// The same 5,000-item ceiling the catalog snapshot uses.
+const MAX_LISTINGS: usize = 5_000;
+/// `unmeasured` is a stable preview; `missingDimensions` keeps the full count.
+const MAX_UNMEASURED: usize = 200;
 
 fn default_clearance() -> [u32; 3] {
     [5; 3]
@@ -22,6 +33,104 @@ pub struct SpaceFitInput {
     pub catalog: CatalogSnapshot,
     #[serde(default = "default_clearance")]
     pub clearance_mm: [u32; 3],
+    /// Reviewed bundle items. Rust re-validates them and may use their
+    /// dimensions and price text as clearly-flagged reference values; they can
+    /// never overwrite a Known snapshot fact. Empty keeps the old behaviour.
+    #[serde(default)]
+    pub listings: Vec<CrawledItem>,
+}
+/// Whether the evaluated dimensions come from a Confirmed snapshot fact or
+/// from reference-grade evidence. Ordering is deliberate: Confirmed <
+/// Reference, so a candidate's worst block is the maximum.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
+#[serde(rename_all = "camelCase")]
+pub enum DimensionProvenance {
+    Confirmed,
+    Reference,
+}
+/// Evidence quality behind a reference dimension. `Unspecified` means no
+/// listing carried the values; `Unparsed` never appears on an evaluated item.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum DimensionBasis {
+    High,
+    Medium,
+    Low,
+    Unspecified,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SpaceFitDimensions {
+    pub provenance: DimensionProvenance,
+    /// Listing confidence.
+    pub basis: DimensionBasis,
+    /// Where a listing's size text came from. The bundle has no origin field;
+    /// the collector marks image-OCR size text with a leading `[image-OCR]`
+    /// in `rawText`. Origin never upgrades provenance: OCR stays reference.
+    pub origin: DimensionOrigin,
+}
+/// Origin of reference size text. `Unspecified` when no listing is present.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum DimensionOrigin {
+    PageText,
+    ImageOcr,
+    Unspecified,
+}
+const IMAGE_OCR_MARKER: &str = "[image-OCR]";
+fn listing_origin(listing: Option<&CrawledItem>) -> DimensionOrigin {
+    match listing {
+        Some(item)
+            if item
+                .dimensions
+                .raw_text
+                .trim_start()
+                .starts_with(IMAGE_OCR_MARKER) =>
+        {
+            DimensionOrigin::ImageOcr
+        }
+        Some(_) => DimensionOrigin::PageText,
+        None => DimensionOrigin::Unspecified,
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum SpaceFitPriceBasis {
+    Confirmed,
+    Reference,
+}
+/// A price fact, or an explicit unknown. Amounts are integer-won decimal text.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(
+    tag = "state",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum SpaceFitPrice {
+    Known {
+        pack_price_krw: String,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<String>")]
+        pack_quantity: Option<String>,
+        #[serde(deserialize_with = "crate::required_option")]
+        #[schemars(with = "crate::RequiredNullable<String>")]
+        unit_price_krw: Option<String>,
+        basis: SpaceFitPriceBasis,
+    },
+    Unknown {},
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SpaceFitCategory {
+    /// Product category hint (e.g. `bin`).
+    pub hint: String,
+    /// Listing category label, trimmed; null when uncollected.
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<String>")]
+    pub label: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -34,6 +143,32 @@ pub struct SpaceFitBlock {
     pub origin_mm: [u32; 3],
     pub quantity: String,
     pub urls: Vec<String>,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<CrawlSite>")]
+    pub source: Option<CrawlSite>,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<String>")]
+    pub seller_id: Option<String>,
+    pub category: SpaceFitCategory,
+    pub price: SpaceFitPrice,
+    pub dimensions: SpaceFitDimensions,
+}
+/// A variant with no usable W/D/H at all. It is never evaluated; the block
+/// shape stays the same for display without inventing dimensions or prices.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SpaceFitUnmeasured {
+    pub variant_id: String,
+    pub name: String,
+    pub urls: Vec<String>,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<CrawlSite>")]
+    pub source: Option<CrawlSite>,
+    #[serde(deserialize_with = "crate::required_option")]
+    #[schemars(with = "crate::RequiredNullable<String>")]
+    pub seller_id: Option<String>,
+    pub category: SpaceFitCategory,
+    pub price: SpaceFitPrice,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -56,6 +191,8 @@ pub struct SpaceFitCandidate {
     pub remaining_mm: [u32; 3],
     pub occupied_volume_mm3: String,
     pub unconfirmed: bool,
+    /// Worst block provenance: one reference block makes the candidate reference.
+    pub dimension_provenance: DimensionProvenance,
     pub checks: SpaceFitChecks,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -69,7 +206,11 @@ pub struct SpaceFitPage {
     pub profile: String,
     pub singles: Vec<SpaceFitCandidate>,
     pub combinations: Vec<SpaceFitCandidate>,
+    /// First 200 unmeasured variants in stable variant order, returned on the
+    /// first page only. Later pages carry an empty list.
+    pub unmeasured: Vec<SpaceFitUnmeasured>,
     pub inspected_variants: u32,
+    /// Full count of variants with no usable dimensions.
     pub missing_dimensions: u32,
     pub unavailable_variants: u32,
     pub nodes: u32,
@@ -93,8 +234,10 @@ pub struct SpaceFitSearch {
     available: [u32; 3],
     items: Vec<Item>,
     singles: Vec<SpaceFitCandidate>,
+    unmeasured: Vec<SpaceFitUnmeasured>,
     missing: u32,
     unavailable: u32,
+    first_page: bool,
     stage: u8,
     a: usize,
     b: usize,
@@ -103,6 +246,104 @@ pub struct SpaceFitSearch {
 }
 fn confirmed<T>(fact: &Fact<T>) -> bool {
     matches!(fact, Fact::Known { provenance, .. } if provenance.verification == VerificationStatus::Confirmed)
+}
+/// Strict listing price grammar: grouped or plain integer, then 원 or KRW.
+/// Anything ambiguous stays unknown; the search never guesses a price.
+fn parse_price_text(text: &str) -> Option<u64> {
+    let number = text
+        .trim()
+        .strip_suffix("KRW")
+        .or_else(|| text.trim().strip_suffix('원'))?
+        .trim();
+    let digits = if let Some((head, tail)) = number.split_once(',') {
+        if head.is_empty()
+            || head.len() > 3
+            || !head.bytes().all(|byte| byte.is_ascii_digit())
+            || !tail
+                .split(',')
+                .all(|group| group.len() == 3 && group.bytes().all(|byte| byte.is_ascii_digit()))
+        {
+            return None;
+        }
+        format!("{head}{}", tail.replace(',', ""))
+    } else {
+        if number.is_empty() || !number.bytes().all(|byte| byte.is_ascii_digit()) {
+            return None;
+        }
+        number.to_owned()
+    };
+    let value = digits.parse::<u64>().ok()?;
+    (value > 0 && value <= 100_000_000).then_some(value)
+}
+fn listing_basis(listing: Option<&CrawledItem>) -> DimensionBasis {
+    match listing.map(|item| item.dimensions.confidence) {
+        Some(DimensionConfidence::High) => DimensionBasis::High,
+        Some(DimensionConfidence::Medium) => DimensionBasis::Medium,
+        Some(DimensionConfidence::Low) => DimensionBasis::Low,
+        _ => DimensionBasis::Unspecified,
+    }
+}
+/// One deterministic offer for seller, price and pack quantity: not out of
+/// stock first, then a Known pack price, then the smallest id.
+fn stable_offer<'a>(offers: &[&'a Offer]) -> Option<&'a Offer> {
+    offers.iter().copied().min_by_key(|o| {
+        (
+            o.inventory.value() == Some(&InventoryState::OutOfStock),
+            !matches!(o.pack_price, Fact::Known { .. }),
+            o.id.as_str(),
+        )
+    })
+}
+fn block_seller(offers: &[&Offer], listing: Option<&CrawledItem>) -> Option<String> {
+    stable_offer(offers)
+        .map(|offer| offer.seller_id.to_string())
+        .or_else(|| listing.map(|item| format!("seller-{}", item.source.key())))
+}
+fn block_category(product: &Product, listing: Option<&CrawledItem>) -> SpaceFitCategory {
+    let label = listing
+        .map(|item| item.category.trim())
+        .filter(|label| !label.is_empty())
+        .map(str::to_owned);
+    SpaceFitCategory {
+        hint: product.category.clone(),
+        label,
+    }
+}
+fn block_price(offers: &[&Offer], listing: Option<&CrawledItem>) -> SpaceFitPrice {
+    let offer = stable_offer(offers);
+    let pack_quantity = offer.and_then(|offer| match &offer.pack_quantity {
+        Fact::Known { value, .. } => Some(value.get()),
+        _ => None,
+    });
+    let (price, basis) = match offer.map(|offer| &offer.pack_price) {
+        Some(Fact::Known { value, provenance }) => (
+            value.get(),
+            if provenance.verification == VerificationStatus::Confirmed {
+                SpaceFitPriceBasis::Confirmed
+            } else {
+                SpaceFitPriceBasis::Reference
+            },
+        ),
+        _ => match listing
+            .and_then(|item| item.price_text.as_deref())
+            .and_then(parse_price_text)
+        {
+            Some(price) => (price, SpaceFitPriceBasis::Reference),
+            None => return SpaceFitPrice::Unknown {},
+        },
+    };
+    let unit_price = pack_quantity
+        .filter(|quantity| *quantity > 0)
+        .and_then(|quantity| {
+            let quantity = u64::from(quantity);
+            (price % quantity == 0).then(|| (price / quantity).to_string())
+        });
+    SpaceFitPrice::Known {
+        pack_price_krw: price.to_string(),
+        pack_quantity: pack_quantity.map(|quantity| quantity.to_string()),
+        unit_price_krw: unit_price,
+        basis,
+    }
 }
 impl SpaceFitSearch {
     pub fn new(input: SpaceFitInput) -> Result<Self, String> {
@@ -134,6 +375,29 @@ impl SpaceFitSearch {
             .map(|p| (&p.id, &p.name))
             .collect();
         let products: BTreeMap<_, _> = input.catalog.products.iter().map(|p| (&p.id, p)).collect();
+        let product_ids: BTreeSet<&str> = input
+            .catalog
+            .products
+            .iter()
+            .map(|product| product.id.as_str())
+            .collect();
+        if input.listings.len() > MAX_LISTINGS {
+            return Err("space_fit_listing_invalid".into());
+        }
+        let mut listings_by_product: BTreeMap<String, &CrawledItem> = BTreeMap::new();
+        for listing in &input.listings {
+            // The same rules that reviewed the bundle must hold here; a listing
+            // is a side channel, not a weaker second parser.
+            if !crate::catalog_bundle::validate_listing(listing) {
+                return Err("space_fit_listing_invalid".into());
+            }
+            let product_id = format!("p-{}", listing.id);
+            if !product_ids.contains(product_id.as_str())
+                || listings_by_product.insert(product_id, listing).is_some()
+            {
+                return Err("space_fit_listing_invalid".into());
+            }
+        }
         let mut offers_by_variant: BTreeMap<_, Vec<_>> = BTreeMap::new();
         for offer in &input.catalog.offers {
             offers_by_variant
@@ -142,14 +406,18 @@ impl SpaceFitSearch {
                 .push(offer);
         }
         let mut items = vec![];
+        let mut unmeasured = vec![];
         let mut missing = 0;
         let mut unavailable = 0;
         for (variant_index, v) in input.catalog.variants.iter().enumerate() {
             // This feature searches storage boxes only, not furniture.
-            let product = products.get(&v.product_id);
-            if product.is_none_or(|p| p.category != "bin") {
+            let Some(product) = products.get(&v.product_id).copied() else {
+                continue;
+            };
+            if product.category != "bin" {
                 continue;
             }
+            let listing = listings_by_product.get(v.product_id.as_str()).copied();
             let offers = offers_by_variant.get(&v.id).cloned().unwrap_or_default();
             if !offers.is_empty()
                 && offers
@@ -159,17 +427,54 @@ impl SpaceFitSearch {
                 unavailable += 1;
                 continue;
             }
-            let dims = [
+            let urls: Vec<String> = offers
+                .iter()
+                .filter_map(|o| o.url.value())
+                .filter(|u| crate::catalog_bundle::allowed_product_url(u))
+                .cloned()
+                .collect();
+            let name = format!("{} {}", names[&v.product_id], v.option_label)
+                .trim()
+                .to_owned();
+            let outer = [
                 &v.dimensions.outer.width,
                 &v.dimensions.outer.depth,
                 &v.dimensions.outer.height,
             ];
-            let Some(mut base) = dims
-                .iter()
-                .map(|f| f.value().map(|m| m.nominal.get()))
-                .collect::<Option<Vec<_>>>()
-            else {
+            let snapshot = outer.map(|fact| fact.value().map(|m| m.nominal.get()));
+            let snapshot_known = snapshot.iter().all(Option::is_some);
+            let snapshot_confirmed = outer.iter().all(|fact| confirmed(*fact));
+            let listing_mm = listing.and_then(crate::catalog_bundle::listing_outer_mm);
+            // Known snapshot axes always win; a listing only fills unknown axes.
+            let composed: [Option<u32>; 3] =
+                std::array::from_fn(|i| snapshot[i].or_else(|| listing_mm.map(|mm| mm[i])));
+            let (mut base, provenance, basis) = if let [Some(w), Some(d), Some(h)] = composed {
+                if snapshot_known && snapshot_confirmed {
+                    (
+                        [w, d, h],
+                        DimensionProvenance::Confirmed,
+                        DimensionBasis::Unspecified,
+                    )
+                } else {
+                    (
+                        [w, d, h],
+                        DimensionProvenance::Reference,
+                        listing_basis(listing),
+                    )
+                }
+            } else {
                 missing += 1;
+                if unmeasured.len() < MAX_UNMEASURED {
+                    unmeasured.push(SpaceFitUnmeasured {
+                        variant_id: v.id.to_string(),
+                        name,
+                        urls,
+                        source: listing.map(|item| item.source),
+                        seller_id: block_seller(&offers, listing),
+                        category: block_category(product, listing),
+                        price: block_price(&offers, listing),
+                    });
+                }
                 continue;
             };
             let extra = crate::geometry::handle_extra(&v.dimensions.handles);
@@ -180,6 +485,15 @@ impl SpaceFitSearch {
                         .ok_or("envelope_overflow")?;
                 }
             }
+            let source = listing.map(|item| item.source);
+            let origin = if provenance == DimensionProvenance::Confirmed {
+                DimensionOrigin::Unspecified
+            } else {
+                listing_origin(listing)
+            };
+            let seller_id = block_seller(&offers, listing);
+            let category = block_category(product, listing);
+            let price = block_price(&offers, listing);
             // Unknown directions get an explicitly conditional upright0 only.
             let directions = v
                 .allowed_orientations
@@ -212,28 +526,29 @@ impl SpaceFitSearch {
                 if max.contains(&0) {
                     continue;
                 }
-                let urls = offers
-                    .iter()
-                    .filter_map(|o| o.url.value())
-                    .filter(|u| crate::catalog_bundle::allowed_product_url(u))
-                    .cloned()
-                    .collect();
                 items.push(Item {
                     variant_index,
                     block: SpaceFitBlock {
                         variant_id: v.id.to_string(),
-                        name: format!("{} {}", names[&v.product_id], v.option_label)
-                            .trim()
-                            .into(),
+                        name: name.clone(),
                         orientation: direction,
                         unit_mm: unit,
                         grid: [1; 3],
                         origin_mm: [0; 3],
                         quantity: "1".into(),
-                        urls,
+                        urls: urls.clone(),
+                        source,
+                        seller_id: seller_id.clone(),
+                        category: category.clone(),
+                        price: price.clone(),
+                        dimensions: SpaceFitDimensions {
+                            provenance,
+                            basis,
+                            origin,
+                        },
                     },
                     max,
-                    confirmed: dims.iter().all(|f| confirmed(*f)),
+                    confirmed: provenance == DimensionProvenance::Confirmed,
                     orientation_known: confirmed(&v.allowed_orientations),
                     envelope_known: extra.is_some(),
                 });
@@ -249,8 +564,10 @@ impl SpaceFitSearch {
             available,
             items,
             singles: vec![],
+            unmeasured,
             missing,
             unavailable,
+            first_page: true,
             stage: 0,
             a: 0,
             b: 1,
@@ -268,6 +585,7 @@ impl SpaceFitSearch {
     fn candidate(&self, selections: &[(usize, [u32; 3], [u32; 3])]) -> Option<SpaceFitCandidate> {
         let mut blocks = vec![];
         let mut unconfirmed = false;
+        let mut dimension_provenance = DimensionProvenance::Confirmed;
         let mut orientation_known = true;
         let mut envelope_known = true;
         for (index, grid, origin) in selections {
@@ -284,6 +602,7 @@ impl SpaceFitSearch {
                 .to_string();
             blocks.push(block);
             unconfirmed |= !item.confirmed;
+            dimension_provenance = dimension_provenance.max(item.block.dimensions.provenance);
             orientation_known &= item.orientation_known;
             envelope_known &= item.envelope_known;
         }
@@ -314,6 +633,7 @@ impl SpaceFitSearch {
             remaining_mm: std::array::from_fn(|i| self.space[i] - end[i]),
             occupied_volume_mm3: volume.to_string(),
             unconfirmed,
+            dimension_provenance,
             checks: SpaceFitChecks {
                 outer: if envelope_known {
                     CheckStatus::Pass
@@ -426,11 +746,17 @@ impl SpaceFitSearch {
             schema_version: 1,
             input_revision: self.input.input_revision.clone(),
             catalog_digest: self.input.catalog.catalog_digest.to_string(),
-            solver_version: "space-fit-1".into(),
+            solver_version: "space-fit-2".into(),
             space_mm: self.space,
             profile: "grids-and-two-type-floor-rows-64".into(),
             singles: std::mem::take(&mut self.singles),
             combinations,
+            unmeasured: if self.first_page {
+                self.first_page = false;
+                std::mem::take(&mut self.unmeasured)
+            } else {
+                vec![]
+            },
             inspected_variants: self.input.catalog.variants.len() as u32,
             missing_dimensions: self.missing,
             unavailable_variants: self.unavailable,
@@ -496,6 +822,105 @@ mod tests {
     use super::*;
     use crate::catalog_bundle::{BundleGenerator, build_bundle_from_json, review_bundle_text};
     use serde_json::json;
+    fn input_with(
+        items: serde_json::Value,
+        space: [&str; 3],
+        listings: Vec<CrawledItem>,
+    ) -> SpaceFitInput {
+        let built = build_bundle_from_json(
+            &items.to_string(),
+            "2026-11-05T00:00:00Z",
+            BundleGenerator {
+                name: "test".into(),
+                version: "1".into(),
+            },
+        );
+        let catalog = review_bundle_text(&built.bundle_text.unwrap())
+            .snapshot
+            .unwrap();
+        SpaceFitInput {
+            schema_version: 1,
+            input_revision: "r1".into(),
+            space: space.map(String::from),
+            catalog,
+            clearance_mm: [5; 3],
+            listings,
+        }
+    }
+    fn item_value(
+        id: &str,
+        confidence: &str,
+        size: [Option<u32>; 3],
+        price: Option<&str>,
+    ) -> serde_json::Value {
+        let mut value = json!({
+            "id": id,
+            "sourceKind": "crawled",
+            "status": "unconfirmed",
+            "name": "합성 수납함",
+            "brand": "합성",
+            "category": "수납함",
+            "categoryHint": "bin",
+            "productUrl": "https://mujikorea.co.kr/products/1",
+            "source": "muji",
+            "fetchedAt": "2026-11-05T00:00:00Z",
+            "dimensions": {
+                "rawText": "합성 치수",
+                "width": size[0].map(|n| n.to_string()),
+                "depth": size[1].map(|n| n.to_string()),
+                "height": size[2].map(|n| n.to_string()),
+                "unit": if confidence == "unparsed" { None } else { Some("mm") },
+                "confidence": confidence,
+            }
+        });
+        if let Some(price) = price {
+            value["priceText"] = json!(price);
+        }
+        value
+    }
+    fn listing(value: &serde_json::Value) -> CrawledItem {
+        serde_json::from_value(value.clone()).unwrap()
+    }
+    fn unverified() -> Provenance {
+        Provenance {
+            origin: MeasurementOrigin::Synthetic,
+            verification: VerificationStatus::Unverified,
+            evidence_ids: vec![],
+            rule_ids: vec![],
+            input_refs: vec![],
+            observed_at: None,
+        }
+    }
+    fn confirm_outer(input: &mut SpaceFitInput) {
+        for variant in &mut input.catalog.variants {
+            for fact in [
+                &mut variant.dimensions.outer.width,
+                &mut variant.dimensions.outer.depth,
+                &mut variant.dimensions.outer.height,
+            ] {
+                if let Fact::Known { provenance, .. } = fact {
+                    provenance.verification = VerificationStatus::Confirmed;
+                }
+            }
+        }
+        rehash(input);
+    }
+    fn set_offer_price(input: &mut SpaceFitInput, price: MoneyKrw, quantity: Option<PackQuantity>) {
+        for offer in &mut input.catalog.offers {
+            offer.pack_price = Fact::Known {
+                value: price,
+                provenance: unverified(),
+            };
+            offer.pack_quantity = match quantity {
+                Some(value) => Fact::Known {
+                    value,
+                    provenance: unverified(),
+                },
+                None => Fact::unknown(),
+            };
+        }
+        rehash(input);
+    }
     fn input(sizes: &[[u32; 3]], space: [&str; 3]) -> SpaceFitInput {
         let items: Vec<_> = sizes.iter().enumerate().map(|(i,size)| json!({
             "id":format!("crawl:muji:{}",i+1), "sourceKind":"crawled", "status":"unconfirmed", "name":format!("합성 수납함 {i}"), "brand":"합성", "category":"수납함", "categoryHint":"bin", "productUrl":format!("https://mujikorea.co.kr/products/{}",i+1), "source":"muji", "fetchedAt":"2026-11-05T00:00:00Z",
@@ -518,6 +943,7 @@ mod tests {
             space: space.map(String::from),
             catalog,
             clearance_mm: [5; 3],
+            listings: vec![],
         }
     }
     fn rehash(input: &mut SpaceFitInput) {
@@ -693,5 +1119,299 @@ mod tests {
         let mut bad = b;
         bad.quantity = "2".into();
         assert!(validate_blocks(&[bad], [1000; 3]).is_none());
+    }
+    #[test]
+    fn low_confidence_listing_is_evaluated_as_reference() {
+        let value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            Some("1000 KRW"),
+        );
+        let i = input_with(json!([value.clone()]), ["30.5"; 3], vec![listing(&value)]);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        assert_eq!(p.missing_dimensions, 0);
+        assert!(p.unmeasured.is_empty());
+        assert_eq!(p.singles.len(), 1);
+        assert_eq!(
+            p.singles[0].dimension_provenance,
+            DimensionProvenance::Reference
+        );
+        assert!(p.singles[0].unconfirmed);
+        let block = &p.singles[0].blocks[0];
+        assert_eq!(block.unit_mm, [100; 3]);
+        assert_eq!(block.dimensions.provenance, DimensionProvenance::Reference);
+        assert_eq!(block.dimensions.basis, DimensionBasis::Low);
+        assert!(matches!(
+            &block.price,
+            SpaceFitPrice::Known {
+                pack_price_krw,
+                pack_quantity: None,
+                unit_price_krw: None,
+                basis: SpaceFitPriceBasis::Reference,
+            } if pack_price_krw == "1000"
+        ));
+    }
+    #[test]
+    fn image_ocr_low_confidence_item_is_reference_with_ocr_origin() {
+        // Synthetic copy of the live R2 bundle shape (b-c8fb29299e687ad0):
+        // unconfirmed + low confidence, `[image-OCR]` prefix in rawText, cm.
+        let ocr = json!({
+            "id": "crawl:daiso:1015446",
+            "sourceKind": "crawled",
+            "status": "unconfirmed",
+            "name": "합성 멀티 바스켓",
+            "brand": "다이소",
+            "category": "플라스틱바구니",
+            "categoryHint": "bin",
+            "productUrl": "https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=1015446",
+            "source": "daiso",
+            "fetchedAt": "2026-11-10T01:10:39Z",
+            "priceText": "1000 KRW",
+            "dimensions": {
+                "rawText": "[image-OCR] 12.3 X 32 X 8 cm",
+                "width": "12.3",
+                "depth": "32",
+                "height": "8",
+                "unit": "cm",
+                "confidence": "low"
+            }
+        });
+        let page_text = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            None,
+        );
+        let i = input_with(
+            json!([ocr.clone(), page_text.clone()]),
+            ["40"; 3],
+            vec![listing(&ocr), listing(&page_text)],
+        );
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        assert!(p.unmeasured.is_empty());
+        assert_eq!(p.missing_dimensions, 0);
+        let block = |id: &str| {
+            p.singles
+                .iter()
+                .flat_map(|c| &c.blocks)
+                .find(|b| b.variant_id.contains(id))
+                .cloned()
+                .unwrap()
+        };
+        let ocr_block = block("1015446");
+        assert_eq!(ocr_block.unit_mm, [123, 320, 80]);
+        assert_eq!(
+            ocr_block.dimensions.provenance,
+            DimensionProvenance::Reference
+        );
+        assert_eq!(ocr_block.dimensions.basis, DimensionBasis::Low);
+        assert_eq!(ocr_block.dimensions.origin, DimensionOrigin::ImageOcr);
+        assert_eq!(ocr_block.source, Some(CrawlSite::Daiso));
+        assert_eq!(ocr_block.category.label.as_deref(), Some("플라스틱바구니"));
+        let page_block = block("muji");
+        assert_eq!(page_block.dimensions.origin, DimensionOrigin::PageText);
+        assert!(
+            p.singles
+                .iter()
+                .all(|c| c.unconfirmed && c.dimension_provenance == DimensionProvenance::Reference)
+        );
+    }
+    #[test]
+    fn unparsed_or_partial_listing_stays_unmeasured() {
+        for value in [
+            item_value("crawl:muji:1", "unparsed", [None, None, None], None),
+            item_value(
+                "crawl:muji:1",
+                "low",
+                [Some(100), Some(100), None],
+                Some("1000원"),
+            ),
+        ] {
+            let i = input_with(json!([value.clone()]), ["50"; 3], vec![listing(&value)]);
+            let mut search = SpaceFitSearch::new(i).unwrap();
+            let page = search.step(1000);
+            assert_eq!(page.missing_dimensions, 1);
+            assert!(page.singles.is_empty());
+            assert!(page.combinations.is_empty());
+            assert_eq!(page.unmeasured.len(), 1);
+            assert_eq!(page.unmeasured[0].variant_id, "crawl:muji:1");
+            // The unmeasured preview is returned on the first page only.
+            assert!(search.step(1000).unmeasured.is_empty());
+        }
+    }
+    #[test]
+    fn confirmed_snapshot_dimensions_win_over_a_listing() {
+        let snapshot = item_value(
+            "crawl:muji:1",
+            "high",
+            [Some(200), Some(200), Some(200)],
+            None,
+        );
+        let changed = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(999), Some(999), Some(999)],
+            Some("19,900원"),
+        );
+        let mut i = input_with(json!([snapshot]), ["50"; 3], vec![listing(&changed)]);
+        confirm_outer(&mut i);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        let block = &p.singles[0].blocks[0];
+        assert_eq!(block.unit_mm, [200; 3]);
+        assert_eq!(block.dimensions.provenance, DimensionProvenance::Confirmed);
+        assert_eq!(block.dimensions.basis, DimensionBasis::Unspecified);
+        assert!(!p.singles[0].unconfirmed);
+        assert_eq!(
+            p.singles[0].dimension_provenance,
+            DimensionProvenance::Confirmed
+        );
+    }
+    #[test]
+    fn listing_only_fills_unknown_snapshot_axes() {
+        // Snapshot knows W/D (medium), height unknown; a conflicting listing
+        // may fill the height but never overwrite the known W/D.
+        let snapshot = item_value("crawl:muji:1", "medium", [Some(200), Some(200), None], None);
+        let changed = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(999), Some(999), Some(150)],
+            None,
+        );
+        let i = input_with(json!([snapshot]), ["50"; 3], vec![listing(&changed)]);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        let block = &p.singles[0].blocks[0];
+        assert_eq!(block.unit_mm, [200, 200, 150]);
+        assert_eq!(block.dimensions.provenance, DimensionProvenance::Reference);
+        assert!(p.singles[0].unconfirmed);
+    }
+    #[test]
+    fn unmeasured_preview_is_capped_but_count_is_full() {
+        let items: Vec<_> = (0..205)
+            .map(|n| {
+                item_value(
+                    &format!("crawl:muji:{}", 1000 + n),
+                    "unparsed",
+                    [None; 3],
+                    None,
+                )
+            })
+            .collect();
+        let listings = items.iter().map(listing).collect();
+        let i = input_with(json!(items), ["50"; 3], listings);
+        let mut search = SpaceFitSearch::new(i).unwrap();
+        let first = search.step(1000);
+        assert_eq!(first.missing_dimensions, 205);
+        assert_eq!(first.unmeasured.len(), MAX_UNMEASURED);
+        assert!(search.step(1000).unmeasured.is_empty());
+    }
+    #[test]
+    fn listing_price_grammar_is_strict() {
+        assert_eq!(parse_price_text("1000 KRW"), Some(1000));
+        assert_eq!(parse_price_text("19,900원"), Some(19_900));
+        assert_eq!(parse_price_text(" 1,234 원 "), Some(1_234));
+        assert_eq!(parse_price_text("100000000원"), Some(100_000_000));
+        for bad in [
+            "1,00원",
+            "약 1000원",
+            "1000",
+            "0원",
+            "₩1000",
+            "1000 krw",
+            "10,00 KRW",
+            "1,2345원",
+            "100000001원",
+            "-1000원",
+            "1 000원",
+        ] {
+            assert_eq!(parse_price_text(bad), None, "{bad}");
+        }
+    }
+    #[test]
+    fn unit_price_needs_a_known_exact_pack_quantity() {
+        let value = item_value(
+            "crawl:muji:1",
+            "high",
+            [Some(100), Some(100), Some(100)],
+            None,
+        );
+        let price = MoneyKrw::new(19_900).unwrap();
+        let mut without_quantity = input_with(json!([value.clone()]), ["50"; 3], vec![]);
+        set_offer_price(&mut without_quantity, price, None);
+        let p = SpaceFitSearch::new(without_quantity).unwrap().step(1000);
+        assert!(matches!(
+            &p.singles[0].blocks[0].price,
+            SpaceFitPrice::Known {
+                pack_price_krw,
+                pack_quantity: None,
+                unit_price_krw: None,
+                ..
+            } if pack_price_krw == "19900"
+        ));
+        let mut inexact = input_with(json!([value.clone()]), ["50"; 3], vec![]);
+        set_offer_price(&mut inexact, price, Some(PackQuantity::new(3).unwrap()));
+        let p = SpaceFitSearch::new(inexact).unwrap().step(1000);
+        assert!(matches!(
+            &p.singles[0].blocks[0].price,
+            SpaceFitPrice::Known {
+                unit_price_krw: None,
+                pack_quantity: Some(quantity),
+                ..
+            } if quantity == "3"
+        ));
+        let mut exact = input_with(json!([value]), ["50"; 3], vec![]);
+        set_offer_price(&mut exact, price, Some(PackQuantity::new(2).unwrap()));
+        let p = SpaceFitSearch::new(exact).unwrap().step(1000);
+        assert!(matches!(
+            &p.singles[0].blocks[0].price,
+            SpaceFitPrice::Known {
+                unit_price_krw: Some(unit_price),
+                ..
+            } if unit_price == "9950"
+        ));
+    }
+    #[test]
+    fn invalid_listings_are_refused() {
+        let value = item_value(
+            "crawl:muji:1",
+            "high",
+            [Some(100), Some(100), Some(100)],
+            None,
+        );
+        let base = input_with(json!([value.clone()]), ["50"; 3], vec![]);
+        let good = listing(&value);
+        let mut missing_product = good.clone();
+        missing_product.id = "crawl:muji:2".into();
+        let mut bad_url = good.clone();
+        bad_url.product_url = "https://evil.example/products/1".into();
+        let mut bad_source = good.clone();
+        bad_source.source = CrawlSite::Daiso;
+        for listings in [
+            vec![missing_product],
+            vec![good.clone(), good.clone()],
+            vec![bad_url],
+            vec![bad_source],
+        ] {
+            let input = SpaceFitInput {
+                listings,
+                ..base.clone()
+            };
+            assert_eq!(
+                SpaceFitSearch::new(input).err().unwrap(),
+                "space_fit_listing_invalid"
+            );
+        }
+    }
+    #[test]
+    fn no_listings_keeps_the_old_snapshot_only_behaviour() {
+        let i = input(&[[200, 300, 100]], ["30.5"; 3]);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        let block = &p.singles[0].blocks[0];
+        assert_eq!(block.dimensions.provenance, DimensionProvenance::Reference);
+        assert_eq!(block.dimensions.basis, DimensionBasis::Unspecified);
+        assert_eq!(block.source, None);
+        assert_eq!(block.seller_id.as_deref(), Some("seller-muji"));
+        assert!(matches!(block.price, SpaceFitPrice::Unknown {}));
+        assert!(p.unmeasured.is_empty());
     }
 }

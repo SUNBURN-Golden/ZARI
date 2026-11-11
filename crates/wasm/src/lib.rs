@@ -62,7 +62,8 @@ pub struct SpaceFitSearch(zari_core::space_fit::SpaceFitSearch);
 impl SpaceFitSearch {
     #[wasm_bindgen(constructor)]
     pub fn new(text: &str) -> Result<Self, JsError> {
-        if text.len() > 4 * 1024 * 1024 {
+        // Snapshot (<=4 MiB) plus the listings side channel (bundle <=10 MiB).
+        if text.len() > 16 * 1024 * 1024 {
             return Err(JsError::new("space_input_too_large"));
         }
         let input = serde_json::from_str(text).map_err(|_| JsError::new("space_input_invalid"))?;

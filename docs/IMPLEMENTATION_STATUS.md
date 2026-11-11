@@ -2564,3 +2564,69 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   ext-state/run.log, hosts.json. Rust/app 변경 없음; browser/native WASM parity는
   재실행하지 않았다. 비작성자 exact-HEAD review 미완료. 다음은 별도 owner resume
   판단과 실제 상품 치수/옵션 독립 확인이다. Codex 명의 commit 후 sg의 현재 branch만 push.
+
+### 2026-11-10 PR-A — 결과 블록 판매처·분류·가격·치수 근거 계약 (사용자 결정 D1–D3)
+
+- 추가: `dimensions.origin`(`imageOcr`/`pageText`/`unspecified`). 수집기가 `rawText` 앞에 붙이는
+  `[image-OCR]` 표식으로만 판정한다. 실번들 `b-c8fb29299e687ad0`(읽기 전용) 측정: 상품 38개,
+  보관함 31개 → confirmed 0 · reference 31(imageOcr 17, pageText 14) · unknown 0, 가격 known(참고) 31.
+  OCR 형태의 합성 fixture로 Rust 단위 시험을 추가했다.
+- 리뷰 반영(DeepSeek flash, 읽기 전용): listing은 snapshot의 unknown 축만 채우고 Known 축을 덮어쓰지 않는다
+  (부분 Known 시험 추가). offer는 재고 있음 → Known 가격 → id 순으로 하나만 골라 판매처·가격·묶음 수량에 쓴다.
+  `expect` 제거. WASM·예제 입력 상한을 snapshot(4 MiB)+listings(번들 10 MiB)에 맞춰 16 MiB로 올렸다.
+  R2 경로에서 listings가 비면 `catalog_listings_missing`으로 거절한다. `unmeasured` 200개 상한 시험 추가.
+
+- 결정 기록: `design/DECISIONS.md`의 `D-space-fit-listing-provenance`에 2026-11-10
+  준태님 결정 D1(판매처/source·분류·가격·치수 근거), D2(크롤/OCR/상품명 유래 치수는
+  참고치이며 적합성 계산에 포함), D3(unknown을 가격·묶음 수량·단가·치수로 발명하지
+  않음)을 기록했다. 보존 프롬프트와 `SOURCE_MANIFEST.json`은 변경하지 않았다.
+- Rust 권위: `SpaceFitInput`에 optional `listings`를 추가했다. 앱이 검토한 번들
+  `items`를 side channel로 보내면 Rust가 `catalog_bundle`과 같은 규칙으로 다시
+  검증한다. `check_item`을 복제하지 않고 `pub(crate) validate_listing`과
+  `listing_outer_mm`으로 `axis_mm` 변환을 재사용했다. 잘못된 listing, 중복 id,
+  snapshot에 없는 `p-{id}`는 `space_fit_listing_invalid`로 거절하며 최대 5,000개다.
+  known snapshot 사실을 listing이 덮어쓰지 않는다.
+- 치수 provenance: (a) 외경 3축 Known+Confirmed → `confirmed`; (b) 3축 Known이나
+  전부 Confirmed는 아님 → `reference`; (c) snapshot 미상 + listing의 W/D/H·단위가
+  있고 confidence가 unparsed가 아님(low 포함) → `reference`; (d) 그 외 → `unknown`.
+  참고치는 확정치와 동일하게 평가·반환하고, 쌓기 K>1은 confirmed stackability를
+  그대로 요구한다. block이 하나라도 confirmed가 아니면 `unconfirmed`는 true이며
+  candidate `dimensionProvenance`는 block 중 최악값이다. 정렬의 confirmed 우선
+  키는 유지하고 참고치를 숨기지 않는다. 치수가 전혀 없는 variant만
+  `unmeasured`(안정 순서 첫 200개, 첫 page에만)로 보내고 `missingDimensions`는
+  전체 개수를 유지한다. `solverVersion`은 `space-fit-2`다.
+- 계약: block에 `source`(nullable CrawlSite), `sellerId`(안정 offer의 첫 seller,
+  없으면 `seller-{site}`, 그것도 없으면 null), `category` `{hint,label|null}`,
+  `price`(known `{packPriceKrw,packQuantity|null,unitPriceKrw|null,basis}` 또는
+  `unknown`), `dimensions` `{provenance,basis,origin}`를 추가했다. 가격은 snapshot Known
+  offer의 `packPrice`를 우선하고, 없으면 listing `priceText`가
+  `^\s*(\d{1,3}(,\d{3})+|\d+)\s*(원|KRW)\s*$`(대소문자 구분)일 때만 0 초과
+  100,000,000 이하를 `reference`로 쓴다. `packQuantity`는 snapshot 값만,
+  단가는 묶음 수량을 알 때 정확히 나누어떨어질 때만 계산하며 합계는 만들지 않는다.
+  번들 스키마에 origin 필드를 추가하지 않았고, `origin`은 `rawText`의 `[image-OCR]` 표식에서만 판정한다. `deny_unknown_fields`는
+  유지했다.
+- 웹: `catalog.ts`의 `LoadedCatalog.listings`가 R2 번들, 캐시 번들, 개발용 파일의
+  같은 검토 텍스트에서 `items`를 넘긴다. `SpaceFit.tsx`는 `listings`를 입력에 넣고
+  첫 page의 `unmeasured`만 보관한다(뒤 page의 빈 배열이 지우지 않음). 새 한국어
+  UI 문자열·레이아웃 변경은 없고 worker는 그대로다. 생성 계약은
+  `npm run contracts:generate`로만 갱신했다(수기 편집 없음).
+- fixture: `tests/fixtures/space-fit/input.json`에 snapshot과 일치하는 합성 MUJI
+  listing 2개를 넣어 native/browser WASM parity가 side channel을 지나가게 했다.
+- 검증(실행값): `cargo fmt --all -- --check` 통과, `cargo clippy --workspace
+  --all-targets --locked -- -D warnings` 통과(0 warning), `cargo test --workspace
+  --locked` **275 passed / 0 failed / 1 ignored**, `fixture_runner fixtures/bootstrap`
+  exit 0, `cargo tree -p zari-wasm --target wasm32-unknown-unknown ...` exit 0,
+  `npm run wasm:build` 통과(wasm-bindgen 0.2.128), `npm run contracts:check`
+  **124 fixture structures valid**, `npm run typecheck` 통과, `npm run lint` 통과,
+  `npm test` **494 passed / 58 files**, `npm run build` 통과,
+  `node scripts/check-design-tokens.mjs --self-test` **80 base tokens / 90/90
+  contrast cases**, space-fit Playwright **6 passed**, `npm run test:parity`
+  **2 passed / 124 shared fixtures**. 전체 browser suite(기본 병렬)는 157 passed /
+  6 failed였고, 실패한 offer-bundles·plan·print-share·probe·purchase-handoff를
+  단독/직렬 재실행하면 **15 tests 모두 통과**했다(space-fit 실패 0, 부하로 인한
+  기존 flake로 판단). `npm test`도 첫 병렬 실행에서 session/dimension 테스트
+  timeout이 1–2개 있었으나 재실행에서 494개 전부 통과했다.
+- 미완료: PR-B 화면에서 참고치 badge·판매처/분류/가격 표시, OCR origin 스키마 매핑,
+  가격 문법은 현재 `원`/`KRW`만 지원. `unmeasured` 첫-page 한정은 문서화된 선택이며
+  UI는 아직 표시하지 않는다. 비작성자 exact-HEAD review와 commit/push는 이 작업
+  범위 밖이며 수행하지 않았다. 다음: PR-B UI, review, CI exact-head 확인.
