@@ -2704,3 +2704,66 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 측정함: typecheck·lint 통과, `npm test` 506/506, space-fit+easy-mode Chromium 19 passed.
 - 남김(후속 PR): `조합 더 찾기` 경로의 id 중복 테스트, 가격 확인된 block과 미확인 block이 섞인 조합 fixture 테스트, 긴 이름 fixture — 현재 실데이터 묶음 수량이 모두 미확인이라 fixture 추가가 필요하다.
 
+
+### 2026-11-10 PR-C — SpaceFit 필터·정렬·혼합 조합 자동 단계 (UI 전용)
+
+- 범위: `apps/web/src/features/space-fit/`(신규 `view.ts`), `apps/web/src/app/App.tsx`,
+  같은 기능의 단위·브라우저 시험, `design/COMPONENTS.md`·`design/SCREENS.md`·
+  `design/DECISIONS.md`만 바꿨다. Rust crates·계약 생성 코드·R2·배포·catalog
+  데이터·main은 건드리지 않았다.
+- 보기 상태: `view.ts`는 `SortKey`(`leftover`|`price`|`count`)와
+  `ViewState{sellers,types,sort}`를 정의하고, hash의 `?` 뒤 query만 읽어
+  `sort`·`seller`·`type`을 복원한다. 모르는 정렬·판매처 값은 버리고 중복은 합친다.
+  기본값이면 경로만, 아니면 `sort, seller, type` 순서로 직렬화한다. `App.tsx`는
+  `?` 앞 경로만으로 화면을 판정하므로 `#/?…`와 `#/space-fit?…`가 query 없는 경우와
+  같다. 필터 변경은 `history.replaceState`만 쓰고 검색을 다시 하지 않는다.
+- 필터·정렬: `facetOptions`는 후보에 실제로 있는 판매처(무인양품·다이소 순)와 trim한
+  분류 label(한국어 localeCompare 안정 정렬)만 낸다. `filterCandidates`는 후보의 어느
+  블록이든 선택 판매처/분류와 맞으면 통과시키고 빈 그룹은 전체다. 가격 합계는
+  `results.ts`로 옮긴 `blockTotalKrw`(ceil(qty/packQty)*packPrice, 하나라도 모르면 null)를
+  쓴다. 정렬은 기본 `compareCandidates`, 가격 오름차순(모르는 가격 뒤), 총 수량
+  내림차순이며 동률은 기존 순서다. 입력 배열은 바꾸지 않는다.
+- 혼합 조합: 첫 page가 `combinationsComplete=false`이면 응답마다
+  `{type:'next', budget:1000}`을 최대 6번 자동 전송한다. 혼합 후보 20개, 완료,
+  조합 2,000개 중 하나에서 멈추고 revision guard를 유지한다. 초점은 첫 page에서만
+  이동한다. 자동 단계는 `busy`와 분리된 `autoStepping` 상태라 결과·찾기 단추·칩이 계속 쓸 수 있고
+  `aria-busy`도 걸리지 않으며, 그동안 `조합 더 찾기`만 잠긴다.
+- UI: 1024px 미만은 결과 요약 아래 가로 스크롤 칩 줄과 하단 시트
+  (`role="dialog"`, `aria-modal`, `aria-labelledby`, `document.body`로 portal하고 `#root`를
+  inert로 만드는 PrintPanel 방식, 초점 트랩·Esc·scrim·`닫기`, 닫은 뒤 연 단추로 초점 복귀), 1024px 이상은 왼쪽 sticky 필터 열과 최대 720px
+  결과 열이다. 시트와 열은 같은 `FilterPanel`을 쓰고 CSS로 하나만 접근성 트리에
+  남긴다. 칩·정렬은 `button aria-pressed`이며 `모두 보기`는 빈 그룹에서 pressed다(칩 줄에는 같은 이름이 두 번 나오지 않게 `모두 보기`를 두지 않고 시트·열에만 둔다).
+  필터를 바꾸면 화면에 보이지 않는 `role=status`가 필터된 개수를 기존 요약 문구로 알린다.
+  hash의 판매처·분류 목록은 디코딩 전 raw 값을 `,`로 나눠 쉼표가 든 label도 왕복한다.
+  루트(`#/`)에서 바꾼 보기는 `#/space-fit?…`로 써서 전문가 모드 기기에서도 Space Fit이 열린다.
+  필터를 바꾸면 보이는 개수는 20개로 돌아가고, 필터 결과 0개(원래 결과 있음)이면
+  요약 문구와 `처음대로 돌리기`를 보인다. 요약 개수는 필터된 개수다.
+- 결과 행 다듬기: 판매처 링크를 48px 전체 폭 `space-link-row`로 바꿔 왼쪽에 제품명
+  (한 줄 말줄임)을, 48rem 이상에서는 같은 줄 오른쪽에, 그보다 좁으면 항상 다음 줄에
+  `판매처에서 보기 (새 탭)`을 두고 반복 이름은 번호를
+  붙여 접근 가능한 이름을 유지한다. `놓는 모양 보기`는 안쪽 wrapper를 8pt grid로
+  묶고 배치 줄은 primary, 일반 확인 문단은 secondary 색으로 낮췄다. `space-count`만
+  큰 강조 줄로 남는다.
+- 문구: 새 UI 문자열은 승인된 `순서·가게 고르기`, `파는 곳`, `수납함 모양`,
+  `모두 보기`, `보여주는 순서`, `빈틈없이 꽉 차는 순`, `가격 싼 순`,
+  `수납함 많이 들어가는 순`, `이대로 보기`, `닫기`, `처음대로 돌리기`,
+  `다시 골라보기`(보고서상 범위, 렌더에는 미사용), `고르신 내용에 맞는 수납함이 아직 없어요`
+  와 기존 문구뿐이다. 새 `copy-todo`는 추가하지 않았고,
+  `results.ts`의 기존 묶음 가격 문구 copy-todo 한 건이 그대로 남아 있다.
+- 파일: `features/space-fit/view.ts`(신규), `SpaceFit.tsx`, `space-fit.css`,
+  `results.ts`(`blockTotalKrw` 추출), `app/App.tsx`, `tests/unit/spaceFitView.test.ts`(신규),
+  `tests/browser/space-fit.spec.ts`, `design/COMPONENTS.md`, `design/SCREENS.md`,
+  `design/DECISIONS.md`, 이 문서.
+- 검증(측정함, HEAD 기준): `npm run typecheck`·`npm run lint` 통과, `npm test` **521 passed / 60 files**,
+  `contracts:check` 124 valid, `check-design-tokens --self-test` 80 tokens · 90/90, `test:build` 통과,
+  `space-fit.spec.ts` Chromium **18 passed**(space-fit+easy-mode 묶음 실행은 리뷰 수정 전 24 passed).
+  전체 Chromium 결과는 PR 본문에 적는다. 색상 쌍은 기존 `selected-label`·`accent-link`·
+  `inverse-on-accent`·`control-on-panel`을 재사용해 `design/token-contrast-cases.json`을 바꾸지 않았다.
+- 시각 검증(측정함): live R2 번들(read-only)을 production build로 390/320/1440 × light/dark,
+  입력·결과·배지·펼침·조합·시트(또는 필터 열) 42개 상태에서 axe 위반 0, 가로 넘침 없음, 48px 미만
+  대상 없음, 잘림 없음, page error 없음. 60×30×35에서 223개가 나오고 기본 정렬 상위 20개 중 8개가
+  두 제품 조합이다(PR-B는 첫 화면 0개). 증거: `docs/evidence/space-fit-pr-c/`.
+- 리뷰(DeepSeek flash, read-only; GLM 429): 시트 모달 격리, `.space-link` 규칙 삭제, 쉼표 label
+  hash 왕복, 자동 단계 시험 공백, 필터 개수 미공지, 자동 단계의 전역 busy, 전문가 모드에서의 `#/?…`
+  를 반영했다. 남김: fixture에 분류 label·두 번째 실측 판매처가 없어 분류 칩·판매처 필터의 브라우저
+  시험은 단위 시험으로만 덮는다(fixture 재생성은 후속).

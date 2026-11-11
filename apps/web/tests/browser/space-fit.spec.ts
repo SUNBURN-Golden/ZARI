@@ -154,6 +154,74 @@ test('Space Fit pages match native Rust in a real browser Worker/WASM',async({pa
   expect(browser).toEqual(native);
 });
 
+test('mobile chip row, sheet focus trap and sort persistence',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const chipRow=page.locator('.space-chip-row');
+  await expect(chipRow).toBeVisible();
+  expect(await chipRow.evaluate((el)=>getComputedStyle(el).overflowX)).toBe('auto');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+  const opener=page.getByRole('button',{name:'순서·가게 고르기',exact:true});
+  await opener.click();
+  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole('heading',{name:'순서·가게 고르기'})).toBeFocused();
+  // Tab and Shift+Tab stay inside the modal while it is open.
+  for(let i=0;i<12;i++) {
+    await page.keyboard.press(i%3===0?'Shift+Tab':'Tab');
+    expect(await page.evaluate(()=>Boolean(document.activeElement?.closest('[role="dialog"]')))).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  const price=dialog.getByRole('button',{name:'가격 싼 순',exact:true});
+  await price.click();
+  await expect(price).toHaveAttribute('aria-pressed','true');
+  expect(await page.evaluate(()=>location.hash)).toContain('sort=price');
+  await dialog.getByRole('button',{name:'이대로 보기',exact:true}).click();
+  await expect(dialog).toBeHidden();
+  // The URL keeps the chosen sort; a reload and a new search still show it pressed.
+  await page.reload(); await importCatalog(page); await fill(page); await search(page);
+  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
+  await expect(page.getByRole('dialog').getByRole('button',{name:'가격 싼 순',exact:true})).toHaveAttribute('aria-pressed','true');
+});
+test('seller chip filters the rows and reset restores the default view',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const rows=page.locator('.space-results > li');
+  await expect(rows).toHaveCount(9);
+  const chip=page.locator('.space-chip-row').getByRole('button',{name:'무인양품',exact:true});
+  await expect(chip).toHaveAttribute('aria-pressed','false');
+  await chip.click();
+  await expect(chip).toHaveAttribute('aria-pressed','true');
+  // Every candidate in this fixture is sold by MUJI, so all rows remain and name it.
+  await expect(rows).toHaveCount(9);
+  for(const row of await rows.all()) await expect(row.getByText('무인양품').first()).toBeVisible();
+  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
+  await dialog.getByRole('button',{name:'처음대로 돌리기',exact:true}).click();
+  await dialog.getByRole('button',{name:'이대로 보기',exact:true}).click();
+  await expect(chip).toHaveAttribute('aria-pressed','false');
+  expect(await page.evaluate(()=>location.hash)).not.toContain('seller=');
+});
+test('desktop filter column is sticky and the result list stays within 720px',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const column=page.locator('.space-filter-column');
+  await expect(column).toBeVisible();
+  expect(await column.evaluate((el)=>getComputedStyle(el).position)).toBe('sticky');
+  await expect(page.getByRole('button',{name:'순서·가게 고르기',exact:true})).toBeHidden();
+  const width=await page.locator('.space-results').evaluate((el)=>el.getBoundingClientRect().width);
+  expect(width).toBeLessThanOrEqual(720);
+});
+test('mobile filter sheet has no axe violations',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'순서·가게 고르기'})).toBeVisible();
+  expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
+});
 test('editing cancels an in-flight Worker and keeps the next search usable', async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page); await fill(page);
   // Queue an actual start and input event in the same browser task. Termination
@@ -169,4 +237,44 @@ test('editing cancels an in-flight Worker and keeps the next search usable', asy
   await expect(page.getByRole('button',{name:'맞는 수납함 찾기',exact:true})).toBeEnabled();
   await expect(page.getByRole('region',{name:'찾은 수납함',exact:true})).toHaveCount(0);
   await search(page);
+});
+test('a view query on the root hash still opens Space Fit with that sort',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/?sort=count');
+  await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
+  await importCatalog(page); await fill(page); await search(page);
+  await expect(page.locator('.space-filter-column').getByRole('button',{name:'수납함 많이 들어가는 순',exact:true})).toHaveAttribute('aria-pressed','true');
+});
+test('auto-steps surface two-product combinations without pressing 조합 더 찾기',async({page})=>{
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['200','200','40']); await search(page);
+  // The results stay usable while background steps run: no busy region, search enabled.
+  await expect(page.getByRole('region',{name:'찾은 수납함',exact:true})).toHaveAttribute('aria-busy','false');
+  await expect(page.getByRole('button',{name:'맞는 수납함 찾기',exact:true})).toBeEnabled();
+  // Page 0 holds 100 single-product grids; mixed rows only come from later steps.
+  await expect.poll(async()=>Number((await page.locator('#space-summary').textContent())?.match(/(\d+)개/)?.[1] ?? 0),{timeout:20000}).toBeGreaterThan(100);
+  await expect(page.locator('.space-results > li .space-row-title',{hasText:'+'}).first()).toBeAttached({timeout:20000}).catch(async()=>{
+    // The mixed rows may sort below the first 20; reveal more rows until one appears.
+    for(let i=0;i<10 && await page.locator('.space-results > li .space-row-title',{hasText:'+'}).count()===0;i++) await page.getByRole('button',{name:'더 보기',exact:true}).click();
+    await expect(page.locator('.space-results > li .space-row-title',{hasText:'+'}).first()).toBeAttached();
+  });
+});
+test('clicking a non-focusable part of the sheet keeps Tab and Escape inside it',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const opener=page.getByRole('button',{name:'순서·가게 고르기',exact:true});
+  await opener.click();
+  const dialog=page.getByRole('dialog',{name:'순서·가게 고르기'});
+  await dialog.getByText('파는 곳',{exact:true}).click();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(()=>Boolean(document.activeElement?.closest('[role="dialog"]')))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+  expect(await page.evaluate(()=>document.getElementById('root')?.hasAttribute('inert'))).toBe(false);
+});
+test('a view link opens Space Fit even after expert mode was used',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('zari.mode.v1','expert'));
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/space-fit?sort=price');
+  await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
 });
