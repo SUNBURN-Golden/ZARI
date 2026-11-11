@@ -164,3 +164,57 @@ node tools/catalog-crawler-bot/cli.ts publish --yes
 - 수집한 변형은 "내 보유 수납함으로 복사"로 등록할 수 있다. 복사본은 카탈로그 근거(evidence) id를 들고 오지 않는다 — 출처 연결은 옵션 참조(`variantRef`)가 다이제스트 고정 스냅샷으로 유지한다. 내경·지지면은 항상 미확인이므로 물건을 안에 담는 지지면 결속 배치는 잠정(provisional) 배치로만 되고, 계산은 알 수 없음으로 남는다.
 - 내경은 항상 알 수 없다. 외경만으로는 물건이 들어가는지 계산할 수 없고, 계산은 알 수 없음으로 남는다.
 - 옵션 이름은 한글이면 해시 토큰이 id가 되고 이름은 항목 `name`의 괄호에만 남는다.
+
+## Space Fit MVP source observations — 2026-11-05
+
+Official host verification used the web, before changing the allowlist:
+- https://www.muji.com/kr/ and https://www.mujikorea.net/ redirect to
+  https://mujikorea.co.kr/. Only `mujikorea.co.kr` is added; legacy aliases,
+  asset hosts and wildcard subdomains are excluded. Storage listing observed:
+  `/products/category/24`. Product path fixtures are synthetic, not live evidence.
+- https://www.daiso.co.kr/ links to `https://www.daisomall.co.kr/`.
+  The mall returned HTTP 403; investigation stopped without bypass or retry.
+- MUJI robots could not be read using the web tool. Collection remains blocked
+  (`robots_unverified`); Daiso remains blocked (`observed_http_403`). The bot
+  initializes these sources disabled. `resume-host` requires operator review,
+  then a fresh readable/allowing robots response before any product request.
+
+The extension supports short text specification rows for MUJI/Daiso. Handwritten
+fixtures in `tests/fixtures/catalog-collection/{muji,daiso}` are synthetic and
+contain no images. Explicit outer W/D/H and option boundaries are required;
+packaging/inner sizes cannot become outer sizes. Every observation stays
+`unconfirmed`. Daiso's `pdNo` query is retained as product identity.
+
+Any block now persists until explicit operator resume, even after cooldown.
+Navigation failures become terminal queue entries. There is no automatic retry.
+Actual two-source collection, dimensions verification and R2 publication have
+**not** been performed; these observations are not collection permission or
+end-to-end product qualification.
+
+### Server-only DeepSeek fallback
+
+`tools/catalog-crawler-bot/deepseek.ts` is called by the existing bot after rule
+extraction, for MUJI/Daiso short specification text only. `DEEPSEEK_API_KEY` is
+read exclusively from the server process environment. The adapter has no log
+calls, exposes no public HTTP listener, follows no redirects, invokes no tools,
+limits input to 1,024 characters and output to 400 tokens/16 KiB, and aborts at
+30 seconds. Failures return a fixed empty result with no automatic retry.
+
+Model `deepseek-flash` was verified against the official documentation on
+2026-11-05: https://api-docs.deepseek.com/api/list-models/ and
+https://api-docs.deepseek.com/updates/ . There is no fallback model. JSON must
+identify the exact option and an outer-size evidence span; labeled values and
+units must agree with that text, then the existing Rust bundle tool validates
+numbers/precision. Confidence never confirms dimensions. Model/prompt/hash are
+kept in the bot's private item record, outside the public v1 bundle.
+
+The optional bot config field `aiCostCap` defaults to `null` (off). To enable a
+**per-run** cap, provide `{ "limitUsd": <amount>, "inputUsdPerMillion": <verified
+current price>, "outputUsdPerMillion": <verified current price> }`. Invalid
+config stops setup. The adapter reserves a conservative input/output allowance
+before HTTP, accounts reported usage, and closes the cap on unknown usage.
+Failures keep their reservation. Calls are sequential; the cache (including
+failures) is bounded to 1,000 entries and lasts for one run. Durable daily/monthly
+accounting and cross-run AI cache are not implemented. Do not describe this
+option as a durable account-wide spend limit. No live paid API call was made
+for implementation tests; every HTTP call in tests is mocked.

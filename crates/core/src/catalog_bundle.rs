@@ -29,6 +29,8 @@ const MAX_SNAPSHOT_BYTES: usize = 4 * 1024 * 1024;
 const MAX_ID_CHARS: usize = 80;
 const MAX_RAW_TEXT_CHARS: usize = 1024;
 const MAX_PRICE_TEXT_CHARS: usize = 64;
+const MAX_PACK_EVIDENCE_CHARS: usize = 120;
+pub const MAX_PACK_QUANTITY: u32 = 10_000;
 const GENERATOR_NAME_MAX: usize = 64;
 
 #[derive(
@@ -41,6 +43,10 @@ pub enum CrawlSite {
     Cm29,
     #[serde(rename = "ikea")]
     Ikea,
+    #[serde(rename = "muji")]
+    Muji,
+    #[serde(rename = "daiso")]
+    Daiso,
 }
 
 impl CrawlSite {
@@ -49,6 +55,8 @@ impl CrawlSite {
             Self::Ohou => "ohou",
             Self::Cm29 => "29cm",
             Self::Ikea => "ikea",
+            Self::Muji => "muji",
+            Self::Daiso => "daiso",
         }
     }
     pub fn primary_host(self) -> &'static str {
@@ -56,10 +64,14 @@ impl CrawlSite {
             Self::Ohou => "ohou.se",
             Self::Cm29 => "www.29cm.co.kr",
             Self::Ikea => "www.ikea.com",
+            Self::Muji => "mujikorea.co.kr",
+            Self::Daiso => "www.daisomall.co.kr",
         }
     }
     fn host_allowed(self, host: &str, path: &str) -> bool {
         match self {
+            Self::Muji => host == "mujikorea.co.kr" && path.starts_with("/products/"),
+            Self::Daiso => host == "www.daisomall.co.kr" && path.starts_with("/pd/"),
             Self::Ohou => host == "ohou.se" || host == "store.ohou.se",
             Self::Cm29 => host == "www.29cm.co.kr",
             Self::Ikea => host == "www.ikea.com" && (path == "/kr" || path.starts_with("/kr/")),
@@ -165,6 +177,33 @@ pub struct CrawledItem {
     pub dimensions: BundleDimensions,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price_text: Option<String>,
+    /// How many units the listed price buys (e.g. "2개입" = 2). Optional;
+    /// absent means unknown and the price stays a pack-only price.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pack_quantity: Option<BundlePackQuantity>,
+}
+
+/// Where a pack quantity came from. NOTE: this never confirms a price; any
+/// space-fit price that uses a listing pack quantity is `reference` (참고치).
+/// `confirmed`: the seller's own page text
+/// states it ("입수 1개입", "2개입", "상품구성 수납함 1개"). `reference`: inferred
+/// (e.g. a single product with no pack wording). Either way the item stays
+/// `unconfirmed` and space-fit prices built from it are reference values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum PackQuantityBasis {
+    Confirmed,
+    Reference,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BundlePackQuantity {
+    /// Units per listed price, 1..=10000.
+    pub value: u32,
+    pub basis: PackQuantityBasis,
+    /// Short verbatim evidence or the inference note (<= 120 chars).
+    pub evidence: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -356,6 +395,8 @@ fn id_parts(id: &str) -> Option<(CrawlSite, &str, Option<&str>)> {
         "ohou" => CrawlSite::Ohou,
         "29cm" => CrawlSite::Cm29,
         "ikea" => CrawlSite::Ikea,
+        "muji" => CrawlSite::Muji,
+        "daiso" => CrawlSite::Daiso,
         _ => return None,
     };
     let product = parts.next()?;
@@ -459,6 +500,46 @@ struct ItemRow {
     dimensions_usable: bool,
 }
 
+/// Re-run the bundle's own item rules at a second boundary. The space-fit
+/// side channel calls this so a listing cannot reach the search under weaker
+/// checks than the one that produced the snapshot.
+pub(crate) fn validate_listing(item: &CrawledItem) -> bool {
+    let mut codes = BTreeSet::new();
+    check_item(item, &mut codes).is_some() && codes.is_empty()
+}
+
+/// Whole-millimetre outer W/D/H for a reference listing. All three axes, the
+/// unit, and a confidence other than `unparsed` are required. Conversion reuses
+/// the bundle's `axis_mm`, so a listing and a snapshot cannot disagree on the
+/// same source text.
+pub(crate) fn listing_outer_mm(item: &CrawledItem) -> Option<[u32; 3]> {
+    if item.dimensions.confidence == DimensionConfidence::Unparsed {
+        return None;
+    }
+    let unit = item.dimensions.unit?;
+    let mut codes = BTreeSet::new();
+    let mut out = [0u32; 3];
+    for (axis, value) in [
+        &item.dimensions.width,
+        &item.dimensions.depth,
+        &item.dimensions.height,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        value.as_ref()?;
+        let text = axis_mm(value, Some(unit), &mut codes);
+        if !codes.is_empty() {
+            return None;
+        }
+        out[axis] = parse_length(&text, Unit::Mm).ok().flatten()?.get();
+    }
+    if out.contains(&0) {
+        return None;
+    }
+    Some(out)
+}
+
 fn check_item(item: &CrawledItem, codes: &mut BTreeSet<String>) -> Option<ItemRow> {
     let parts = id_parts(&item.id);
     match parts {
@@ -497,6 +578,17 @@ fn check_item(item: &CrawledItem, codes: &mut BTreeSet<String>) -> Option<ItemRo
         .is_some_and(|p| p.chars().count() > MAX_PRICE_TEXT_CHARS)
     {
         codes.insert("text_too_long".into());
+    }
+    if let Some(pack) = &item.pack_quantity {
+        if pack.value == 0 || pack.value > MAX_PACK_QUANTITY {
+            codes.insert("pack_quantity_invalid".into());
+        }
+        if pack.evidence.trim().is_empty() {
+            codes.insert("pack_evidence_missing".into());
+        }
+        if pack.evidence.chars().count() > MAX_PACK_EVIDENCE_CHARS {
+            codes.insert("text_too_long".into());
+        }
     }
     let dims = &item.dimensions;
     if dims.raw_text.chars().count() > MAX_RAW_TEXT_CHARS {
@@ -958,6 +1050,22 @@ fn assemble(items: &[CrawledItem], created_at: &str, generator: &BundleGenerator
     }
 }
 
+/// Safe external product links for the read-only space search.
+pub fn allowed_product_url(url: &str) -> bool {
+    valid_locator(url)
+        && url_parts(url).is_some_and(|(host, path)| {
+            [
+                CrawlSite::Muji,
+                CrawlSite::Daiso,
+                CrawlSite::Ohou,
+                CrawlSite::Cm29,
+                CrawlSite::Ikea,
+            ]
+            .iter()
+            .any(|site| site.host_allowed(host, path))
+        })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -976,6 +1084,7 @@ mod tests {
             fetched_at: "2026-10-15T00:00:00Z".into(),
             dimensions: dims,
             price_text: Some("19,900원".into()),
+            pack_quantity: None,
         }
     }
 
@@ -1031,6 +1140,90 @@ mod tests {
         let text = build.bundle_text.expect("bundle built");
         let bundle = serde_json::from_str(&text).expect("bundle parses");
         (text, bundle)
+    }
+
+    #[test]
+    fn pack_quantity_round_trips_and_absent_keeps_old_bytes() {
+        let (old_text, _) = built();
+        assert!(!old_text.contains("packQuantity"));
+        let mut items = sample();
+        items[0].pack_quantity = Some(BundlePackQuantity {
+            value: 2,
+            basis: PackQuantityBasis::Confirmed,
+            evidence: "2개입".into(),
+        });
+        let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
+        assert_eq!(build.codes, Vec::<String>::new());
+        let text = build.bundle_text.unwrap();
+        assert!(
+            text.contains(r#""packQuantity":{"basis":"confirmed","evidence":"2개입","value":2}"#)
+        );
+        let review = review_bundle_text(&text);
+        assert!(!review.quarantined, "{review:?}");
+    }
+
+    #[test]
+    fn pack_quantity_out_of_range_or_unknown_field_is_rejected() {
+        for (value, code) in [
+            (0, "pack_quantity_invalid"),
+            (10_001, "pack_quantity_invalid"),
+        ] {
+            let mut items = sample();
+            items[0].pack_quantity = Some(BundlePackQuantity {
+                value,
+                basis: PackQuantityBasis::Reference,
+                evidence: "x".into(),
+            });
+            let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
+            assert!(
+                build
+                    .rejected
+                    .iter()
+                    .any(|r| r.codes.contains(&code.to_owned())),
+                "{value}: {:?}",
+                build.rejected
+            );
+        }
+        for (evidence, code) in [
+            (" ".to_owned(), "pack_evidence_missing"),
+            ("가".repeat(121), "text_too_long"),
+        ] {
+            let mut items = sample();
+            items[0].pack_quantity = Some(BundlePackQuantity {
+                value: 1,
+                basis: PackQuantityBasis::Reference,
+                evidence,
+            });
+            let build = build_bundle(items, "2026-10-15T01:00:00Z", generator());
+            assert!(
+                build
+                    .rejected
+                    .iter()
+                    .any(|r| r.codes.contains(&code.to_owned())),
+                "{code}: {:?}",
+                build.rejected
+            );
+        }
+        let mut items = sample();
+        items[0].pack_quantity = Some(BundlePackQuantity {
+            value: 1,
+            basis: PackQuantityBasis::Reference,
+            evidence: "가".repeat(120),
+        });
+        assert!(
+            build_bundle(items, "2026-10-15T01:00:00Z", generator())
+                .rejected
+                .is_empty()
+        );
+        let mut value = serde_json::to_value(&sample()[0]).unwrap();
+        value["packQuantity"] =
+            serde_json::json!({"value": 1, "basis": "confirmed", "evidence": "1개", "extra": 1});
+        let text = serde_json::to_string(&vec![value]).unwrap();
+        let build = build_bundle_from_json(&text, "2026-10-15T01:00:00Z", generator());
+        assert_eq!(
+            build.rejected[0].codes,
+            vec!["item_schema_invalid".to_owned()]
+        );
     }
 
     #[test]

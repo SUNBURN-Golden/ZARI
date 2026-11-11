@@ -1,7 +1,7 @@
 import { closeSync, existsSync, openSync, readFileSync, unlinkSync, writeSync, appendFileSync } from 'node:fs';
 import { ensureDir, readJson, writeJsonAtomic } from './fsx.ts';
 import type { StatePaths } from './paths.ts';
-import { normalizeUrl, productKey, siteOfHost, parseHttpsUrl } from '../catalog-extension/lib/sites.js';
+import { normalizeUrl, productKey, siteOfHost, parseHttpsUrl, canonicalProductUrl } from '../catalog-extension/lib/sites.js';
 import type { SiteKey } from '../catalog-extension/lib/sites.js';
 import type { Robots } from './robots.ts';
 
@@ -34,6 +34,7 @@ export interface HostState {
 }
 
 export interface ItemRecord {
+  extraction?: { model: string; promptVersion: string; textHash: string; status: 'unconfirmed' };
   item: Record<string, unknown>;
   seenAt: string;
 }
@@ -82,7 +83,7 @@ export function entryFor(rawUrl: string, kind: EntryKind, from: string | null): 
   if (kind === 'product') {
     const key = productKey(rawUrl);
     if (!key) return null;
-    return mk(`product:${key.site}:${key.productId}`, normalized.split('?')[0]!, kind, site.key, url.hostname, from);
+    return mk(`product:${key.site}:${key.productId}`, canonicalProductUrl(rawUrl)!, kind, site.key, url.hostname, from);
   }
   return mk(`listing:${normalized}`, normalized, kind, site.key, url.hostname, from);
 }
@@ -114,7 +115,6 @@ export function requeueStale(store: Store, nowMs: number, recrawlDays: number): 
       entry.state = 'pending';
       entry.attempts = 0;
     }
-    if (entry.state === 'failed' && entry.lastVisitedAt === null) entry.state = 'pending';
   }
 }
 

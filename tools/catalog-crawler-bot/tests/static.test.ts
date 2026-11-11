@@ -20,7 +20,7 @@ describe('bot has no listener and no direct site access', () => {
     for (const [file, text] of botSources) {
       for (const match of text.matchAll(/(?:from\s+|import\s*\()\s*['"]([^'"]+)['"]/g)) {
         const target = match[1]!;
-        expect(target.startsWith('node:') || target.startsWith('./') || target === '../catalog-extension/lib/sites.js', `${file}: ${target}`).toBe(true);
+        expect(target.startsWith('node:') || target.startsWith('./') || ['../catalog-extension/lib/sites.js', '../catalog-extension/lib/dimensions.js', '../../apps/web/src/contracts/generated/dto.ts'].includes(target), `${file}: ${target}`).toBe(true);
       }
     }
   });
@@ -32,9 +32,13 @@ describe('bot has no listener and no direct site access', () => {
     const listens = botSources.flatMap(([file, text]) => [...text.matchAll(/\bserver\.listen\(([^)]*)\)/g)].map((m) => `${file}: ${m[1]}`));
     expect(listens).toEqual(['tools/catalog-crawler-bot/channel.ts: paths.socket, (']);
   });
-  it('calls fetch only in the R2 publisher, and only against the validated endpoint', () => {
-    const files = botSources.filter(([, text]) => /\bfetch\s*\(/.test(text)).map(([file]) => file);
-    expect(files).toEqual(['tools/catalog-crawler-bot/publish-r2.ts']);
+  it('calls fetch only at the R2 boundary; AI uses its separately tested fixed HTTP endpoint', () => {
+    const files = botSources.filter(([, text]) => /\b(?:fetch|http)\s*\(/.test(text)).map(([file]) => file);
+    expect(files).toEqual(['tools/catalog-crawler-bot/deepseek.ts', 'tools/catalog-crawler-bot/publish-r2.ts']);
+    const ai = botSources.find(([file]) => file.endsWith('deepseek.ts'))![1];
+    expect(ai).toContain("const ENDPOINT = 'https://api.deepseek.com/chat/completions'");
+    expect(ai).toContain("redirect: 'error'");
+    expect(ai).not.toMatch(/console\.|JSON\.stringify\(.*apiKey/);
     const publisher = botSources.find(([file]) => file.endsWith('publish-r2.ts'))![1];
     expect(publisher).toContain("redirect: 'error'");
     expect(publisher).toMatch(/\.r2\.cloudflarestorage\.com/);

@@ -2371,3 +2371,467 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 검증 중 발견·수정: 첫 전체 브라우저 실행은 방 선택 오류 시험에 남은 이전 기대값 ‘둘 곳을 골라 주세요.’를 검출해 중단했고 ‘놓을 곳을 골라 주세요.’로 수정했다. 현 작업 사본의 Chromium·Firefox 쉬운 모드 18개는 통과했다. WebKit 9개는 실행 전 라이브러리 경로 검사에서 실패했다. 라이브러리는 캐시의 `sys/lib/libproxy/libpxbackend-1.0.so`에 이미 있었고 두 WebKit 번들의 `sys/lib`에 해당 파일의 상대 심볼릭 링크를 추가해 기본 WebKit launch와 페이지 표시를 확인했다. 저장소 의존성·Playwright 설정·timeout·baseline·retry 설정은 바꾸지 않았다. 캐시 수정 후 WebKit 쉬운 모드 9개도 통과했다. 현 작업 사본의 세 브라우저 쉬운 모드 총 27개와 각 브라우저의 8개 native/Worker-WASM 전체 JSON 대조가 통과했고, 분리한 커밋 대상 코드의 전체 브라우저 검사는 `npm run test:browser -- --workers=3`에서 466/471 통과, WebKit 기존 전문가 경로 5개 실패였다. 추적 자료 확인 뒤 workers=1로 진단한 5개 중 대기 시간 초과 4개는 통과했고, 카탈로그 오프라인 새 탭 재방문 1개는 WebKit 내부 오류를 재현했다. GTK headed 실행과 별도 사본의 서비스 워커 네트워크 회피 진단에서도 같은 오류였다. 서비스 워커 진단 변경은 폐기했고 저장소 앱에는 적용하지 않았다. 다른 기존 WebKit 오프라인 시험과 같은 캐시 검증 범위로 맞출지, 문구만 커밋하며 기존 실패를 기록할지 사용자 결정 대기 중이다.
 
 실제 이미지 확인: 현 작업 사본의 390px light 입력·결과와 1440px dark 상세 화면에서 최종 문구를 확인했다. 이 캡처에는 기존 미커밋 시각 QA 수정도 들어 있으며 화면 승인은 계속 draft다. 실제 모바일·수동 스크린리더·사용자 화면 baseline 승인·비작성자 exact-HEAD 검토는 미완료다. 다음 작업은 WebKit 검증 범위에 대한 사용자 결정 뒤 최종 검사와 커밋, 이후 비작성자 검토다. 사용자가 모든 검사의 통과를 요구했으므로 현재 커밋·push는 보류했다. merge·배포는 수행하지 않는다.
+
+## 2026-11-05 — Space Fit MVP 로컬 구현과 검증 (M1–M4 실물 수용은 미완료)
+
+- 요청/결정: `docs/design/space-fit.md` 전체와 §14를 기준으로
+  `feat/space-fit-mvp` worktree 안에서 구현했다. 축별 기본 여유 5mm, 혼합 최대
+  2종, 미확인 접힘, 서버 환경의 DeepSeek Flash, 비용 상한 기본 꺼짐을 적용했다.
+  보존 프롬프트·SOURCE_MANIFEST·main·원격·배포·태그는 변경하지 않았다.
+- 수집: 기존 Native Messaging 봇/Chrome 확장에 MUJI/Daiso 텍스트 파서를 추가했다.
+  공식 MUJI 링크의 현재 목적지는 `mujikorea.co.kr`, 다이소 기업 사이트의 몰
+  링크는 `www.daisomall.co.kr`임을 웹으로 확인한 뒤 정확한 호스트만 등록했다.
+  legacy MUJI alias/이미지 호스트/wildcard subdomain은 등록하지 않았다.
+  옵션·외경/내경/포장을 분리하며 URL을 포함한 사양 절은 버린다. 새 자료는 항상
+  `unconfirmed`이고 이미지 수집은 없다. 손으로 쓴 합성 HTML fixture로 검증했다.
+- 수집 차단: 다이소몰 HTTP 403에서 추가 접근을 중단했다. MUJI robots는 읽을 수
+  없어 `robots_unverified`다. 두 출처는 기본 비활성이며 운영자 검토/명시적 재개와
+  새 robots 확인 전에는 요청하지 않는다. 차단은 cooldown 이후에도 유지한다.
+  실패 작업(마지막 방문 시각이 없는 legacy 실패 포함)은 자동 재시도하지 않는다.
+- Rust: 새 `space_fit.rs`와 얇은 WASM session을 추가했다. 기존 cm 정수 mm 파서와
+  카탈로그 검증/digest를 재사용한다. 단일 상품 전수 검사, 허용된 upright0/90,
+  같은 제품 N×M×K 압축 격자, 2종·64개 이하의 바닥 행 조합을 생성한다.
+  K>1은 확인된 적층 maxUnits 범위만 생성하고 하중은 계속 unknown이다.
+  별도 압축 AABB/수량/바닥·방향·적층 검사 후 후보를 반환한다. 외경·내용물·설치·
+  개폐·접근·하중·방향·수량·오차 상태를 구분한다. 기본 5mm는 축 끝에서 한 번
+  남기는 검색 조건이며 제품 사이 간격은 0이다. 제조사 안전 여유가 아니다.
+- 성능/범위: 상품 최대 5,000개, 한 step 최대 1,000 node/100개 조합, Worker 상주
+  상태와 명시적 이어보기, 화면 조합 최대 2,000개다. 단일 후보와 각 조합 페이지는
+  결정론적으로 정렬한다. 미탐색 범위가 있으면 완료로 표시하지 않는다. 서로 다른
+  제품 적층, 일반 3D 전수 탐색, 전역 최적/전역 순위, 실제 모바일 p95는 달성한
+  것으로 주장하지 않는다. v1의 4 MiB snapshot/10 MiB bundle 한도를 유지한다.
+- 카탈로그: 기존 v1 R2 reader에 UTF-8 길이/hash 결속과 스트림 제한을 보강했다.
+  앱은 빌드 설정으로 고정한 public R2 bucket origin만 credentials omit / redirect
+  error / no-referrer GET으로 읽는다. 정상 번들은 별도 IndexedDB에 캐시하고
+  장애 시 같은 R2 base의 캐시를 Rust 재검토 후 쓴다. 원격 쓰기/판매처 fetch/AI
+  호출은 앱에 없다. 파일 가져오기는 dev/test 전용이다. v2 shard/release/철회
+  publisher, 실제 R2/CORS 연결은 이번에 완료하지 않았다.
+- 서버 AI: 봇의 낮은 신뢰도 짧은 사양에만 `deepseek-flash` fallback을 연결했다.
+  키는 `process.env.DEEPSEEK_API_KEY`만 읽고 출력/로그하지 않는다. 정확한 옵션,
+  외경 역할, 원문 evidence span, 축/단위/값, 제한 JSON을 확인한 뒤 기존 Rust
+  bundle tool로 검증한다. high confidence도 unconfirmed다. 30초/400 output token/
+  16 KiB 응답, run 내 최대 1,000개 cache와 실패 재호출 방지가 있다. `aiCostCap`
+  기본 null; 선택 상한은 검증된 단가를 요구하는 per-run 예약/사용량 계산이다.
+  durable 일/월 한도·cross-run cache·AI 조합 순위·실제 유료 호출은 미구현/미실행이다.
+- 화면: 첫 입구/`#/space-fit`는 가로·깊이·높이 cm와 단추 하나다. 딱 맞음/조합,
+  접힌 치수 확인 중, 더 보기/탐색 제한, 오류 초점·stale·취소·입력 보존을 구현했다.
+  새 `zari.space-fit.v1` 초안과 캐시는 기존 easy/프로젝트 저장과 분리했다.
+  `#/easy` 물건 비교·전문가 프로젝트를 보존했다. 도형은 같은 후보의 Rust 좌표를
+  투영한 개략 그림이며 새 PlanSnapshot 채택/견적/가이드 기능을 만들지 않았다.
+  기존 전문가 도면/BOM/가이드의 같은 snapshot 계약은 회귀 시험으로 유지했다.
+- 실행 검증:
+  - `cargo test --workspace --locked`: **268 passed, 1 ignored, 0 failed** (30 suites).
+  - `npm test` (`vitest run`): **458 passed / 54 files**.
+  - `npx playwright test --project=chromium --workers=1 --grep-invert '@parity|@capture|@bench'`:
+    **163 passed** (12.6분). 새 Space Fit 6개에 다중 페이지 native Rust ↔ 실제
+    browser Worker/WASM 전체 JSON 대조와 입력 수정 중 Worker 취소를 포함했다.
+  - 초기 workers=2 실행은 160 pass/2 fail였다. 잘못 옮긴 easy mode-memory 테스트
+    주소를 새 입구 계약에 맞게 수정했다. 기존 execution-checklist의 5초 Worker
+    제한 중단은 native/브라우저 동시 부하를 피한 serial 전체 실행에서 통과했다.
+    그 검사·생산 timeout·assertion을 삭제/완화하거나 자동 retry하지 않았다.
+  - `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`,
+    `npm run contracts:check`(124 fixture structures), `npm run typecheck`, `npm run lint` 통과.
+  - 실제 `npm run wasm:build` / test build와 별도 production build 통과. production
+    Chromium smoke에서 파일 입력 0개, 외부 요청 0개, 미설정 자료 오류/입력 유지 확인.
+    기존 대형 chunk 경고는 남아 있다.
+  - `node scripts/check-design-tokens.mjs --self-test`: **13 self-tests, 90/90 contrast cases**.
+    실제 320px(light/dark axe·keyboard·forced-colors), 390/1440px(light/dark) 검토에서
+    가로 넘침 없음/주요 단추 48px 확인. 캡처는 draft이며 승인 baseline으로 올리지 않았다.
+- 검증 산출물: 로컬 `test-results/space-fit-review/`의 draft 화면/metrics와
+  `test-results/space-fit-run/logs/`, 사용자 지정 `/workspace/zari-fit-run/RESULT.md`.
+- 미완료/다음: 허용 robots와 실제 옵션 URL/텍스트 확보 → 사람/독립 규칙의 세 축·옵션·
+  돌출 확인 → 실제 R2/CORS 설정 → 두 판매처 수집/확인/R2/검색 여정 → 사용자 사용 수용.
+  실제 휴대폰·Firefox/WebKit 전체 matrix·사용자 화면 승인·비작성자 exact-HEAD review는
+  미완료다. 사용자가 언급한 main의 WebKit `catalog-crawler:67` 실패는 여기서 재현하지
+  않았으며 그 테스트를 비활성화하지 않았다. M4·출시·배포 완료를 선언하지 않는다.
+
+### 2026-11-05 16:31 KST 승인 — headed Chrome / DeepSeek Flash 치수 수집
+
+- `tools/catalog-trial/trial-deepseek.ts`를 추가했다. 지정 Chrome profile,
+  DISPLAY=:12, 실제 headed Chrome/default UA/no proxy, 이미지·미디어·폰트 차단,
+  DOMContentLoaded 뒤 9초 렌더 대기, MUJI 4–8초 간격을 사용한다.
+  기존 adapter의 1,024자 제한 때문에 같은 `deepseek-flash` 모델로 12,000자 이하의
+  visible innerText를 JSON response_format으로 보낸다. 키는 env에서만 읽는다.
+- DAISO robots 200을 먼저 확인했다. `/ds/`와 `/pd/pdr/` 허용 및 30초 delay를
+  적용하고, navigation뿐 아니라 모든 허용된 DAISO 요청을 직렬 제한한다.
+  허용 검색 페이지에서 상품 링크를 발견하지 못해 상품 방문/AI 호출 없이 종료했다.
+  실행 뒤 보수적으로 `empty_page:no_product_links`로 분류하여 로컬
+  `/workspace/zari-fit-run/state/daiso.disabled`를 기록했다. 재시도하지 않았다.
+- 기존 MUJI 9개 중 치수 누락 4개를 productUrl로 재방문했다. 실제 DeepSeek 호출
+  **4회**, 네 항목 모두 literal evidence/0.5–300cm 검사를 통과했다. 원본 5개를
+  보존하여 **9 items / 9 with dims**, DAISO **0 / 0**이다. 모두 unconfirmed다.
+  로컬 real-items.v1.json에 원본을 보관하고 real-items.json을 갱신했다.
+- 새 추출은 real-items.json에 confidence `llm`과 evidence rawText를 기록한다.
+  Rust v1 계약에는 llm enum이 없어 bundle 입력 경계에서 `low`로 명시 변환한다
+  (치수 미확보는 unparsed). 따라서 새 네 항목은 fit 계산에서 계속 unknown이며,
+  자동 추출을 확인된 치수로 승격하지 않았다. 앱/공유 Rust 계약 변경은 없다.
+- 기존 Rust buildBundle로 9개 전부 수용/거절 0인 `b-cece21958d57f694`를 생성하고,
+  사용자 승인 범위에서 기존 publish-file.ts로 zari-catalog R2에 게시했다.
+  public latest.json **200**, 새 bundleId/digest 일치, bundle **200** 및 로컬과
+  공개 응답 **4,457 bytes 전체 일치**를 확인했다. 앱 배포는 수행하지 않았다.
+- 검증: trial/robots offline tests **13 passed / 3 files**, `npm run typecheck` 통과.
+  새 sanity test는 범위 경계, NaN/null, 허구/빈 evidence, 원문에 없는 값,
+  내경 거절 및 mm→cm를 포함한다. 네트워크/키 없이 실행한다.
+- 로컬 근거: `/workspace/zari-fit-run/ds-run.json`, `ds-publish-verification.json`,
+  `DS_RESULT.md`. 미완료/다음: DAISO 사람 검토 후 재개 판단, 새 MUJI 네 상품의
+  축·옵션·외경 독립 확인 및 비작성자 exact-HEAD review. 새 Rust/WASM 계산 변경은
+  없으며 전체 browser/native parity는 이번 작업에서 재실행하지 않았다.
+  push/merge/tag/branch 변경/앱 배포는 수행하지 않았다.
+
+### 2026-11-05 16:59 KST 승인 — DAISO 카테고리 단일 재개 시도
+
+- `d9f0e17`의 DeepSeek sibling을 재사용한
+  `tools/catalog-trial/trial-daiso-category.ts`를 추가했다. 기존 disabled flag를
+  자동 삭제하지 않고, 전용 backup이 있으면 재실행을 거절한다. 실제 headed
+  Chrome / DISPLAY=:12 / 지정 profile / default UA / no proxy·login과
+  image·media·font 차단을 유지했다. `/robots.txt`를 먼저 읽고 이후 DAISO 요청을
+  `/ds/`, `/pd/pdr/`와 새 robots 허용 교집합으로 제한했다.
+- robots **200**, User-agent `*`의 Crawl-delay **30초**. robots navigation
+  08:01:33.545Z → 승인 category navigation 08:02:03.548Z로 **30.003초** 간격이었다.
+  category **200** 뒤 10초 render 대기·600px scroll·추가 1초 대기에도 상품 없이
+  navigation/footer만 나타났다. `empty_page`로 즉시 중단하여
+  `/workspace/zari-fit-run/state/daiso.disabled`를 썼다. 추가 접근/재시도 없음.
+  방문은 robots 1개와 category 1개, detail **0**, DAISO **0개/치수 0개**,
+  이번 DeepSeek 호출 **0회**다. 두 판매처 수집 성공으로 기록하지 않는다.
+- `real-items.ds2-backup.json`을 먼저 보관했다. MUJI **9개/치수 9개**를 유지하고
+  상판 `59138`만 `categoryHint=other`로 바꿨다. 기존 Rust SpaceFit의 `bin` 필터로
+  적합성 후보에서 제외된다. 나머지 필드·다른 8개 항목의 동일성을 확인했다.
+  전부 unconfirmed이며 llm→low 변환과 literal evidence/range 검사를 유지했다.
+- Rust bundle tool이 9개 수용/거절 0인 **b-3f1f3dfb266282aa**를 생성했다.
+  승인된 `publish-file.ts`로 기존 `zari-catalog`에 게시했다. public latest와 새
+  bundle 모두 **200**, latest의 bundleId/digest 일치, 공개 bundle **4,459 bytes**가
+  로컬과 완전히 같다. 앱 배포는 수행하지 않았다.
+- 검증: 기존 trial/robots/publish/bundle-flow **41 tests / 5 files**와 신규 경로
+  제한 검사 **1 test / 1 file** 통과. `npm run typecheck`, Rust `space_fit`
+  **7 tests**, `node --check`, `git diff --check` 통과. 앱/Rust 구현 변경은 없고
+  실제 browser/native parity는 이번에 재실행하지 않았다.
+- 근거: `/workspace/zari-fit-run/DS2_RESULT.md`, `ds2-run.json`,
+  `ds2-publish-verification.json`, `ds2-page-2.txt`, `ds2-daiso-robots.txt`.
+  다음: DAISO는 사람 검토와 별도 명시적 재개 전까지 disabled 유지. MUJI 치수의
+  축/옵션/외경 독립 확인과 비작성자 exact-HEAD review는 미완료다. 사용자 지시로
+  현재 기능 branch를 Codex 명의로 commit하고 `sg feat/space-fit-mvp`에 push한다.
+  main push·merge·태그 변경·앱 배포는 수행하지 않는다.
+
+### 2026-11-06 18:57 KST 승인 — DAISO 확장 allowlist / headed Chrome DS3
+
+- DAISO shared allowlist에 `/ds/`, `/pd/` pathPrefixes를 적용하고 manifest에
+  `/ds/*`를 추가했다. 기존 `/pd/pdl/SCR_PDL_0001?pdNo=` 상품 식별은 유지했다.
+  승인된 재개에 따라 static blockedReason만 제거했다. live 차단 뒤 operator
+  resume 전까지 host disabled를 유지하는 scheduler 계약은 보존했다.
+- 확장 render settle을 robots 1.5초 / 상품 2.5초 / listing 15초로 구분했다.
+  DAISO listing의 추출 상품 링크가 0개이면 empty_listing 차단으로 반환하여
+  navigation/footer만 있는 DOM을 성공으로 처리하지 않는다.
+- 실제 Google Chrome 156.0.8078.47, DISPLAY=:12, 전용 ext-state profile과
+  `--load-extension`으로 실행했다. switch만으로 확장이 로드되지 않아 Chrome
+  developer UI의 Load unpacked로 같은 경로를 설치했다. 최초 두 connection
+  setup은 90초 만료로 끝났고 DAISO 요청은 0회였다. 최종 CLI run handler는
+  extension 연결 대기만 600초로 늘렸으며 native connection이 실제 성립했다.
+  Playwright/CDP/UA 변경/로그인/프록시/우회는 사용하지 않았다. profile에서
+  이미지 로드를 차단하고 수집기는 DOM/meta/JSON-LD 텍스트만 읽었다.
+- 시드는 승인 category URL 단 하나다. config는 minIntervalMs=30000,
+  pagesPerRun=15, dailyPerHost=20, jitterMs=0, publishEvery=0이다.
+  robots **200**, `*` Crawl-delay **30초**, `/ds/`, `/pd/pdr/` Allow 확인.
+  robots job 10:07:51.108Z → category job 10:08:21.138Z (**30.030초**).
+  category에서 load 완료 뒤 15초 대기에도 상품 링크 **0**, empty_listing으로
+  host를 비활성화하고 종료했다. robots 1회/category 1회/product 0회,
+  DAISO **0 items / 0 with dims**, AI 호출 0회다. 재방문하지 않았다.
+- `/workspace/zari-fit-run/state/daiso.disabled`를 재생성했다. MUJI real-items.json과
+  상판 59138의 기존 제외 상태를 변경하지 않았다. 새 번들/R2 게시 없음.
+  Computer egress는 활성화하지 않았다. 다음 합법적 선택지는 준태님 컴퓨터를
+  통한 Settings → Computer egress이며 별도 사람 판단 후 진행해야 한다.
+- 검증: `npx vitest run tools/catalog-extension/tests tools/catalog-crawler-bot/tests`
+  **160 passed / 13 files**, `npm run typecheck`, `git diff --check` 통과.
+  앱/Rust 계산 변경 없음, browser/native WASM parity는 재실행하지 않았다.
+- 근거: `/workspace/zari-fit-run/DS3_EXT_RESULT.md`, ext-state/run.log,
+  ext-state/hosts.json, ext-state/cli-run.log. 비작성자 exact-HEAD review 미완료.
+  사용자 승인 범위에서 Codex 명의 commit과 `sg feat/space-fit-mvp` push만 수행한다.
+  main push/merge/tag 변경/앱 배포는 수행하지 않는다.
+
+### 2026-11-06 DS4 — DAISO PDR 상품 식별 수정 / 승인된 단일 재개
+
+- shared productKey가 numeric pdNo를 가진 PDR/PDL 두 경로를 인식하고,
+  canonicalProductUrl은 PDR + pdNo만 남긴다. recmYn=N 등 부가 query가 있는
+  live 형태와 legacy listing dedupe, invalid ID, parser fixture 회귀를 검증했다.
+- extension + crawler-bot unit tests: **163 passed / 13 files**. typecheck 통과.
+- 승인된 ext-state host resume와 기존 extension ID/native host/profile, DISPLAY=:12의
+  headed Chrome으로 단 한 번 재개했다. minIntervalMs=30000/pagesPerRun=15/
+  dailyPerHost=20을 유지하고 기존 daily count도 보존했다. 단일 category seed 유지.
+- fresh robots 요청 2026-11-06T10:19:23.486Z → **403** 판정으로 host closed.
+  listing/product 방문 0, 새 상품 0/치수 0, DeepSeek 0회. 추가 요청/재시도 없이
+  daiso.disabled를 재생성했다. 기존 MUJI 9개와 상판 제외는 변경하지 않았다.
+  새 bundle/R2 게시 없음. 앱 배포/main push/merge 없음.
+- 근거: /workspace/zari-fit-run/DS4_PDR_RESULT.md, ext-state/ds4-cli.log,
+  ext-state/run.log, hosts.json. Rust/app 변경 없음; browser/native WASM parity는
+  재실행하지 않았다. 비작성자 exact-HEAD review 미완료. 다음은 별도 owner resume
+  판단과 실제 상품 치수/옵션 독립 확인이다. Codex 명의 commit 후 sg의 현재 branch만 push.
+
+### 2026-11-10 PR-A — 결과 블록 판매처·분류·가격·치수 근거 계약 (사용자 결정 D1–D3)
+
+- 추가: `dimensions.origin`(`imageOcr`/`pageText`/`unspecified`). 수집기가 `rawText` 앞에 붙이는
+  `[image-OCR]` 표식으로만 판정한다. 실번들 `b-c8fb29299e687ad0`(읽기 전용) 측정: 상품 38개,
+  보관함 31개 → confirmed 0 · reference 31(imageOcr 17, pageText 14) · unknown 0, 가격 known(참고) 31.
+  OCR 형태의 합성 fixture로 Rust 단위 시험을 추가했다.
+- 리뷰 반영(DeepSeek flash, 읽기 전용): listing은 snapshot의 unknown 축만 채우고 Known 축을 덮어쓰지 않는다
+  (부분 Known 시험 추가). offer는 재고 있음 → Known 가격 → id 순으로 하나만 골라 판매처·가격·묶음 수량에 쓴다.
+  `expect` 제거. WASM·예제 입력 상한을 snapshot(4 MiB)+listings(번들 10 MiB)에 맞춰 16 MiB로 올렸다.
+  R2 경로에서 listings가 비면 `catalog_listings_missing`으로 거절한다. `unmeasured` 200개 상한 시험 추가.
+
+- 결정 기록: `design/DECISIONS.md`의 `D-space-fit-listing-provenance`에 2026-11-10
+  준태님 결정 D1(판매처/source·분류·가격·치수 근거), D2(크롤/OCR/상품명 유래 치수는
+  참고치이며 적합성 계산에 포함), D3(unknown을 가격·묶음 수량·단가·치수로 발명하지
+  않음)을 기록했다. 보존 프롬프트와 `SOURCE_MANIFEST.json`은 변경하지 않았다.
+- Rust 권위: `SpaceFitInput`에 optional `listings`를 추가했다. 앱이 검토한 번들
+  `items`를 side channel로 보내면 Rust가 `catalog_bundle`과 같은 규칙으로 다시
+  검증한다. `check_item`을 복제하지 않고 `pub(crate) validate_listing`과
+  `listing_outer_mm`으로 `axis_mm` 변환을 재사용했다. 잘못된 listing, 중복 id,
+  snapshot에 없는 `p-{id}`는 `space_fit_listing_invalid`로 거절하며 최대 5,000개다.
+  known snapshot 사실을 listing이 덮어쓰지 않는다.
+- 치수 provenance: (a) 외경 3축 Known+Confirmed → `confirmed`; (b) 3축 Known이나
+  전부 Confirmed는 아님 → `reference`; (c) snapshot 미상 + listing의 W/D/H·단위가
+  있고 confidence가 unparsed가 아님(low 포함) → `reference`; (d) 그 외 → `unknown`.
+  참고치는 확정치와 동일하게 평가·반환하고, 쌓기 K>1은 confirmed stackability를
+  그대로 요구한다. block이 하나라도 confirmed가 아니면 `unconfirmed`는 true이며
+  candidate `dimensionProvenance`는 block 중 최악값이다. 정렬의 confirmed 우선
+  키는 유지하고 참고치를 숨기지 않는다. 치수가 전혀 없는 variant만
+  `unmeasured`(안정 순서 첫 200개, 첫 page에만)로 보내고 `missingDimensions`는
+  전체 개수를 유지한다. `solverVersion`은 `space-fit-2`다.
+- 계약: block에 `source`(nullable CrawlSite), `sellerId`(안정 offer의 첫 seller,
+  없으면 `seller-{site}`, 그것도 없으면 null), `category` `{hint,label|null}`,
+  `price`(known `{packPriceKrw,packQuantity|null,unitPriceKrw|null,basis}` 또는
+  `unknown`), `dimensions` `{provenance,basis,origin}`를 추가했다. 가격은 snapshot Known
+  offer의 `packPrice`를 우선하고, 없으면 listing `priceText`가
+  `^\s*(\d{1,3}(,\d{3})+|\d+)\s*(원|KRW)\s*$`(대소문자 구분)일 때만 0 초과
+  100,000,000 이하를 `reference`로 쓴다. `packQuantity`는 snapshot 값만,
+  단가는 묶음 수량을 알 때 정확히 나누어떨어질 때만 계산하며 합계는 만들지 않는다.
+  번들 스키마에 origin 필드를 추가하지 않았고, `origin`은 `rawText`의 `[image-OCR]` 표식에서만 판정한다. `deny_unknown_fields`는
+  유지했다.
+- 웹: `catalog.ts`의 `LoadedCatalog.listings`가 R2 번들, 캐시 번들, 개발용 파일의
+  같은 검토 텍스트에서 `items`를 넘긴다. `SpaceFit.tsx`는 `listings`를 입력에 넣고
+  첫 page의 `unmeasured`만 보관한다(뒤 page의 빈 배열이 지우지 않음). 새 한국어
+  UI 문자열·레이아웃 변경은 없고 worker는 그대로다. 생성 계약은
+  `npm run contracts:generate`로만 갱신했다(수기 편집 없음).
+- fixture: `tests/fixtures/space-fit/input.json`에 snapshot과 일치하는 합성 MUJI
+  listing 2개를 넣어 native/browser WASM parity가 side channel을 지나가게 했다.
+- 검증(실행값): `cargo fmt --all -- --check` 통과, `cargo clippy --workspace
+  --all-targets --locked -- -D warnings` 통과(0 warning), `cargo test --workspace
+  --locked` **275 passed / 0 failed / 1 ignored**, `fixture_runner fixtures/bootstrap`
+  exit 0, `cargo tree -p zari-wasm --target wasm32-unknown-unknown ...` exit 0,
+  `npm run wasm:build` 통과(wasm-bindgen 0.2.128), `npm run contracts:check`
+  **124 fixture structures valid**, `npm run typecheck` 통과, `npm run lint` 통과,
+  `npm test` **494 passed / 58 files**, `npm run build` 통과,
+  `node scripts/check-design-tokens.mjs --self-test` **80 base tokens / 90/90
+  contrast cases**, space-fit Playwright **6 passed**, `npm run test:parity`
+  **2 passed / 124 shared fixtures**. 전체 browser suite(기본 병렬)는 157 passed /
+  6 failed였고, 실패한 offer-bundles·plan·print-share·probe·purchase-handoff를
+  단독/직렬 재실행하면 **15 tests 모두 통과**했다(space-fit 실패 0, 부하로 인한
+  기존 flake로 판단). `npm test`도 첫 병렬 실행에서 session/dimension 테스트
+  timeout이 1–2개 있었으나 재실행에서 494개 전부 통과했다.
+- 미완료: PR-B 화면에서 참고치 badge·판매처/분류/가격 표시, OCR origin 스키마 매핑,
+  가격 문법은 현재 `원`/`KRW`만 지원. `unmeasured` 첫-page 한정은 문서화된 선택이며
+  UI는 아직 표시하지 않는다. 비작성자 exact-HEAD review와 commit/push는 이 작업
+  범위 밖이며 수행하지 않았다. 다음: PR-B UI, review, CI exact-head 확인.
+
+### 2026-11-10 PR-B — SpaceFit 결과 한 목록·참고치 배지·가격 표시 (UI 전용)
+
+- 시각 검증·리뷰 반영(코디네이터, 실 R2 번들 `b-c8fb29299e687ad0` 읽기 전용): 이름 끝의 기본 옵션 표식
+  ` 기본` 제거, 요약 `scroll-margin-top`, 조합의 링크·놓는 법 줄에 제품명 접두(같은 문구가 다른 판매처를
+  가리키지 않게, 링크 키는 variantId+url), 모든 블록 가격이 unknown이면 한 줄, 수량 문장 32px
+  (`--zari-text-title`, DESIGN.md 쉬운 모드 결과 32px 이상), 참고 가격 배지 제거(설명 문장이 크기용이라
+  잘못된 출처 설명이 됨 → copy-todo). 시험 추가: 빈 결과 요약, 배지 Tab 초점 outline, 페이지 넘김 id 중복 없음.
+- 알려진 한계: 첫 page는 같은 상품 격자 단계에서 node 예산을 다 써서 서로 다른 두 상품 조합은
+  `조합 더 찾기`를 눌러야 나온다(실번들 60×30×35: 첫 page 123개, 10번 누르면 1123개, 1위가 조합).
+  기본 정렬이 남는 공간 순이라 조합이 늦게 보인다. PR-C/D 또는 Rust 단계 순서 조정에서 다룬다.
+- 미확인 상품 미리보기는 Rust가 앞 200개만 보내므로 그보다 많으면 나머지는 목록에 없다(개수는 전체). 안내 문구는 copy-todo.
+
+- 범위: `apps/web/src/features/space-fit/`와 그 시험·fixture·디자인 문서만 바꿨다.
+  Rust·계약 생성 코드·R2·배포·catalog 데이터·main은 건드리지 않았다. commit/push는
+  하지 않았다.
+- 화면: 단일·조합을 `mergeCandidates`로 합친 한 목록으로 표시하고 `딱 맞음`/`조합`
+  영역을 없앴다. 정렬은 `occupiedVolumeMm3` 내림차순 BigInt, confirmed before
+  reference, id 순이다. 20개 + `더 보기` 20개, 기존 `조합 더 찾기`·2,000개 한도
+  문구는 유지했다. 결과 요약은 `h2` `tabindex=-1`이며 첫 page에서만 초점을 받고
+  `aria-live`로 한 번 알린다(개수는 `aria-live="off"`). `prefers-reduced-motion`에서는
+  부드러운 스크롤을 쓰지 않는다.
+- 입력: 가로/깊이/높이 레이블을 항상 보이고 cm는 필드 안 고정, `inputMode="decimal"`,
+  `enterKeyHint="search"`, placeholder 60/40/40을 유지했다. `맞는 수납함 찾기`는
+  입력 form의 sticky bottom bar(panel 토큰 배경, safe-area 여백)에 두었다.
+- 행: 판매처(무인양품/다이소)·분류 메타, 제품명 `h3`, `수납함 {n}개가 딱 들어가요`
+  (BigInt 합), 축별 `{방향}로 {n}cm 남아요`, 블록별 가격, 판매처 새 탭 링크,
+  접힌 `놓는 모양 보기`(SVG·배치·기존 확인 문구) 순서다. 목록 뒤에는 단일 접힌
+  `치수 확인 중 ({n}개)`을 두고 미확인 상품 이름·판매처·링크를 넣는다.
+- 참고치: 치수 provenance가 reference인 행의 meta 줄에만
+  `참고치` 버튼을 두고 `aria-expanded`/`aria-controls`로 설명 문단을 펼친다.
+  confirmed 행에는 배지가 없다. 버튼 높이는 48px 이상이다.
+- 가격: known이고 묶음 수량·개당 가격이 있으면
+  `한 개 {가격}원 · 다 해서 {가격}원`(총액은 `ceil(quantity / packQuantity) *
+  packPriceKrw` BigInt)을 표시한다. 그 외에는 `가격은 파는 곳에서 봐 주세요`만
+  표시한다. 판매처 표시가만 아는 문구는 승인 전이라 `results.ts`에
+  `// copy-todo: pack-price line (판매처 표시가 {가격}원, 묶음 수량 미확인) needs Argon approval`
+  주석만 남기고 렌더하지 않는다. 현재 copy-todo는 이 한 건이다.
+- 문구: `찾고 있어요.` → `들어갈 수 있는지 맞춰 보고 있어요.`, 입력 기준 안내 →
+  `적어 주신 크기대로만 맞춰 본 결과예요. 축마다 0.5cm를 남겨요.`, 확인 안내 →
+  `문이 잘 열리는지, 넣고 빼기 편한지는 따로 살펴봐 주세요.`로 바꿨다. 기존
+  `상품 {n}개를 확인했어요.`, `치수를 확인한 수납함은 아직 찾지 못했어요.`,
+  `크기와 판매처 보기` details를 제거했다. 승인되지 않은 새 한국어 문구는 없다.
+- 파일: `features/space-fit/results.ts`(신규 helper), `SpaceFit.tsx`, `space-fit.css`,
+  `tests/unit/spaceFitResults.test.ts`(신규), `tests/unit/spaceFitCatalog.test.ts`,
+  `tests/browser/space-fit.spec.ts`, `tests/fixtures/space-fit/catalog.json`.
+- fixture: 손으로 hash를 고치지 않고 저장소 도구
+  `cargo run -p zari-core --example catalog_bundle_tool build 2026-11-05T00:00:00Z 1`로
+  재생성했다. 치수 미확인 합성 다이소 item 1개를 더해 총 3개, bundleId
+  `b-b2bc69873c8c1aea`, 1,255 bytes다. 검토 결과 review 통과·variant 3개·미확인 1개를
+  확인했다.
+- 검증(실행값): `npm run typecheck` 통과, `npm run lint` 통과,
+  `npm test` **505 passed / 59 files**, `node scripts/check-design-tokens.mjs
+  --self-test` **80 base tokens / 90/90 contrast cases**, 같은 스크립트 CI 실행도
+  **80 / 90/90**, `npm run contracts:check` **124 fixture structures valid**,
+  `npm run test:build` 통과, `npx playwright test apps/web/tests/browser/space-fit.spec.ts
+  apps/web/tests/browser/easy-mode.spec.ts --project=chromium` **19 passed / 0 failed** (2차 리뷰 수정 후 재실행, `npm test` 506 passed / 59 files).
+  space-fit Playwright에는 합친 목록·요약 초점·sticky·미확인 접힘·stale 흐름,
+  참고치 키보드(Enter/Space), 가격 줄 unknown 문구(조합의 unknown 가격은 한 줄로 합침, 9줄), 320px light/dark axe와
+  넘침 없음, forced colors, native Rust ↔ 실제 Worker/WASM parity, 진행 중 편집
+  취소가 포함된다.
+- 미완료: PR-C의 필터·정렬 UI, PR-D의 여유 공간/빈 상태/가상화는 이 PR에 없다.
+  실제 판매처·실기기·approved baseline 수용, 비작성자 exact-HEAD review, commit/push는
+  수행하지 않았다. 묶음 가격만 아는 경우의 문구는 Argon 승인 대기다. 다음: PR-C,
+  exact-head CI, 독립 review.
+
+#### PR-B 2차 리뷰(DeepSeek flash, read-only) 반영
+
+- 조합 링크: 같은 이름(옵션만 다른 variant, offer 여러 개)이 겹치면 이름 뒤에 번호를 붙여 링크 텍스트가 항상 달라지게 했다.
+- `isReferencePrice` 주석을 실제 상태(UI 미표시, copy-todo)로 고쳤다.
+- `.space-links`·`.space-link`·배치 문단에 `overflow-wrap:anywhere`(+keep-all)를 더해 긴 상품명이 320px에서 넘치지 않게 했다.
+- 측정함: typecheck·lint 통과, `npm test` 506/506, space-fit+easy-mode Chromium 19 passed.
+- 남김(후속 PR): `조합 더 찾기` 경로의 id 중복 테스트, 가격 확인된 block과 미확인 block이 섞인 조합 fixture 테스트, 긴 이름 fixture — 현재 실데이터 묶음 수량이 모두 미확인이라 fixture 추가가 필요하다.
+
+
+### 2026-11-10 PR-C — SpaceFit 필터·정렬·혼합 조합 자동 단계 (UI 전용)
+
+- 범위: `apps/web/src/features/space-fit/`(신규 `view.ts`), `apps/web/src/app/App.tsx`,
+  같은 기능의 단위·브라우저 시험, `design/COMPONENTS.md`·`design/SCREENS.md`·
+  `design/DECISIONS.md`만 바꿨다. Rust crates·계약 생성 코드·R2·배포·catalog
+  데이터·main은 건드리지 않았다.
+- 보기 상태: `view.ts`는 `SortKey`(`leftover`|`price`|`count`)와
+  `ViewState{sellers,types,sort}`를 정의하고, hash의 `?` 뒤 query만 읽어
+  `sort`·`seller`·`type`을 복원한다. 모르는 정렬·판매처 값은 버리고 중복은 합친다.
+  기본값이면 경로만, 아니면 `sort, seller, type` 순서로 직렬화한다. `App.tsx`는
+  `?` 앞 경로만으로 화면을 판정하므로 `#/?…`와 `#/space-fit?…`가 query 없는 경우와
+  같다. 필터 변경은 `history.replaceState`만 쓰고 검색을 다시 하지 않는다.
+- 필터·정렬: `facetOptions`는 후보에 실제로 있는 판매처(무인양품·다이소 순)와 trim한
+  분류 label(한국어 localeCompare 안정 정렬)만 낸다. `filterCandidates`는 후보의 어느
+  블록이든 선택 판매처/분류와 맞으면 통과시키고 빈 그룹은 전체다. 가격 합계는
+  `results.ts`로 옮긴 `blockTotalKrw`(ceil(qty/packQty)*packPrice, 하나라도 모르면 null)를
+  쓴다. 정렬은 기본 `compareCandidates`, 가격 오름차순(모르는 가격 뒤), 총 수량
+  내림차순이며 동률은 기존 순서다. 입력 배열은 바꾸지 않는다.
+- 혼합 조합: 첫 page가 `combinationsComplete=false`이면 응답마다
+  `{type:'next', budget:1000}`을 최대 6번 자동 전송한다. 혼합 후보 20개, 완료,
+  조합 2,000개 중 하나에서 멈추고 revision guard를 유지한다. 초점은 첫 page에서만
+  이동한다. 자동 단계는 `busy`와 분리된 `autoStepping` 상태라 결과·찾기 단추·칩이 계속 쓸 수 있고
+  `aria-busy`도 걸리지 않으며, 그동안 `조합 더 찾기`만 잠긴다.
+- UI: 1024px 미만은 결과 요약 아래 가로 스크롤 칩 줄과 하단 시트
+  (`role="dialog"`, `aria-modal`, `aria-labelledby`, `document.body`로 portal하고 `#root`를
+  inert로 만드는 PrintPanel 방식, 초점 트랩·Esc·scrim·`닫기`, 닫은 뒤 연 단추로 초점 복귀), 1024px 이상은 왼쪽 sticky 필터 열과 최대 720px
+  결과 열이다. 시트와 열은 같은 `FilterPanel`을 쓰고 CSS로 하나만 접근성 트리에
+  남긴다. 칩·정렬은 `button aria-pressed`이며 `모두 보기`는 빈 그룹에서 pressed다(칩 줄에는 같은 이름이 두 번 나오지 않게 `모두 보기`를 두지 않고 시트·열에만 둔다).
+  필터를 바꾸면 화면에 보이지 않는 `role=status`가 필터된 개수를 기존 요약 문구로 알린다.
+  hash의 판매처·분류 목록은 디코딩 전 raw 값을 `,`로 나눠 쉼표가 든 label도 왕복한다.
+  루트(`#/`)에서 바꾼 보기는 `#/space-fit?…`로 써서 전문가 모드 기기에서도 Space Fit이 열린다.
+  필터를 바꾸면 보이는 개수는 20개로 돌아가고, 필터 결과 0개(원래 결과 있음)이면
+  요약 문구와 `처음대로 돌리기`를 보인다. 요약 개수는 필터된 개수다.
+- 결과 행 다듬기: 판매처 링크를 48px 전체 폭 `space-link-row`로 바꿔 왼쪽에 제품명
+  (한 줄 말줄임)을, 48rem 이상에서는 같은 줄 오른쪽에, 그보다 좁으면 항상 다음 줄에
+  `판매처에서 보기 (새 탭)`을 두고 반복 이름은 번호를
+  붙여 접근 가능한 이름을 유지한다. `놓는 모양 보기`는 안쪽 wrapper를 8pt grid로
+  묶고 배치 줄은 primary, 일반 확인 문단은 secondary 색으로 낮췄다. `space-count`만
+  큰 강조 줄로 남는다.
+- 문구: 새 UI 문자열은 승인된 `순서·가게 고르기`, `파는 곳`, `수납함 모양`,
+  `모두 보기`, `보여주는 순서`, `빈틈없이 꽉 차는 순`, `가격 싼 순`,
+  `수납함 많이 들어가는 순`, `이대로 보기`, `닫기`, `처음대로 돌리기`,
+  `다시 골라보기`(보고서상 범위, 렌더에는 미사용), `고르신 내용에 맞는 수납함이 아직 없어요`
+  와 기존 문구뿐이다. 새 `copy-todo`는 추가하지 않았고,
+  `results.ts`의 기존 묶음 가격 문구 copy-todo 한 건이 그대로 남아 있다.
+- 파일: `features/space-fit/view.ts`(신규), `SpaceFit.tsx`, `space-fit.css`,
+  `results.ts`(`blockTotalKrw` 추출), `app/App.tsx`, `tests/unit/spaceFitView.test.ts`(신규),
+  `tests/browser/space-fit.spec.ts`, `design/COMPONENTS.md`, `design/SCREENS.md`,
+  `design/DECISIONS.md`, 이 문서.
+- 검증(측정함, HEAD 기준): `npm run typecheck`·`npm run lint` 통과, `npm test` **521 passed / 60 files**,
+  `contracts:check` 124 valid, `check-design-tokens --self-test` 80 tokens · 90/90, `test:build` 통과,
+  `space-fit.spec.ts` Chromium **18 passed**(space-fit+easy-mode 묶음 실행은 리뷰 수정 전 24 passed).
+  전체 Chromium 결과는 PR 본문에 적는다. 색상 쌍은 기존 `selected-label`·`accent-link`·
+  `inverse-on-accent`·`control-on-panel`을 재사용해 `design/token-contrast-cases.json`을 바꾸지 않았다.
+- 시각 검증(측정함): live R2 번들(read-only)을 production build로 390/320/1440 × light/dark,
+  입력·결과·배지·펼침·조합·시트(또는 필터 열) 42개 상태에서 axe 위반 0, 가로 넘침 없음, 48px 미만
+  대상 없음, 잘림 없음, page error 없음. 60×30×35에서 223개가 나오고 기본 정렬 상위 20개 중 8개가
+  두 제품 조합이다(PR-B는 첫 화면 0개). 증거: `docs/evidence/space-fit-pr-c/`.
+- 리뷰(DeepSeek flash, read-only; GLM 429): 시트 모달 격리, `.space-link` 규칙 삭제, 쉼표 label
+  hash 왕복, 자동 단계 시험 공백, 필터 개수 미공지, 자동 단계의 전역 busy, 전문가 모드에서의 `#/?…`
+  를 반영했다. 남김: fixture에 분류 label·두 번째 실측 판매처가 없어 분류 칩·판매처 필터의 브라우저
+  시험은 단위 시험으로만 덮는다(fixture 재생성은 후속).
+
+### 2026-11-10 PR-D — SpaceFit 여유 틈·이유별 빈 상태·긴 목록 (UI 전용)
+
+- 범위: `apps/web/src/features/space-fit/`(신규 `clearance.ts`·`windowing.ts`),
+  같은 기능의 단위·브라우저 시험, `design/COMPONENTS.md`·`design/SCREENS.md`·
+  `design/DECISIONS.md`, 이 문서만 바꿨다. Rust crates·계약 생성 코드·R2·배포·
+  catalog 데이터·main은 건드리지 않았다.
+- 여유 틈: `clearance.ts`가 승인된 0·5·10·20mm(`ClearanceMm`)와 기본 5mm,
+  `parseClearance`(목록 밖·깨진 값은 기본), `formatClearanceCm`(0/0.5/1/2, 뒤
+  붙는 0 없음), `clearanceLabel`을 제공한다. localStorage 키는
+  `zari.space-fit.clearance.v1`이고 mm 정수로 저장한다. 읽기·쓰기 실패는 현재
+  화면 선택을 막지 않는다. `ClearanceField` fieldset(legend `여유 틈`, 설명
+  `수납함이 빡빡하지 않게 남길 틈이에요`, `aria-describedby`, `useId`)을 입력 form의
+  접힌 native `<details>`와 `FilterPanel`(모바일 시트·데스크톱 열)에 같은 모양으로
+  둔다. 각 칩은 `button aria-pressed`이며 그룹마다 정확히 하나만 pressed다.
+- 검색: `SpaceFitInput.clearanceMm`에 `[c,c,c]`를 보낸다(기존 `[5,5,5]` 고정 제거).
+  `submit`을 `runSearch({moveFocus})`로 정리했다. 결과가 보이는 상태에서 여유 틈을
+  바꾸면 `moveFocus:false`로 현재 입력을 자동 재검색하고, 결과 화면을 유지해 누른
+  칩이 초점을 잃지 않는다. 재검색 중에는 이전 행을 그대로 두고 첫 page가 오면 바꿔 끼워
+  요약이 빈 문구로 잠깐 바뀌지 않는다. 입력 form 안의 fieldset legend는 summary와 겹치지 않게
+  시각적으로만 숨긴다. page에는 그 검색의 여유 틈(`pageClearance`)을 함께
+  두어 안내가 `축마다 {0|0.5|1|2}cm를 남겨요.`로 바뀐다. `처음대로 돌리기`는
+  정렬·판매처·모양과 여유 틈을 0.5cm로 되돌리고, 여유 틈이 실제로 달라졌을 때만
+  재검색한다.
+- 빈 상태: `view.ts`의 순수 `emptyReason`이 `noData`·`filters`·`stopped`·`noFit`
+  중 하나 또는 null을 고른다. `noData`(자료 실패, 첫 page 전)와 `stopped`(첫 page
+  전 사용자 중지)는 `div.space-empty[data-reason]` `role="status"`와 `맞는 수납함
+  찾기` 재시도를 두고, 같은 내용의 `role="alert"`는 없앴다. `filters`는 요약 아래
+  `처음대로 돌리기`와 모바일 전용 `다시 골라보기`(시트 열기), `noFit`은 요약만
+  둔다. `noData`·`stopped` 블록은 키 큰 form 아래에 있으므로 나타나면 초점(`tabIndex=-1`)을
+  받고 화면 가운데로 스크롤된다. page가 보인 뒤 중지는 결과를 유지하고 status 문장만 추가한다. `찾기 멈추기`
+  단추는 첫 계산과 자동 조합 단계 모두에서 보인다.
+- 긴 목록: 200번째 이후 행에 `space-row-deferred`(`content-visibility: auto;
+  contain-intrinsic-size: auto 28rem;`)를 붙인다. 렌더 행이 1,000개를 넘으면
+  `windowing.ts`의 순수 `windowRange(scrollTop, viewportHeight, listTop, rowHeight,
+  count, overscan)`와 `useWindowedRows(count, estimate)`가 보이는 구간 ±20만
+  렌더하고, 앞뒤 `li[aria-hidden]` 스페이서를 평균 행 높이(ResizeObserver, 실패 시
+  480px)로 채운다. 창 모드에서만 행에 `aria-setsize`/`aria-posinset`을 두고
+  `data-candidate-id`는 유지한다. 1,000개 이하에서는 기존과 같다.
+- 문구: 새 한국어 UI 문자열은 `여유 틈`, `수납함이 빡빡하지 않게 남길 틈이에요`
+  뿐이고 나머지는 기존 승인 문구(`처음대로 돌리기`, `다시 골라보기`, `닫기`,
+  `맞는 수납함 찾기`, `고르신 내용에 맞는 수납함이 아직 없어요`, 자료 실패·중지
+  문구, `축마다 …cm를 남겨요.`)와 숫자+`cm`뿐이다. `copy-todo`는 두 건이다:
+  `SpaceFit.tsx`의 noFit 안내 `이 크기에 맞는 수납함이 없어요 — 크기를 조금 넓혀
+  보거나 여유 틈을 줄여 보세요`(렌더하지 않음)와 `results.ts`의 기존 묶음 가격 문구.
+- 파일: `features/space-fit/clearance.ts`(신규), `windowing.ts`(신규),
+  `SpaceFit.tsx`, `view.ts`(`emptyReason`), `space-fit.css`,
+  `tests/unit/spaceFitView.test.ts`, `tests/browser/space-fit.spec.ts`,
+  `design/COMPONENTS.md`, `design/SCREENS.md`, `design/DECISIONS.md`, 이 문서.
+- 검증(측정함, HEAD 기준): typecheck·lint 통과, `npm test` **529 passed / 60 files**, contracts 124 valid,
+  `check-design-tokens --self-test` 통과(80 tokens · 90/90), `test:build` 통과, `test:parity` 2 passed.
+  Chromium 브라우저는 묶음별로 실행했다: `space-fit.spec.ts` **29 passed**(여유 틈·noData·stopped·
+  axe 320/390/1440 × light/dark·시트 포함), 나머지 46개 spec 세 묶음 **56 + 52 + 49 passed**,
+  합계 **186 passed / 0 failed**. 새 색상 쌍은 없어 `design/token-contrast-cases.json`은 그대로다.
+- 시각 검증(측정함): live R2 번들(read-only), production build로 390/320/1440 × light/dark에서
+  입력·결과·배지·펼침·조합·시트/열·form 여유 틈·`filters` 빈 상태(무인양품 + 부직포정리함)·`noData`
+  (R2 요청 abort) 66개 상태: axe 위반 0, 가로 넘침 없음, 48px 미만 대상 없음, 잘림 없음, page error 없음.
+  증거: `docs/evidence/space-fit-pr-d/`.
+- 남김: 실제 판매처·실기기·approved baseline 수용, 비작성자 exact-HEAD review. fixture에 두 번째
+  실측 판매처가 없어 브라우저의 `filters` 0개 상태는 live 시각 검증과 단위 시험으로 덮는다. 1,000행
+  창 모드는 단위 시험(`windowRange`)만 있고 브라우저 시험은 없다(50번 `더 보기`가 필요).
+- 리뷰(DeepSeek flash, read-only; GLM 응답 없음) 반영: 검색 중 여유 틈을 바꾸면 그 검색을 새 값으로 다시
+  시작, 중지된 여유 틈 재검색의 이전 결과는 stale로 표시, 보기 변경 시 `stopped` 해제, 중지 뒤
+  `조합 더 찾기` 잠금, 창 모드 첫 프레임을 `useLayoutEffect`로 측정, 창 모드에서는
+  `content-visibility` 미적용(평균 행 높이 왜곡 방지), 빈 `noFit` 표식 제거(요약이 noFit 상태).
+  재실행(측정함): typecheck·lint 통과, `npm test` 529/529, space-fit+easy-mode Chromium 38 passed.
+  다른 46개 spec은 이 수정 전 HEAD에서 157 passed였고 수정은 space-fit 파일만 바꿨다.
+  남김: 1,000행 창 모드·결정적 `stopped` 빈 블록 브라우저 시험(지연 워커 fixture 필요).

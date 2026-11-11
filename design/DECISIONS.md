@@ -465,3 +465,179 @@ D004의 ‘검토 후보’ 상태를 아키텍처 제안 수준에서 구체화
 ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근성·성능 영향 / 전후 화면과 코드 SHA / 사용자 승인 근거(해당 시) / 되돌리기 경로.
 
 기존 결정을 조용히 덮어쓰기보다 supersedes 관계를 기록한다. 버전 충돌·글꼴 변경·토큰 전역 변경·컴포넌트 기반 교체는 새 결정을 남긴다.
+
+## D-space-fit-mvp — 빈 공간 치수 세 개로 수납함 찾기 / 구현 초안
+
+- 근거: 사용자 2026-11-05 구현 요청과 `docs/design/space-fit.md` §14. 새 메인
+  입구·R2 읽기·서버 AI를 이 작업 범위에서 허용한다. 과거 로컬 전용·물건 우선
+  입구 계약의 이 기능에 해당하는 부분을 대체한다. 원문 보존 자료는 변경하지 않는다.
+- 선택: 기본 입구와 `#/space-fit`에 가로/깊이/높이 cm와 찾기 단추를 둔다.
+  기존 비교는 `#/easy`, 프로젝트는 전문가 경로에 보존한다. 신규 초안 키는
+  `zari.space-fit.v1`이며 기존 쉬운 입력을 덮어쓰지 않는다.
+- 결과: 딱 맞음(단일 상품) / 조합, 치수 확인 중은 접힌 native details.
+  Rust가 명목 배치와 수량·남는 길이를 계산하고 UI는 표시와 SVG 투영만 한다.
+  축별 5mm는 각 축 끝에서 한 번 남기는 검색 조건이다. 제품 간격은 0이며
+  제조사 설치 기준·허용 오차·하중을 보증하지 않는다.
+- 범위: 동일 제품의 N×M×K 전수 격자(확인된 적층 허용 범위), 다른 두 종류의
+  바닥 행 배치(64개 이하). 서로 다른 제품 적층·일반 3D 전수 탐색은 미지원.
+  1회 1,000 node/100개 응답, 명시적 이어보기와 화면 2,000개 조합 한도가 있다.
+- 네트워크: 빌드 설정의 정확한 R2 public bucket base만 GET. 사용자의 공간은
+  서버로 보내지 않는다. 앱은 판매처/AI에 접근하지 않는다. 파일 가져오기는
+  개발·시험 빌드에만 있다. R2 설정이 없으면 자료를 꾸며내지 않는다.
+- 디자인: 기존 semantic token과 대비 쌍을 재사용하고 SVG 윤곽/앱 배경 쌍을
+  추가했다. 키보드·오류 연결·터치 크기·좁은 화면·명암·forced colors는 실제
+  브라우저 시험으로 확인한다. 화면은 draft이며 사용자 수용·승인은 미완료다.
+- 되돌리기: 새 입구·Worker·R2 transport를 제거하고 기존 easy 입구를 연결한다.
+  새 캐시/초안은 기존 프로젝트 저장 형식과 분리되어 있다.
+
+## D-space-fit-listing-provenance — 결과 블록의 판매처·분류·가격·치수 근거 / 사용자 결정
+
+- 근거: 준태님 사용자 결정 **2026-11-10**. 대상은 `feat/space-fit-pr-a-contract`
+  (PR-A)이며 화면 문구·배지는 PR-B 범위다.
+- D1. 각 결과 블록은 판매처/출처, 분류, 가격, 치수 근거를 함께 전달한다.
+- D2. 수집 페이지·OCR·상품명에서 읽은 치수는 **참고치(reference)**다. 참고치는
+  적합성 검색에서 실제로 평가되고 일반 결과에 반환되며 참고치로 표시된다.
+  계약에서 confirmed와 reference를 구분한다. W/D/H를 하나도 쓸 수 없는 variant만
+  접힌 “unknown” 그룹에 남긴다.
+- D3. 모르는 값은 모르는 채로 둔다. 가격·묶음 수량·개당 가격·치수를 만들어 내지
+  않는다.
+- 문제: 기존 `SpaceFitBlock`은 variantId·이름·방향·치수·격자·원점·수량·URL만
+  가졌고, 정본 `catalog_bundle::check_item`은 high/medium만 snapshot에 넣고 low를
+  unknown으로 만들며 가격을 `Offer.packPrice`에 넣지 않는다. 정본 snapshot의
+  “추측은 적합이 될 수 없다” 규칙은 다른 기능이 의존하므로 바꾸지 않는다.
+- 선택: space-fit 전용 side channel. `SpaceFitInput.listings`(선택, 기본 빈 배열)로
+  검토된 번들 item을 넘기고 Rust가 `check_item`과 같은 규칙으로 다시 검증한다.
+  잘못된 item, 중복 id, snapshot에 없는 product(`p-{item.id}`)는
+  `space_fit_listing_invalid`로 전체 입력을 거부한다. Known snapshot 사실을
+  listing이 덮어쓰지 못한다(축별로 unknown 축만 채움).
+- 치수 근거 순서: (a) 외경 세 축 Known+Confirmed → confirmed, (b) 세 축 Known이나
+  전부 Confirmed는 아님 → reference(있으면 listing confidence, 없으면
+  unspecified), (c) snapshot 축 unknown이고 listing에 세 축+단위+non-unparsed
+  confidence가 있음 → reference, (d) 그 외 → unknown(평가하지 않고 `unmeasured`에
+  기록, `missingDimensions` 전체 개수 유지). 후보 수준
+  `dimensionProvenance`는 블록 중 가장 약한 값이다. 기존 순위의 첫 키
+  (unconfirmed)가 confirmed-before-reference를 이미 보장한다.
+- 계약: `SpaceFitPage.unmeasured`는 안정 variant 순서의 처음 200개이며 **첫 페이지에만**
+  실린다(이후 페이지는 빈 배열). TS는 첫 응답만 보관한다. 가격은
+  `{state:"known"|"unknown"}` 태그 객체이고, listing `priceText`는
+  `^\s*(\d{1,3}(,\d{3})+|\d+)\s*(원|KRW)\s*$`(KRW 대소문자 구분)와
+  0 < 값 ≤ 100,000,000만 reference로 인정한다. `packQuantity`는 Known snapshot
+  Offer에서만, `unitPriceKrw`는 나눗셈이 정확할 때만 채운다. 총액 계산은 하지 않는다.
+- OCR: 번들 스키마에 OCR/상품명 출처 필드가 아직 없다. ZARI OCR 카탈로그 갱신이
+  필드를 추가하면 `dimensions.basis`로 매핑하며 provenance 의미는 바꾸지 않는다.
+  이번 PR에서 `CrawledItem`/`BundleDimensions` 필드는 추가하지 않는다.
+- 정본 영향: `CatalogSnapshot`·`check_item`의 snapshot 산출·정본 fixture는 바뀌지
+  않는다(space-fit 입력 fixture에는 `listings`만 추가). `solverVersion`은 `space-fit-1`에서 `space-fit-2`로 올린다(출력 의미 변경).
+- 되돌리기: `SpaceFitInput.listings`, 새 블록/페이지 필드, TS 전달을 제거하면 기존
+  snapshot-only 동작으로 돌아간다. 저장된 카탈로그는 이 결정으로 다시 쓰지 않는다.
+- 2026-11-10 추가(ZARI 전달, 번들 `b-c8fb29299e687ad0`): 이미지에서 읽은 치수는 `rawText`가
+  `[image-OCR]`로 시작하고 unconfirmed+low로 들어온다. `dimensions.origin`
+  (`imageOcr` | `pageText` | `unspecified`)으로 구분하며, origin은 provenance를 올리지 않는다
+  (OCR도 reference). 실번들 측정: 보관함 31개 중 confirmed 0, reference 31
+  (imageOcr 17, pageText 14), unknown 0. bin이 아닌 7개는 기존 범위대로 제외.
+
+## D-space-fit-results-ui — 결과 한 목록·기본 정렬·참고치 배지·가격 문구 / 구현 초안 (PR-B)
+
+- 상태: **draft**. 사용자 화면 수용·승인, 실제 판매처·실기기 확인은 미완료다.
+- 근거: 사용자 2026-11-10 PR-B 지시. PR-A의 `D-space-fit-listing-provenance` 계약을
+  화면에 드러내되 Rust 계산을 복제하지 않는다.
+- 문제: 기존 결과 화면은 `딱 맞음`/`조합` 두 영역으로 갈라져 같은 후보를 두 번 읽게
+  했고, 참고치를 숨긴 채 confirmed처럼 보이게 했다. 가격·판매처·분류·치수 근거는
+  계약에만 있고 화면에는 없었다.
+- 선택 1 — 한 목록: 단일·조합을 합쳐 정렬한 `ul` 하나로 표시하고 탭·그룹 제목을
+  없앤다. 기본 정렬은 `occupiedVolumeMm3` 내림차순(BigInt), confirmed before
+  reference, id 순이다. 20개씩 보이며 `더 보기`가 20개를 추가한다.
+- 선택 2 — 참고치를 숨기지 않음: `dimensionProvenance === 'reference'`인 행의 meta 줄에
+  `참고치` 버튼을 두고(참고 가격에는 두지 않음, 설명이 크기 문장이므로), 설명 문단을
+  `aria-expanded`/`aria-controls`로 펼친다. confirmed에는 배지를 두지 않는다.
+  치수가 전혀 없는 상품은 `unmeasured` 접힌 그룹 하나에 남긴다.
+- 선택 3 — 가격: known이고 `packQuantity`·`unitPriceKrw`가 있으면
+  `ceil(quantity / packQuantity) * packPriceKrw`를 BigInt로 계산해
+  `한 개 {가격}원 · 다 해서 {가격}원`으로 표시한다. 그 외에는
+  `가격은 파는 곳에서 봐 주세요`만 표시하고 판매처 표시가만 아는 경우의 문구는
+  Argon 승인 전까지 `copy-todo` 주석으로 남긴다. 원화 금액을 추정하지 않는다.
+- 접근성·성능: 결과 요약은 `tabindex=-1` `h2`이며 첫 page 도착 때만 초점을 받고
+  `aria-live`로 한 번 알린다. 개수는 `aria-live="off"` 안에 두어 append가 다시
+  읽히지 않게 한다. 참고치 버튼은 48px 이상, 키보드 Enter/Space, Tab 순서와 focus-visible outline을
+  Chromium Playwright로 확인한다(forced-colors 배지 확인은 아직 없음). 320px에서 가로 넘침이 없어야 한다.
+- 전후 화면: 이전은 두 영역·숨긴 참고치·가격 없음. 이후는 한 목록·배지·가격 줄.
+  baseline 캡처는 draft이며 approved로 기록하지 않는다.
+- 되돌리기: `SpaceFit.tsx`의 합친 목록·배지·가격 줄과 `results.ts`를 제거하고
+  이전 두 영역 렌더링으로 돌아간다. Rust 계약과 저장 데이터는 바뀌지 않는다.
+
+## D-space-fit-filters — SpaceFit 필터·정렬·혼합 조합 자동 단계 / 구현 초안 (PR-C)
+
+- 상태: **draft**. 사용자 화면 수용·승인, 실기기·실제 판매처 확인은 미완료다.
+- 근거: 사용자 2026-11-10 PR-C 지시와 PR-B 리뷰의 알려진 한계(첫 page가 단일 상품
+  격자 단계에서 예산을 써 혼합 조합이 늦게 나옴). PR-A 계약과 Rust 계산을 바꾸지 않는다.
+- 문제: 후보가 많아도 판매처·수납함 모양으로 좁히거나 가격·수량 기준으로 다시 볼
+  수 없었고, 새로고침하면 보던 조건이 사라졌다. 혼합 조합은 `조합 더 찾기`를
+  눌러야 보였다.
+- 선택 1 — 클라이언트 전용 필터·정렬: 필터는 Worker가 이미 반환한 후보만 대상으로
+  하고, 판매처는 블록의 `source`, 모양은 trim한 `category.label`을 쓴다. 후보의
+  어느 블록이든 선택값과 맞으면 통과하며 빈 그룹은 전체다. 정렬의 기본은 기존
+  `compareCandidates`이고, 가격 정렬은 `blockTotalKrw`의 합으로만 비교해 모르는
+  가격을 뒤로 보내며, 수량 정렬은 총 수량 내림차순이다. JS에서 적합성·배치·가격을
+  새로 계산하지 않는다.
+- 선택 2 — hash 보기 상태: `sort`, `seller`, `type`만 query에 둔다. 경로 판정은
+  `?` 앞부분만 비교하므로 `#/`·`#/space-fit`은 query가 붙어도 같은 화면이다.
+  변경은 `history.replaceState`로 기록해 hashchange 루프와 재검색을 만들지 않고,
+  새로고침 시 같은 상태를 복원한다. 기본값은 query에서 생략한다.
+- 선택 3 — 혼합 조합 자동 단계: Rust는 stage 0에서 단일 상품 격자를, stage 1에서
+  두 상품 혼합을 낸다. 첫 page가 `combinationsComplete=false`이면 UI가 응답마다
+  `{type:'next', budget:1000}`을 최대 6번 자동 전송하고, 혼합 후보 20개·완료·조합
+  2,000개 중 하나에서 멈춘다. revision guard와 첫 page 한 번의 초점 이동은 유지하고
+  계산 중 문구는 자동 단계 동안에도 보인다. `조합 더 찾기`는 이후에도 동작한다.
+- 선택 4 — 반응형 UI: 1024px 미만은 결과 위 가로 스크롤 칩 줄과 하단 시트, 1024px
+  이상은 왼쪽 sticky 필터 열과 최대 720px 결과 열이다. 같은 `FilterPanel`을 두 곳에
+  렌더하고 CSS `display:none`으로 한 번에 하나만 접근성 트리에 남긴다. 칩·정렬은
+  `button aria-pressed`, 시트는 `role="dialog"` `aria-modal`, 초점 트랩·Esc·초점 복귀를
+  지킨다. 결과 링크는 48px 전체 폭 행으로 바꾸고 반복 이름은 번호를 붙인다.
+- 접근성·성능: 모든 조작 대상은 48px 이상이고 새 색상 쌍은 없다(기존 semantic token
+  재사용). 시트 scrim만 `color-mix`로 text-primary 40%를 쓴다. 320px에서 페이지 가로
+  넘침이 없고 칩 줄만 내부 스크롤한다. 필터는 순수 배열 연산이라 후보 수에 비례한다.
+- 전후 화면: 이전은 필터·정렬·hash 상태·혼합 자동 단계 없음. 이후는 클라이언트 필터·
+  정렬, URL 복원, 혼합 후보 자동 노출. 캡처·실기기 결과는 draft이며 approved로
+  기록하지 않는다.
+- 되돌리기: `view.ts`와 `SpaceFit.tsx`의 필터 UI·자동 단계, App의 경로 비교를
+  제거하면 PR-B 화면으로 돌아간다. Rust 계약·카탈로그·저장 데이터는 바뀌지 않는다.
+
+## D-space-fit-clearance-empty — SpaceFit 여유 틈·이유별 빈 상태·긴 목록 / 구현 초안 (PR-D)
+
+- 상태: **draft**. 사용자 화면 수용·승인, 실기기·실제 판매처 확인은 미완료다.
+- 근거: 사용자 2026-11-10 PR-D 지시. PR-A/PR-B/PR-C 계약과 Rust 계산을 바꾸지 않는다.
+- 문제: 축마다 5mm가 코드에 고정되어 사용자가 틈을 바꿀 수 없었고, 결과가 없는
+  이유(자료 실패·사용자 중지·필터·후보 없음)가 한 문구로 섞였으며, 아주 긴 목록은
+  모든 행을 DOM에 두었다.
+- 선택 1 — 여유 틈: 승인된 0·5·10·20mm 네 값을 `0cm`·`0.5cm`·`1cm`·`2cm` 칩으로
+  고르고 기본은 0.5cm다. 값은 `zari.space-fit.clearance.v1`에 mm 정수로 저장하며
+  읽을 때 승인 목록에 없거나 깨졌으면 기본값으로 돌린다. 저장 실패는 화면 선택을
+  막지 않는다. `SpaceFitInput.clearanceMm`에는 `[c,c,c]`를 보내고, 결과 안내는 그
+  page를 만든 검색의 값으로 쓴다. 결과가 보이는 상태에서 값을 바꾸면 같은
+  `runSearch({moveFocus:false})` 경로로 현재 입력을 다시 계산하며, 결과 화면을
+  유지해 누른 칩이 초점을 잃지 않는다. 잘못된 입력은 기존 Worker 오류 흐름을 쓴다.
+  `처음대로 돌리기`는 정렬·판매처·모양과 여유 틈을 함께 기본값으로 되돌리고,
+  여유 틈이 실제로 달라졌을 때만 재검색한다.
+- 선택 2 — 이유별 빈 상태: `view.ts`의 순수 `emptyReason({hasPage, loadFailed,
+  stopped, total, shown})`가 `noData`·`stopped`·`filters`·`noFit` 중 하나 또는
+  null을 고른다. `noData`와 첫 page 전 `stopped`는 `role="status"` 블록과
+  `맞는 수납함 찾기` 재시도를 두고 `role="alert"`를 중복하지 않는다. `filters`는
+  요약 아래 `처음대로 돌리기`와 모바일 전용 `다시 골라보기`를, `noFit`은 요약만
+  둔다(추가 문구는 `copy-todo`). page 뒤의 중지는 결과를 유지한 채 status 문장만
+  추가한다.
+- 선택 3 — 긴 목록: 200번째 이후 행에 `content-visibility: auto`와
+  `contain-intrinsic-size: auto 28rem`을 적용한다. 화면에 렌더하는 행이 1,000개를
+  넘으면 `windowing.ts`의 `windowRange`와 `useWindowedRows`가 보이는 구간 ±20만
+  렌더하고, 앞뒤 `li[aria-hidden]` 스페이서를 평균 행 높이(ResizeObserver, 실패 시
+  480px)로 채운다. 창 모드에서만 `aria-setsize`/`aria-posinset`을 붙이며
+  `data-candidate-id`는 유지한다. 1,000개 이하에서는 기존 렌더가 그대로다.
+- 접근성·성능: 칩·재시도·재선택 단추는 48px 이상이고 `aria-pressed`는 그룹마다
+  정확히 하나다. 설명 문단은 `aria-describedby`로 연결하고 `useId`로 복사본마다
+  id를 달리한다. 새 색상 쌍은 없고 `--zari-surface-subtle` 위 primary/secondary
+  기존 대비 사례를 쓴다. 창 모드는 DOM 행 수를 40여 개로 제한한다.
+- 전후 화면: 이전은 5mm 고정·한 가지 빈 문구·전체 행 렌더. 이후는 선택 가능한
+  여유 틈, 이유별 빈 상태, 지연·창 렌더. 캡처·실기기 결과는 draft이며 approved로
+  기록하지 않는다.
+- 되돌리기: `clearance.ts`, `windowing.ts`, `SpaceFit.tsx`의 관련 UI·상태,
+  `space-fit.css`의 PR-D 규칙을 제거하면 PR-C 화면으로 돌아간다. Rust 계약·카탈로그·
+  저장 데이터는 바뀌지 않는다.

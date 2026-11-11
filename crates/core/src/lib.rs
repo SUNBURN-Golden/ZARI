@@ -28,6 +28,7 @@ pub mod purchase_handoff;
 pub mod raw;
 pub mod scalars;
 pub mod search_diagnostics;
+pub mod space_fit;
 pub mod spatial_view;
 pub mod strategy;
 pub mod strategy_library;

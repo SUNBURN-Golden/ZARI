@@ -49,7 +49,9 @@ export async function handleJob(job, env) {
   const reason = detectBlocked(snapshot, finalUrl.pathname);
   if (reason) return { type: 'blocked', id, reason, status: snapshot.status ?? null };
   if (job.kind === 'listing') {
-    return { type: 'result', id, kind: 'listing', url: normalizeUrl(job.url), links: extractListing(snapshot, String(snapshot.url)) };
+    const links = extractListing(snapshot, String(snapshot.url));
+    if (site.key === 'daiso' && links.length === 0) return { type: 'blocked', id, reason: 'empty_listing', status: snapshot.status ?? null };
+    return { type: 'result', id, kind: 'listing', url: normalizeUrl(job.url), links };
   }
   const extracted = extractProducts(snapshot, String(snapshot.url), env.now());
   if (extracted.error) return fail(extracted.error);

@@ -1,8 +1,10 @@
+import type { CostCap } from './deepseek.ts';
 import { existsSync } from 'node:fs';
 import { readJson } from './fsx.ts';
 
 /** User-editable. Every value is clamped to the hard limits below. */
 export interface Config {
+  aiCostCap: CostCap | null;
   minIntervalMs: number;
   jitterMs: number;
   pagesPerRun: number;
@@ -16,6 +18,7 @@ export interface Config {
 }
 
 export const DEFAULTS: Config = {
+  aiCostCap: null,
   minIntervalMs: 8000,
   jitterMs: 4000,
   pagesPerRun: 100,
@@ -42,8 +45,16 @@ export const LIMITS = {
 const clamp = (value: unknown, fallback: number, min: number, max: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(min, Math.trunc(value))) : fallback;
 
+function costCap(raw: unknown): CostCap | null {
+  if (raw === undefined || raw === null || raw === false) return null;
+  if (typeof raw !== 'object') throw new Error('ai_cost_config_invalid');
+  const c = raw as Record<string, unknown>;
+  if (![c.limitUsd,c.inputUsdPerMillion,c.outputUsdPerMillion].every((n) => typeof n === 'number' && Number.isFinite(n) && n > 0)) throw new Error('ai_cost_config_invalid');
+  return { limitUsd:c.limitUsd as number,inputUsdPerMillion:c.inputUsdPerMillion as number,outputUsdPerMillion:c.outputUsdPerMillion as number };
+}
 export function normalizeConfig(raw: Partial<Record<keyof Config, unknown>>): Config {
   return {
+    aiCostCap: costCap(raw.aiCostCap),
     minIntervalMs: clamp(raw.minIntervalMs, DEFAULTS.minIntervalMs, LIMITS.minIntervalMsFloor, 3600000),
     jitterMs: clamp(raw.jitterMs, DEFAULTS.jitterMs, 0, 600000),
     pagesPerRun: clamp(raw.pagesPerRun, DEFAULTS.pagesPerRun, 1, LIMITS.pagesPerRunMax),

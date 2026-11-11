@@ -56,6 +56,8 @@ function buildManifestPlugin(): Plugin {
 
 export default defineConfig(({ mode }) => ({
   root: 'apps/web',
+  // .env.production lives at the repo root, not under apps/web.
+  envDir: resolve('.'),
   base: './',
   plugins: [react(), buildManifestPlugin()],
   worker: { format: 'es' },

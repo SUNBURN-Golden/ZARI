@@ -166,7 +166,7 @@ it('bounds a picked file before reading it', async () => {
 // ---- the read-only repository reader (core only; no transport is wired) ----
 
 const POINTER = (id: string, bytes: number) =>
-  JSON.stringify({ schemaVersion: 1, bundleId: id, sha256: 'a'.repeat(64), bytes, bundlePath: `catalog/v1/${id}/bundle.json` });
+  JSON.stringify({ schemaVersion: 1, bundleId: id, sha256: JSON.parse(GOLDEN).manifest.sha256, bytes, bundlePath: `catalog/v1/${id}/bundle.json` });
 const BUNDLE_ID = (JSON.parse(GOLDEN) as { manifest: { bundleId: string } }).manifest.bundleId;
 
 function mockRepository(overrides: { latest?: string; latestStatus?: number; bundle?: string; bundleStatus?: number } = {}) {
@@ -174,7 +174,7 @@ function mockRepository(overrides: { latest?: string; latestStatus?: number; bun
   const transport = async (request: TransportRequest) => {
     requests.push(request);
     if (request.url.endsWith('/latest.json')) {
-      return { status: overrides.latestStatus ?? 200, text: overrides.latest ?? POINTER(BUNDLE_ID, GOLDEN.length) };
+      return { status: overrides.latestStatus ?? 200, text: overrides.latest ?? POINTER(BUNDLE_ID, Buffer.byteLength(GOLDEN)) };
     }
     return { status: overrides.bundleStatus ?? 200, text: overrides.bundle ?? GOLDEN };
   };
@@ -196,7 +196,7 @@ it('reads latest.json then the bundle: GET, no credentials, no redirects, https,
     expect(request.maxBytes).toBeLessThanOrEqual(BUNDLE_BYTES_LIMIT);
   }
   expect(requests[0]!.maxBytes).toBe(4096);
-  expect(requests[1]!.maxBytes).toBe(GOLDEN.length);
+  expect(requests[1]!.maxBytes).toBe(Buffer.byteLength(GOLDEN));
 });
 
 it('refuses non-https, userinfo, query and unparseable base URLs without any request', async () => {
@@ -222,7 +222,7 @@ it('stops at a missing, invalid or mismatching pointer and never reads a path ou
     expect(await readRepository('https://catalog.example/', m.transport, reviewer), latest).toEqual({ status: 'rejected', code: 'repository_latest_invalid' });
     expect(m.requests).toHaveLength(1);
   }
-  const swapped = mockRepository({ latest: POINTER('b-0000000000000000', 10) });
+  const swapped = mockRepository({ latest: POINTER('b-0000000000000000', Buffer.byteLength(GOLDEN)) });
   expect(await readRepository('https://catalog.example/', swapped.transport, reviewer)).toEqual({ status: 'rejected', code: 'repository_pointer_mismatch' });
   const missing = mockRepository({ bundleStatus: 500 });
   expect(await readRepository('https://catalog.example/', missing.transport, reviewer)).toEqual({ status: 'rejected', code: 'repository_bundle_unavailable' });

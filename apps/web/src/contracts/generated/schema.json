@@ -737,6 +737,31 @@
       "title": "BundleManifest",
       "type": "object"
     },
+    "BundlePackQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/definitions/PackQuantityBasis"
+        },
+        "evidence": {
+          "description": "Short verbatim evidence or the inference note (<= 120 chars).",
+          "type": "string"
+        },
+        "value": {
+          "description": "Units per listed price, 1..=10000.",
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "evidence"
+      ],
+      "title": "BundlePackQuantity",
+      "type": "object"
+    },
     "BundleSource": {
       "additionalProperties": false,
       "properties": {
@@ -2806,6 +2831,17 @@
         "name": {
           "type": "string"
         },
+        "packQuantity": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BundlePackQuantity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How many units the listed price buys (e.g. \"2개입\" = 2). Optional;\nabsent means unknown and the price stays a pack-only price."
+        },
         "priceText": {
           "type": [
             "string",
@@ -2852,7 +2888,9 @@
       "enum": [
         "ohou",
         "29cm",
-        "ikea"
+        "ikea",
+        "muji",
+        "daiso"
       ],
       "title": "CrawlSite",
       "type": "string"
@@ -2916,6 +2954,17 @@
     "Digest": {
       "pattern": "^[0-9a-f]{64}(?![\\s\\S])",
       "title": "Digest",
+      "type": "string"
+    },
+    "DimensionBasis": {
+      "description": "Evidence quality behind a reference dimension. `Unspecified` means no\nlisting carried the values; `Unparsed` never appears on an evaluated item.",
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "unspecified"
+      ],
+      "title": "DimensionBasis",
       "type": "string"
     },
     "DimensionConfidence": {
@@ -3025,6 +3074,25 @@
       ],
       "title": "DimensionGuide",
       "type": "object"
+    },
+    "DimensionOrigin": {
+      "description": "Origin of reference size text. `Unspecified` when no listing is present.",
+      "enum": [
+        "pageText",
+        "imageOcr",
+        "unspecified"
+      ],
+      "title": "DimensionOrigin",
+      "type": "string"
+    },
+    "DimensionProvenance": {
+      "description": "Whether the evaluated dimensions come from a Confirmed snapshot fact or\nfrom reference-grade evidence. Ordering is deliberate: Confirmed <\nReference, so a candidate's worst block is the maximum.",
+      "enum": [
+        "confirmed",
+        "reference"
+      ],
+      "title": "DimensionProvenance",
+      "type": "string"
     },
     "Dimensions": {
       "additionalProperties": false,
@@ -10008,6 +10076,15 @@
       "title": "PackQuantity",
       "type": "integer"
     },
+    "PackQuantityBasis": {
+      "description": "Where a pack quantity came from. NOTE: this never confirms a price; any\nspace-fit price that uses a listing pack quantity is `reference` (참고치).\n`confirmed`: the seller's own page text\nstates it (\"입수 1개입\", \"2개입\", \"상품구성 수납함 1개\"). `reference`: inferred\n(e.g. a single product with no pack wording). Either way the item stays\n`unconfirmed` and space-fit prices built from it are reference values.",
+      "enum": [
+        "confirmed",
+        "reference"
+      ],
+      "title": "PackQuantityBasis",
+      "type": "string"
+    },
     "ParentRef": {
       "oneOf": [
         {
@@ -15297,6 +15374,516 @@
       "title": "Space",
       "type": "object"
     },
+    "SpaceFitBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "$ref": "#/definitions/SpaceFitCategory"
+        },
+        "dimensions": {
+          "$ref": "#/definitions/SpaceFitDimensions"
+        },
+        "grid": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "orientation": {
+          "$ref": "#/definitions/Orientation"
+        },
+        "originMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "price": {
+          "$ref": "#/definitions/SpaceFitPrice"
+        },
+        "quantity": {
+          "type": "string"
+        },
+        "sellerId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CrawlSite"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unitMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "urls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "variantId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "variantId",
+        "name",
+        "orientation",
+        "unitMm",
+        "grid",
+        "originMm",
+        "quantity",
+        "urls",
+        "source",
+        "sellerId",
+        "category",
+        "price",
+        "dimensions"
+      ],
+      "title": "SpaceFitBlock",
+      "type": "object"
+    },
+    "SpaceFitCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "blocks": {
+          "items": {
+            "$ref": "#/definitions/SpaceFitBlock"
+          },
+          "type": "array"
+        },
+        "checks": {
+          "$ref": "#/definitions/SpaceFitChecks"
+        },
+        "dimensionProvenance": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/DimensionProvenance"
+            }
+          ],
+          "description": "Worst block provenance: one reference block makes the candidate reference."
+        },
+        "id": {
+          "type": "string"
+        },
+        "occupiedVolumeMm3": {
+          "type": "string"
+        },
+        "remainingMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "unconfirmed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "blocks",
+        "remainingMm",
+        "occupiedVolumeMm3",
+        "unconfirmed",
+        "dimensionProvenance",
+        "checks"
+      ],
+      "title": "SpaceFitCandidate",
+      "type": "object"
+    },
+    "SpaceFitCategory": {
+      "additionalProperties": false,
+      "properties": {
+        "hint": {
+          "description": "Product category hint (e.g. `bin`).",
+          "type": "string"
+        },
+        "label": {
+          "description": "Listing category label, trimmed; null when uncollected.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "hint",
+        "label"
+      ],
+      "title": "SpaceFitCategory",
+      "type": "object"
+    },
+    "SpaceFitChecks": {
+      "additionalProperties": false,
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "inner": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "installation": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "opening": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "orientation": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "outer": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "quantity": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "supportLoad": {
+          "$ref": "#/definitions/CheckStatus"
+        },
+        "tolerance": {
+          "$ref": "#/definitions/CheckStatus"
+        }
+      },
+      "required": [
+        "outer",
+        "inner",
+        "installation",
+        "opening",
+        "access",
+        "supportLoad",
+        "orientation",
+        "quantity",
+        "tolerance"
+      ],
+      "title": "SpaceFitChecks",
+      "type": "object"
+    },
+    "SpaceFitDimensions": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/DimensionBasis"
+            }
+          ],
+          "description": "Listing confidence."
+        },
+        "origin": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/DimensionOrigin"
+            }
+          ],
+          "description": "Where a listing's size text came from. The bundle has no origin field;\nthe collector marks image-OCR size text with a leading `[image-OCR]`\nin `rawText`. Origin never upgrades provenance: OCR stays reference."
+        },
+        "provenance": {
+          "$ref": "#/definitions/DimensionProvenance"
+        }
+      },
+      "required": [
+        "provenance",
+        "basis",
+        "origin"
+      ],
+      "title": "SpaceFitDimensions",
+      "type": "object"
+    },
+    "SpaceFitInput": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog": {
+          "$ref": "#/definitions/CatalogSnapshot"
+        },
+        "clearanceMm": {
+          "default": [
+            5,
+            5,
+            5
+          ],
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "inputRevision": {
+          "type": "string"
+        },
+        "listings": {
+          "default": [],
+          "description": "Reviewed bundle items. Rust re-validates them and may use their\ndimensions and price text as clearly-flagged reference values; they can\nnever overwrite a Known snapshot fact. Empty keeps the old behaviour.",
+          "items": {
+            "$ref": "#/definitions/CrawledItem"
+          },
+          "type": "array"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "space": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "inputRevision",
+        "space",
+        "catalog"
+      ],
+      "title": "SpaceFitInput",
+      "type": "object"
+    },
+    "SpaceFitPage": {
+      "additionalProperties": false,
+      "properties": {
+        "catalogDigest": {
+          "type": "string"
+        },
+        "combinations": {
+          "items": {
+            "$ref": "#/definitions/SpaceFitCandidate"
+          },
+          "type": "array"
+        },
+        "combinationsComplete": {
+          "type": "boolean"
+        },
+        "inputRevision": {
+          "type": "string"
+        },
+        "inspectedVariants": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "missingDimensions": {
+          "description": "Full count of variants with no usable dimensions.",
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "nodes": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "singles": {
+          "items": {
+            "$ref": "#/definitions/SpaceFitCandidate"
+          },
+          "type": "array"
+        },
+        "singlesComplete": {
+          "type": "boolean"
+        },
+        "solverVersion": {
+          "type": "string"
+        },
+        "spaceMm": {
+          "items": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "unavailableVariants": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unmeasured": {
+          "description": "First 200 unmeasured variants in stable variant order, returned on the\nfirst page only. Later pages carry an empty list.",
+          "items": {
+            "$ref": "#/definitions/SpaceFitUnmeasured"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "inputRevision",
+        "catalogDigest",
+        "solverVersion",
+        "spaceMm",
+        "profile",
+        "singles",
+        "combinations",
+        "unmeasured",
+        "inspectedVariants",
+        "missingDimensions",
+        "unavailableVariants",
+        "nodes",
+        "singlesComplete",
+        "combinationsComplete"
+      ],
+      "title": "SpaceFitPage",
+      "type": "object"
+    },
+    "SpaceFitPrice": {
+      "description": "A price fact, or an explicit unknown. Amounts are integer-won decimal text.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "basis": {
+              "$ref": "#/definitions/SpaceFitPriceBasis"
+            },
+            "packPriceKrw": {
+              "type": "string"
+            },
+            "packQuantity": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "state": {
+              "const": "known",
+              "type": "string"
+            },
+            "unitPriceKrw": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "packPriceKrw",
+            "packQuantity",
+            "unitPriceKrw",
+            "basis"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "type": "object"
+        }
+      ],
+      "title": "SpaceFitPrice"
+    },
+    "SpaceFitPriceBasis": {
+      "enum": [
+        "confirmed",
+        "reference"
+      ],
+      "title": "SpaceFitPriceBasis",
+      "type": "string"
+    },
+    "SpaceFitUnmeasured": {
+      "additionalProperties": false,
+      "description": "A variant with no usable W/D/H at all. It is never evaluated; the block\nshape stays the same for display without inventing dimensions or prices.",
+      "properties": {
+        "category": {
+          "$ref": "#/definitions/SpaceFitCategory"
+        },
+        "name": {
+          "type": "string"
+        },
+        "price": {
+          "$ref": "#/definitions/SpaceFitPrice"
+        },
+        "sellerId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CrawlSite"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "urls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "variantId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "variantId",
+        "name",
+        "urls",
+        "source",
+        "sellerId",
+        "category",
+        "price"
+      ],
+      "title": "SpaceFitUnmeasured",
+      "type": "object"
+    },
     "SpaceKind": {
       "enum": [
         "rectangularCompartment"
@@ -16921,6 +17508,12 @@
     "SnapshotBinding": {
       "$ref": "#/definitions/SnapshotBinding"
     },
+    "SpaceFitInput": {
+      "$ref": "#/definitions/SpaceFitInput"
+    },
+    "SpaceFitPage": {
+      "$ref": "#/definitions/SpaceFitPage"
+    },
     "VerifiableRecordDto": {
       "$ref": "#/definitions/VerifiableRecordDto"
     }
@@ -16929,6 +17522,8 @@
     "ProtocolRequest",
     "ProtocolResponse",
     "BootstrapProbeDto",
+    "SpaceFitInput",
+    "SpaceFitPage",
     "EasyFitInput",
     "EasyFitResult",
     "BootstrapProbeResult",
