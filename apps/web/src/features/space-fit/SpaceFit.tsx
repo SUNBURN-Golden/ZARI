@@ -21,6 +21,10 @@ import {
   totalQuantityText,
 } from './results';
 import { sketchFor } from './sketches';
+import { onePerProduct, SimpleResults } from './SimpleResults';
+
+/** Simple-mode mockup: hides clearance, filters, sort and the sheet. */
+const SIMPLE = true;
 import {
   DEFAULT_VIEW,
   emptyReason,
@@ -109,6 +113,7 @@ export function SpaceFit() {
   // Below 1,000 rendered rows this keeps every row; above it renders a window.
   const windowed = useWindowedRows(visibleCount);
   const emptyBlock = useRef<HTMLDivElement | null>(null);
+  const simpleShown = useMemo(() => onePerProduct(shown), [shown]);
   const reason = emptyReason({ hasPage: page !== null, loadFailed, stopped, total: allResults.length, shown: shown.length });
   // When the list is windowed, only the rows in view (plus overscan) render.
   const rowStart = windowed.active ? windowed.range.start : 0;
@@ -295,10 +300,10 @@ export function SpaceFit() {
         <div className="easy-dimensions">{LABELS.map((label, i) => <div key={label}>
           <label htmlFor={`space-${i}`}>{label}<span className="easy-input-unit"><input id={`space-${i}`} ref={(node) => { fields.current[i] = node; }} value={space[i]} onChange={(e) => edit(i,e.target.value)} inputMode="decimal" enterKeyHint="search" maxLength={64} placeholder={['60','40','40'][i]} aria-invalid={invalidAxis === i || undefined} aria-describedby={invalidAxis === i ? 'space-error' : 'space-help'} /><span aria-hidden="true">cm</span></span></label>
         </div>)}</div>
-        <details className="space-clearance-details">
+        {!SIMPLE && <details className="space-clearance-details">
           <summary>여유 틈</summary>
           <ClearanceField value={clearance} onChange={chooseClearance} hideLegend />
-        </details>
+        </details>}
         <div className="space-find-bar">
           <button className="space-find" type="submit" disabled={busy}>맞는 수납함 찾기</button>
         </div>
@@ -315,7 +320,14 @@ export function SpaceFit() {
       </div>}
       <p role="status" aria-live="polite">{busy ? '들어갈 수 있는지 맞춰 보고 있어요.' : stopped && page ? '찾기를 멈췄어요. 입력은 그대로 있어요.' : stale && page ? '크기를 바꿨어요. 다시 찾아 주세요.' : ''}</p>
       {(busy || autoStepping) && <button type="button" onClick={stopByUser}>찾기 멈추기</button>}
-      {page && <section aria-label="찾은 수납함" aria-busy={busy} data-stale={stale}>
+      {page && SIMPLE && <section className="sf-results" aria-busy={busy} data-stale={stale}>
+        <h2 id="space-summary" ref={summary} className="sf-summary" tabIndex={-1} aria-live="polite" aria-atomic="true">
+          {simpleShown.length === 0 ? (reason === 'noFit' ? SPACE_FIT_COPY.noFit : SPACE_FIT_COPY.filteredEmpty) : <>이 자리에 맞는 수납함 <span aria-live="off">{simpleShown.length}</span>개를 찾았어요</>}
+        </h2>
+        <SimpleResults key={page.inputRevision} candidates={simpleShown} />
+        <p className="sf-footnote">문이 잘 열리는지, 넣고 빼기 편한지는 따로 살펴봐 주세요.</p>
+      </section>}
+      {page && !SIMPLE && <section aria-label="찾은 수납함" aria-busy={busy} data-stale={stale}>
         <p>적어 주신 크기대로만 맞춰 본 결과예요. 축마다 {formatClearanceCm(pageClearance)}cm를 남겨요.</p>
         <p>문이 잘 열리는지, 넣고 빼기 편한지는 따로 살펴봐 주세요.</p>
         <div className="space-results-layout">

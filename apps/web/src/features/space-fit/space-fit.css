@@ -286,3 +286,35 @@
 .space-row-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--zari-space-4); }
 .space-sketches { display: flex; gap: var(--zari-space-2); }
 .space-sketch { display: block; width: var(--zari-sketch-size); height: var(--zari-sketch-size); object-fit: contain; border-radius: var(--zari-radius-control); background: var(--zari-surface-subtle); }
+
+/* --- Simple mode mockup (2026-11-11): inputs + one button, then big cards. --- */
+.space-fit-main .space-find { min-height: 3.5rem; font-size: var(--zari-type-body); border-radius: var(--zari-radius-panel); }
+.sf-results { margin-top: var(--zari-space-8); }
+.sf-summary { margin: 0 0 var(--zari-space-6); font-family: var(--zari-font-display); font-size: var(--zari-type-title); line-height: var(--zari-type-title-line); font-weight: var(--zari-weight-semibold); scroll-margin-top: var(--zari-space-6); word-break: keep-all; }
+.sf-cards { display: grid; gap: var(--zari-space-4); margin: 0; padding: 0; list-style: none; }
+.sf-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--zari-space-4); padding: var(--zari-space-5); border: var(--zari-border-width) solid var(--zari-border-subtle); border-radius: var(--zari-radius-overlay); background: var(--zari-surface-panel); box-shadow: var(--zari-shadow-raised); }
+.sf-pics { display: flex; gap: var(--zari-space-3); }
+.sf-pic { display: block; flex: 1 1 0; min-width: 0; width: 100%; height: var(--zari-sf-pic); border-radius: var(--zari-radius-panel); background: var(--zari-surface-subtle); object-fit: contain; }
+.sf-pic-empty path { fill: none; stroke: var(--zari-text-muted); stroke-width: 2.5; stroke-linejoin: round; }
+.sf-body { min-width: 0; }
+.sf-name { margin: 0 0 var(--zari-space-1); font-size: var(--zari-type-body); line-height: var(--zari-type-label-line); font-weight: var(--zari-weight-semibold); word-break: keep-all; overflow-wrap: anywhere; }
+.sf-count { margin: 0 0 var(--zari-space-3); font-family: var(--zari-font-display); font-size: var(--zari-type-title); line-height: var(--zari-type-title-line); font-weight: var(--zari-weight-bold); word-break: keep-all; }
+.sf-item + .sf-item { margin-top: var(--zari-space-2); }
+.sf-item-name { margin: 0; color: var(--zari-text-secondary); word-break: keep-all; overflow-wrap: anywhere; }
+.sf-size { margin: 0; color: var(--zari-text-secondary); line-height: var(--zari-type-secondary-line); }
+.sf-price { margin: var(--zari-space-1) 0 0; font-weight: var(--zari-weight-semibold); line-height: var(--zari-type-label-line); word-break: keep-all; }
+.sf-note { margin: var(--zari-space-1) 0 0; color: var(--zari-text-secondary); line-height: var(--zari-type-secondary-line); word-break: keep-all; }
+.sf-links { display: grid; gap: var(--zari-space-2); margin-top: var(--zari-space-4); }
+.space-fit-main .sf-link { display: flex; flex-wrap: wrap; align-items: center; gap: var(--zari-space-1) var(--zari-space-2); min-height: var(--zari-touch-min-height); padding: var(--zari-space-2) var(--zari-space-4); border: var(--zari-border-width) solid var(--zari-border-control); border-radius: var(--zari-radius-control); color: var(--zari-accent); font-weight: var(--zari-weight-medium); text-decoration: none; word-break: keep-all; }
+.sf-link:hover { background: var(--zari-accent-soft); }
+.sf-seller { color: var(--zari-text-primary); font-weight: var(--zari-weight-semibold); }
+.sf-more { display: flex; align-items: center; justify-content: center; width: 100%; min-height: var(--zari-touch-min-height); margin-top: var(--zari-space-4); border: var(--zari-border-width) solid var(--zari-border-control); border-radius: var(--zari-radius-control); background: var(--zari-surface-panel); color: var(--zari-text-primary); font-size: var(--zari-type-body); }
+.sf-combos { margin-top: var(--zari-space-12); }
+.sf-section-title { margin: 0 0 var(--zari-space-4); font-family: var(--zari-font-display); font-size: var(--zari-type-title); line-height: var(--zari-type-title-line); font-weight: var(--zari-weight-semibold); }
+.sf-footnote { margin: var(--zari-space-8) 0 0; color: var(--zari-text-secondary); word-break: keep-all; }
+@media (min-width: 64rem) {
+  .sf-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--zari-space-6); }
+  .sf-card { grid-template-columns: var(--zari-sf-pic-wide) minmax(0, 1fr); align-items: start; }
+  .sf-pics { flex-direction: column; }
+  .sf-pic { width: var(--zari-sf-pic-wide); height: var(--zari-sf-pic-wide); flex: none; }
+}
