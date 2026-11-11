@@ -311,11 +311,19 @@ fn block_category(product: &Product, listing: Option<&CrawledItem>) -> SpaceFitC
 }
 fn block_price(offers: &[&Offer], listing: Option<&CrawledItem>) -> SpaceFitPrice {
     let offer = stable_offer(offers);
-    let pack_quantity = offer.and_then(|offer| match &offer.pack_quantity {
+    let offer_pack = offer.and_then(|offer| match &offer.pack_quantity {
         Fact::Known { value, .. } => Some(value.get()),
         _ => None,
     });
-    let (price, basis) = match offer.map(|offer| &offer.pack_price) {
+    // A catalog listing's pack quantity only fills an unknown offer quantity,
+    // and anything priced with it is a reference value (참고치), never confirmed.
+    let listing_pack = listing
+        .and_then(|item| item.pack_quantity.as_ref())
+        .map(|pack| pack.value)
+        .filter(|value| (1..=crate::catalog_bundle::MAX_PACK_QUANTITY).contains(value));
+    let pack_from_listing = offer_pack.is_none() && listing_pack.is_some();
+    let pack_quantity = offer_pack.or(listing_pack);
+    let (price, mut basis) = match offer.map(|offer| &offer.pack_price) {
         Some(Fact::Known { value, provenance }) => (
             value.get(),
             if provenance.verification == VerificationStatus::Confirmed {
@@ -332,6 +340,9 @@ fn block_price(offers: &[&Offer], listing: Option<&CrawledItem>) -> SpaceFitPric
             None => return SpaceFitPrice::Unknown {},
         },
     };
+    if pack_from_listing {
+        basis = SpaceFitPriceBasis::Reference;
+    }
     let unit_price = pack_quantity
         .filter(|quantity| *quantity > 0)
         .and_then(|quantity| {
@@ -1150,6 +1161,126 @@ mod tests {
                 unit_price_krw: None,
                 basis: SpaceFitPriceBasis::Reference,
             } if pack_price_krw == "1000"
+        ));
+    }
+    #[test]
+    fn listing_pack_quantity_prices_as_reference() {
+        let mut value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            Some("2,000원"),
+        );
+        value["packQuantity"] = json!({"value": 2, "basis": "confirmed", "evidence": "2개입"});
+        let i = input_with(json!([value.clone()]), ["30.5"; 3], vec![listing(&value)]);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        let block = &p.singles[0].blocks[0];
+        assert!(matches!(
+            &block.price,
+            SpaceFitPrice::Known {
+                pack_price_krw,
+                pack_quantity: Some(pack),
+                unit_price_krw: Some(unit),
+                basis: SpaceFitPriceBasis::Reference,
+            } if pack_price_krw == "2000" && pack == "2" && unit == "1000"
+        ));
+    }
+    #[test]
+    fn listing_pack_quantity_not_dividing_price_has_no_unit_price() {
+        let mut value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            Some("1000 KRW"),
+        );
+        value["packQuantity"] = json!({"value": 3, "basis": "reference", "evidence": "추정"});
+        let i = input_with(json!([value.clone()]), ["30.5"; 3], vec![listing(&value)]);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        assert!(matches!(
+            &p.singles[0].blocks[0].price,
+            SpaceFitPrice::Known {
+                pack_quantity: Some(pack),
+                unit_price_krw: None,
+                basis: SpaceFitPriceBasis::Reference,
+                ..
+            } if pack == "3"
+        ));
+    }
+    #[test]
+    fn confirmed_offer_price_with_listing_pack_becomes_reference() {
+        let mut value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            None,
+        );
+        value["packQuantity"] = json!({"value": 2, "basis": "confirmed", "evidence": "2개입"});
+        let mut i = input_with(json!([value.clone()]), ["30.5"; 3], vec![listing(&value)]);
+        for offer in &mut i.catalog.offers {
+            offer.pack_price = Fact::Known {
+                value: MoneyKrw::new(2000).unwrap(),
+                provenance: Provenance {
+                    verification: VerificationStatus::Confirmed,
+                    ..unverified()
+                },
+            };
+            offer.pack_quantity = Fact::unknown();
+        }
+        rehash(&mut i);
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        assert!(matches!(
+            &p.singles[0].blocks[0].price,
+            SpaceFitPrice::Known {
+                pack_quantity: Some(pack),
+                unit_price_krw: Some(unit),
+                basis: SpaceFitPriceBasis::Reference,
+                ..
+            } if pack == "2" && unit == "1000"
+        ));
+    }
+    #[test]
+    fn out_of_range_listing_pack_reaching_search_is_refused() {
+        let mut value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            Some("1000 KRW"),
+        );
+        let i0 = input_with(json!([value.clone()]), ["30.5"; 3], vec![]);
+        for bad in [0, 10_001] {
+            value["packQuantity"] = json!({"value": bad, "basis": "confirmed", "evidence": "x"});
+            let mut i = i0.clone();
+            i.listings = vec![listing(&value)];
+            assert_eq!(
+                SpaceFitSearch::new(i).err().unwrap(),
+                "space_fit_listing_invalid",
+                "{bad}"
+            );
+        }
+    }
+    #[test]
+    fn offer_pack_quantity_wins_over_listing() {
+        let mut value = item_value(
+            "crawl:muji:1",
+            "low",
+            [Some(100), Some(100), Some(100)],
+            Some("1000 KRW"),
+        );
+        value["packQuantity"] = json!({"value": 5, "basis": "confirmed", "evidence": "5P"});
+        let mut i = input_with(json!([value.clone()]), ["30.5"; 3], vec![listing(&value)]);
+        set_offer_price(
+            &mut i,
+            MoneyKrw::new(4000).unwrap(),
+            Some(PackQuantity::new(4).unwrap()),
+        );
+        let p = SpaceFitSearch::new(i).unwrap().step(1000);
+        assert!(matches!(
+            &p.singles[0].blocks[0].price,
+            SpaceFitPrice::Known {
+                pack_quantity: Some(pack),
+                unit_price_krw: Some(unit),
+                ..
+            } if pack == "4" && unit == "1000"
         ));
     }
     #[test]
