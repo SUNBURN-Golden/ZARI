@@ -194,8 +194,8 @@ describe('displayName', () => {
   });
 });
 
-describe('reference notice placeholder', () => {
-  it('stays empty until Argon approves the wording', () => {
-    expect(REFERENCE_NOTICE).toBe('');
+describe('reference notice', () => {
+  it('uses the Argon-approved wording', () => {
+    expect(REFERENCE_NOTICE).toBe('사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.');
   });
 });

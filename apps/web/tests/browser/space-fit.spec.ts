@@ -125,8 +125,7 @@ test('a listing price without pack quantity shows as the listing price with the 
   await expect(first.getByText('글에서 찾은 가격이라 다를 수 있어요',{exact:true})).toBeVisible();
   // Fixture products have no drawings, so the grey placeholder stays.
   await expect(first.locator('.sf-pic-empty')).toBeVisible();
-  // The Argon notice is a placeholder and must not invent copy.
-  await expect(page.locator('.sf-notice')).toHaveCount(0);
+  await expect(page.locator('.sf-notice')).toHaveText('사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.');
 });
 
 test('invalid inputs focus the associated field and offline errors preserve inputs',async({page})=>{

@@ -6,9 +6,9 @@ import { productKey, SKETCHES, sketchFor } from '../../src/features/space-fit/sk
 const SKETCH_DIR = resolve('apps/web/public/sketches');
 
 describe('space-fit sketch slot', () => {
-  it('maps the 30 shipped drawings, sharing one file across product variants', () => {
+  it('maps the 32 shipped drawings, sharing one file across product variants', () => {
     const paths = [...new Set(Object.values(SKETCHES))];
-    expect(paths).toHaveLength(30);
+    expect(paths).toHaveLength(32);
     expect(Object.keys(SKETCHES).length).toBeGreaterThanOrEqual(30);
     expect(sketchFor('crawl:daiso:1065176:o1a2b3c4d')).toBe('/sketches/daiso-1065176.webp');
     expect(sketchFor('crawl:daiso:1065177')).toBe('/sketches/daiso-1065176.webp');
@@ -17,18 +17,16 @@ describe('space-fit sketch slot', () => {
     expect(sketchFor('crawl:muji:1003338')).toBe('/sketches/muji-1003337.webp');
   });
 
-  it('keeps the grey placeholder for the two drawings that are not ready', () => {
-    expect(sketchFor('crawl:muji:1006186')).toBeNull();
-    expect(sketchFor('crawl:muji:1006187')).toBeNull();
-    expect(sketchFor('crawl:muji:1006188')).toBeNull();
-    expect(sketchFor('crawl:muji:59138')).toBeNull();
-    expect(SKETCHES['crawl:muji:1006187']).toBeUndefined();
-    expect(SKETCHES['crawl:muji:59138']).toBeUndefined();
+  it('maps the last two drawings, sharing one file across the picnic-sheet sizes', () => {
+    expect(sketchFor('crawl:muji:1006186')).toBe('/sketches/muji-1006187.webp');
+    expect(sketchFor('crawl:muji:1006187')).toBe('/sketches/muji-1006187.webp');
+    expect(sketchFor('crawl:muji:1006188')).toBe('/sketches/muji-1006187.webp');
+    expect(sketchFor('crawl:muji:59138')).toBe('/sketches/muji-59138.webp');
   });
 
   it('ships a same-origin webp for every mapped path', () => {
     const files = new Set(readdirSync(SKETCH_DIR).filter((name) => name.endsWith('.webp')));
-    expect(files.size).toBe(30);
+    expect(files.size).toBe(32);
     for (const path of new Set(Object.values(SKETCHES))) {
       expect(path).toMatch(/^\/sketches\/[a-z0-9-]+\.webp$/);
       expect(files.has(path.slice('/sketches/'.length))).toBe(true);

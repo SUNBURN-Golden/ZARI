@@ -2863,3 +2863,10 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
 - 시각·접근성(측정함, 실 R2 번들, 운영 빌드, 입력 60×40×40cm, 기본 여유 틈): 320/390/1440 × light/dark 결과와 입력·열린 `더 고르기`에서 axe 위반 0, 가로 넘침 0, 48px 미만 대상 0, 18px 미만 본문 0. 요약은 `이 자리에 맞는 수납함 327개를 찾았어요`. 스크린샷: `/workspace/shots/zari-spacefit-ui/simple-pr/`.
 - 남김: 손그림 2장, Argon 참고치 문구, push·PR, 준태님 머지·배포 승인, 비작성자 exact-HEAD review. `#137`·`#138` 닫기는 PR을 열 때 한다.
 
+## 2026-11-11 SpaceFit 단순화 — 손그림 32장·참고치 문구 (PR 예정)
+
+- 손그림 32장 완료. `muji-1006187`은 1006186·1006188과 공유. `muji-59138`(아카시아 L용 상판)은 원본 사진과 같은 나무 살창 상판이라 맞다고 보고 넣었다(측정함, 원본과 그림 대조).
+- `REFERENCE_NOTICE`에 Argon 승인 문구를 그대로 넣었다: `사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.`
+- 가지를 `origin/main` `f873c2e`(#139 카탈로그 수집기, 공간맞춤 파일과 겹치지 않음) 위로 rebase했다.
+- 검증(측정함): typecheck·lint 통과, `npm test` **550 passed / 62 files**(rebase로 catalog-server 시험이 더해짐), Chromium `space-fit.spec.ts` **26 passed**. 실 R2 번들·운영 빌드, 60×40×40cm, 기본 여유 틈: 320/390/1440 × light/dark와 입력·열린 `더 고르기`에서 axe 위반 0, 가로 넘침 0. 요약 `이 자리에 맞는 수납함 337개를 찾았어요`. 스크린샷: `/workspace/shots/zari-spacefit-ui/simple-pr/`.
+- 남김: push 후 PR 생성, `#137`·`#138` 닫기, 준태님 머지·배포 승인, 비작성자 exact-HEAD review.

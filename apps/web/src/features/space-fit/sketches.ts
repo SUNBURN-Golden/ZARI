@@ -5,8 +5,8 @@
  *
  * The drawings ship with the app under /sketches/ and are keyed by crawled
  * product id (`crawl:{site}:{id}`), so they need no contract change. Variants
- * of the same product share one drawing. Items without a drawing (currently
- * the muji-1006187 family and muji-59138) show the grey placeholder.
+ * of the same product share one drawing. A row without a drawing shows the
+ * grey placeholder.
  */
 export const SKETCHES: Readonly<Record<string, string>> = {
   'crawl:daiso:1065176': '/sketches/daiso-1065176.webp',
@@ -43,6 +43,10 @@ export const SKETCHES: Readonly<Record<string, string>> = {
   'crawl:muji:1004885': '/sketches/muji-1004885.webp',
   'crawl:muji:1005321': '/sketches/muji-1005321.webp',
   'crawl:muji:1005322': '/sketches/muji-1005322.webp',
+  'crawl:muji:1006186': '/sketches/muji-1006187.webp',
+  'crawl:muji:1006187': '/sketches/muji-1006187.webp',
+  'crawl:muji:1006188': '/sketches/muji-1006187.webp',
+  'crawl:muji:59138': '/sketches/muji-59138.webp',
 };
 
 const SKETCH_PATH = /^\/sketches\/[a-z0-9-]+\.(?:webp|jpg)$/;

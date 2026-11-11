@@ -269,7 +269,7 @@ export function SpaceFit() {
         <h2 id="space-summary" ref={summary} className="sf-summary" tabIndex={-1} aria-live="polite" aria-atomic="true">
           {shown.length === 0 ? summaryText : <>이 자리에 맞는 수납함 <span aria-live="off">{shown.length}</span>개를 찾았어요</>}
         </h2>
-        {REFERENCE_NOTICE !== '' && <p className="sf-notice">{REFERENCE_NOTICE}</p>}
+        <p className="sf-notice">{REFERENCE_NOTICE}</p>
         {!busy && reason === 'filters' && <div className="space-empty" data-reason="filters">
           <div className="space-empty-actions">
             <button type="button" className="space-reset-inline" onClick={resetAll}>처음대로 돌리기</button>

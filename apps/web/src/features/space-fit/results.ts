@@ -22,11 +22,9 @@ export const SPACE_FIT_COPY = {
 
 /**
  * One short 참고치 honesty line shown above the results list.
- * TODO: exact Korean copy will come from Argon review; do not invent final copy.
- * Keep this constant empty until that wording is approved. The results UI
- * renders the line only when the string is non-empty.
+ * Argon-approved copy (2026-11-11).
  */
-export const REFERENCE_NOTICE = '';
+export const REFERENCE_NOTICE = '사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.';
 
 /** Rust sends at most this many unmeasured previews (first page only). */
 export const UNMEASURED_PREVIEW_CAP = 200;
