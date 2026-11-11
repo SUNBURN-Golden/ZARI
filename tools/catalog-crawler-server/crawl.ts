@@ -125,6 +125,7 @@ function peakMemMB(): number {
 async function detailPhase(): Promise<void> {
   const live = await loadLive(cfg.publicBase).catch(() => null);
   const liveDims = new Set((live?.items ?? []).filter((i) => (i.dimensions as any)?.width).map((i) => String(i.id)));
+  const livePack = new Set((live?.items ?? []).filter((i) => (i.packQuantity as any)?.basis === 'confirmed').map((i) => String(i.id)));
   const store = loadStore(paths);
   const todo: { pd: string; needOcr: boolean }[] = [];
   for (const rec of Object.values(store.items)) {
@@ -134,7 +135,7 @@ async function detailPhase(): Promise<void> {
     if (!/^\d+$/.test(pd) || cfg.skipIds.includes(pd) || existsSync(join(DETAIL, `${pd}.json`))) continue;
     const raw = existsSync(join(RAW, `${pd}.json`)) ? JSON.parse(readFileSync(join(RAW, `${pd}.json`), 'utf8')) : null;
     const haveDims = liveDims.has(it.id) || !!dimsFromPageText(it.name, String(raw?.text ?? '')) || existsSync(join(HOME, 'imgocr', `${pd}.json`));
-    const havePack = existsSync(join(HOME, 'packocr', `${pd}.json`));
+    const havePack = livePack.has(it.id) || existsSync(join(HOME, 'packocr', `${pd}.json`));
     if (!haveDims || !havePack) todo.push({ pd, needOcr: !haveDims });
   }
   result.detail.todo = todo.length;
