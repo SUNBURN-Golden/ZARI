@@ -57,6 +57,22 @@ SpaceFit은 단일·조합 결과를 한 목록으로 합친다. 탭이나 `딱 
 - Rust Worker는 단일 상품 격자(stage 0) 뒤에 두 상품 혼합(stage 1)을 보낸다. 첫 page가 미완료면 UI가 응답마다 최대 6번 `next`를 자동 요청해 혼합 후보 20개·완료·2,000개 한도 중 하나에서 멈춘다. `조합 더 찾기`는 그 뒤에도 동작하고, 초점은 첫 page에서만 이동한다.
 - 색은 기존 semantic token과 대비 사례(selected-label, accent-link, inverse-on-accent, control-on-panel)만 재사용한다. 시트 scrim은 `color-mix(in srgb, var(--zari-text-primary) 40%, transparent)`다. 새 색상 쌍은 추가하지 않았다.
 
+## SpaceFit 여유 틈·빈 상태·긴 목록 — PR-D 구현 초안 (2026-11-10)
+
+여유 틈은 Worker에 넘기는 검색 입력(mm)이며 JS가 기하를 계산하지 않는다. 빈 상태는 이유별로 하나만 렌더하고, 긴 목록은 1,000행을 넘을 때만 창을 자른다. 화면은 draft이며 승인된 baseline이 아니다.
+
+| 컴포넌트 | 책임 | 반드시 구현할 상태 |
+| --- | --- | --- |
+| ClearanceSetting | `여유 틈` fieldset. 승인된 0·5·10·20mm를 `0cm`·`0.5cm`·`1cm`·`2cm` 칩(`button aria-pressed`, 정확히 하나 pressed)으로 표시하고 설명 문단을 `aria-describedby`로 연결한다. 입력 form의 접힌 details와 모바일 시트·데스크톱 열의 `FilterPanel`에 같은 fieldset을 쓰되 `useId`로 설명 id를 복사본마다 다르게 둔다 | default 0.5cm, selected, persisted, re-search, reset |
+| EmptyState | 이유 하나당 `div.space-empty[data-reason]` 하나. `noData`(자료 실패)·`stopped`(첫 page 전 사용자 중지)는 `role="status"`와 `맞는 수납함 찾기` 재시도, `filters`는 요약 아래 `처음대로 돌리기`와 모바일 `다시 골라보기`, `noFit`은 요약만 둔다. page가 이미 있으면 stopped는 빈 블록 없이 status 문장만 남긴다 | noData, stopped, filters, noFit, retry, reset, reselect |
+| DeferredRow | 200번째 이후 결과 행 `li`에 `space-row-deferred`를 붙여 `content-visibility: auto`와 `contain-intrinsic-size: auto 28rem`을 적용한다. 행 내용·`data-candidate-id`·링크는 그대로다 | deferred, non-deferred |
+| WindowedRows (`windowing.ts`) | 렌더 행이 1,000개를 넘을 때만 `windowRange`로 보이는 구간 ±20을 렌더한다. 앞뒤에 `li[aria-hidden]` 스페이서를 두고 평균 행 높이(ResizeObserver, 실패 시 480px)로 크기를 정한다. 창 모드에서만 `aria-setsize`/`aria-posinset`을 행에 둔다 | below threshold, windowed, spacer, measured height |
+
+- 여유 틈을 결과 화면에서 바꾸면 현재 입력으로 검색을 다시 실행하되 초점은 누른 칩에 그대로 둔다(결과 화면을 유지한 채 새 page를 기다린다). 입력이 오래됐거나 잘못됐으면 기존 오류 흐름을 쓴다.
+- `처음대로 돌리기`는 정렬·판매처·모양과 여유 틈을 0.5cm로 되돌린다. 여유 틈이 실제로 달라졌을 때만 검색을 다시 실행한다.
+- 결과 요약의 첫 page 초점 이동·`aria-live` 규칙은 PR-B와 같다. `noFit`의 추가 안내 문구는 승인 전이라 `copy-todo`로만 남긴다.
+- 새 색상 쌍은 없다. `space-empty`는 `--zari-surface-subtle` 바탕에 `--zari-text-primary`/`--zari-border-subtle`를 쓰고 기존 `primary-on-subtle`·`secondary-on-subtle` 사례로 확인한다.
+
 ## 접근성과 입력 규칙
 
 레이블을 placeholder로 대체하지 않는다. input의 타입, inputmode, 허용 문자열, 정규화 시점을 분리한다. 구체화된 [프런트엔드 계약](../docs/FRONTEND.md)에 따라 DimensionField는 React Aria TextField로 원문 문자열을 유지하고 Rust가 정규화한다. NumberField나 JS 숫자 파서를 정식 측정값 변환에 사용하지 않는다. JS 부동소수점 결과를 정식 도메인 값으로 확정하지 않는다.

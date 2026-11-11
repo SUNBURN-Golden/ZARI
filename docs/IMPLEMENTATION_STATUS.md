@@ -2767,3 +2767,71 @@ Playwright의 문구 기대값을 갱신하고 지정 버튼·단위 확인·결
   hash 왕복, 자동 단계 시험 공백, 필터 개수 미공지, 자동 단계의 전역 busy, 전문가 모드에서의 `#/?…`
   를 반영했다. 남김: fixture에 분류 label·두 번째 실측 판매처가 없어 분류 칩·판매처 필터의 브라우저
   시험은 단위 시험으로만 덮는다(fixture 재생성은 후속).
+
+### 2026-11-10 PR-D — SpaceFit 여유 틈·이유별 빈 상태·긴 목록 (UI 전용)
+
+- 범위: `apps/web/src/features/space-fit/`(신규 `clearance.ts`·`windowing.ts`),
+  같은 기능의 단위·브라우저 시험, `design/COMPONENTS.md`·`design/SCREENS.md`·
+  `design/DECISIONS.md`, 이 문서만 바꿨다. Rust crates·계약 생성 코드·R2·배포·
+  catalog 데이터·main은 건드리지 않았다.
+- 여유 틈: `clearance.ts`가 승인된 0·5·10·20mm(`ClearanceMm`)와 기본 5mm,
+  `parseClearance`(목록 밖·깨진 값은 기본), `formatClearanceCm`(0/0.5/1/2, 뒤
+  붙는 0 없음), `clearanceLabel`을 제공한다. localStorage 키는
+  `zari.space-fit.clearance.v1`이고 mm 정수로 저장한다. 읽기·쓰기 실패는 현재
+  화면 선택을 막지 않는다. `ClearanceField` fieldset(legend `여유 틈`, 설명
+  `수납함이 빡빡하지 않게 남길 틈이에요`, `aria-describedby`, `useId`)을 입력 form의
+  접힌 native `<details>`와 `FilterPanel`(모바일 시트·데스크톱 열)에 같은 모양으로
+  둔다. 각 칩은 `button aria-pressed`이며 그룹마다 정확히 하나만 pressed다.
+- 검색: `SpaceFitInput.clearanceMm`에 `[c,c,c]`를 보낸다(기존 `[5,5,5]` 고정 제거).
+  `submit`을 `runSearch({moveFocus})`로 정리했다. 결과가 보이는 상태에서 여유 틈을
+  바꾸면 `moveFocus:false`로 현재 입력을 자동 재검색하고, 결과 화면을 유지해 누른
+  칩이 초점을 잃지 않는다. 재검색 중에는 이전 행을 그대로 두고 첫 page가 오면 바꿔 끼워
+  요약이 빈 문구로 잠깐 바뀌지 않는다. 입력 form 안의 fieldset legend는 summary와 겹치지 않게
+  시각적으로만 숨긴다. page에는 그 검색의 여유 틈(`pageClearance`)을 함께
+  두어 안내가 `축마다 {0|0.5|1|2}cm를 남겨요.`로 바뀐다. `처음대로 돌리기`는
+  정렬·판매처·모양과 여유 틈을 0.5cm로 되돌리고, 여유 틈이 실제로 달라졌을 때만
+  재검색한다.
+- 빈 상태: `view.ts`의 순수 `emptyReason`이 `noData`·`filters`·`stopped`·`noFit`
+  중 하나 또는 null을 고른다. `noData`(자료 실패, 첫 page 전)와 `stopped`(첫 page
+  전 사용자 중지)는 `div.space-empty[data-reason]` `role="status"`와 `맞는 수납함
+  찾기` 재시도를 두고, 같은 내용의 `role="alert"`는 없앴다. `filters`는 요약 아래
+  `처음대로 돌리기`와 모바일 전용 `다시 골라보기`(시트 열기), `noFit`은 요약만
+  둔다. `noData`·`stopped` 블록은 키 큰 form 아래에 있으므로 나타나면 초점(`tabIndex=-1`)을
+  받고 화면 가운데로 스크롤된다. page가 보인 뒤 중지는 결과를 유지하고 status 문장만 추가한다. `찾기 멈추기`
+  단추는 첫 계산과 자동 조합 단계 모두에서 보인다.
+- 긴 목록: 200번째 이후 행에 `space-row-deferred`(`content-visibility: auto;
+  contain-intrinsic-size: auto 28rem;`)를 붙인다. 렌더 행이 1,000개를 넘으면
+  `windowing.ts`의 순수 `windowRange(scrollTop, viewportHeight, listTop, rowHeight,
+  count, overscan)`와 `useWindowedRows(count, estimate)`가 보이는 구간 ±20만
+  렌더하고, 앞뒤 `li[aria-hidden]` 스페이서를 평균 행 높이(ResizeObserver, 실패 시
+  480px)로 채운다. 창 모드에서만 행에 `aria-setsize`/`aria-posinset`을 두고
+  `data-candidate-id`는 유지한다. 1,000개 이하에서는 기존과 같다.
+- 문구: 새 한국어 UI 문자열은 `여유 틈`, `수납함이 빡빡하지 않게 남길 틈이에요`
+  뿐이고 나머지는 기존 승인 문구(`처음대로 돌리기`, `다시 골라보기`, `닫기`,
+  `맞는 수납함 찾기`, `고르신 내용에 맞는 수납함이 아직 없어요`, 자료 실패·중지
+  문구, `축마다 …cm를 남겨요.`)와 숫자+`cm`뿐이다. `copy-todo`는 두 건이다:
+  `SpaceFit.tsx`의 noFit 안내 `이 크기에 맞는 수납함이 없어요 — 크기를 조금 넓혀
+  보거나 여유 틈을 줄여 보세요`(렌더하지 않음)와 `results.ts`의 기존 묶음 가격 문구.
+- 파일: `features/space-fit/clearance.ts`(신규), `windowing.ts`(신규),
+  `SpaceFit.tsx`, `view.ts`(`emptyReason`), `space-fit.css`,
+  `tests/unit/spaceFitView.test.ts`, `tests/browser/space-fit.spec.ts`,
+  `design/COMPONENTS.md`, `design/SCREENS.md`, `design/DECISIONS.md`, 이 문서.
+- 검증(측정함, HEAD 기준): typecheck·lint 통과, `npm test` **529 passed / 60 files**, contracts 124 valid,
+  `check-design-tokens --self-test` 통과(80 tokens · 90/90), `test:build` 통과, `test:parity` 2 passed.
+  Chromium 브라우저는 묶음별로 실행했다: `space-fit.spec.ts` **29 passed**(여유 틈·noData·stopped·
+  axe 320/390/1440 × light/dark·시트 포함), 나머지 46개 spec 세 묶음 **56 + 52 + 49 passed**,
+  합계 **186 passed / 0 failed**. 새 색상 쌍은 없어 `design/token-contrast-cases.json`은 그대로다.
+- 시각 검증(측정함): live R2 번들(read-only), production build로 390/320/1440 × light/dark에서
+  입력·결과·배지·펼침·조합·시트/열·form 여유 틈·`filters` 빈 상태(무인양품 + 부직포정리함)·`noData`
+  (R2 요청 abort) 66개 상태: axe 위반 0, 가로 넘침 없음, 48px 미만 대상 없음, 잘림 없음, page error 없음.
+  증거: `docs/evidence/space-fit-pr-d/`.
+- 남김: 실제 판매처·실기기·approved baseline 수용, 비작성자 exact-HEAD review. fixture에 두 번째
+  실측 판매처가 없어 브라우저의 `filters` 0개 상태는 live 시각 검증과 단위 시험으로 덮는다. 1,000행
+  창 모드는 단위 시험(`windowRange`)만 있고 브라우저 시험은 없다(50번 `더 보기`가 필요).
+- 리뷰(DeepSeek flash, read-only; GLM 응답 없음) 반영: 검색 중 여유 틈을 바꾸면 그 검색을 새 값으로 다시
+  시작, 중지된 여유 틈 재검색의 이전 결과는 stale로 표시, 보기 변경 시 `stopped` 해제, 중지 뒤
+  `조합 더 찾기` 잠금, 창 모드 첫 프레임을 `useLayoutEffect`로 측정, 창 모드에서는
+  `content-visibility` 미적용(평균 행 높이 왜곡 방지), 빈 `noFit` 표식 제거(요약이 noFit 상태).
+  재실행(측정함): typecheck·lint 통과, `npm test` 529/529, space-fit+easy-mode Chromium 38 passed.
+  다른 46개 spec은 이 수정 전 HEAD에서 157 passed였고 수정은 space-fit 파일만 바꿨다.
+  남김: 1,000행 창 모드·결정적 `stopped` 빈 블록 브라우저 시험(지연 워커 fixture 필요).

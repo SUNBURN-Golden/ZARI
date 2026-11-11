@@ -601,3 +601,43 @@ ID / 상태 / 문제 / 변경 대상 / 검토한 대안 / 선택 이유 / 접근
   기록하지 않는다.
 - 되돌리기: `view.ts`와 `SpaceFit.tsx`의 필터 UI·자동 단계, App의 경로 비교를
   제거하면 PR-B 화면으로 돌아간다. Rust 계약·카탈로그·저장 데이터는 바뀌지 않는다.
+
+## D-space-fit-clearance-empty — SpaceFit 여유 틈·이유별 빈 상태·긴 목록 / 구현 초안 (PR-D)
+
+- 상태: **draft**. 사용자 화면 수용·승인, 실기기·실제 판매처 확인은 미완료다.
+- 근거: 사용자 2026-11-10 PR-D 지시. PR-A/PR-B/PR-C 계약과 Rust 계산을 바꾸지 않는다.
+- 문제: 축마다 5mm가 코드에 고정되어 사용자가 틈을 바꿀 수 없었고, 결과가 없는
+  이유(자료 실패·사용자 중지·필터·후보 없음)가 한 문구로 섞였으며, 아주 긴 목록은
+  모든 행을 DOM에 두었다.
+- 선택 1 — 여유 틈: 승인된 0·5·10·20mm 네 값을 `0cm`·`0.5cm`·`1cm`·`2cm` 칩으로
+  고르고 기본은 0.5cm다. 값은 `zari.space-fit.clearance.v1`에 mm 정수로 저장하며
+  읽을 때 승인 목록에 없거나 깨졌으면 기본값으로 돌린다. 저장 실패는 화면 선택을
+  막지 않는다. `SpaceFitInput.clearanceMm`에는 `[c,c,c]`를 보내고, 결과 안내는 그
+  page를 만든 검색의 값으로 쓴다. 결과가 보이는 상태에서 값을 바꾸면 같은
+  `runSearch({moveFocus:false})` 경로로 현재 입력을 다시 계산하며, 결과 화면을
+  유지해 누른 칩이 초점을 잃지 않는다. 잘못된 입력은 기존 Worker 오류 흐름을 쓴다.
+  `처음대로 돌리기`는 정렬·판매처·모양과 여유 틈을 함께 기본값으로 되돌리고,
+  여유 틈이 실제로 달라졌을 때만 재검색한다.
+- 선택 2 — 이유별 빈 상태: `view.ts`의 순수 `emptyReason({hasPage, loadFailed,
+  stopped, total, shown})`가 `noData`·`stopped`·`filters`·`noFit` 중 하나 또는
+  null을 고른다. `noData`와 첫 page 전 `stopped`는 `role="status"` 블록과
+  `맞는 수납함 찾기` 재시도를 두고 `role="alert"`를 중복하지 않는다. `filters`는
+  요약 아래 `처음대로 돌리기`와 모바일 전용 `다시 골라보기`를, `noFit`은 요약만
+  둔다(추가 문구는 `copy-todo`). page 뒤의 중지는 결과를 유지한 채 status 문장만
+  추가한다.
+- 선택 3 — 긴 목록: 200번째 이후 행에 `content-visibility: auto`와
+  `contain-intrinsic-size: auto 28rem`을 적용한다. 화면에 렌더하는 행이 1,000개를
+  넘으면 `windowing.ts`의 `windowRange`와 `useWindowedRows`가 보이는 구간 ±20만
+  렌더하고, 앞뒤 `li[aria-hidden]` 스페이서를 평균 행 높이(ResizeObserver, 실패 시
+  480px)로 채운다. 창 모드에서만 `aria-setsize`/`aria-posinset`을 붙이며
+  `data-candidate-id`는 유지한다. 1,000개 이하에서는 기존 렌더가 그대로다.
+- 접근성·성능: 칩·재시도·재선택 단추는 48px 이상이고 `aria-pressed`는 그룹마다
+  정확히 하나다. 설명 문단은 `aria-describedby`로 연결하고 `useId`로 복사본마다
+  id를 달리한다. 새 색상 쌍은 없고 `--zari-surface-subtle` 위 primary/secondary
+  기존 대비 사례를 쓴다. 창 모드는 DOM 행 수를 40여 개로 제한한다.
+- 전후 화면: 이전은 5mm 고정·한 가지 빈 문구·전체 행 렌더. 이후는 선택 가능한
+  여유 틈, 이유별 빈 상태, 지연·창 렌더. 캡처·실기기 결과는 draft이며 approved로
+  기록하지 않는다.
+- 되돌리기: `clearance.ts`, `windowing.ts`, `SpaceFit.tsx`의 관련 UI·상태,
+  `space-fit.css`의 PR-D 규칙을 제거하면 PR-C 화면으로 돌아간다. Rust 계약·카탈로그·
+  저장 데이터는 바뀌지 않는다.

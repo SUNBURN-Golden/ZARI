@@ -118,7 +118,9 @@ test('invalid inputs focus the associated field and offline errors preserve inpu
   await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveAttribute('aria-invalid','true');
   await page.reload();await fill(page);
   await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('상품 자료를 아직 받지 못했어요');
+  // A catalog failure is its own empty state, not a role=alert error.
+  await expect(page.locator('.space-empty[data-reason="noData"]')).toContainText('상품 자료를 아직 받지 못했어요');
+  await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('60');
 });
 for(const theme of ['light','dark'] as const) test(`mobile keyboard, contrast and no overflow ${theme}`,async({page},info)=>{
@@ -277,4 +279,88 @@ test('a view link opens Space Fit even after expert mode was used',async({page})
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/#/space-fit?sort=price');
   await expect(page.getByRole('heading',{level:1})).toHaveText('빈 공간에 맞는 수납함을 찾아요');
+});
+
+test('clearance defaults, persists and re-runs from the desktop column without moving focus',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/space-fit');
+  const details=page.locator('.space-clearance-details');
+  await expect(details).not.toHaveAttribute('open','');
+  const formClearance=details.locator('.space-clearance');
+  await details.locator('summary').click();
+  // Closed <details> content is not in the accessibility tree; check after opening.
+  await expect(formClearance.getByRole('button',{name:'0.5cm',exact:true})).toHaveAttribute('aria-pressed','true');
+  await formClearance.getByRole('button',{name:'1cm',exact:true}).click();
+  await expect(formClearance.getByRole('button',{name:'1cm',exact:true})).toHaveAttribute('aria-pressed','true');
+  expect(await page.evaluate(()=>localStorage.getItem('zari.space-fit.clearance.v1'))).toBe('10');
+  await importCatalog(page); await fill(page); await search(page);
+  await expect(page.getByText('축마다 1cm를 남겨요.')).toBeVisible();
+  // The stored choice survives a reload.
+  await page.reload();
+  const reloaded=page.locator('.space-clearance-details');
+  await reloaded.locator('summary').click();
+  await expect(reloaded.locator('.space-clearance').getByRole('button',{name:'1cm',exact:true})).toHaveAttribute('aria-pressed','true');
+  await importCatalog(page); await fill(page); await search(page);
+  // A change on the visible results screen repeats the search; the pressed
+  // chip keeps focus and the summary stays mounted.
+  const column=page.locator('.space-filter-column');
+  const two=column.getByRole('button',{name:'2cm',exact:true});
+  await two.click();
+  await expect(two).toBeFocused();
+  await expect(page.locator('#space-summary')).toBeVisible();
+  await expect(page.getByText('축마다 2cm를 남겨요.')).toBeVisible();
+});
+
+test('desktop 처음대로 돌리기 restores the default view and clearance',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  const column=page.locator('.space-filter-column');
+  await column.getByRole('button',{name:'가격 싼 순',exact:true}).click();
+  await column.getByRole('button',{name:'2cm',exact:true}).click();
+  await expect(page.getByText('축마다 2cm를 남겨요.')).toBeVisible();
+  await column.getByRole('button',{name:'처음대로 돌리기',exact:true}).click();
+  await expect(column.getByRole('button',{name:'빈틈없이 꽉 차는 순',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(column.getByRole('button',{name:'0.5cm',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByText('축마다 0.5cm를 남겨요.')).toBeVisible();
+});
+
+test('a failed catalog load shows the noData empty state with a retry action',async({page})=>{
+  await page.route('**/catalog/v1/**',(route)=>route.abort());
+  await page.goto('/#/space-fit'); await fill(page);
+  await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
+  const empty=page.locator('.space-empty[data-reason="noData"]');
+  await expect(empty).toBeVisible();
+  await expect(empty).toHaveAttribute('role','status');
+  await expect(empty).toContainText('상품 자료를 아직 받지 못했어요. 연결을 확인한 뒤 다시 찾아 주세요.');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('60');
+  await empty.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
+  await expect(empty).toBeVisible();
+});
+
+test('stopping a search keeps the inputs and reports a stopped state or the shown rows',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page,['200','200','40']);
+  await page.getByRole('button',{name:'맞는 수납함 찾기',exact:true}).click();
+  // The first page can beat the click; both outcomes are valid, but the
+  // screen must say something and keep the inputs.
+  await page.getByRole('button',{name:'찾기 멈추기',exact:true}).click({timeout:2000}).catch(()=>undefined);
+  await expect(page.getByText('찾기를 멈췄어요. 입력은 그대로 있어요.').or(page.getByRole('region',{name:'찾은 수납함'}))).toBeVisible();
+  await expect(page.getByRole('textbox',{name:'가로',exact:true})).toHaveValue('200');
+});
+
+for(const width of [320,390,1440] as const) for(const theme of ['light','dark'] as const) test(`space fit results have no axe violations at ${width} ${theme}`,async({page})=>{
+  await page.setViewportSize({width,height:width===1440?900:844});
+  await page.emulateMedia({colorScheme:theme});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+});
+
+test('mobile filter sheet with clearance has no axe violations',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#/space-fit'); await importCatalog(page); await fill(page); await search(page);
+  await page.getByRole('button',{name:'순서·가게 고르기',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'순서·가게 고르기'})).toBeVisible();
+  expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
 });

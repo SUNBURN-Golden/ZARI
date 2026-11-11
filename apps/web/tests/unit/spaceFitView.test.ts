@@ -3,6 +3,7 @@ import type { SpaceFitBlock, SpaceFitCandidate, SpaceFitPrice } from '../../src/
 import {
   DEFAULT_VIEW,
   candidateTotalPrice,
+  emptyReason,
   facetOptions,
   filterCandidates,
   isMixed,
@@ -12,6 +13,14 @@ import {
   serializeViewState,
   sortCandidates,
 } from '../../src/features/space-fit/view';
+import {
+  CLEARANCE_OPTIONS_MM,
+  DEFAULT_CLEARANCE_MM,
+  clearanceLabel,
+  formatClearanceCm,
+  parseClearance,
+} from '../../src/features/space-fit/clearance';
+import { FALLBACK_ROW_HEIGHT, WINDOW_OVERSCAN, WINDOW_THRESHOLD, windowRange } from '../../src/features/space-fit/windowing';
 
 function makeBlock(overrides: Partial<SpaceFitBlock> = {}): SpaceFitBlock {
   return {
@@ -217,6 +226,69 @@ describe('space-fit facets and mixed detection', () => {
     expect(isMixed(makeCandidate({ blocks: [makeBlock({ variantId: 'same' }), makeBlock({ variantId: 'same' })] }))).toBe(false);
     expect(isMixed(makeCandidate({ blocks: [makeBlock({ variantId: 'a' }), makeBlock({ variantId: 'b' })] }))).toBe(true);
     expect(isMixed(makeCandidate({ blocks: [makeBlock()] }))).toBe(false);
+  });
+});
+
+describe('space-fit clearance', () => {
+  it('accepts only the approved millimetre choices and defaults the rest', () => {
+    expect(CLEARANCE_OPTIONS_MM).toEqual([0, 5, 10, 20]);
+    expect(DEFAULT_CLEARANCE_MM).toBe(5);
+    for (const value of CLEARANCE_OPTIONS_MM) expect(parseClearance(String(value))).toBe(value);
+    for (const broken of [null, undefined, '', '   ', '0.5', '7', 'abc', '{}', '-5']) {
+      expect(parseClearance(broken)).toBe(DEFAULT_CLEARANCE_MM);
+    }
+  });
+
+  it('formats centimetres without trailing zeros and labels chips', () => {
+    expect(formatClearanceCm(0)).toBe('0');
+    expect(formatClearanceCm(5)).toBe('0.5');
+    expect(formatClearanceCm(10)).toBe('1');
+    expect(formatClearanceCm(20)).toBe('2');
+    expect(clearanceLabel(0)).toBe('0cm');
+    expect(clearanceLabel(5)).toBe('0.5cm');
+    expect(clearanceLabel(10)).toBe('1cm');
+    expect(clearanceLabel(20)).toBe('2cm');
+  });
+});
+
+describe('space-fit empty reasons', () => {
+  const base = { hasPage: false, loadFailed: false, stopped: false, total: 0, shown: 0 };
+
+  it('separates a catalog failure from a user stop before the first page', () => {
+    expect(emptyReason({ ...base, loadFailed: true })).toBe('noData');
+    expect(emptyReason({ ...base, stopped: true })).toBe('stopped');
+    expect(emptyReason(base)).toBeNull();
+  });
+
+  it('separates filters hiding every row from a search that found none', () => {
+    expect(emptyReason({ ...base, hasPage: true, total: 3, shown: 0 })).toBe('filters');
+    expect(emptyReason({ ...base, hasPage: true, total: 0, shown: 0 })).toBe('noFit');
+    expect(emptyReason({ ...base, hasPage: true, total: 3, shown: 2 })).toBeNull();
+  });
+
+  it('never turns a stop after a shown page into an empty block', () => {
+    expect(emptyReason({ ...base, hasPage: true, stopped: true, total: 3, shown: 3 })).toBeNull();
+    expect(emptyReason({ ...base, hasPage: true, stopped: true, total: 3, shown: 0 })).toBeNull();
+  });
+});
+
+describe('space-fit windowing', () => {
+  it('keeps the first viewport plus overscan at the top of the list', () => {
+    expect(windowRange(0, 1000, 0, 500, 100, 20)).toEqual({ start: 0, end: 22 });
+  });
+
+  it('moves the window with the scroll position and list offset', () => {
+    expect(windowRange(10000, 1000, 0, 500, 100, 20)).toEqual({ start: 0, end: 42 });
+    expect(windowRange(2000, 1000, 1000, 500, 100, 20)).toEqual({ start: 0, end: 24 });
+  });
+
+  it('clamps to the list length and handles an empty list or broken height', () => {
+    expect(windowRange(14000, 1000, 0, 500, 30, 20)).toEqual({ start: 8, end: 30 });
+    expect(windowRange(0, 1000, 0, 500, 0, 20)).toEqual({ start: 0, end: 0 });
+    expect(windowRange(0, 1000, 0, 0, 5, 20)).toEqual({ start: 0, end: 5 });
+    expect(WINDOW_THRESHOLD).toBe(1000);
+    expect(WINDOW_OVERSCAN).toBe(20);
+    expect(FALLBACK_ROW_HEIGHT).toBe(480);
   });
 });
 
