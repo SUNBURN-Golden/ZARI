@@ -38,7 +38,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const result = { startedAt: new Date(started).toISOString(), endedAt: '', reason: '', pages: 0, itemsStored: 0, queued: 0, blocked: [] as string[], errors: 0, detail: { todo: 0, visited: 0, ocrItems: 0, images: 0, stop: '' }, peakMemMB: 0 };
 
 // The crawl scheduler reads its own config file; keep it in step with pipeline.json.
-writeFileSync(paths.config, JSON.stringify({ minIntervalMs: cfg.minIntervalMs, jitterMs: 0, pagesPerRun: cfg.pagesPerRun, dailyPerHost: cfg.dailyPerHost, recrawlDays: cfg.recrawlDays, publishEvery: 0, jobTimeoutMs: 120000 }));
+writeFileSync(paths.config, JSON.stringify({ minIntervalMs: cfg.minIntervalMs, jitterMs: 0, pagesPerRun: cfg.pagesPerRun, dailyPerHost: cfg.dailyPerHost, recrawlDays: cfg.recrawlDays, publishEvery: 0, jobTimeoutMs: 240000 }));
 {
   const store = loadStore(paths);
   store.seeds = cfg.categories;
@@ -68,7 +68,7 @@ async function collect(url: string, kind: string) {
       // number of product links stops growing (same single page view, no extra navigation).
       await wait(5000);
       let last = -1, stable = 0;
-      for (let i = 0; i < 30 && stable < 4; i++) {
+      for (let i = 0; i < 24 && stable < 3; i++) {
         await page.mouse.wheel(0, 2000);
         await wait(2500);
         const count = await page.evaluate(() => document.querySelectorAll('a[href*="pdNo="]').length).catch(() => 0);
