@@ -45,7 +45,7 @@ writeFileSync(paths.config, JSON.stringify({ minIntervalMs: cfg.minIntervalMs, j
   // Category pages are re-read once per listingRefreshHours to find new products;
   // product pages follow recrawlDays (unchanged products are not revisited daily).
   for (const e of store.queue) {
-    if (e.kind === 'listing' && e.state === 'done' && e.lastVisitedAt && Date.now() - Date.parse(e.lastVisitedAt) >= cfg.listingRefreshHours * 3600000) e.state = 'pending';
+    if (e.kind === 'listing' && (e.state === 'done' || e.state === 'failed') && e.lastVisitedAt && Date.now() - Date.parse(e.lastVisitedAt) >= cfg.listingRefreshHours * 3600000) e.state = 'pending';
   }
   saveStore(paths, store, ['seeds', 'queue']);
 }
@@ -61,7 +61,8 @@ await context.route('**/*', (route) => (['image', 'media', 'font'].includes(rout
 async function collect(url: string, kind: string) {
   const page = await context.newPage();
   try {
-    const resp = await page.goto(url, { waitUntil: 'load', timeout: 45000 });
+    // 'load' can stall on slow third-party scripts; the collector waits for content itself.
+    const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     if (kind === 'listing') {
       for (let i = 0; i < 6; i++) { await wait(2500); await page.mouse.wheel(0, 1500); }
       await wait(2000);
@@ -134,9 +135,11 @@ async function detailPhase(): Promise<void> {
     const pd = new URL(it.productUrl).searchParams.get('pdNo') ?? '';
     if (!/^\d+$/.test(pd) || cfg.skipIds.includes(pd) || existsSync(join(DETAIL, `${pd}.json`))) continue;
     const raw = existsSync(join(RAW, `${pd}.json`)) ? JSON.parse(readFileSync(join(RAW, `${pd}.json`), 'utf8')) : null;
-    const haveDims = liveDims.has(it.id) || !!dimsFromPageText(it.name, String(raw?.text ?? '')) || existsSync(join(HOME, 'imgocr', `${pd}.json`));
+    const haveDims = liveDims.has(it.id) || !!dimsFromPageText(it.name, String(raw?.text ?? ''));
     const havePack = livePack.has(it.id) || existsSync(join(HOME, 'packocr', `${pd}.json`));
-    if (!haveDims || !havePack) todo.push({ pd, needOcr: !haveDims });
+    // OCR when size is unknown and never read; pack text only for items that have a size (others are not published).
+    const ocrRead = existsSync(join(HOME, 'imgocr', `${pd}.json`));
+    if ((!haveDims && !ocrRead) || (haveDims && !havePack)) todo.push({ pd, needOcr: !haveDims });
   }
   result.detail.todo = todo.length;
   const host = 'www.daisomall.co.kr';
@@ -158,6 +161,7 @@ async function detailPhase(): Promise<void> {
     h.nextRequestAt = new Date(Date.now() + gap).toISOString();
     saveStore(paths, st, ['hosts']);
 
+    const reqAt = new Date().toISOString();
     const page = await context.newPage();
     let desc: any = null; let status: number | null = null; let body = '';
     page.on('response', async (r) => { if (r.url().includes('/pd/pdr/pdDtl/selPdDtlDesc')) { try { desc = await r.json(); } catch { /* ignore */ } } });
@@ -171,7 +175,7 @@ async function detailPhase(): Promise<void> {
     const title = await page.title().catch(() => '');
     await page.close().catch(() => {});
     result.detail.visited += 1;
-    log(`${new Date().toISOString()} detail ${pd} http=${status} desc=${!!desc}`);
+    log(`${new Date().toISOString()} detail ${pd} requestedAt=${reqAt} http=${status} desc=${!!desc}`);
     if (status !== 200 || /captcha|access denied|차단|too many requests/i.test(`${title}\n${body.slice(0, 2000)}`)) {
       const s2 = loadStore(paths);
       applyBlock(s2.hosts[host]!, status === 200 ? 'blocked_page' : `http_${status}`, Date.now(), normalizeConfig({}));
