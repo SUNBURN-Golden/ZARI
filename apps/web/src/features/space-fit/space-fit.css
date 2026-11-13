@@ -304,7 +304,6 @@
 .sf-item-name { margin: 0; color: var(--zari-text-secondary); word-break: keep-all; overflow-wrap: anywhere; }
 .sf-size { margin: 0; color: var(--zari-text-secondary); line-height: var(--zari-type-secondary-line); }
 .sf-price { margin: var(--zari-space-1) 0 0; font-weight: var(--zari-weight-semibold); line-height: var(--zari-type-label-line); word-break: keep-all; }
-.sf-note { margin: var(--zari-space-1) 0 0; color: var(--zari-text-secondary); line-height: var(--zari-type-secondary-line); word-break: keep-all; }
 .sf-links { display: grid; gap: var(--zari-space-2); margin-top: var(--zari-space-4); }
 .space-fit-main .sf-link { display: flex; flex-wrap: wrap; align-items: center; gap: var(--zari-space-1) var(--zari-space-2); min-height: var(--zari-touch-min-height); padding: var(--zari-space-2) var(--zari-space-4); border: var(--zari-border-width) solid var(--zari-border-control); border-radius: var(--zari-radius-control); color: var(--zari-accent); font-weight: var(--zari-weight-medium); text-decoration: none; word-break: keep-all; }
 .sf-link:hover { background: var(--zari-accent-soft); }

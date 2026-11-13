@@ -13,9 +13,7 @@ export const SPACE_FIT_COPY = {
   /** Filters hide every result: the earlier approved summary. */
   filteredEmpty: '고르신 내용에 맞는 수납함이 아직 없어요',
   /** Listing price whose pack quantity is unknown: the price of the listing, never per unit. */
-  listingPrice: (priceText: string) => `${priceText}원 · 몇 개 값인지는 파는 곳에서 봐 주세요`,
-  /** Price came from listing text (reference basis). */
-  referencePriceNote: '글에서 찾은 가격이라 다를 수 있어요',
+  listingPrice: (priceText: string) => `${priceText}원`,
   /** Under the unmeasured heading when more than the preview cap exist. */
   unmeasuredCapNote: '너무 많아서 200개까지만 먼저 보여드려요',
 } as const;
@@ -141,7 +139,7 @@ export function priceLine(block: SpaceFitBlock): PriceLine {
   return { kind: 'unknown', text: UNKNOWN_PRICE_COPY };
 }
 
-/** Reference prices (crawled listing text) carry SPACE_FIT_COPY.referencePriceNote. */
+/** True when the price came from crawled listing text (reference basis). */
 export function isReferencePrice(block: SpaceFitBlock): boolean {
   return block.price.state === 'known' && block.price.basis === 'reference';
 }

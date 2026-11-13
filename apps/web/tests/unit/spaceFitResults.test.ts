@@ -128,9 +128,9 @@ describe('space-fit price line', () => {
 
   it('shows the listing price, never a per-unit price, when pack quantity is unknown', () => {
     const line = priceLine(makeBlock({ quantity: '4', price: knownPrice({ packQuantity: null, unitPriceKrw: null, packPriceKrw: '19900' }) }));
-    expect(line).toEqual({ kind: 'listing', text: '19,900원 · 몇 개 값인지는 파는 곳에서 봐 주세요' });
+    expect(line).toEqual({ kind: 'listing', text: '19,900원' });
     expect(line.text).not.toMatch(/한 개|다 해서/);
-    expect(SPACE_FIT_COPY.listingPrice('1,000')).toBe('1,000원 · 몇 개 값인지는 파는 곳에서 봐 주세요');
+    expect(SPACE_FIT_COPY.listingPrice('1,000')).toBe('1,000원');
   });
 
   it('keeps the approved fallback when the price is unknown or the pack quantity cannot price one unit', () => {
@@ -143,7 +143,6 @@ describe('space-fit price line', () => {
   it('holds the Argon-approved copy verbatim', () => {
     expect(SPACE_FIT_COPY.noFit).toBe('이 자리에 맞는 수납함이 없어요. 크기를 조금 넓히거나 여유 틈을 줄여 보세요');
     expect(SPACE_FIT_COPY.filteredEmpty).toBe('고르신 내용에 맞는 수납함이 아직 없어요');
-    expect(SPACE_FIT_COPY.referencePriceNote).toBe('글에서 찾은 가격이라 다를 수 있어요');
     expect(SPACE_FIT_COPY.unmeasuredCapNote).toBe('너무 많아서 200개까지만 먼저 보여드려요');
     // The cap in the copy and the Rust preview cap must move together.
     expect(SPACE_FIT_COPY.unmeasuredCapNote).toContain(`${UNMEASURED_PREVIEW_CAP}개`);

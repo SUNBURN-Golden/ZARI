@@ -112,17 +112,18 @@ test('a catalog pack quantity shows a reference unit and total price',async({pag
   expect(await priced.count()).toBeGreaterThan(0);
 });
 
-test('a listing price without pack quantity shows as the listing price with the reference note',async({page})=>{
+test('a listing price without pack quantity shows as the listing price only',async({page})=>{
   await page.goto('/#/space-fit'); await importCatalog(page,pricedCatalog); await fill(page); await search(page);
   const prices=page.locator('.sf-price');
   const texts=(await prices.allTextContents()).map((t)=>t.trim());
   expect(texts.length).toBeGreaterThan(0);
   for(const text of texts) {
-    expect(text).toMatch(/^(19,900|29,900)원 · 몇 개 값인지는 파는 곳에서 봐 주세요$/);
+    expect(text).toMatch(/^(19,900|29,900)원$/);
     expect(text).not.toMatch(/한 개|다 해서/);
   }
   const first=page.locator('.sf-card').first();
-  await expect(first.getByText('글에서 찾은 가격이라 다를 수 있어요',{exact:true})).toBeVisible();
+  await expect(first.getByText('글에서 찾은 가격이라 다를 수 있어요')).toHaveCount(0);
+  await expect(page.getByText('몇 개 값인지는 파는 곳에서 봐 주세요')).toHaveCount(0);
   // Fixture products have no drawings, so the grey placeholder stays.
   await expect(first.locator('.sf-pic-empty')).toBeVisible();
   await expect(page.locator('.sf-notice')).toHaveText('사기 전에 판매 페이지에서 실제 크기와 가격을 꼭 확인해 주세요.');
