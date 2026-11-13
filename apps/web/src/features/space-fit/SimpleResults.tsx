@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SpaceFitBlock, SpaceFitCandidate } from '../../contracts/generated/dto';
-import { displayName, isReferencePrice, priceLine, rowTitle, sellerLabel, SPACE_FIT_COPY, totalQuantityText } from './results';
+import { displayName, priceLine, rowTitle, sellerLabel, totalQuantityText } from './results';
 import { sketchFor } from './sketches';
 
 /** First page sizes; later pages use the same step (existing 더 보기 pattern). */
@@ -25,7 +25,6 @@ function Card({ candidate }: { candidate: SpaceFitCandidate }) {
   const distinct = blocks.filter((block, index) => blocks.findIndex((other) => other.variantId === block.variantId) === index);
   const prices = distinct.map(priceLine);
   const allUnknown = prices.every((line) => line.kind === 'unknown');
-  const reference = distinct.some((block, index) => prices[index]!.kind !== 'unknown' && isReferencePrice(block));
   return <li className="sf-card" data-card-id={candidate.id} tabIndex={-1}>
     <div className="sf-pics">{distinct.slice(0, 2).map((block) => <Picture key={block.variantId} block={block} />)}</div>
     <div className="sf-body">
@@ -36,7 +35,6 @@ function Card({ candidate }: { candidate: SpaceFitCandidate }) {
         <p className="sf-size">{sizeText(block)}</p>
         {(!allUnknown || index === 0) && <p className="sf-price">{prices[index]!.text}</p>}
       </div>)}
-      {reference && <p className="sf-note">{SPACE_FIT_COPY.referencePriceNote}</p>}
       <div className="sf-links">{distinct.flatMap((block) => block.urls.slice(0, 1).map((url) => {
         const seller = sellerLabel(block.source);
         const name = distinct.length > 1 ? `${displayName(block.name)} ` : '';
